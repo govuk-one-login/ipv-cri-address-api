@@ -1,0 +1,98 @@
+swagger: "2.0"
+info:
+  description: "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters."
+  version: "1.0.0"
+  title: "Swagger Petstore"
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "apiteam@swagger.io"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "petstore.swagger.io"
+basePath: "/v2"
+tags:
+  - name: "pet"
+    description: "Everything about your Pets"
+    externalDocs:
+      description: "Find out more"
+      url: "http://swagger.io"
+  - name: "store"
+    description: "Access to Petstore orders"
+  - name: "user"
+    description: "Operations about user"
+    externalDocs:
+      description: "Find out more about our store"
+      url: "http://swagger.io"
+schemes:
+  - "https"
+paths:
+  /session:
+    put:
+      summary: "Validate OAuth authorization request and return a session id"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Authorization object that needs to be validated in exchange for a Session"
+          required: true
+          schema:
+            $ref: "#/definitions/Authorization"
+      responses:
+        "200":
+          description: "Session created"
+          schema:
+            $ref: "#/definitions/Session"
+        "400":
+          description: "Invalid Authorization"
+          schema:
+            $ref: "#/definitions/Error"
+
+definitions:
+  Authorization:
+    type: object
+    required:
+      - response_type
+      - client_id
+      - state
+      - redirect_uri
+      - request
+    properties:
+      response_type:
+        type: string
+        enum: [code]
+      client_id:
+        type: string
+        enum: [ipv-core]
+      state:
+        type: string
+      redirect_uri:
+        type: string
+        format: uri
+      request:
+        type: string
+        pattern: "^([a-zA-Z0-9_=]+)\.([a-zA-Z0-9_=]+)\.([a-zA-Z0-9_\-\+\/=]*)"
+        description: JWT claim
+  Session:
+    type: object
+    required:
+      - session_id
+    properties:
+      session_id:
+        type: string
+        format: uuid
+  Error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+        format: uuid
