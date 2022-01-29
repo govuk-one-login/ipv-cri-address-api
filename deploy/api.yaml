@@ -1,98 +1,102 @@
-swagger: "2.0"
+openapi: "3.0.1"
 info:
-  description: "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters."
-  version: "1.0.0"
-  title: "Swagger Petstore"
-  termsOfService: "http://swagger.io/terms/"
-  contact:
-    email: "apiteam@swagger.io"
-  license:
-    name: "Apache 2.0"
-    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
-host: "petstore.swagger.io"
-basePath: "/v2"
-tags:
-  - name: "pet"
-    description: "Everything about your Pets"
-    externalDocs:
-      description: "Find out more"
-      url: "http://swagger.io"
-  - name: "store"
-    description: "Access to Petstore orders"
-  - name: "user"
-    description: "Operations about user"
-    externalDocs:
-      description: "Find out more about our store"
-      url: "http://swagger.io"
-schemes:
-  - "https"
+  title: "Address CRI"
+  version: "2022-01-29T19:35:02Z"
+servers:
+  - url: "https://w4n55uhzxk.execute-api.eu-west-2.amazonaws.com/{basePath}"
+    variables:
+      basePath:
+        default: "/dev"
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  body-only:
+    validateRequestBody: true
+    validateRequestParameters: false
+x-amazon-apigateway-request-validator: body-only
 paths:
   /session:
     put:
-      summary: "Validate OAuth authorization request and return a session id"
-      consumes:
-        - "application/json"
-      produces:
-        - "application/json"
-      parameters:
-        - in: "body"
-          name: "body"
-          description: "Authorization object that needs to be validated in exchange for a Session"
-          required: true
-          schema:
-            $ref: "#/definitions/Authorization"
+      x-amazon-apigateway-request-validator : body-only
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Authorization"
+        required: true
       responses:
-        "200":
-          description: "Session created"
-          schema:
-            $ref: "#/definitions/Session"
-        "400":
-          description: "Invalid Authorization"
-          schema:
-            $ref: "#/definitions/Error"
-
-definitions:
-  Authorization:
-    type: object
-    required:
-      - response_type
-      - client_id
-      - state
-      - redirect_uri
-      - request
-    properties:
-      response_type:
-        type: string
-        enum: [code]
-      client_id:
-        type: string
-        enum: [ipv-core]
-      state:
-        type: string
-      redirect_uri:
-        type: string
-        format: uri
-      request:
-        type: string
-        pattern: "^([a-zA-Z0-9_=]+)\.([a-zA-Z0-9_=]+)\.([a-zA-Z0-9_\-\+\/=]*)"
-        description: JWT claim
-  Session:
-    type: object
-    required:
-      - session_id
-    properties:
-      session_id:
-        type: string
-        format: uuid
-  Error:
-    type: object
-    required:
-      - code
-      - message
-    properties:
-      code:
-        type: integer
-        format: int32
-      message:
-        type: string
-        format: uuid
+        400:
+          description: "400 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: "500 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        201:
+          description: "201 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+      x-amazon-apigateway-integration:
+        type: "aws"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:130355686670:function:cri-address-session-cri-address-philm/invocations"
+        requestTemplates:
+          application/json: "#set ($root=$input.path('$')) { \"response_type\": \"$root.response_type\" }"
+        responses:
+          201:
+            statusCode: 201
+            responseTemplates:
+              application/json: "#set ($root=$input.path('$')) { \"session_id\": \"$root.body\" }"
+          500:
+            statusCode: 500
+            responseTemplates:
+              application/json: "#set ($root=$input.path('$')) { \"message\": \"$root.body\" }"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+components:
+  schemas:
+    Authorization:
+      required:
+        - "client_id"
+        - "redirect_uri"
+        - "request"
+        - "response_type"
+        - "state"
+      type: "object"
+      properties:
+        response_type:
+          type: "string"
+          pattern: "code"
+          example: "code"
+        client_id:
+          type: "string"
+        state:
+          type: "string"
+        redirect_uri:
+          type: "string"
+        request:
+          type: "string"
+    Error:
+      required:
+        - "message"
+      type: "object"
+      properties:
+        code:
+          type: "string"
+        message:
+          type: "string"
+    Session:
+      required:
+        - "session_id"
+      type: "object"
+      properties:
+        session_id:
+          type: "string"
