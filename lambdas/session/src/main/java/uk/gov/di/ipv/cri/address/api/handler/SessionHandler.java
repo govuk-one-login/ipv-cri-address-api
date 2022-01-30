@@ -16,14 +16,12 @@ public class SessionHandler
     @Override
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
-        Map<String, String> headers = input.getHeaders();
-        System.out.println("👍 headers is " + new Gson().toJson(headers));
-        System.out.println("👍 input is " + input.getBody());
         APIGatewayProxyResponseEvent apiGatewayProxyResponseEvent =
                 new APIGatewayProxyResponseEvent();
         apiGatewayProxyResponseEvent.setStatusCode(HttpStatus.SC_CREATED);
         UUID uuid = UUID.randomUUID();
-        apiGatewayProxyResponseEvent.setBody(uuid.toString());
+        Map<String, String> responseMap = Map.of("session_id", uuid.toString());
+        apiGatewayProxyResponseEvent.setBody(new Gson().toJson(responseMap));
         return apiGatewayProxyResponseEvent;
     }
 }

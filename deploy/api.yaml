@@ -1,12 +1,6 @@
 openapi: "3.0.1"
 info:
   title: "Address Credential Issuer API"
-  version: "2022-01-30T21:49:33Z"
-servers:
-  - url: "https://4mw0qs1br3.execute-api.eu-west-2.amazonaws.com/{basePath}"
-    variables:
-      basePath:
-        default: "/dev"
 paths:
   /session:
     put:
@@ -29,8 +23,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-        "200":
-          description: "200 response"
+        "201":
+          description: "201 response"
           content:
             application/json:
               schema:
@@ -38,7 +32,8 @@ paths:
       x-amazon-apigateway-request-validator: "Validate body"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
-        uri: "arn:aws:apigateway:eu-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-2:130355686670:function:cri-address-session-cri-address-philm/invocations"
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SessionFunction.Arn}/invocations
         responses:
           default:
             statusCode: "200"

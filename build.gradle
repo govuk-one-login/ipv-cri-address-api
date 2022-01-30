@@ -1,50 +1,24 @@
-import org.gradle.api.tasks.bundling.Zip
-
 plugins {
-	id 'idea'
-	id 'application'
-	id 'java'
-	id "jacoco"
-	id "com.diffplug.spotless" version "6.0.4"
+	id "java"
 	id "org.sonarqube" version "3.3"
+	id "com.diffplug.spotless" version "6.1.0"
 }
-
-group "uk.gov.di.ipv.cri.address.api"
 
 repositories {
 	mavenCentral()
 }
 
-sourceCompatibility = 11
-
-dependencies {
-
-	implementation "com.amazonaws:aws-lambda-java-core:1.2.1",
-			"com.amazonaws:aws-lambda-java-events:3.11.0",
-			"org.apache.httpcomponents:httpclient:4.5.13",
-			"com.nimbusds:oauth2-oidc-sdk:9.3.1",
-			"com.google.code.gson:gson:2.8.9"
-
-	testImplementation "org.junit.jupiter:junit-jupiter:5.8.2",
-			"org.mockito:mockito-junit-jupiter:4.2.0",
-			"org.mockito:mockito-inline:4.2.0"
-}
-
-test {
-	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.enabled true
+sonarqube {
+	properties {
+		property "sonar.projectKey", "alphagov_di-ipv-cri-address-api"
+		property "sonar.organization", "alphagov"
+		property "sonar.host.url", "https://sonarcloud.io"
 	}
 }
 
 spotless {
 	java {
-		target "src/main/**/*.java"
+		target "**/src/**/*.java"
 		googleJavaFormat("1.13.0").aosp()
 		importOrder "", "javax", "java", "\\#"
 		endWithNewline()
@@ -57,19 +31,6 @@ spotless {
 	}
 }
 
-sonarqube {
-	properties {
-		property "sonar.projectKey", "alphagov_di-ipv-cri-address-api"
-		property "sonar.organization", "alphagov"
-		property "sonar.host.url", "https://sonarcloud.io"
-	}
-}
-
-task buildZip(type: Zip) {
-	from compileJava
-	from processResources
-	destinationDirectory = file("$rootDir/build/distributions")
-	into("lib") {
-		from configurations.runtimeClasspath
-	}
+clean.doFirst {
+	delete "${rootDir}/dist/"
 }
