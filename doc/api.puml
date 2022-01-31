@@ -1,0 +1,68 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+skinparam backgroundColor #ffffff
+
+'actor User
+box "Relying Party" #d0ffee
+participant Core as core
+end box
+
+box "Credential Issuer"
+participant Frontend as fe
+participant API as api
+database Datastore as db
+
+box "Third Party" #e4ffde
+participant "Postcode Lookup" as pcl
+end box
+== Oauth start ==
+
+core -[#green]> fe : /authorize\n{ jwt }
+activate fe
+
+fe -> api: POST /session\n{ jwt }
+activate api
+api -> api: validate JWT
+api -> api: create & write session
+return session-id
+
+
+
+fe-[#blue]>fe: display post code page
+
+fe -> api: POST /postcode-lookup
+activate api
+api->pcl: /postcode-lookup
+api<--pcl: addresses
+return addresses
+
+fe-[#blue]>fe: display addresses
+
+fe->api: /address
+activate api
+
+api -> api: create authorization_code
+api -> db: write address, authorization_code
+return 204 (authorization_code)
+
+core <[#green]- fe: /callback\n(authorization code)
+destroy fe
+== Oauth return ==
+
+
+
+core -[#green]> api: /token
+activate api
+api -> api: create token
+api -> db: write token
+return token
+core -[#green]> api: /credential/issue
+activate api
+api -> api: use AuthenticationResult in verifiable-credential
+return verifiable-credential
+
+
+destroy api
+@enduml

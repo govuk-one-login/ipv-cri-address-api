@@ -1,0 +1,3 @@
+rootProject.name = 'di-ipv-cri-address-api'
+include "lambdas",
+		"lambdas:session"

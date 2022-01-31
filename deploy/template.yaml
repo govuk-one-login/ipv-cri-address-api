@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
+Description: "Digital Identity IPV CRI Address API"
+
+Parameters:
+  Environment:
+    Description: environment name
+    Default: dev
+    Type: String
+    AllowedValues:
+      - dev
+      - staging
+      - integration
+      - prod
+    ConstraintDescription: specify dev, staging, integration or prod for environment
+  APIS3BucketName:
+    Type: String
+    Description: The name of the S3 bucket for the api gateway openapi definiiton
+    Default: di-ipv-cri-address-api
+
+Globals:
+  Function:
+    Timeout: 30 # seconds
+    Runtime: java11
+    AutoPublishAlias: live
+    MemorySize: 512
+
+Resources:
+
+  AddressApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Sub Environment
+#      Auth:
+#        DefaultAuthorizer: AWS_IAM
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include # the api.yaml file needs to be in an s3 bucket for Arn interpolation
+          Parameters:
+            Location: s3://di-ipv-address-cri-api/dev/api.yaml
+      OpenApiVersion: 3.0.1
+      EndpointConfiguration:
+        Type: REGIONAL
+    DependsOn: SessionFunction
+
+  SessionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../dist/session.zip
+      Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler
+      Policies:
+        DynamoDBWritePolicy:
+          TableName:
+            Ref: AddressSessionTable
+
+  FunctionPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - SessionFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SessionFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AddressApi}*"
+
+  AddressSessionTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "address-session"
+      BillingMode: "PAY_PER_REQUEST"
+      AttributeDefinitions:
+        -
+          AttributeName: "session-id"
+          AttributeType: "S"
+        -
+          AttributeName: "authorization-code"
+          AttributeType: "S"
+        -
+          AttributeName: "token"
+          AttributeType: "S"
+
+      KeySchema:
+        -
+          AttributeName: "session-id"
+          KeyType: "HASH"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "authorization-code-index"
+          KeySchema:
+            -
+              AttributeName: "authorization-code"
+              KeyType: "HASH"
+          Projection:
+            NonKeyAttributes:
+              - "session-id"
+            ProjectionType: "INCLUDE"
+        -
+          IndexName: "token-index"
+          KeySchema:
+            -
+              AttributeName: "token"
+              KeyType: "HASH"
+          Projection:
+            NonKeyAttributes:
+              - "session-id"
+            ProjectionType: "INCLUDE"
+      TimeToLiveSpecification:
+        AttributeName: expiry-date
+        Enabled: true
