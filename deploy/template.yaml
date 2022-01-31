@@ -24,9 +24,6 @@ Globals:
     Runtime: java11
     AutoPublishAlias: live
     MemorySize: 512
-#    PackageType: Zip
-#    Architectures:
-#      - x86_64
 
 Resources:
 
