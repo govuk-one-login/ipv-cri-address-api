@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - KBV-57-sam-github-actions
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
