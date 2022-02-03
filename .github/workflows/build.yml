@@ -35,3 +35,45 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew build sonarqube --info
+  lambda-deploy:
+    needs: build
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: eu-west-2
+      ENVIRONMENT: dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup SAM 
+        uses: aws-actions/setup-sam@v1
+
+      - name: Assume temporary AWS role
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: ${{ secrets.AWS_ROLE_SESSIOM }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get signing profile name
+        id: code_signing
+        run: echo "::set-output name=profile::$(aws ssm get-parameter --region ${{ env.AWS_REGION }} --name '${{ secrets.AWS_PROFILE_PATH }}' | jq '.Parameter.Value')"
+
+      - name: Gradle build
+        run: ./gradlew clean buildZip
+
+      - name: SAM build
+        run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
+        
+      - name: SAM Validate
+        run: sam validate --region ${{ env.AWS_REGION }} -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
+        
+      # - name: Upload API config
+      #   run: aws s3 cp deploy/api.yaml s3://${{ secrets.AWS_CONFIG_BUCKET }}/${{ env.ENVIRONMENT }}/api.yaml
+
+      # - name: SAM deploy
+      #   run: sam deploy -t deploy/template.yaml --config-env dev --config-file samconfig.toml --no-fail-on-empty-changeset --signing-profiles SessionFunction=${{ steps.code_signing.outputs.profile }} --stack-name timp-di-ipv-cri-address-api --s3-bucket ipv_kbv-lambda-artifact-bucket --s3-prefix timp-di-ipv-cri-address-api --region ${{ env.AWS_REGION }} --confirm-changeset false --disable-rollback true --capabilities CAPABILITY_IAM
