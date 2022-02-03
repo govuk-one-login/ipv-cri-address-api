@@ -57,7 +57,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: ${{ secrets.AWS_ROLE_SESSIOM }}
+          role-session-name: ${{ secrets.AWS_ROLE_SESSION }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Get signing profile name
