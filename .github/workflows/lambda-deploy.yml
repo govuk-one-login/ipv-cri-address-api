@@ -1,4 +1,4 @@
-name: Lambda Deploy
+name: Deploy
 on:
   push:
     branches:
@@ -7,8 +7,8 @@ on:
 jobs:
   lambda-deploy:
     needs: build
-    runs-on: ubuntu-latest
     timeout-minutes: 10
+    runs-on: ubuntu-latest
     env:
       AWS_REGION: eu-west-2
       ENVIRONMENT: dev
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Setup SAM
+      - name: Setup SAM 
         uses: aws-actions/setup-sam@v1
 
       - name: Assume temporary AWS role
