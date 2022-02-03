@@ -4,7 +4,7 @@ on:
     branches:
       - main
       - KBV-57-sam-github-actions
-  lambda-deploy:
+  lambda_deploy:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
