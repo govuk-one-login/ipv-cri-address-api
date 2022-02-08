@@ -70,7 +70,7 @@ Resources:
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
-      TableName: "address-session"
+      TableName: !Sub "address-session-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         -
