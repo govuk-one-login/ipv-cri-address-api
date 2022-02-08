@@ -34,10 +34,14 @@ Resources:
 #      Auth:
 #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
+        openapi: "3.0.1" # workaround to get `sam validate` to work
+        paths: # workaround to get `sam validate` to work
+          /never-created:
+            options: { } # workaround to get `sam validate` to work
         Fn::Transform:
-          Name: AWS::Include # the api.yaml file needs to be in an s3 bucket for Arn interpolation
+          Name: AWS::Include
           Parameters:
-            Location: s3://di-ipv-address-cri-api/dev/api.yaml
+            Location: './api.yaml'
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
