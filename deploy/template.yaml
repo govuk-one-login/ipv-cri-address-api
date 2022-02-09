@@ -13,10 +13,6 @@ Parameters:
       - integration
       - prod
     ConstraintDescription: specify dev, staging, integration or prod for environment
-  APIS3BucketName:
-    Type: String
-    Description: The name of the S3 bucket for the api gateway openapi definiiton
-    Default: di-ipv-cri-address-api
 
 Globals:
   Function:
@@ -34,10 +30,14 @@ Resources:
 #      Auth:
 #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
+        openapi: "3.0.1" # workaround to get `sam validate` to work
+        paths: # workaround to get `sam validate` to work
+          /never-created:
+            options: { } # workaround to get `sam validate` to work
         Fn::Transform:
-          Name: AWS::Include # the api.yaml file needs to be in an s3 bucket for Arn interpolation
+          Name: AWS::Include
           Parameters:
-            Location: s3://di-ipv-address-cri-api/dev/api.yaml
+            Location: './api.yaml'
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
@@ -66,7 +66,7 @@ Resources:
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
-      TableName: "address-session"
+      TableName: !Sub "address-session-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         -

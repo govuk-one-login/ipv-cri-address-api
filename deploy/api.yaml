@@ -1,5 +1,6 @@
 openapi: "3.0.1"
 info:
+  version: "0.1"
   title: "Address Credential Issuer API"
 paths:
   /session:

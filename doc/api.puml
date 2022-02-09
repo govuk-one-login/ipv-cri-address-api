@@ -22,10 +22,11 @@ end box
 core -[#green]> fe : /authorize\n{ jwt }
 activate fe
 
-fe -> api: POST /session\n{ jwt }
+fe -> api: PUT /session\n{ jwt }
 activate api
 api -> api: validate JWT
-api -> api: create & write session
+api -> api: create session
+api -> db: write session
 return session-id
 
 
