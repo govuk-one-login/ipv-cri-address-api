@@ -13,10 +13,6 @@ Parameters:
       - integration
       - prod
     ConstraintDescription: specify dev, staging, integration or prod for environment
-  APIS3BucketName:
-    Type: String
-    Description: The name of the S3 bucket for the api gateway openapi definiiton
-    Default: di-ipv-cri-address-api
 
 Globals:
   Function:
