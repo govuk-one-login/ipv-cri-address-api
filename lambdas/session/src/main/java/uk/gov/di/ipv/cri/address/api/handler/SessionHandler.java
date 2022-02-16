@@ -30,10 +30,10 @@ public class SessionHandler
     APIGatewayProxyResponseEvent apiGatewayProxyResponseEvent = new APIGatewayProxyResponseEvent();
     apiGatewayProxyResponseEvent.setStatusCode(HttpStatus.SC_CREATED);
     UUID uuid = UUID.randomUUID();
-    // write to dynamoDB
+
     AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
     DynamoDB dynamoDB = new DynamoDB(client);
-    String tableName = "address-session-tino-cri-address-api"; // use env variable
+    String tableName = System.getenv("TableName");
     Table table = dynamoDB.getTable(tableName);
     Item item = new Item().withPrimaryKey("session-id", uuid.toString());
     table.putItem(item);
