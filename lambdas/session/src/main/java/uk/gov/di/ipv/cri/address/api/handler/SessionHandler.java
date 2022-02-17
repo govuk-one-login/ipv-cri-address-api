@@ -30,14 +30,12 @@ public class SessionHandler
     APIGatewayProxyResponseEvent apiGatewayProxyResponseEvent = new APIGatewayProxyResponseEvent();
     apiGatewayProxyResponseEvent.setStatusCode(HttpStatus.SC_CREATED);
     UUID uuid = UUID.randomUUID();
-
     AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
     DynamoDB dynamoDB = new DynamoDB(client);
     String tableName = System.getenv("TableName");
     Table table = dynamoDB.getTable(tableName);
     Item item = new Item().withPrimaryKey("session-id", uuid.toString());
     table.putItem(item);
-
     Map<String, String> responseMap = Map.of("session_id", uuid.toString());
     apiGatewayProxyResponseEvent.setBody(new Gson().toJson(responseMap));
     return apiGatewayProxyResponseEvent;

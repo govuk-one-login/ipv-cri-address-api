@@ -48,6 +48,9 @@ Resources:
     Properties:
       CodeUri: ../dist/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler
+      Environment:
+        Variables:
+          TableName: !Sub "address-session-${AWS::StackName}"
       Policies:
         DynamoDBWritePolicy:
           TableName:
