@@ -37,7 +37,6 @@ public class SessionHandler
             apiGatewayProxyResponseEvent.setBody(e.getMessage());
             return apiGatewayProxyResponseEvent;
         }
-
         Map<String, String> responseMap = Map.of("session_id", uuid.toString());
         apiGatewayProxyResponseEvent.setBody(new Gson().toJson(responseMap));
         return apiGatewayProxyResponseEvent;
