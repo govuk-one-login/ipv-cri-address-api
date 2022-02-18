@@ -53,6 +53,16 @@ Resources:
           TableName:
             Ref: AddressSessionTable
 
+  SessionFunctionCodeSigning:
+    Type: AWS::Lambda::CodeSigningConfig
+    Properties:
+      Description: "Code Signing for SessionFunction"
+      AllowedPublishers:
+        SigningProfileVersionArns:
+          - "{{resolve:ssm:/dev/credentialIssuers/kbv/sam/signingProfileVersionArn}}"
+      CodeSigningPolicies:
+        UntrustedArtifactOnDeployment: "Enforce"
+
   FunctionPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
