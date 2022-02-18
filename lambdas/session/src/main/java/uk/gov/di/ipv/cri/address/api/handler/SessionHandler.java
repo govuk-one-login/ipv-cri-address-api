@@ -25,7 +25,6 @@ public class SessionHandler
                 new APIGatewayProxyResponseEvent();
         apiGatewayProxyResponseEvent.setStatusCode(HttpStatus.SC_CREATED);
         UUID uuid = UUID.randomUUID();
-
         try {
             AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
             DynamoDB dynamoDB = new DynamoDB(client);
