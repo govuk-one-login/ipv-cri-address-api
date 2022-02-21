@@ -1,5 +1,17 @@
 # di-ipv-cri-address-api
-Address Collector API
+Address Collector Credential Issuer API
+
+## Build
+
+> Ensure that you are using the java version specified in `.sdkmanrc`.
+
+Build with `./gradlew clean build buildZip`
+
+## Deploy to dev account
+
+Build a sam config toml file once only by running:
+`sam deploy -t deploy/template.yaml --guided`
+Then run `gds aws <account> -- ./deploy.sh`
 
 
 ## Deploy to AWS lambda
