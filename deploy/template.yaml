@@ -46,7 +46,7 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../dist/session.zip
+      CodeUri: ../lambdas/session
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler
       Policies:
         DynamoDBWritePolicy:

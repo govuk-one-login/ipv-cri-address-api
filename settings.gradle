@@ -1,3 +1,5 @@
-rootProject.name = 'di-ipv-cri-address-api'
-include "lambdas",
-		"lambdas:session"
+rootProject.name = "di-ipv-cri-address-api"
+
+include "lib", "session"
+
+project(':session').projectDir = new File('./lambdas/session')
