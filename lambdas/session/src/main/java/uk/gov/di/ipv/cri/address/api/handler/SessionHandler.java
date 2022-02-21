@@ -1,5 +1,6 @@
 package uk.gov.di.ipv.cri.address.api.handler;
 
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -25,9 +26,9 @@ public class SessionHandler
                 new APIGatewayProxyResponseEvent();
         apiGatewayProxyResponseEvent.setStatusCode(HttpStatus.SC_CREATED);
         UUID uuid = UUID.randomUUID();
-
+        AmazonDynamoDB client =
+                AmazonDynamoDBClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
         try {
-            AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
             DynamoDB dynamoDB = new DynamoDB(client);
             String tableName = System.getenv("TableName");
             Table table = dynamoDB.getTable(tableName);
@@ -38,7 +39,6 @@ public class SessionHandler
             apiGatewayProxyResponseEvent.setBody(e.getMessage());
             return apiGatewayProxyResponseEvent;
         }
-
         Map<String, String> responseMap = Map.of("session_id", uuid.toString());
         apiGatewayProxyResponseEvent.setBody(new Gson().toJson(responseMap));
         return apiGatewayProxyResponseEvent;
