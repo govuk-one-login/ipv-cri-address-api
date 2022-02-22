@@ -30,7 +30,7 @@ hs_err_pid*
 build
 
 # aws sam deploy ignores
-deploy/samconfig.toml.bak
+deploy/samconfig.toml
 .aws-sam
 
 # mac
