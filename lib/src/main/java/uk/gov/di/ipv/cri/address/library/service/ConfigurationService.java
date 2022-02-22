@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.service;
+package uk.gov.di.ipv.cri.address.library.service;
 
 import software.amazon.lambda.powertools.parameters.ParamManager;
 import software.amazon.lambda.powertools.parameters.SSMProvider;

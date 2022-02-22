@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.service;
+package uk.gov.di.ipv.cri.address.library.service;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
@@ -29,11 +29,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.fraud.library.exception.AccessTokenProcessingException;
-import uk.gov.di.ipv.cri.fraud.library.exception.AccessTokenValidationException;
-import uk.gov.di.ipv.cri.fraud.library.persistence.DataStore;
-import uk.gov.di.ipv.cri.fraud.library.persistence.item.AccessTokenItem;
-import uk.gov.di.ipv.cri.fraud.library.validation.ValidationResult;
+import uk.gov.di.ipv.cri.address.library.exception.AccessTokenProcessingException;
+import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
+import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
+import uk.gov.di.ipv.cri.address.library.persistence.item.AccessTokenItem;
+import uk.gov.di.ipv.cri.address.library.validation.ValidationResult;
 
 import java.net.URI;
 import java.net.URISyntaxException;

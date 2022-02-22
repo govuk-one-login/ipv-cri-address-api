@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.helpers;
+package uk.gov.di.ipv.cri.address.library.helpers;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;

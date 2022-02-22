@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.service;
+package uk.gov.di.ipv.cri.address.library.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,8 +9,8 @@ import software.amazon.lambda.powertools.parameters.SSMProvider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
-import static uk.gov.di.ipv.cri.fraud.library.service.ConfigurationService.SSMParameterName.AccessTokenTableName;
-import static uk.gov.di.ipv.cri.fraud.library.service.ConfigurationService.SSMParameterName.BearerAccessTokenTtl;
+import static uk.gov.di.ipv.cri.address.library.service.ConfigurationService.SSMParameterName.AccessTokenTableName;
+import static uk.gov.di.ipv.cri.address.library.service.ConfigurationService.SSMParameterName.BearerAccessTokenTtl;
 
 @ExtendWith(MockitoExtension.class)
 class ConfigurationServiceTest {
