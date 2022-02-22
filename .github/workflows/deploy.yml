@@ -54,8 +54,8 @@ jobs:
       - name: SAM deploy
         run: |
           sam deploy -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} \
-            --config-file samconfig.toml --no-fail-on-empty-changeset \
+            --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} \
             --signing-profiles SessionFunction=${{ steps.code_signing.outputs.profile }} \
             --stack-name ${{ env.STACK_NAME }} --s3-bucket di-ipv-cri-lambda-artifact-bucket \
-            --s3-prefix --stack-name ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} \
-            --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} --capabilities CAPABILITY_IAM
+            --s3-prefix ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} \
+            --capabilities CAPABILITY_IAM
