@@ -59,7 +59,7 @@ Resources:
       Description: "Code Signing for SessionFunction"
       AllowedPublishers:
         SigningProfileVersionArns:
-          - "{{resolve:ssm:/dev/credentialIssuers/kbv/sam/signingProfileVersionArn}}"
+          - "{{resolve:ssm:/dev/credentialIssuers/cri/sam/signingProfileVersionArn}}"
       CodeSigningPolicies:
         UntrustedArtifactOnDeployment: "Enforce"
 
