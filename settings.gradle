@@ -4,4 +4,3 @@ include "lib", "session", "postcode-lookup"
 
 project(':session').projectDir = new File('./lambdas/session')
 project(':postcode-lookup').projectDir = new File('./lambdas/postcode-lookup')
-
