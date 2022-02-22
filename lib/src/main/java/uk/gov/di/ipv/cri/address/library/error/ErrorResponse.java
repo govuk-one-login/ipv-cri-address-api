@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.error;
+package uk.gov.di.ipv.cri.address.library.error;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;

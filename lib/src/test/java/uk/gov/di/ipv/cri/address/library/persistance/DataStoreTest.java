@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.persistance;
+package uk.gov.di.ipv.cri.address.library.persistance;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,8 +11,8 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import uk.gov.di.ipv.cri.fraud.library.persistence.DataStore;
-import uk.gov.di.ipv.cri.fraud.library.persistence.item.AccessTokenItem;
+import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
+import uk.gov.di.ipv.cri.address.library.persistence.item.AccessTokenItem;
 
 import java.util.UUID;
 

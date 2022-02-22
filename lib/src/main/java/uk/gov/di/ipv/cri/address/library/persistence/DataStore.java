@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.persistence;
+package uk.gov.di.ipv.cri.address.library.persistence;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;

@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.validation;
+package uk.gov.di.ipv.cri.address.library.validation;
 
 public class ValidationResult<T> {
     private final boolean valid;

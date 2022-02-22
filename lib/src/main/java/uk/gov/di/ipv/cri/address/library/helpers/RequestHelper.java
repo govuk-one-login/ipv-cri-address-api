@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.helpers;
+package uk.gov.di.ipv.cri.address.library.helpers;
 
 import java.util.Map;
 import java.util.Objects;

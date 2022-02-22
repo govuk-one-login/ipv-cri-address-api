@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.fraud.library.persistence.item;
+package uk.gov.di.ipv.cri.address.library.persistence.item;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
