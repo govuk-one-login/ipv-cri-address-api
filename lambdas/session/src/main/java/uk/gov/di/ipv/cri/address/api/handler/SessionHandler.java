@@ -6,7 +6,6 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
 import org.apache.http.HttpStatus;
-import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
 import java.util.Map;
@@ -20,7 +19,6 @@ public class SessionHandler
         addressSessionService = new AddressSessionService();
     }
 
-    @ExcludeFromGeneratedCoverageReport
     public SessionHandler(AddressSessionService addressSessionService) {
         this.addressSessionService = addressSessionService;
     }

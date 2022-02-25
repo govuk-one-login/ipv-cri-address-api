@@ -1,6 +1,5 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
-import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
@@ -13,7 +12,6 @@ public class AddressSessionService {
     private final ConfigurationService configurationService;
     private final Clock clock;
 
-    @ExcludeFromGeneratedCoverageReport
     public AddressSessionService() {
         this.configurationService = new ConfigurationService();
         this.dataStore =
