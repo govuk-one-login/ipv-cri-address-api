@@ -3,27 +3,24 @@ package uk.gov.di.ipv.cri.address.library.persistence.item;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
+import java.util.UUID;
+
 @DynamoDbBean
-public class AccessTokenItem {
-    private String accessToken;
-    private String resourceId;
+public class AddressSessionItem {
+    private String sessionId;
     private long expiryDate;
 
-    @DynamoDbPartitionKey
-    public String getAccessToken() {
-        return accessToken;
+    public AddressSessionItem() {
+        sessionId = UUID.randomUUID().toString();
     }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
+    @DynamoDbPartitionKey()
+    public String getSessionId() {
+        return sessionId;
     }
 
-    public String getResourceId() {
-        return resourceId;
-    }
-
-    public void setResourceId(String resourceId) {
-        this.resourceId = resourceId;
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     public long getExpiryDate() {

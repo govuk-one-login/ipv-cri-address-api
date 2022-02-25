@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public class ConfigurationService {
 
-    private static final long DEFAULT_BEARER_TOKEN_TTL_IN_SECS = 3600L;
+    private static final long DEFAULT_SESSION_ADDRESS_TTL_IN_SECS = 172800L;
     private final SSMProvider ssmProvider;
 
     public ConfigurationService(SSMProvider ssmProvider) {
@@ -18,18 +18,18 @@ public class ConfigurationService {
         this.ssmProvider = ParamManager.getSsmProvider();
     }
 
-    public String getAccessTokenTableName() {
-        return ssmProvider.get(SSMParameterName.AccessTokenTableName.toString());
+    public String getAddressSessionTableName() {
+        return ssmProvider.get(SSMParameterName.AddressSessionTableName.toString());
     }
 
-    public long getBearerAccessTokenTtl() {
-        return Optional.ofNullable(ssmProvider.get(SSMParameterName.BearerAccessTokenTtl.name()))
+    public long getAddressSessionTtl() {
+        return Optional.ofNullable(ssmProvider.get(SSMParameterName.AddressSessionTtl.name()))
                 .map(Long::valueOf)
-                .orElse(DEFAULT_BEARER_TOKEN_TTL_IN_SECS);
+                .orElse(DEFAULT_SESSION_ADDRESS_TTL_IN_SECS);
     }
 
     public enum SSMParameterName {
-        AccessTokenTableName,
-        BearerAccessTokenTtl
+        AddressSessionTableName,
+        AddressSessionTtl
     }
 }

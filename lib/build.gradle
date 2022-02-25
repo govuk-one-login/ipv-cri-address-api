@@ -6,8 +6,6 @@ dependencies {
 
 	implementation configurations.lambda,
 			configurations.dynamodb,
-			configurations.jackson,
-			configurations.gson,
 			configurations.nimbus
 
 	runtimeOnly configurations.logging_runtime
