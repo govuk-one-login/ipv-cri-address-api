@@ -1,15 +1,11 @@
 plugins {
 	id "java"
-	id "application"
 }
 
 dependencies {
-	implementation project(":lib")
-	implementation configurations.lambda
-	implementation configurations.nimbus
-	implementation configurations.jackson
-	implementation configurations.gson
-	implementation configurations.dynamodb
+	implementation project(":lib"),
+			configurations.lambda,
+			configurations.gson
 
 	runtimeOnly configurations.logging_runtime
 
@@ -17,6 +13,16 @@ dependencies {
 
 	testRuntimeOnly configurations.test_runtime
 }
+
+task buildZip(type: Zip) {
+	from compileJava
+	from processResources
+	into('lib') {
+		from configurations.runtimeClasspath
+	}
+}
+
+build.finalizedBy(buildZip)
 
 test {
 	useJUnitPlatform()

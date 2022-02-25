@@ -1,5 +1,3 @@
-import org.gradle.api.JavaVersion
-
 plugins {
 	id "java"
 	id "org.sonarqube" version "3.3"
@@ -8,16 +6,13 @@ plugins {
 
 ext {
 	dependencyVersions = [
-		jackson_version          : "2.13.1",
 		aws_sdk_version          : "1.12.153",
 		aws_lambda_core_version  : "1.2.1",
 		aws_lambda_events_version: "3.11.0",
 		aws_powertools_version   : "1.9.0",
 		nimbusds_oauth_version   : "9.25",
 		nimbusds_jwt_version     : "9.15.1",
-		protobuf_version         : "3.19.4",
 		junit                    : "5.8.2",
-		glassfish_version        : "3.0.3",
 	]
 }
 
@@ -42,10 +37,7 @@ subprojects {
 
 	configurations {
 		dynamodb
-		jackson
 		lambda
-		lambda_tests
-		lettuce
 		logging_runtime
 		nimbus
 		ssm
@@ -66,17 +58,6 @@ subprojects {
 				"com.amazonaws:aws-lambda-java-log4j2:1.5.1",
 				"software.amazon.lambda:powertools-parameters:${dependencyVersions.aws_powertools_version}",
 				"org.apache.httpcomponents:httpclient:4.5.13"
-
-		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
-
-		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.core:jackson-annotations:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${dependencyVersions.jackson_version}",
-				"org.hibernate.validator:hibernate-validator:7.0.2.Final",
-				"org.glassfish:jakarta.el:4.0.2",
-				"jakarta.xml.bind:jakarta.xml.bind-api:3.0.1",
-				"com.sun.xml.bind:jaxb-impl:3.0.2"
 
 		nimbus "com.nimbusds:oauth2-oidc-sdk:${dependencyVersions.nimbusds_oauth_version}",
 				"com.nimbusds:nimbus-jose-jwt:${dependencyVersions.nimbusds_jwt_version}"
