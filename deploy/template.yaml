@@ -20,6 +20,9 @@ Globals:
     Runtime: java11
     AutoPublishAlias: live
     MemorySize: 512
+    Environment:
+      Variables:
+        AWS_STACK_NAME: !Sub ${AWS::StackName}
 
 Resources:
 
@@ -52,10 +55,13 @@ Resources:
         - DynamoDBWritePolicy:
             TableName:
               Ref: AddressSessionTable
-        - SSMParameterReadPolicy:
-            ParameterName: !Ref ParameterAddressSessionTableName
-        - SSMParameterReadPolicy:
-            ParameterName: !Ref ParameterAddressSessionTtl
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
 
   SessionFunctionCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
@@ -125,7 +131,7 @@ Resources:
   ParameterAddressSessionTableName:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: AddressSessionTableName
+      Name: !Sub "/${AWS::StackName}/AddressSessionTableName"
       Value: !Sub address-session-${AWS::StackName}
       Type: String
       Description: address session dynamodb table name
@@ -133,7 +139,7 @@ Resources:
   ParameterAddressSessionTtl:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: AddressSessionTtl
+      Name: !Sub "/${AWS::StackName}/AddressSessionTtl"
       Value: 172800 # 2 days
       Type: String
       Description: default time to live for an address session item (seconds)

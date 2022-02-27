@@ -18,20 +18,22 @@ class ConfigurationServiceTest {
 
     @BeforeEach
     void setUp() {
-        configurationService = new ConfigurationService(ssmProvider);
+        configurationService = new ConfigurationService(ssmProvider, "stack-name");
     }
 
     @Test
     void shouldGetAccessTokenTableName() {
         when(ssmProvider.get(
-                        ConfigurationService.SSMParameterName.AddressSessionTableName.toString()))
+                        "/stack-name/"
+                                + ConfigurationService.SSMParameterName.AddressSessionTableName))
                 .thenReturn("the table name");
         assertEquals("the table name", configurationService.getAddressSessionTableName());
     }
 
     @Test
     void shouldGetBearerAccessTokenTtl() {
-        when(ssmProvider.get(ConfigurationService.SSMParameterName.AddressSessionTtl.toString()))
+        when(ssmProvider.get(
+                        "/stack-name/" + ConfigurationService.SSMParameterName.AddressSessionTtl))
                 .thenReturn("10");
         assertEquals(10, configurationService.getAddressSessionTtl());
     }
