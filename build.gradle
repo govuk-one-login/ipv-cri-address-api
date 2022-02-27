@@ -94,6 +94,5 @@ spotless {
 }
 
 clean.doFirst {
-	delete "${rootDir}/dist/"
 	delete "${rootDir}/.aws-sam"
 }
