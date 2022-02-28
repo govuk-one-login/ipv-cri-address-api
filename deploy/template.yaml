@@ -53,6 +53,13 @@ Resources:
           TableName:
             Ref: AddressSessionTable
 
+  PostcodeLookupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/postcode-lookup
+      Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler
+
+
   SessionFunctionCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
     Properties:
