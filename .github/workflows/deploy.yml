@@ -41,7 +41,7 @@ jobs:
         run: echo "::set-output name=profile::$(aws ssm get-parameter --region ${{ env.AWS_REGION }} --name '${{ secrets.AWS_PROFILE_PATH }}' | jq '.Parameter.Value')"
 
       - name: Gradle build
-        run: ./gradlew clean build buildZip
+        run: ./gradlew clean build
 
       - name: SAM build
         run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}

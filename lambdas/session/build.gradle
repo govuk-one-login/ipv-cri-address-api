@@ -1,52 +1,29 @@
 plugins {
 	id "java"
-	id "application"
-	id "idea"
-	id "jacoco"
-}
-
-repositories {
-	mavenCentral()
 }
 
 dependencies {
+	implementation project(":lib"),
+			configurations.lambda,
+			configurations.gson
 
-	implementation "com.amazonaws:aws-lambda-java-core:1.2.1",
-			"com.amazonaws:aws-lambda-java-events:3.11.0",
-			"org.apache.httpcomponents:httpclient:4.5.13",
-			"com.nimbusds:oauth2-oidc-sdk:9.3.1",
-			"com.google.code.gson:gson:2.8.9",
-			"software.amazon.awssdk:dynamodb:2.17.121"
-	"com.amazonaws:aws-java-sdk-dynamodb:1.12.122"
+	runtimeOnly configurations.logging_runtime
 
+	testImplementation configurations.tests
 
-	testImplementation "org.junit.jupiter:junit-jupiter:5.8.2",
-			"org.mockito:mockito-junit-jupiter:4.2.0",
-			"org.mockito:mockito-inline:4.2.0"
-}
-
-java {
-	sourceCompatibility = JavaVersion.VERSION_11
-	targetCompatibility = JavaVersion.VERSION_11
+	testRuntimeOnly configurations.test_runtime
 }
 
 task buildZip(type: Zip) {
 	from compileJava
 	from processResources
-	destinationDirectory = file("$rootDir/dist")
-	into("lib") {
+	into('lib') {
 		from configurations.runtimeClasspath
 	}
 }
 
+build.finalizedBy(buildZip)
+
 test {
 	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required.set(true)
-	}
 }

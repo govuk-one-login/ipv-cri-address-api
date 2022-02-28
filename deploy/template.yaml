@@ -20,6 +20,9 @@ Globals:
     Runtime: java11
     AutoPublishAlias: live
     MemorySize: 512
+    Environment:
+      Variables:
+        AWS_STACK_NAME: !Sub ${AWS::StackName}
 
 Resources:
 
@@ -46,12 +49,19 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../dist/session.zip
+      CodeUri: ../lambdas/session/build/distributions/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler
       Policies:
-        DynamoDBWritePolicy:
-          TableName:
-            Ref: AddressSessionTable
+        - DynamoDBWritePolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
 
   SessionFunctionCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
@@ -80,10 +90,10 @@ Resources:
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         -
-          AttributeName: "session-id"
+          AttributeName: "sessionId"
           AttributeType: "S"
         -
-          AttributeName: "authorization-code"
+          AttributeName: "authorizationCode"
           AttributeType: "S"
         -
           AttributeName: "token"
@@ -91,14 +101,14 @@ Resources:
 
       KeySchema:
         -
-          AttributeName: "session-id"
+          AttributeName: "sessionId"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
         -
-          IndexName: "authorization-code-index"
+          IndexName: "authorizationCode-index"
           KeySchema:
             -
-              AttributeName: "authorization-code"
+              AttributeName: "authorizationCode"
               KeyType: "HASH"
           Projection:
             NonKeyAttributes:
@@ -117,3 +127,19 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expiry-date
         Enabled: true
+
+  ParameterAddressSessionTableName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/AddressSessionTableName"
+      Value: !Sub address-session-${AWS::StackName}
+      Type: String
+      Description: address session dynamodb table name
+
+  ParameterAddressSessionTtl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/AddressSessionTtl"
+      Value: 172800 # 2 days
+      Type: String
+      Description: default time to live for an address session item (seconds)

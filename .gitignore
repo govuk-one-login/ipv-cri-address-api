@@ -35,3 +35,6 @@ deploy/samconfig.toml
 
 # mac
 .DS_Store
+
+# intellij project dir
+.idea
