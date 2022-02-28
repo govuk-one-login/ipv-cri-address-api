@@ -9,8 +9,6 @@ import software.amazon.lambda.powertools.parameters.SSMProvider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
-import static uk.gov.di.ipv.cri.address.library.service.ConfigurationService.SSMParameterName.AccessTokenTableName;
-import static uk.gov.di.ipv.cri.address.library.service.ConfigurationService.SSMParameterName.BearerAccessTokenTtl;
 
 @ExtendWith(MockitoExtension.class)
 class ConfigurationServiceTest {
@@ -20,18 +18,26 @@ class ConfigurationServiceTest {
 
     @BeforeEach
     void setUp() {
-        configurationService = new ConfigurationService(ssmProvider);
+        configurationService = new ConfigurationService(ssmProvider, "stack-name");
     }
 
     @Test
     void shouldGetAccessTokenTableName() {
-        when(ssmProvider.get(AccessTokenTableName.toString())).thenReturn("the table name");
-        assertEquals("the table name", configurationService.getAccessTokenTableName());
+        when(ssmProvider.get(
+                        "/stack-name/"
+                                + ConfigurationService.SSMParameterName.ADDRESS_SESSION_TABLE_NAME
+                                        .parameterName))
+                .thenReturn("the table name");
+        assertEquals("the table name", configurationService.getAddressSessionTableName());
     }
 
     @Test
     void shouldGetBearerAccessTokenTtl() {
-        when(ssmProvider.get(BearerAccessTokenTtl.toString())).thenReturn("10");
-        assertEquals(10, configurationService.getBearerAccessTokenTtl());
+        when(ssmProvider.get(
+                        "/stack-name/"
+                                + ConfigurationService.SSMParameterName.ADDRESS_SESSION_TTL
+                                        .parameterName))
+                .thenReturn("10");
+        assertEquals(10, configurationService.getAddressSessionTtl());
     }
 }
