@@ -25,22 +25,28 @@ public class ConfigurationService {
     }
 
     public String getAddressSessionTableName() {
-        return ssmProvider.get(getParameterName(SSMParameterName.AddressSessionTableName));
+        return ssmProvider.get(getParameterName(SSMParameterName.ADDRESS_SESSION_TABLE_NAME));
     }
 
     public long getAddressSessionTtl() {
         return Optional.ofNullable(
-                        ssmProvider.get(getParameterName(SSMParameterName.AddressSessionTtl)))
+                        ssmProvider.get(getParameterName(SSMParameterName.ADDRESS_SESSION_TTL)))
                 .map(Long::valueOf)
                 .orElse(DEFAULT_SESSION_ADDRESS_TTL_IN_SECS);
     }
 
     private String getParameterName(SSMParameterName parameterName) {
-        return String.format("/%s/%s", parameterPrefix, parameterName.name());
+        return String.format("/%s/%s", parameterPrefix, parameterName.name);
     }
 
     public enum SSMParameterName {
-        AddressSessionTableName,
-        AddressSessionTtl
+        ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
+        ADDRESS_SESSION_TTL("AddressSessionTtl");
+
+        public final String name;
+
+        SSMParameterName(String name) {
+            this.name = name;
+        }
     }
 }
