@@ -36,17 +36,17 @@ public class ConfigurationService {
     }
 
     private String getParameterName(SSMParameterName parameterName) {
-        return String.format("/%s/%s", parameterPrefix, parameterName.name);
+        return String.format("/%s/%s", parameterPrefix, parameterName.parameterName);
     }
 
     public enum SSMParameterName {
         ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
         ADDRESS_SESSION_TTL("AddressSessionTtl");
 
-        public final String name;
+        public final String parameterName;
 
-        SSMParameterName(String name) {
-            this.name = name;
+        SSMParameterName(String parameterName) {
+            this.parameterName = parameterName;
         }
     }
 }
