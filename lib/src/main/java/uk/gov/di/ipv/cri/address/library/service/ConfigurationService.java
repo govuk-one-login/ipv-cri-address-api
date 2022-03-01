@@ -41,12 +41,23 @@ public class ConfigurationService {
 
     public enum SSMParameterName {
         ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
-        ADDRESS_SESSION_TTL("AddressSessionTtl");
+        ADDRESS_SESSION_TTL("AddressSessionTtl"),
+        OS_API_KEY("OrdinanceSurveyAPIKey"),
+        OS_API_URL("OrdinanceSurveyAPIUrl");
 
         public final String parameterName;
 
         SSMParameterName(String parameterName) {
             this.parameterName = parameterName;
         }
+    }
+
+    public String getOsApiKey() {
+        return ssmProvider.get(getParameterName(SSMParameterName.OS_API_KEY));
+    }
+
+    public String getOsApiUrl() {
+        return Optional.ofNullable(ssmProvider.get(getParameterName(SSMParameterName.OS_API_URL)))
+                .orElse("https://api.os.uk/search/places/v1/postcode");
     }
 }
