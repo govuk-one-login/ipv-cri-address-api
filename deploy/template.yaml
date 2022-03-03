@@ -49,16 +49,16 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
-    DependsOn:
-      - SessionFunction
-      - PostcodeLookupFunction
+    DependsOn: [SessionFunction, PostcodeLookupFunction]
 
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/session
-      Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler
+      Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
         - DynamoDBWritePolicy:
             TableName:
               Ref: AddressSessionTable
@@ -69,60 +69,43 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+      Events:
+        RetrieveSession:
+          Type: Api
+          Properties:
+            Path: /session
+            Method: post
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/postcode-lookup
-      Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler
+      Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
     Policies:
+      - AWSLambdaBasicExecutionRole
+      - AWSXrayWriteOnlyAccess
       - Statement:
           - Sid: ReadSecretsPolicy
             Effect: Allow
             Action:
               - 'secretsmanager:GetSecretValue'
             Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${AWS::StackName}/OrdinanceSurveyAPIKey'
+    Events:
+      PostcodeLookup:
+        Type: Api
+        Properties:
+          Path: /postcode-lookup
+          Method: post
 
-  SessionFunctionCodeSigning:
+  AddressCriCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
     Properties:
-      Description: "Code Signing for SessionFunction"
+      Description: "Code Signing for Address CRI API"
       AllowedPublishers:
         SigningProfileVersionArns:
           - "{{resolve:ssm:/dev/credentialIssuers/cri/sam/signingProfileVersionArn}}"
       CodeSigningPolicies:
         UntrustedArtifactOnDeployment: "Enforce"
-
-  PostcodeLookupFunctionCodeSigning:
-    Type: AWS::Lambda::CodeSigningConfig
-    Properties:
-      Description: "Code Signing for PostcodeLookupFunction"
-      AllowedPublishers:
-        SigningProfileVersionArns:
-          - "{{resolve:ssm:/dev/credentialIssuers/cri/sam/signingProfileVersionArn}}"
-      CodeSigningPolicies:
-        UntrustedArtifactOnDeployment: "Enforce"
-
-  SessionFunctionPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - SessionFunction
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref SessionFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AddressApi}*"
-
-  PostcodeLookupFunctionPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - PostcodeLookupFunction
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref PostcodeLookupFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${AddressApi}*"
-
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -185,9 +168,41 @@ Resources:
       Type: String
       Description: default time to live for an address session item (seconds)
 
-  ParameterOrdinanceSurveyAPIKey:
-    Type: AWS::SSM::Secret
+  SecretOrdinanceSurveyAPIKey:
+    Type: AWS::SecretsManager::Secret
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdinanceSurveyAPIKey"
       SecretString: !Ref OrdinanceSurveyAPIKey
       Description: API key for the Ordinance Survey API
+
+  SessionFunctionPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - SessionFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt SessionFunction.Arn
+      Principal: apigateway.amazonaws.com
+
+  PostcodeLookupFunctionPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - PostcodeLookupFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PostcodeLookupFunction.Arn
+      Principal: apigateway.amazonaws.com
+
+
+Outputs:
+  SessionFunctionApi:
+    Description: "API Gateway endpoint URL for Prod stage for session function"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
+  SessionFunction:
+    Value: !GetAtt SessionFunction.Arn
+
+  PostcodeLookupFunctionApi:
+    Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
+  PostcodeLookupFunction:
+    Value: !GetAtt PostcodeLookupFunction.Arn

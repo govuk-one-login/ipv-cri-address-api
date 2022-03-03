@@ -2,14 +2,21 @@ openapi: "3.0.1"
 info:
   version: "0.1"
   title: "Address Credential Issuer API"
+
+x-amazon-apigateway-request-validators:
+  body:
+    validateRequestBody: true
+    validateRequestParameters: false
+
 paths:
-  /postcodeLookup:
-    get:
+  /postcode-lookup:
+    post:
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/PostcodeLookupRequest'
+        required: true
       responses:
         "400":
           description: "400 response"
@@ -30,16 +37,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/PostcodeLookupResponse"
       x-amazon-apigateway-request-validator: "Validate body"
-        x-amazon-apigateway-integration:
-          httpMethod: "GET"
-          uri:
-            Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostcodeLookupFunction.Arn}/invocations
-          responses:
-            default:
-              statusCode: "200"
-          passthroughBehavior: "when_no_match"
-          contentHandling: "CONVERT_TO_TEXT"
-          type: "aws_proxy"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostcodeLookupFunction.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
 
   /session:
     put:
@@ -143,7 +150,4 @@ components:
         address:
           type: "string"
           example: "Flat 1, 46 Some Street, London, SW1A 1AA"
-x-amazon-apigateway-request-validators:
-  Validate body:
-    validateRequestParameters: false
-    validateRequestBody: true
+
