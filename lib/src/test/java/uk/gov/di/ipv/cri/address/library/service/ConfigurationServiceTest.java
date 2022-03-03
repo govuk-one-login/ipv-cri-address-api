@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.lambda.powertools.parameters.SSMProvider;
+import software.amazon.lambda.powertools.parameters.SecretsProvider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -14,11 +15,12 @@ import static org.mockito.Mockito.when;
 class ConfigurationServiceTest {
 
     @Mock SSMProvider ssmProvider;
+    @Mock SecretsProvider secretsProvider;
     private ConfigurationService configurationService;
 
     @BeforeEach
     void setUp() {
-        configurationService = new ConfigurationService(ssmProvider, "stack-name");
+        configurationService = new ConfigurationService(ssmProvider, secretsProvider, "stack-name");
     }
 
     @Test
@@ -39,5 +41,15 @@ class ConfigurationServiceTest {
                                         .parameterName))
                 .thenReturn("10");
         assertEquals(10, configurationService.getAddressSessionTtl());
+    }
+
+    @Test
+    void shouldGetOrdinanceSurveyAPIKey() {
+        when(secretsProvider.get(
+                        "/stack-name/"
+                                + ConfigurationService.SSMParameterName.OS_API_KEY.parameterName))
+                .thenReturn("1234567890");
+
+        assertEquals("1234567890", configurationService.getOsApiKey());
     }
 }

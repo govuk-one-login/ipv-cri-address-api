@@ -22,7 +22,9 @@ public enum ErrorResponse {
     JWT_SIGNATURE_IS_INVALID(1013, "Signature of the shared attribute JWT is invalid"),
     INVALID_REDIRECT_URL(1014, "Provided redirect URL is not in those configured for client"),
     UNKNOWN_CLIENT_ID(1015, "Unknown client id provided in request params"),
-    INVALID_REQUEST_PARAM(1016, "Invalid request param");
+    INVALID_REQUEST_PARAM(1016, "Invalid request param"),
+    SERVER_ERROR(1017, "Postcode search failed due to a server error"),
+    INVALID_POSTCODE(1018, "Invalid postcode param");
 
     private final int code;
     private final String message;
