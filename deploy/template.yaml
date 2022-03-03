@@ -23,6 +23,7 @@ Globals:
     Environment:
       Variables:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
+        POWERTOOLS_LOG_LEVEL: INFO
 
 Resources:
 
@@ -62,6 +63,11 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+      Environment:
+        Variables:
+          POWERTOOLS_METRICS_NAMESPACE: session
+          POWERTOOLS_SERVICE_NAME: session
 
   SessionFunctionCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
