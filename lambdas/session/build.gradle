@@ -1,17 +1,14 @@
 plugins {
 	id "java"
-	id "application"
+	id 'io.freefair.aspectj.post-compile-weaving' version '6.3.0'
 }
 
 dependencies {
-	implementation project(":lib")
-	implementation configurations.lambda
-	implementation configurations.nimbus
-	implementation configurations.jackson
-	implementation configurations.gson
-	implementation configurations.dynamodb
+	implementation project(":lib"),
+			configurations.lambda,
+			configurations.gson
 
-	runtimeOnly configurations.logging_runtime
+	aspect configurations.powertools
 
 	testImplementation configurations.tests
 

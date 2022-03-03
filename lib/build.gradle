@@ -10,8 +10,6 @@ dependencies {
 			configurations.gson,
 			configurations.nimbus
 
-	runtimeOnly configurations.logging_runtime
-
 	testImplementation configurations.tests
 
 	testRuntimeOnly configurations.test_runtime

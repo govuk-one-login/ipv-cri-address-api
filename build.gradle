@@ -6,10 +6,12 @@ plugins {
 	id "com.diffplug.spotless" version "6.1.0"
 }
 
+defaultTasks 'clean', 'spotlessApply', 'build'
+
 ext {
 	dependencyVersions = [
 		jackson_version          : "2.13.1",
-		aws_sdk_version          : "1.12.153",
+		aws_sdk_version          : "1.12.167",
 		aws_lambda_core_version  : "1.2.1",
 		aws_lambda_events_version: "3.11.0",
 		aws_powertools_version   : "1.9.0",
@@ -18,6 +20,7 @@ ext {
 		protobuf_version         : "3.19.4",
 		junit                    : "5.8.2",
 		glassfish_version        : "3.0.3",
+		powertools_version       : "1.12.0",
 	]
 }
 
@@ -52,6 +55,7 @@ subprojects {
 		tests
 		test_runtime
 		gson
+		powertools
 	}
 
 	dependencies {
@@ -77,6 +81,9 @@ subprojects {
 				"org.glassfish:jakarta.el:4.0.2",
 				"jakarta.xml.bind:jakarta.xml.bind-api:3.0.1",
 				"com.sun.xml.bind:jaxb-impl:3.0.2"
+
+		powertools "software.amazon.lambda:powertools-logging:${dependencyVersions.powertools_version}",
+				"software.amazon.lambda:powertools-metrics:${dependencyVersions.powertools_version}"
 
 		nimbus "com.nimbusds:oauth2-oidc-sdk:${dependencyVersions.nimbusds_oauth_version}",
 				"com.nimbusds:nimbus-jose-jwt:${dependencyVersions.nimbusds_jwt_version}"
@@ -116,8 +123,6 @@ clean.doFirst {
 	delete "${rootDir}/dist/"
 	delete "${rootDir}/.aws-sam"
 }
-
-defaultTasks 'clean', 'spotlessApply', 'build'
 
 gradle.projectsEvaluated {
 	tasks.withType(JavaCompile) {

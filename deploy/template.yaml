@@ -28,6 +28,7 @@ Globals:
     Environment:
       Variables:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
+        POWERTOOLS_LOG_LEVEL: INFO
 
 Resources:
 
