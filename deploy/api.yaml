@@ -31,9 +31,9 @@ paths:
                 $ref: "#/components/schemas/PostcodeLookupResponse"
       x-amazon-apigateway-request-validator: "Validate body"
         x-amazon-apigateway-integration:
-          httpMethod: "POST"
+          httpMethod: "GET"
           uri:
-            Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Postcode.Arn}/invocations
+            Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostcodeLookupFunction.Arn}/invocations
           responses:
             default:
               statusCode: "200"
