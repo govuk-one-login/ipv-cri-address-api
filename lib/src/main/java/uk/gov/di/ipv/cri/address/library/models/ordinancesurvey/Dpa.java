@@ -5,17 +5,126 @@ import com.google.gson.annotations.SerializedName;
 
 public class Dpa {
 
+    /** (Required) */
     @SerializedName("UPRN")
     @Expose
     private String uprn;
-
+    /** (Required) */
     @SerializedName("UDPRN")
     @Expose
     private String udprn;
-
+    /** (Required) */
     @SerializedName("ADDRESS")
     @Expose
     private String address;
+    /** (Required) */
+    @SerializedName("POST_TOWN")
+    @Expose
+    private String postTown;
+    /** (Required) */
+    @SerializedName("POSTCODE")
+    @Expose
+    private String postcode;
+
+    @SerializedName("PO_BOX_NUMBER")
+    @Expose
+    private String poBoxNumber;
+    /** (Required) */
+    @SerializedName("RPC")
+    @Expose
+    private String rpc;
+    /** (Required) */
+    @SerializedName("X_COORDINATE")
+    @Expose
+    private Double xCoordinate;
+    /** (Required) */
+    @SerializedName("Y_COORDINATE")
+    @Expose
+    private Double yCoordinate;
+    /** (Required) */
+    @SerializedName("STATUS")
+    @Expose
+    private String status;
+    /** (Required) */
+    @SerializedName("DEPARTMENT_NAME")
+    @Expose
+    private String departmentName;
+
+    @SerializedName("LOGICAL_STATUS_CODE")
+    @Expose
+    private String logicalStatusCode;
+    /** (Required) */
+    @SerializedName("CLASSIFICATION_CODE")
+    @Expose
+    private String classificationCode;
+    /** (Required) */
+    @SerializedName("CLASSIFICATION_CODE_DESCRIPTION")
+    @Expose
+    private String classificationCodeDescription;
+    /** (Required) */
+    @SerializedName("LOCAL_CUSTODIAN_CODE")
+    @Expose
+    private Integer localCustodianCode;
+    /** (Required) */
+    @SerializedName("LOCAL_CUSTODIAN_CODE_DESCRIPTION")
+    @Expose
+    private String localCustodianCodeDescription;
+    /** (Required) */
+    @SerializedName("COUNTRY_CODE")
+    @Expose
+    private String countryCode;
+    /** (Required) */
+    @SerializedName("COUNTRY_CODE_DESCRIPTION")
+    @Expose
+    private String countryCodeDescription;
+    /** (Required) */
+    @SerializedName("POSTAL_ADDRESS_CODE")
+    @Expose
+    private String postalAddressCode;
+    /** (Required) */
+    @SerializedName("POSTAL_ADDRESS_CODE_DESCRIPTION")
+    @Expose
+    private String postalAddressCodeDescription;
+    /** (Required) */
+    @SerializedName("BLPU_STATE_CODE_DESCRIPTION")
+    @Expose
+    private String blpuStateCodeDescription;
+    /** (Required) */
+    @SerializedName("TOPOGRAPHY_LAYER_TOID")
+    @Expose
+    private String topographyLayerToid;
+
+    @SerializedName("PARENT_UPRN")
+    @Expose
+    private String parentUprn;
+    /** (Required) */
+    @SerializedName("LAST_UPDATE_DATE")
+    @Expose
+    private String lastUpdateDate;
+    /** (Required) */
+    @SerializedName("ENTRY_DATE")
+    @Expose
+    private String entryDate;
+    /** (Required) */
+    @SerializedName("LANGUAGE")
+    @Expose
+    private String language;
+    /** (Required) */
+    @SerializedName("MATCH")
+    @Expose
+    private Integer match;
+    /** (Required) */
+    @SerializedName("MATCH_DESCRIPTION")
+    @Expose
+    private String matchDescription;
+    /** (Required) */
+    @SerializedName("DELIVERY_POINT_SUFFIX")
+    @Expose
+    private String deliveryPointSuffix;
+
+    @SerializedName("ORGANISATION_NAME")
+    @Expose
+    private String organisationName;
 
     @SerializedName("BUILDING_NUMBER")
     @Expose
@@ -25,147 +134,312 @@ public class Dpa {
     @Expose
     private String thoroughfareName;
 
-    @SerializedName("POST_TOWN")
-    @Expose
-    private String postTown;
-
-    @SerializedName("POSTCODE")
-    @Expose
-    private String postcode;
-
-    @SerializedName("RPC")
-    @Expose
-    private String rpc;
-
-    @SerializedName("X_COORDINATE")
-    @Expose
-    private Float xCoordinate;
-
-    @SerializedName("Y_COORDINATE")
-    @Expose
-    private Float yCoordinate;
-
-    @SerializedName("STATUS")
-    @Expose
-    private String status;
-
-    @SerializedName("LOGICAL_STATUS_CODE")
-    @Expose
-    private String logicalStatusCode;
-
-    @SerializedName("CLASSIFICATION_CODE")
-    @Expose
-    private String classificationCode;
-
-    @SerializedName("CLASSIFICATION_CODE_DESCRIPTION")
-    @Expose
-    private String classificationCodeDescription;
-
-    @SerializedName("LOCAL_CUSTODIAN_CODE")
-    @Expose
-    private Integer localCustodianCode;
-
-    @SerializedName("LOCAL_CUSTODIAN_CODE_DESCRIPTION")
-    @Expose
-    private String localCustodianCodeDescription;
-
-    @SerializedName("COUNTRY_CODE")
-    @Expose
-    private String countryCode;
-
-    @SerializedName("COUNTRY_CODE_DESCRIPTION")
-    @Expose
-    private String countryCodeDescription;
-
-    @SerializedName("POSTAL_ADDRESS_CODE")
-    @Expose
-    private String postalAddressCode;
-
-    @SerializedName("POSTAL_ADDRESS_CODE_DESCRIPTION")
-    @Expose
-    private String postalAddressCodeDescription;
-
     @SerializedName("BLPU_STATE_CODE")
     @Expose
     private String blpuStateCode;
-
-    @SerializedName("BLPU_STATE_CODE_DESCRIPTION")
-    @Expose
-    private String blpuStateCodeDescription;
-
-    @SerializedName("TOPOGRAPHY_LAYER_TOID")
-    @Expose
-    private String topographyLayerToid;
-
-    @SerializedName("LAST_UPDATE_DATE")
-    @Expose
-    private String lastUpdateDate;
-
-    @SerializedName("ENTRY_DATE")
-    @Expose
-    private String entryDate;
 
     @SerializedName("BLPU_STATE_DATE")
     @Expose
     private String blpuStateDate;
 
-    @SerializedName("LANGUAGE")
-    @Expose
-    private String language;
-
-    @SerializedName("MATCH")
-    @Expose
-    private Float match;
-
-    @SerializedName("MATCH_DESCRIPTION")
-    @Expose
-    private String matchDescription;
-
-    @SerializedName("DELIVERY_POINT_SUFFIX")
-    @Expose
-    private String deliveryPointSuffix;
-
     @SerializedName("BUILDING_NAME")
     @Expose
     private String buildingName;
 
+    @SerializedName("SUB_BUILDING_NAME")
+    @Expose
+    private String subBuildingName;
+
+    @SerializedName("DEPENDENT_THOROUGHFARE_NAME")
+    @Expose
+    private String dependentThoroughfareName;
+
+    @SerializedName("DOUBLE_DEPENDENT_LOCALITY")
+    @Expose
+    private String doubleDependentLocality;
+
+    @SerializedName("DEPENDENT_LOCALITY")
+    @Expose
+    private String dependentLocality;
+
+    /** (Required) */
     public String getUprn() {
         return uprn;
     }
 
+    /** (Required) */
     public void setUprn(String uprn) {
         this.uprn = uprn;
     }
 
-    public Dpa withUprn(String uprn) {
-        this.uprn = uprn;
-        return this;
-    }
-
+    /** (Required) */
     public String getUdprn() {
         return udprn;
     }
 
+    /** (Required) */
     public void setUdprn(String udprn) {
         this.udprn = udprn;
     }
 
-    public Dpa withUdprn(String udprn) {
-        this.udprn = udprn;
-        return this;
-    }
-
+    /** (Required) */
     public String getAddress() {
         return address;
     }
 
+    /** (Required) */
     public void setAddress(String address) {
         this.address = address;
     }
 
-    public Dpa withAddress(String address) {
-        this.address = address;
-        return this;
+    /** (Required) */
+    public String getPostTown() {
+        return postTown;
+    }
+
+    /** (Required) */
+    public void setPostTown(String postTown) {
+        this.postTown = postTown;
+    }
+
+    /** (Required) */
+    public String getPostcode() {
+        return postcode;
+    }
+
+    /** (Required) */
+    public void setPostcode(String postcode) {
+        this.postcode = postcode;
+    }
+
+    public String getPoBoxNumber() {
+        return poBoxNumber;
+    }
+
+    public void setPoBoxNumber(String poBoxNumber) {
+        this.poBoxNumber = poBoxNumber;
+    }
+
+    /** (Required) */
+    public String getRpc() {
+        return rpc;
+    }
+
+    /** (Required) */
+    public void setRpc(String rpc) {
+        this.rpc = rpc;
+    }
+
+    public Double getXCoordinate() {
+        return xCoordinate;
+    }
+
+    public void setXCoordinate(Double xCoordinate) {
+        this.xCoordinate = xCoordinate;
+    }
+
+    public Double getYCoordinate() {
+        return yCoordinate;
+    }
+
+    public void setYCoordinate(Double yCoordinate) {
+        this.yCoordinate = yCoordinate;
+    }
+
+    /** (Required) */
+    public String getStatus() {
+        return status;
+    }
+
+    /** (Required) */
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    /** (Required) */
+    public String getLogicalStatusCode() {
+        return logicalStatusCode;
+    }
+
+    /** (Required) */
+    public void setLogicalStatusCode(String logicalStatusCode) {
+        this.logicalStatusCode = logicalStatusCode;
+    }
+
+    /** (Required) */
+    public String getClassificationCode() {
+        return classificationCode;
+    }
+
+    /** (Required) */
+    public void setClassificationCode(String classificationCode) {
+        this.classificationCode = classificationCode;
+    }
+
+    /** (Required) */
+    public String getClassificationCodeDescription() {
+        return classificationCodeDescription;
+    }
+
+    /** (Required) */
+    public void setClassificationCodeDescription(String classificationCodeDescription) {
+        this.classificationCodeDescription = classificationCodeDescription;
+    }
+
+    /** (Required) */
+    public Integer getLocalCustodianCode() {
+        return localCustodianCode;
+    }
+
+    /** (Required) */
+    public void setLocalCustodianCode(Integer localCustodianCode) {
+        this.localCustodianCode = localCustodianCode;
+    }
+
+    /** (Required) */
+    public String getLocalCustodianCodeDescription() {
+        return localCustodianCodeDescription;
+    }
+
+    /** (Required) */
+    public void setLocalCustodianCodeDescription(String localCustodianCodeDescription) {
+        this.localCustodianCodeDescription = localCustodianCodeDescription;
+    }
+
+    /** (Required) */
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    /** (Required) */
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    /** (Required) */
+    public String getCountryCodeDescription() {
+        return countryCodeDescription;
+    }
+
+    /** (Required) */
+    public void setCountryCodeDescription(String countryCodeDescription) {
+        this.countryCodeDescription = countryCodeDescription;
+    }
+
+    /** (Required) */
+    public String getPostalAddressCode() {
+        return postalAddressCode;
+    }
+
+    /** (Required) */
+    public void setPostalAddressCode(String postalAddressCode) {
+        this.postalAddressCode = postalAddressCode;
+    }
+
+    /** (Required) */
+    public String getPostalAddressCodeDescription() {
+        return postalAddressCodeDescription;
+    }
+
+    /** (Required) */
+    public void setPostalAddressCodeDescription(String postalAddressCodeDescription) {
+        this.postalAddressCodeDescription = postalAddressCodeDescription;
+    }
+
+    /** (Required) */
+    public String getBlpuStateCodeDescription() {
+        return blpuStateCodeDescription;
+    }
+
+    /** (Required) */
+    public void setBlpuStateCodeDescription(String blpuStateCodeDescription) {
+        this.blpuStateCodeDescription = blpuStateCodeDescription;
+    }
+
+    /** (Required) */
+    public String getTopographyLayerToid() {
+        return topographyLayerToid;
+    }
+
+    /** (Required) */
+    public void setTopographyLayerToid(String topographyLayerToid) {
+        this.topographyLayerToid = topographyLayerToid;
+    }
+
+    public String getParentUprn() {
+        return parentUprn;
+    }
+
+    public void setParentUprn(String parentUprn) {
+        this.parentUprn = parentUprn;
+    }
+
+    /** (Required) */
+    public String getLastUpdateDate() {
+        return lastUpdateDate;
+    }
+
+    /** (Required) */
+    public void setLastUpdateDate(String lastUpdateDate) {
+        this.lastUpdateDate = lastUpdateDate;
+    }
+
+    /** (Required) */
+    public String getEntryDate() {
+        return entryDate;
+    }
+
+    /** (Required) */
+    public void setEntryDate(String entryDate) {
+        this.entryDate = entryDate;
+    }
+
+    /** (Required) */
+    public String getLanguage() {
+        return language;
+    }
+
+    /** (Required) */
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    /** (Required) */
+    public Integer getMatch() {
+        return match;
+    }
+
+    /** (Required) */
+    public void setMatch(Integer match) {
+        this.match = match;
+    }
+
+    /** (Required) */
+    public String getMatchDescription() {
+        return matchDescription;
+    }
+
+    /** (Required) */
+    public void setMatchDescription(String matchDescription) {
+        this.matchDescription = matchDescription;
+    }
+
+    /** (Required) */
+    public String getDeliveryPointSuffix() {
+        return deliveryPointSuffix;
+    }
+
+    /** (Required) */
+    public void setDeliveryPointSuffix(String deliveryPointSuffix) {
+        this.deliveryPointSuffix = deliveryPointSuffix;
+    }
+
+    public String getOrganisationName() {
+        return organisationName;
+    }
+
+    public void setOrganisationName(String organisationName) {
+        this.organisationName = organisationName;
     }
 
     public String getBuildingNumber() {
@@ -176,217 +450,12 @@ public class Dpa {
         this.buildingNumber = buildingNumber;
     }
 
-    public Dpa withBuildingNumber(String buildingNumber) {
-        this.buildingNumber = buildingNumber;
-        return this;
-    }
-
     public String getThoroughfareName() {
         return thoroughfareName;
     }
 
     public void setThoroughfareName(String thoroughfareName) {
         this.thoroughfareName = thoroughfareName;
-    }
-
-    public Dpa withThoroughfareName(String thoroughfareName) {
-        this.thoroughfareName = thoroughfareName;
-        return this;
-    }
-
-    public String getPostTown() {
-        return postTown;
-    }
-
-    public void setPostTown(String postTown) {
-        this.postTown = postTown;
-    }
-
-    public Dpa withPostTown(String postTown) {
-        this.postTown = postTown;
-        return this;
-    }
-
-    public String getPostcode() {
-        return postcode;
-    }
-
-    public void setPostcode(String postcode) {
-        this.postcode = postcode;
-    }
-
-    public Dpa withPostcode(String postcode) {
-        this.postcode = postcode;
-        return this;
-    }
-
-    public String getRpc() {
-        return rpc;
-    }
-
-    public void setRpc(String rpc) {
-        this.rpc = rpc;
-    }
-
-    public Dpa withRpc(String rpc) {
-        this.rpc = rpc;
-        return this;
-    }
-
-    public Float getXCoordinate() {
-        return xCoordinate;
-    }
-
-    public void setXCoordinate(Float xCoordinate) {
-        this.xCoordinate = xCoordinate;
-    }
-
-    public Dpa withXCoordinate(Float xCoordinate) {
-        this.xCoordinate = xCoordinate;
-        return this;
-    }
-
-    public Float getYCoordinate() {
-        return yCoordinate;
-    }
-
-    public void setYCoordinate(Float yCoordinate) {
-        this.yCoordinate = yCoordinate;
-    }
-
-    public Dpa withYCoordinate(Float yCoordinate) {
-        this.yCoordinate = yCoordinate;
-        return this;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Dpa withStatus(String status) {
-        this.status = status;
-        return this;
-    }
-
-    public String getLogicalStatusCode() {
-        return logicalStatusCode;
-    }
-
-    public void setLogicalStatusCode(String logicalStatusCode) {
-        this.logicalStatusCode = logicalStatusCode;
-    }
-
-    public Dpa withLogicalStatusCode(String logicalStatusCode) {
-        this.logicalStatusCode = logicalStatusCode;
-        return this;
-    }
-
-    public String getClassificationCode() {
-        return classificationCode;
-    }
-
-    public void setClassificationCode(String classificationCode) {
-        this.classificationCode = classificationCode;
-    }
-
-    public Dpa withClassificationCode(String classificationCode) {
-        this.classificationCode = classificationCode;
-        return this;
-    }
-
-    public String getClassificationCodeDescription() {
-        return classificationCodeDescription;
-    }
-
-    public void setClassificationCodeDescription(String classificationCodeDescription) {
-        this.classificationCodeDescription = classificationCodeDescription;
-    }
-
-    public Dpa withClassificationCodeDescription(String classificationCodeDescription) {
-        this.classificationCodeDescription = classificationCodeDescription;
-        return this;
-    }
-
-    public Integer getLocalCustodianCode() {
-        return localCustodianCode;
-    }
-
-    public void setLocalCustodianCode(Integer localCustodianCode) {
-        this.localCustodianCode = localCustodianCode;
-    }
-
-    public Dpa withLocalCustodianCode(Integer localCustodianCode) {
-        this.localCustodianCode = localCustodianCode;
-        return this;
-    }
-
-    public String getLocalCustodianCodeDescription() {
-        return localCustodianCodeDescription;
-    }
-
-    public void setLocalCustodianCodeDescription(String localCustodianCodeDescription) {
-        this.localCustodianCodeDescription = localCustodianCodeDescription;
-    }
-
-    public Dpa withLocalCustodianCodeDescription(String localCustodianCodeDescription) {
-        this.localCustodianCodeDescription = localCustodianCodeDescription;
-        return this;
-    }
-
-    public String getCountryCode() {
-        return countryCode;
-    }
-
-    public void setCountryCode(String countryCode) {
-        this.countryCode = countryCode;
-    }
-
-    public Dpa withCountryCode(String countryCode) {
-        this.countryCode = countryCode;
-        return this;
-    }
-
-    public String getCountryCodeDescription() {
-        return countryCodeDescription;
-    }
-
-    public void setCountryCodeDescription(String countryCodeDescription) {
-        this.countryCodeDescription = countryCodeDescription;
-    }
-
-    public Dpa withCountryCodeDescription(String countryCodeDescription) {
-        this.countryCodeDescription = countryCodeDescription;
-        return this;
-    }
-
-    public String getPostalAddressCode() {
-        return postalAddressCode;
-    }
-
-    public void setPostalAddressCode(String postalAddressCode) {
-        this.postalAddressCode = postalAddressCode;
-    }
-
-    public Dpa withPostalAddressCode(String postalAddressCode) {
-        this.postalAddressCode = postalAddressCode;
-        return this;
-    }
-
-    public String getPostalAddressCodeDescription() {
-        return postalAddressCodeDescription;
-    }
-
-    public void setPostalAddressCodeDescription(String postalAddressCodeDescription) {
-        this.postalAddressCodeDescription = postalAddressCodeDescription;
-    }
-
-    public Dpa withPostalAddressCodeDescription(String postalAddressCodeDescription) {
-        this.postalAddressCodeDescription = postalAddressCodeDescription;
-        return this;
     }
 
     public String getBlpuStateCode() {
@@ -397,126 +466,12 @@ public class Dpa {
         this.blpuStateCode = blpuStateCode;
     }
 
-    public Dpa withBlpuStateCode(String blpuStateCode) {
-        this.blpuStateCode = blpuStateCode;
-        return this;
-    }
-
-    public String getBlpuStateCodeDescription() {
-        return blpuStateCodeDescription;
-    }
-
-    public void setBlpuStateCodeDescription(String blpuStateCodeDescription) {
-        this.blpuStateCodeDescription = blpuStateCodeDescription;
-    }
-
-    public Dpa withBlpuStateCodeDescription(String blpuStateCodeDescription) {
-        this.blpuStateCodeDescription = blpuStateCodeDescription;
-        return this;
-    }
-
-    public String getTopographyLayerToid() {
-        return topographyLayerToid;
-    }
-
-    public void setTopographyLayerToid(String topographyLayerToid) {
-        this.topographyLayerToid = topographyLayerToid;
-    }
-
-    public Dpa withTopographyLayerToid(String topographyLayerToid) {
-        this.topographyLayerToid = topographyLayerToid;
-        return this;
-    }
-
-    public String getLastUpdateDate() {
-        return lastUpdateDate;
-    }
-
-    public void setLastUpdateDate(String lastUpdateDate) {
-        this.lastUpdateDate = lastUpdateDate;
-    }
-
-    public Dpa withLastUpdateDate(String lastUpdateDate) {
-        this.lastUpdateDate = lastUpdateDate;
-        return this;
-    }
-
-    public String getEntryDate() {
-        return entryDate;
-    }
-
-    public void setEntryDate(String entryDate) {
-        this.entryDate = entryDate;
-    }
-
-    public Dpa withEntryDate(String entryDate) {
-        this.entryDate = entryDate;
-        return this;
-    }
-
     public String getBlpuStateDate() {
         return blpuStateDate;
     }
 
     public void setBlpuStateDate(String blpuStateDate) {
         this.blpuStateDate = blpuStateDate;
-    }
-
-    public Dpa withBlpuStateDate(String blpuStateDate) {
-        this.blpuStateDate = blpuStateDate;
-        return this;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
-    public Dpa withLanguage(String language) {
-        this.language = language;
-        return this;
-    }
-
-    public Float getMatch() {
-        return match;
-    }
-
-    public void setMatch(Float match) {
-        this.match = match;
-    }
-
-    public Dpa withMatch(Float match) {
-        this.match = match;
-        return this;
-    }
-
-    public String getMatchDescription() {
-        return matchDescription;
-    }
-
-    public void setMatchDescription(String matchDescription) {
-        this.matchDescription = matchDescription;
-    }
-
-    public Dpa withMatchDescription(String matchDescription) {
-        this.matchDescription = matchDescription;
-        return this;
-    }
-
-    public String getDeliveryPointSuffix() {
-        return deliveryPointSuffix;
-    }
-
-    public void setDeliveryPointSuffix(String deliveryPointSuffix) {
-        this.deliveryPointSuffix = deliveryPointSuffix;
-    }
-
-    public Dpa withDeliveryPointSuffix(String deliveryPointSuffix) {
-        this.deliveryPointSuffix = deliveryPointSuffix;
-        return this;
     }
 
     public String getBuildingName() {
@@ -527,8 +482,43 @@ public class Dpa {
         this.buildingName = buildingName;
     }
 
-    public Dpa withBuildingName(String buildingName) {
-        this.buildingName = buildingName;
-        return this;
+    public String getSubBuildingName() {
+        return subBuildingName;
+    }
+
+    public void setSubBuildingName(String subBuildingName) {
+        this.subBuildingName = subBuildingName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
+    }
+
+    public String getDependentThoroughfareName() {
+        return dependentThoroughfareName;
+    }
+
+    public void setDependentThoroughfareName(String dependentThoroughfareName) {
+        this.dependentThoroughfareName = dependentThoroughfareName;
+    }
+
+    public String getDoubleDependentLocality() {
+        return doubleDependentLocality;
+    }
+
+    public void setDoubleDependentLocality(String doubleDependentLocality) {
+        this.doubleDependentLocality = doubleDependentLocality;
+    }
+
+    public String getDependentLocality() {
+        return dependentLocality;
+    }
+
+    public void setDependentLocality(String dependentLocality) {
+        this.dependentLocality = dependentLocality;
     }
 }

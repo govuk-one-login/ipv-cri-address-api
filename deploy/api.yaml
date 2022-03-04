@@ -9,14 +9,15 @@ x-amazon-apigateway-request-validators:
     validateRequestParameters: false
 
 paths:
-  /postcode-lookup:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostcodeLookupRequest'
-        required: true
+  /postcode-lookup/{postcode}:
+    get:
+      parameters:
+        - in: path
+          name: postcode
+          required: true
+          description: The postcode to look up
+          schema:
+            type: string
       responses:
         "400":
           description: "400 response"
@@ -38,7 +39,7 @@ paths:
                 $ref: "#/components/schemas/PostcodeLookupResponse"
       x-amazon-apigateway-request-validator: "Validate body"
       x-amazon-apigateway-integration:
-        httpMethod: "POST"
+        httpMethod: "GET"
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostcodeLookupFunction.Arn}/invocations
         responses:

@@ -7,37 +7,32 @@ import java.util.List;
 
 public class OrdinanceSurveyPostcodeResponse {
 
+    /** (Required) */
     @SerializedName("header")
     @Expose
     private Header header;
-
+    /** (Required) */
     @SerializedName("results")
     @Expose
     private List<Result> results = null;
 
+    /** (Required) */
     public Header getHeader() {
         return header;
     }
 
+    /** (Required) */
     public void setHeader(Header header) {
         this.header = header;
     }
 
-    public OrdinanceSurveyPostcodeResponse withHeader(Header header) {
-        this.header = header;
-        return this;
-    }
-
+    /** (Required) */
     public List<Result> getResults() {
         return results;
     }
 
+    /** (Required) */
     public void setResults(List<Result> results) {
         this.results = results;
-    }
-
-    public OrdinanceSurveyPostcodeResponse withResults(List<Result> results) {
-        this.results = results;
-        return this;
     }
 }

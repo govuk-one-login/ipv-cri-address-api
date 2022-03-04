@@ -38,9 +38,7 @@ public class PostcodeLookupHandler
         logger.log("PostcodeLookup Invoked");
         logger.log("Input: " + input.getBody());
 
-        logger.log(postcodeLookupService.getApiKey());
-
-        String postcode = input.getBody();
+        String postcode = input.getPathParameters().get("postcode");
 
         try {
             ArrayList<PostcodeResult> results = postcodeLookupService.lookupPostcode(postcode);

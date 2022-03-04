@@ -97,7 +97,7 @@ Resources:
           Type: Api
           Properties:
             Path: /postcode-lookup
-            Method: post
+            Method: get
 
   AddressCriCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
