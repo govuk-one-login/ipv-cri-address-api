@@ -55,7 +55,7 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/session
+      CodeUri: ../lambdas/session/build/distributions/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -80,23 +80,24 @@ Resources:
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/postcode-lookup
+      CodeUri: ../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
-    Policies:
-      - AWSLambdaBasicExecutionRole
-      - AWSXrayWriteOnlyAccess
-      - Statement:
-          - Sid: ReadSecretsPolicy
-            Effect: Allow
-            Action:
-              - 'secretsmanager:GetSecretValue'
-            Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${AWS::StackName}/OrdinanceSurveyAPIKey'
-    Events:
-      PostcodeLookup:
-        Type: Api
-        Properties:
-          Path: /postcode-lookup
-          Method: post
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - Statement:
+            - Sid: ReadSecretsPolicy
+              Effect: Allow
+              Action:
+                - 'secretsmanager:*'
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${AWS::StackName}/OrdinanceSurveyAPIKey*"
+      Events:
+        PostcodeLookup:
+          Type: Api
+          Properties:
+            Path: /postcode-lookup
+            Method: post
 
   AddressCriCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
@@ -207,3 +208,7 @@ Outputs:
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
   PostcodeLookupFunction:
     Value: !GetAtt PostcodeLookupFunction.Arn
+
+  PostcodeLookupFunctionIamRole:
+    Description: "IAM role for the postcode lookup function"
+    Value: !GetAtt PostcodeLookupFunctionRole.Arn

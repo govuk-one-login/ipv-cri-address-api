@@ -40,7 +40,7 @@ public class ConfigurationService {
                 .orElse(DEFAULT_SESSION_ADDRESS_TTL_IN_SECS);
     }
 
-    private String getParameterName(SSMParameterName parameterName) {
+    public String getParameterName(SSMParameterName parameterName) {
         return String.format("/%s/%s", parameterPrefix, parameterName.parameterName);
     }
 

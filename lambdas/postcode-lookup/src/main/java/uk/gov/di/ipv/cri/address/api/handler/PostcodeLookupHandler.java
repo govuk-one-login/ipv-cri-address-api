@@ -38,6 +38,8 @@ public class PostcodeLookupHandler
         logger.log("PostcodeLookup Invoked");
         logger.log("Input: " + input.getBody());
 
+        logger.log(postcodeLookupService.getApiKey());
+
         String postcode = input.getBody();
 
         try {
@@ -53,6 +55,10 @@ public class PostcodeLookupHandler
             logger.log("PostcodeLookupValidationException: " + e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
+        } catch (Exception e) {
+            logger.log("Exception: " + e.getMessage());
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         }
     }
 }

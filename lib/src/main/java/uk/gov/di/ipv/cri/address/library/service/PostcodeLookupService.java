@@ -36,6 +36,11 @@ public class PostcodeLookupService {
         this.client = client;
     }
 
+    public String getApiKey() {
+        return configurationService.getParameterName(
+                ConfigurationService.SSMParameterName.OS_API_KEY);
+    }
+
     public ArrayList<PostcodeResult> lookupPostcode(String postcode)
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException {
 
