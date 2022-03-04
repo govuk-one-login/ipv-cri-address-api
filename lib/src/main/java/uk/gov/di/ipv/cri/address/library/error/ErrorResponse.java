@@ -24,7 +24,9 @@ public enum ErrorResponse {
     UNKNOWN_CLIENT_ID(1015, "Unknown client id provided in request params"),
     INVALID_REQUEST_PARAM(1016, "Invalid request param"),
     SERVER_ERROR(1017, "Postcode search failed due to a server error"),
-    INVALID_POSTCODE(1018, "Invalid postcode param");
+    INVALID_POSTCODE(1018, "Invalid postcode param"),
+    SESSION_VALIDATION_ERROR(1019, "Session Validation Exception"),
+    SERVER_CONFIG_ERROR(1020, "Server Configuration Error");
 
     private final int code;
     private final String message;

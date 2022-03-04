@@ -100,19 +100,19 @@ components:
         client_id:
           type: "string"
           minLength: 1
-          example: "ipv-core"
+          example: "ipv-core-stub"
         state:
           type: "string"
-          example: "state"
+          example: "Npf1mvOiJj0CZBAcnZMYnNLI_4fQF4QkXxrMiHFeViM"
           minLength: 1
         redirect_uri:
           type: "string"
           format: "uri"
-          example: "https://www.example/com/callback"
+          example: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
         request:
           type: "string"
           pattern: "[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_\\-\\+\\/=]+"
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0dCIsImlhdCI6MTUxNjIzOTAyMn0.SbcN-ywpLObhMbbaMCtW1Un8LYhQzHsEth9LvTk4oQQ"
+          example: "eyJraWQiOiJpcHYtY29yZS1zdHViIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI3MWIyMTEwYS1mZmU2LTQ5OTEtYTBhZS02NDkzYzk5OWUwMGQiLCJuYmYiOjE2NDYzOTgzOTAsImlzcyI6Imlwdi1jb3JlLXN0dWIiLCJjbGFpbXMiOnsidmNfaHR0cF9hcGkiOnt9fSwiZXhwIjoxNjQ2NDAxOTkwLCJpYXQiOjE2NDYzOTgzOTB9.eS8rJvPR3uR6XTw5Ao8csmH2Jy3yo6JC7sL5_5z5c8V4G94a2Pg1m3H4bkKTsmxJqWnMvE2aqDl6OcHb2HubHdQYsGwQFFZnW8S9prT_ogpOhGbq0A5EO2nBQ9ZyxW6edl9eYj_8qYBlN3HweK7MoYayUDd6BZ7DYFtofcK8KTmfqByA36yRu-PYzLyDprz3-VBks8d7R0Mfs7tz5pp_Gj_WO3SpYGP1kqNVo_dDTDdOkfyTbAhcUK_pXamzzqIMXeLG4AlwQ57GyIIZ5-dFO1G6NW1HFZtlTOI5D3phnpP79c5_FhadERl7YsxaLk6NIXzc3sMosrixKFHewQ7bNQ"
     Error:
       title: "Error Schema"
       type: "object"

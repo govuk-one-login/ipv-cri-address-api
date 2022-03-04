@@ -8,15 +8,18 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,15 +39,12 @@ class AddressSessionServiceTest {
     @Test
     void shouldCallCreateOnAddressSessionDataStore() {
         when(mockConfigurationService.getAddressSessionTtl()).thenReturn(1L);
-        addressSessionService.createAndSaveAddressSession();
+        SessionRequest sessionRequest = mock(SessionRequest.class);
+        addressSessionService.createAndSaveAddressSession(sessionRequest);
         verify(mockDataStore).create(mockAddressSessionItem.capture());
         AddressSessionItem value = mockAddressSessionItem.getValue();
-        assertIsUUID(value.getSessionId());
+        assertTrue(value.getSessionId() instanceof UUID);
         assertEquals(fixedInstant.getEpochSecond() + 1, value.getExpiryDate());
-    }
-
-    private void assertIsUUID(String s) {
-        assertTrue(s.matches("([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})"));
     }
 
     @BeforeAll
