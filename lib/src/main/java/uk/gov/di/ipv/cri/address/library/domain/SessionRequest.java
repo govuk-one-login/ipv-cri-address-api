@@ -1,11 +1,5 @@
 package uk.gov.di.ipv.cri.address.library.domain;
 
-/**
- * /** * { * "response_type": "code", * "client_id": "ipv-core", S * "state": "state", S *
- * "redirect_uri": "https://www.example/com/callback", S * "request":
- * "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0dCIsImlhdCI6MTUxNjIzOTAyMn0.SbcN-ywpLObhMbbaMCtW1Un8LYhQzHsEth9LvTk4oQQ"
- * * }
- */
 import com.fasterxml.jackson.annotation.JsonAlias;
 
 import java.net.URI;
