@@ -4,9 +4,7 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
@@ -103,7 +101,6 @@ class PostcodeLookupServiceTest {
                 .thenReturn(mockResponse);
         assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
         verify(logger, times(1)).log(contains("Ordnance Survey Responded with unknown error"));
-
     }
 
     @Test
@@ -114,17 +111,19 @@ class PostcodeLookupServiceTest {
         when(mockResponse.statusCode()).thenReturn(400);
 
         // Simulate a sammple response body
-        when(mockResponse.body()).thenReturn("{\n" +
-                "  \"error\" : {\n" +
-                "    \"statuscode\" : 400,\n" +
-                "    \"message\" : \"Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ\"\n" +
-                "  }\n" +
-                "}");
+        when(mockResponse.body())
+                .thenReturn(
+                        "{\n"
+                                + "  \"error\" : {\n"
+                                + "    \"statuscode\" : 400,\n"
+                                + "    \"message\" : \"Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ\"\n"
+                                + "  }\n"
+                                + "}");
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
                 .thenReturn(mockResponse);
         assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
-        verify(logger, times(1)).log(contains("Requested postcode must contain a minimum of the sector"));
-
+        verify(logger, times(1))
+                .log(contains("Requested postcode must contain a minimum of the sector"));
     }
 
     @Test
@@ -139,7 +138,6 @@ class PostcodeLookupServiceTest {
                 PostcodeLookupProcessingException.class,
                 () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
         verify(logger, times(1)).log(contains("Ordnance Survey Responded with unknown error"));
-
     }
 
     @Test

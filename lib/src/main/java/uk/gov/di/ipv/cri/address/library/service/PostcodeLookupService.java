@@ -128,6 +128,11 @@ public class PostcodeLookupService {
                                     + error.getError().getStatuscode()
                                     + ": "
                                     + error.getError().getMessage());
+                    throw new PostcodeLookupProcessingException(
+                            "Ordnance Survey Responded with "
+                                    + error.getError().getStatuscode()
+                                    + ": "
+                                    + error.getError().getMessage());
                 } catch (Exception e) {
                     logger.log("Ordnance Survey Responded with unknown error: " + response.body());
                 }
