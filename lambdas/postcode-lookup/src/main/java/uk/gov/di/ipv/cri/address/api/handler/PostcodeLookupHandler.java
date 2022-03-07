@@ -36,7 +36,7 @@ public class PostcodeLookupHandler
 
         LambdaLogger logger = context.getLogger();
         logger.log("PostcodeLookup Invoked");
-        logger.log("Input: " + input.getBody());
+        logger.log("Input: " + input.getPathParameters().get("postcode"));
 
         String postcode = input.getPathParameters().get("postcode");
 
