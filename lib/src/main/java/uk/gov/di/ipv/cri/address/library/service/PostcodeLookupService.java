@@ -1,10 +1,12 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.google.gson.Gson;
 import org.apache.http.client.utils.URIBuilder;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.library.models.PostcodeResult;
+import uk.gov.di.ipv.cri.address.library.models.ordinancesurvey.OrdinanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.library.models.ordinancesurvey.OrdinanceSurveyPostcodeResponse;
 
 import java.io.IOException;
@@ -22,6 +24,8 @@ public class PostcodeLookupService {
 
     private final ConfigurationService configurationService;
 
+    private LambdaLogger logger;
+
     public PostcodeLookupService() {
         configurationService = new ConfigurationService();
         client =
@@ -29,16 +33,29 @@ public class PostcodeLookupService {
                         .version(HttpClient.Version.HTTP_2)
                         .connectTimeout(Duration.ofSeconds(10))
                         .build();
+        logger =
+                new LambdaLogger() {
+                    @Override
+                    public void log(String message) {
+                        System.out.println(message);
+                    }
+
+                    @Override
+                    public void log(byte[] message) {
+                        System.out.println(new String(message));
+                    }
+                };
     }
 
-    public PostcodeLookupService(ConfigurationService configurationService, HttpClient client) {
+    public void setLogger(LambdaLogger logger) {
+        this.logger = logger;
+    }
+
+    public PostcodeLookupService(
+            ConfigurationService configurationService, HttpClient client, LambdaLogger logger) {
         this.configurationService = configurationService;
         this.client = client;
-    }
-
-    public String getApiKey() {
-        return configurationService.getParameterName(
-                ConfigurationService.SSMParameterName.OS_API_KEY);
+        this.logger = logger;
     }
 
     public ArrayList<PostcodeResult> lookupPostcode(String postcode)
@@ -76,23 +93,52 @@ public class PostcodeLookupService {
                     "Error sending request for postcode lookup", e);
         }
 
-        // If we have a 404, return an empty list
-        if (response.statusCode() == 404) {
-            return new ArrayList<>();
-        }
+        OrdinanceSurveyPostcodeError error;
+        switch (response.statusCode()) {
+            case 200:
+            case 201:
+                // These responses are fine
+                break;
+            case 400:
+                try {
+                    error =
+                            new Gson()
+                                    .fromJson(response.body(), OrdinanceSurveyPostcodeError.class);
+                    logger.log(
+                            "Ordnance Survey Responded with "
+                                    + error.getError().getStatuscode()
+                                    + ": "
+                                    + error.getError().getMessage());
+                } catch (Exception e) {
+                    logger.log("Ordnance Survey Responded with unknown error: " + response.body());
+                }
+                return new ArrayList<>();
 
-        // If it's not OK, throw an exception
-        if (response.statusCode() != 200) {
-            throw new PostcodeLookupProcessingException(
-                    "Error processing postcode lookup: " + response.body());
+            case 404:
+                logger.log("Ordnance Survey Responded with 404: Not Found");
+                return new ArrayList<>();
+
+            default:
+                try {
+                    error =
+                            new Gson()
+                                    .fromJson(response.body(), OrdinanceSurveyPostcodeError.class);
+                    logger.log(
+                            "Ordnance Survey Responded with "
+                                    + error.getError().getStatuscode()
+                                    + ": "
+                                    + error.getError().getMessage());
+                } catch (Exception e) {
+                    logger.log("Ordnance Survey Responded with unknown error: " + response.body());
+                }
+                throw new PostcodeLookupProcessingException(
+                        "Error processing postcode lookup: " + response.body());
         }
 
         // Otherwise, let's try to parse the response
         OrdinanceSurveyPostcodeResponse postcodeResponse = new OrdinanceSurveyPostcodeResponse();
 
-        String body = response.body();
-        Gson gson = new Gson();
-        postcodeResponse = gson.fromJson(body, postcodeResponse.getClass());
+        postcodeResponse = new Gson().fromJson(response.body(), postcodeResponse.getClass());
 
         // Map the postcode response to our model
         return postcodeResponse.getResults().stream()

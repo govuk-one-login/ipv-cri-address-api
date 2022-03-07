@@ -1,9 +1,12 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
@@ -15,7 +18,7 @@ import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PostcodeLookupServiceTest {
@@ -28,9 +31,12 @@ class PostcodeLookupServiceTest {
 
     @Spy HttpClient httpClient;
 
+    @Mock LambdaLogger logger;
+
     @BeforeEach
     void setUp() {
-        postcodeLookupService = new PostcodeLookupService(mockConfigurationService, httpClient);
+        postcodeLookupService =
+                new PostcodeLookupService(mockConfigurationService, httpClient, logger);
     }
 
     @Test
@@ -82,6 +88,43 @@ class PostcodeLookupServiceTest {
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
                 .thenReturn(mockResponse);
         assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+        verify(logger).log("Ordnance Survey Responded with 404: Not Found");
+    }
+
+    @Test
+    void badRequestReturnsEmptyButLogs() throws IOException, InterruptedException {
+        // Mock a valid url so service doesn't fall over validating URI
+        when(mockConfigurationService.getOsApiUrl()).thenReturn("http://localhost:8080/");
+        // Simulate a 400 bad request response
+        when(mockResponse.statusCode()).thenReturn(400);
+        // Do NOT simulate a body
+
+        when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
+                .thenReturn(mockResponse);
+        assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+        verify(logger, times(1)).log(contains("Ordnance Survey Responded with unknown error"));
+
+    }
+
+    @Test
+    void badRequestReturnsEmptyButLogsWithDetails() throws IOException, InterruptedException {
+        // Mock a valid url so service doesn't fall over validating URI
+        when(mockConfigurationService.getOsApiUrl()).thenReturn("http://localhost:8080/");
+        // Simulate a 400 bad request response
+        when(mockResponse.statusCode()).thenReturn(400);
+
+        // Simulate a sammple response body
+        when(mockResponse.body()).thenReturn("{\n" +
+                "  \"error\" : {\n" +
+                "    \"statuscode\" : 400,\n" +
+                "    \"message\" : \"Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ\"\n" +
+                "  }\n" +
+                "}");
+        when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
+                .thenReturn(mockResponse);
+        assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+        verify(logger, times(1)).log(contains("Requested postcode must contain a minimum of the sector"));
+
     }
 
     @Test
@@ -95,6 +138,8 @@ class PostcodeLookupServiceTest {
         assertThrows(
                 PostcodeLookupProcessingException.class,
                 () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+        verify(logger, times(1)).log(contains("Ordnance Survey Responded with unknown error"));
+
     }
 
     @Test

@@ -35,6 +35,8 @@ public class PostcodeLookupHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         LambdaLogger logger = context.getLogger();
+        postcodeLookupService.setLogger(logger);
+
         logger.log("PostcodeLookup Invoked");
         logger.log("Input: " + input.getPathParameters().get("postcode"));
 
