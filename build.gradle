@@ -67,11 +67,13 @@ subprojects {
 
 		lambda "com.amazonaws:aws-lambda-java-core:${dependencyVersions.aws_lambda_core_version}",
 				"com.amazonaws:aws-lambda-java-events:${dependencyVersions.aws_lambda_events_version}",
-				"com.amazonaws:aws-lambda-java-log4j2:1.5.1",
 				"software.amazon.lambda:powertools-parameters:${dependencyVersions.aws_powertools_version}",
 				"org.apache.httpcomponents:httpclient:4.5.13"
 
 		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
+
+		logging_runtime "com.amazonaws:aws-lambda-java-log4j2:1.5.1",
+				"org.slf4j:slf4j-nop:1.7.36"
 
 		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
 				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",

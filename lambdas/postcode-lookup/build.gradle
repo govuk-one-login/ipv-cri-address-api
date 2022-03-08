@@ -5,9 +5,9 @@ plugins {
 
 dependencies {
 	implementation project(":lib")
-	implementation configurations.lambda
-	implementation configurations.nimbus
-	implementation configurations.jackson
+	implementation configurations.lambda,
+			configurations.nimbus,
+			configurations.jackson
 
 	runtimeOnly configurations.logging_runtime
 
