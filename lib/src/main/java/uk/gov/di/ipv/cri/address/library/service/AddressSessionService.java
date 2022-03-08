@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.jwt.proc.BadJWTException;
+import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
 import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
@@ -22,12 +25,15 @@ import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
 public class AddressSessionService {
 
+    public static final String SSM_PARAM_CLIENT_JWT_AUTH_PATH = "/clients/%s/jwtAuthentication";
     private final DataStore<AddressSessionItem> dataStore;
     private final ConfigurationService configurationService;
     private final Clock clock;
@@ -74,34 +80,20 @@ public class AddressSessionService {
                     new ObjectMapper().readValue(requestBody, SessionRequest.class);
 
             String clientId = sessionRequest.getClientId();
-            String path = String.format("/clients/%s/jwtAuthentication", clientId);
-            Map<String, String> authenticationMap = configurationService.getParametersForPath(path);
-            if (authenticationMap == null || authenticationMap.isEmpty()) {
-                throw new ValidationException(
-                        String.format("no configuration for client id %s", clientId));
-            }
+            Map<String, String> clientAuthNConfig = getClientAuthenticationConfig(clientId);
 
-            URI redirectUri = URI.create(authenticationMap.get("redirectUri"));
-            if (sessionRequest.getRedirectUri() == null
-                    || !sessionRequest.getRedirectUri().equals(redirectUri)) {
-                throw new ValidationException("redirect uri does not match configuration");
+            if (clientAuthNConfig == null || clientAuthNConfig.isEmpty()) {
+                throw new ValidationException("no configuration for client id");
             }
+            verifyRequestUri(sessionRequest, clientAuthNConfig);
 
-            JWSAlgorithm jwsAlgorithm =
-                    JWSAlgorithm.parse(authenticationMap.get("authenticationAlg"));
             SignedJWT signedJWT = SignedJWT.parse(sessionRequest.getRequestJWT());
-            if (jwsAlgorithm != signedJWT.getHeader().getAlgorithm()) {
-                throw new ValidationException("jwsAlgorithm does not match configuration");
-            }
-
-            String publicCertificateToVerify = authenticationMap.get("publicCertificateToVerify");
-            Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
-
-            if (!validSignature(signedJWT, certificateFromConfig)) {
-                throw new ValidationException("JWT signature verification failed");
-            }
+            verifyJWTHeader(clientAuthNConfig, signedJWT);
+            verifyJWTClaimsSet(clientAuthNConfig, signedJWT);
+            verifyJWTSignature(clientAuthNConfig, signedJWT);
 
             return sessionRequest;
+
         } catch (NullPointerException e) {
             throw new ValidationException("could not parse session request", e);
         } catch (ParseException e) {
@@ -109,10 +101,55 @@ public class AddressSessionService {
         } catch (JOSEException e) {
             throw new ValidationException("JWT signature verification failed", e);
         } catch (JsonProcessingException e) {
-            throw new ValidationException("TODO", e);
+            throw new ValidationException("could not parse request body", e);
         } catch (CertificateException e) {
             throw new ServerException("could not parse certificate from config", e);
+        } catch (BadJWTException e) {
+            throw new ValidationException("Invalid JWT ClaimsSet", e);
         }
+    }
+
+    private Map<String, String> getClientAuthenticationConfig(String clientId) {
+        String path = String.format(SSM_PARAM_CLIENT_JWT_AUTH_PATH, clientId);
+        Map<String, String> clientConfig = configurationService.getParametersForPath(path);
+        return clientConfig;
+    }
+
+    private void verifyRequestUri(SessionRequest sessionRequest, Map<String, String> clientConfig)
+            throws ValidationException {
+        URI redirectUri = URI.create(clientConfig.get("redirectUri"));
+        if (sessionRequest.getRedirectUri() == null
+                || !sessionRequest.getRedirectUri().equals(redirectUri)) {
+            throw new ValidationException("redirect uri does not match configuration");
+        }
+    }
+
+    private void verifyJWTHeader(Map<String, String> authenticationMap, SignedJWT signedJWT)
+            throws ValidationException {
+        JWSAlgorithm jwsAlgorithm = JWSAlgorithm.parse(authenticationMap.get("authenticationAlg"));
+        if (jwsAlgorithm != signedJWT.getHeader().getAlgorithm()) {
+            throw new ValidationException("jwsAlgorithm does not match configuration");
+        }
+    }
+
+    private void verifyJWTSignature(Map<String, String> authenticationMap, SignedJWT signedJWT)
+            throws CertificateException, JOSEException, ValidationException {
+        String publicCertificateToVerify = authenticationMap.get("publicCertificateToVerify");
+        Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
+
+        if (!validSignature(signedJWT, certificateFromConfig)) {
+            throw new ValidationException("JWT signature verification failed");
+        }
+    }
+
+    private void verifyJWTClaimsSet(Map<String, String> clientAuthNConfig, SignedJWT signedJWT)
+            throws BadJWTException, ParseException {
+        DefaultJWTClaimsVerifier<?> verifier =
+                new DefaultJWTClaimsVerifier<>(
+                        new JWTClaimsSet.Builder().issuer(clientAuthNConfig.get("issuer")).build(),
+                        new HashSet<>(Arrays.asList("exp", "nbf")));
+
+        verifier.verify(signedJWT.getJWTClaimsSet(), null);
     }
 
     private Certificate getCertificateFromConfig(String base64) throws CertificateException {

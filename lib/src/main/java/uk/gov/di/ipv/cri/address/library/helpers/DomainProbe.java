@@ -37,7 +37,7 @@ public class DomainProbe {
     public void addDimensions(Map<String, String> dimensions) {
         if (dimensions != null) {
             DimensionSet dimensionSet = new DimensionSet();
-            dimensions.entrySet().forEach(e -> dimensionSet.addDimension(e.getKey(), e.getValue()));
+            dimensions.forEach(dimensionSet::addDimension);
             metricsLogger.putDimensions(dimensionSet);
         }
     }
