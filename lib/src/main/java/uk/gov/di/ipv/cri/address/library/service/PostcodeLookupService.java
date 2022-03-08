@@ -2,6 +2,7 @@ package uk.gov.di.ipv.cri.address.library.service;
 
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.google.gson.Gson;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
@@ -96,11 +97,10 @@ public class PostcodeLookupService {
 
         OrdinanceSurveyPostcodeError error;
         switch (response.statusCode()) {
-            case 200:
-            case 201:
+            case HttpStatus.SC_OK:
                 // These responses are fine
                 break;
-            case 400:
+            case HttpStatus.SC_BAD_REQUEST:
                 try {
                     error =
                             new Gson()
@@ -115,7 +115,7 @@ public class PostcodeLookupService {
                 }
                 return new ArrayList<>();
 
-            case 404:
+            case HttpStatus.SC_NOT_FOUND:
                 logger.log("Ordnance Survey Responded with 404: Not Found");
                 return new ArrayList<>();
 
