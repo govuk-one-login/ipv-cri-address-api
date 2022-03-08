@@ -16,6 +16,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class PostcodeLookupService {
 
@@ -146,8 +147,9 @@ public class PostcodeLookupService {
         postcodeResponse = new Gson().fromJson(response.body(), postcodeResponse.getClass());
 
         // Map the postcode response to our model
-        return postcodeResponse.getResults().stream()
-                .map(PostcodeResult::new)
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+        return (ArrayList<PostcodeResult>)
+                postcodeResponse.getResults().stream()
+                        .map(PostcodeResult::new)
+                        .collect(Collectors.toList());
     }
 }

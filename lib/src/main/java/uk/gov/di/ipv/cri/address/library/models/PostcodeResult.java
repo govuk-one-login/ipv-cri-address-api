@@ -1,7 +1,9 @@
 package uk.gov.di.ipv.cri.address.library.models;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import uk.gov.di.ipv.cri.address.library.models.ordinancesurvey.Result;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PostcodeResult {
     private final String uprn;
     private final String organisationName;
