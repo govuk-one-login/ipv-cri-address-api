@@ -1,164 +1,124 @@
-package uk.gov.di.ipv.cri.address.library.models.ordinancesurvey;
+package uk.gov.di.ipv.cri.address.library.models.ordnancesurvey;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Dpa {
 
-    @SerializedName("UPRN")
-    @Expose
+    @JsonProperty("UPRN")
     private String uprn;
 
-    @SerializedName("UDPRN")
-    @Expose
+    @JsonProperty("UDPRN")
     private String udprn;
 
-    @SerializedName("ADDRESS")
-    @Expose
+    @JsonProperty("ADDRESS")
     private String address;
 
-    @SerializedName("POST_TOWN")
-    @Expose
+    @JsonProperty("POST_TOWN")
     private String postTown;
 
-    @SerializedName("POSTCODE")
-    @Expose
+    @JsonProperty("POSTCODE")
     private String postcode;
 
-    @SerializedName("PO_BOX_NUMBER")
-    @Expose
+    @JsonProperty("PO_BOX_NUMBER")
     private String poBoxNumber;
 
-    @SerializedName("RPC")
-    @Expose
+    @JsonProperty("RPC")
     private String rpc;
 
-    @SerializedName("X_COORDINATE")
-    @Expose
+    @JsonProperty("X_COORDINATE")
     private Double xCoordinate;
 
-    @SerializedName("Y_COORDINATE")
-    @Expose
+    @JsonProperty("Y_COORDINATE")
     private Double yCoordinate;
 
-    @SerializedName("STATUS")
-    @Expose
+    @JsonProperty("STATUS")
     private String status;
 
-    @SerializedName("DEPARTMENT_NAME")
-    @Expose
+    @JsonProperty("DEPARTMENT_NAME")
     private String departmentName;
 
-    @SerializedName("LOGICAL_STATUS_CODE")
-    @Expose
+    @JsonProperty("LOGICAL_STATUS_CODE")
     private String logicalStatusCode;
 
-    @SerializedName("CLASSIFICATION_CODE")
-    @Expose
+    @JsonProperty("CLASSIFICATION_CODE")
     private String classificationCode;
 
-    @SerializedName("CLASSIFICATION_CODE_DESCRIPTION")
-    @Expose
+    @JsonProperty("CLASSIFICATION_CODE_DESCRIPTION")
     private String classificationCodeDescription;
 
-    @SerializedName("LOCAL_CUSTODIAN_CODE")
-    @Expose
+    @JsonProperty("LOCAL_CUSTODIAN_CODE")
     private Integer localCustodianCode;
 
-    @SerializedName("LOCAL_CUSTODIAN_CODE_DESCRIPTION")
-    @Expose
+    @JsonProperty("LOCAL_CUSTODIAN_CODE_DESCRIPTION")
     private String localCustodianCodeDescription;
 
-    @SerializedName("COUNTRY_CODE")
-    @Expose
+    @JsonProperty("COUNTRY_CODE")
     private String countryCode;
 
-    @SerializedName("COUNTRY_CODE_DESCRIPTION")
-    @Expose
+    @JsonProperty("COUNTRY_CODE_DESCRIPTION")
     private String countryCodeDescription;
 
-    @SerializedName("POSTAL_ADDRESS_CODE")
-    @Expose
+    @JsonProperty("POSTAL_ADDRESS_CODE")
     private String postalAddressCode;
 
-    @SerializedName("POSTAL_ADDRESS_CODE_DESCRIPTION")
-    @Expose
+    @JsonProperty("POSTAL_ADDRESS_CODE_DESCRIPTION")
     private String postalAddressCodeDescription;
 
-    @SerializedName("BLPU_STATE_CODE_DESCRIPTION")
-    @Expose
+    @JsonProperty("BLPU_STATE_CODE_DESCRIPTION")
     private String blpuStateCodeDescription;
 
-    @SerializedName("TOPOGRAPHY_LAYER_TOID")
-    @Expose
+    @JsonProperty("TOPOGRAPHY_LAYER_TOID")
     private String topographyLayerToid;
 
-    @SerializedName("PARENT_UPRN")
-    @Expose
+    @JsonProperty("PARENT_UPRN")
     private String parentUprn;
 
-    @SerializedName("LAST_UPDATE_DATE")
-    @Expose
+    @JsonProperty("LAST_UPDATE_DATE")
     private String lastUpdateDate;
 
-    @SerializedName("ENTRY_DATE")
-    @Expose
+    @JsonProperty("ENTRY_DATE")
     private String entryDate;
 
-    @SerializedName("LANGUAGE")
-    @Expose
+    @JsonProperty("LANGUAGE")
     private String language;
 
-    @SerializedName("MATCH")
-    @Expose
+    @JsonProperty("MATCH")
     private Integer match;
 
-    @SerializedName("MATCH_DESCRIPTION")
-    @Expose
+    @JsonProperty("MATCH_DESCRIPTION")
     private String matchDescription;
 
-    @SerializedName("DELIVERY_POINT_SUFFIX")
-    @Expose
+    @JsonProperty("DELIVERY_POINT_SUFFIX")
     private String deliveryPointSuffix;
 
-    @SerializedName("ORGANISATION_NAME")
-    @Expose
+    @JsonProperty("ORGANISATION_NAME")
     private String organisationName;
 
-    @SerializedName("BUILDING_NUMBER")
-    @Expose
+    @JsonProperty("BUILDING_NUMBER")
     private String buildingNumber;
 
-    @SerializedName("THOROUGHFARE_NAME")
-    @Expose
+    @JsonProperty("THOROUGHFARE_NAME")
     private String thoroughfareName;
 
-    @SerializedName("BLPU_STATE_CODE")
-    @Expose
+    @JsonProperty("BLPU_STATE_CODE")
     private String blpuStateCode;
 
-    @SerializedName("BLPU_STATE_DATE")
-    @Expose
+    @JsonProperty("BLPU_STATE_DATE")
     private String blpuStateDate;
 
-    @SerializedName("BUILDING_NAME")
-    @Expose
+    @JsonProperty("BUILDING_NAME")
     private String buildingName;
 
-    @SerializedName("SUB_BUILDING_NAME")
-    @Expose
+    @JsonProperty("SUB_BUILDING_NAME")
     private String subBuildingName;
 
-    @SerializedName("DEPENDENT_THOROUGHFARE_NAME")
-    @Expose
+    @JsonProperty("DEPENDENT_THOROUGHFARE_NAME")
     private String dependentThoroughfareName;
 
-    @SerializedName("DOUBLE_DEPENDENT_LOCALITY")
-    @Expose
+    @JsonProperty("DOUBLE_DEPENDENT_LOCALITY")
     private String doubleDependentLocality;
 
-    @SerializedName("DEPENDENT_LOCALITY")
-    @Expose
+    @JsonProperty("DEPENDENT_LOCALITY")
     private String dependentLocality;
 
     public String getUprn() {

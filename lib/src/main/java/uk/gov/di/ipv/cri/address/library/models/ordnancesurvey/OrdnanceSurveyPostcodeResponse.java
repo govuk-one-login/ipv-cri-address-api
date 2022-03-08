@@ -1,18 +1,15 @@
-package uk.gov.di.ipv.cri.address.library.models.ordinancesurvey;
+package uk.gov.di.ipv.cri.address.library.models.ordnancesurvey;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class OrdinanceSurveyPostcodeResponse {
+public class OrdnanceSurveyPostcodeResponse {
 
-    @SerializedName("header")
-    @Expose
+    @JsonProperty("header")
     private Header header;
 
-    @SerializedName("results")
-    @Expose
+    @JsonProperty("results")
     private List<Result> results = null;
 
     public Header getHeader() {

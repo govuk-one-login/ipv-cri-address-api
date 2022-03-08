@@ -1,14 +1,15 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.library.models.PostcodeResult;
-import uk.gov.di.ipv.cri.address.library.models.ordinancesurvey.OrdinanceSurveyPostcodeError;
-import uk.gov.di.ipv.cri.address.library.models.ordinancesurvey.OrdinanceSurveyPostcodeResponse;
+import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.OrdnanceSurveyPostcodeError;
+import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.OrdnanceSurveyPostcodeResponse;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -17,7 +18,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
+
+import static uk.gov.di.ipv.cri.address.library.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
 
 public class PostcodeLookupService {
 
@@ -40,12 +44,12 @@ public class PostcodeLookupService {
                     @Override
                     public void log(String message) {
                         System.out.println(message);
-                    }
+                    } // NOSONAR
 
                     @Override
                     public void log(byte[] message) {
                         System.out.println(new String(message));
-                    }
+                    } // NOSONAR
                 };
     }
 
@@ -60,8 +64,9 @@ public class PostcodeLookupService {
         this.logger = logger;
     }
 
-    public ArrayList<PostcodeResult> lookupPostcode(String postcode)
-            throws PostcodeLookupValidationException, PostcodeLookupProcessingException {
+    public List<PostcodeResult> lookupPostcode(String postcode)
+            throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
+                    JsonProcessingException {
 
         // Check the postcode is valid
         if (postcode == null || postcode.isEmpty()) {
@@ -76,7 +81,7 @@ public class PostcodeLookupService {
             request =
                     HttpRequest.newBuilder()
                             .uri(
-                                    new URIBuilder(configurationService.getOsApiUrl())
+                                    new URIBuilder(configurationService.getOsPostcodeAPIUrl())
                                             .addParameter("postcode", postcode)
                                             .addParameter("key", configurationService.getOsApiKey())
                                             .build())
@@ -91,11 +96,17 @@ public class PostcodeLookupService {
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
+            // If we were interrupted, allow the thread to correctly continue with the interrupt
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+
+            // Now throw our prettier exception
             throw new PostcodeLookupProcessingException(
                     "Error sending request for postcode lookup", e);
         }
 
-        OrdinanceSurveyPostcodeError error;
+        OrdnanceSurveyPostcodeError error;
         switch (response.statusCode()) {
             case HttpStatus.SC_OK:
                 // These responses are fine
@@ -103,53 +114,53 @@ public class PostcodeLookupService {
             case HttpStatus.SC_BAD_REQUEST:
                 try {
                     error =
-                            new Gson()
-                                    .fromJson(response.body(), OrdinanceSurveyPostcodeError.class);
+                            new ObjectMapper()
+                                    .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
                     logger.log(
-                            "Ordnance Survey Responded with "
+                            LOG_RESPONSE_PREFIX
                                     + error.getError().getStatuscode()
                                     + ": "
                                     + error.getError().getMessage());
                 } catch (Exception e) {
-                    logger.log("Ordnance Survey Responded with unknown error: " + response.body());
+                    logger.log(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
                 }
                 return new ArrayList<>();
 
             case HttpStatus.SC_NOT_FOUND:
-                logger.log("Ordnance Survey Responded with 404: Not Found");
+                logger.log(LOG_RESPONSE_PREFIX + "404: Not Found");
                 return new ArrayList<>();
 
             default:
                 try {
                     error =
-                            new Gson()
-                                    .fromJson(response.body(), OrdinanceSurveyPostcodeError.class);
+                            new ObjectMapper()
+                                    .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
                     logger.log(
-                            "Ordnance Survey Responded with "
+                            LOG_RESPONSE_PREFIX
                                     + error.getError().getStatuscode()
                                     + ": "
                                     + error.getError().getMessage());
                     throw new PostcodeLookupProcessingException(
-                            "Ordnance Survey Responded with "
+                            LOG_RESPONSE_PREFIX
                                     + error.getError().getStatuscode()
                                     + ": "
                                     + error.getError().getMessage());
                 } catch (Exception e) {
-                    logger.log("Ordnance Survey Responded with unknown error: " + response.body());
+                    logger.log(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
                 }
                 throw new PostcodeLookupProcessingException(
                         "Error processing postcode lookup: " + response.body());
         }
 
         // Otherwise, let's try to parse the response
-        OrdinanceSurveyPostcodeResponse postcodeResponse = new OrdinanceSurveyPostcodeResponse();
+        OrdnanceSurveyPostcodeResponse postcodeResponse = new OrdnanceSurveyPostcodeResponse();
 
-        postcodeResponse = new Gson().fromJson(response.body(), postcodeResponse.getClass());
+        postcodeResponse =
+                new ObjectMapper().readValue(response.body(), postcodeResponse.getClass());
 
         // Map the postcode response to our model
-        return (ArrayList<PostcodeResult>)
-                postcodeResponse.getResults().stream()
-                        .map(PostcodeResult::new)
-                        .collect(Collectors.toList());
+        return postcodeResponse.getResults().stream()
+                .map(PostcodeResult::new)
+                .collect(Collectors.toList());
     }
 }

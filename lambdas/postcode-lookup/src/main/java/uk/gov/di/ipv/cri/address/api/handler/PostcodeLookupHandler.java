@@ -14,7 +14,7 @@ import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.models.PostcodeResult;
 import uk.gov.di.ipv.cri.address.library.service.PostcodeLookupService;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class PostcodeLookupHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -43,7 +43,7 @@ public class PostcodeLookupHandler
         String postcode = input.getPathParameters().get("postcode");
 
         try {
-            ArrayList<PostcodeResult> results = postcodeLookupService.lookupPostcode(postcode);
+            List<PostcodeResult> results = postcodeLookupService.lookupPostcode(postcode);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
 

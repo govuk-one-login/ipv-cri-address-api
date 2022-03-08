@@ -7,6 +7,8 @@ import software.amazon.lambda.powertools.parameters.SecretsProvider;
 import java.util.Objects;
 import java.util.Optional;
 
+import static uk.gov.di.ipv.cri.address.library.constants.OrdnanceSurveyConstants.POSTCODE_LOOKUP_API;
+
 public class ConfigurationService {
 
     private static final long DEFAULT_SESSION_ADDRESS_TTL_IN_SECS = 172800L;
@@ -62,7 +64,7 @@ public class ConfigurationService {
     }
 
     // This is exposed here so that we can unit test URL failures
-    public String getOsApiUrl() {
-        return "https://api.os.uk/search/places/v1/postcode";
+    public String getOsPostcodeAPIUrl() {
+        return POSTCODE_LOOKUP_API;
     }
 }

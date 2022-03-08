@@ -1,48 +1,37 @@
-package uk.gov.di.ipv.cri.address.library.models.ordinancesurvey;
+package uk.gov.di.ipv.cri.address.library.models.ordnancesurvey;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Header {
 
-    @SerializedName("uri")
-    @Expose
+    @JsonProperty("uri")
     private String uri;
 
-    @SerializedName("query")
-    @Expose
+    @JsonProperty("query")
     private String query;
 
-    @SerializedName("offset")
-    @Expose
+    @JsonProperty("offset")
     private Integer offset;
 
-    @SerializedName("totalresults")
-    @Expose
+    @JsonProperty("totalresults")
     private Integer totalresults;
 
-    @SerializedName("format")
-    @Expose
+    @JsonProperty("format")
     private String format;
 
-    @SerializedName("dataset")
-    @Expose
+    @JsonProperty("dataset")
     private String dataset;
 
-    @SerializedName("lr")
-    @Expose
+    @JsonProperty("lr")
     private String lr;
 
-    @SerializedName("maxresults")
-    @Expose
+    @JsonProperty("maxresults")
     private Integer maxresults;
 
-    @SerializedName("epoch")
-    @Expose
+    @JsonProperty("epoch")
     private String epoch;
 
-    @SerializedName("output_srs")
-    @Expose
+    @JsonProperty("output_srs")
     private String outputSrs;
 
     public String getUri() {

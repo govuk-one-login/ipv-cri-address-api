@@ -1,16 +1,13 @@
-package uk.gov.di.ipv.cri.address.library.models.ordinancesurvey;
+package uk.gov.di.ipv.cri.address.library.models.ordnancesurvey;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Error {
 
-    @SerializedName("statuscode")
-    @Expose
+    @JsonProperty("statuscode")
     private Integer statuscode;
 
-    @SerializedName("message")
-    @Expose
+    @JsonProperty("message")
     private String message;
 
     public Integer getStatuscode() {
