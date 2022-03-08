@@ -74,6 +74,7 @@ public class PostcodeLookupService {
                             .GET()
                             .build();
         } catch (URISyntaxException e) {
+            log.error("Error creating URI for OS postcode lookup", e);
             throw new PostcodeLookupProcessingException(
                     "Error building URI for postcode lookup", e);
         }
@@ -81,12 +82,16 @@ public class PostcodeLookupService {
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            log.error("Postcode lookup threw interrupted exception", e);
 
+            // Unblock the thread
+            Thread.currentThread().interrupt();
             // Now throw our prettier exception
             throw new PostcodeLookupProcessingException(
                     "Error sending request for postcode lookup", e);
         } catch (IOException e) {
+            log.error("Postcode lookup threw an IO exception", e);
+
             throw new PostcodeLookupProcessingException(
                     "Error sending request for postcode lookup", e);
         }
@@ -102,17 +107,17 @@ public class PostcodeLookupService {
                             new ObjectMapper()
                                     .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
                     log.error(
-                            LOG_RESPONSE_PREFIX
-                                    + error.getError().getStatuscode()
-                                    + ": "
-                                    + error.getError().getMessage());
+                            "{} status {}: {}",
+                            LOG_RESPONSE_PREFIX,
+                            error.getError().getStatuscode(),
+                            error.getError().getMessage());
                 } catch (Exception e) {
-                    log.error(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
+                    log.error("{} unknown error: {}", LOG_RESPONSE_PREFIX, response.body());
                 }
                 return new ArrayList<>();
 
             case HttpStatus.SC_NOT_FOUND:
-                log.error(LOG_RESPONSE_PREFIX + "404: Not Found");
+                log.error("{}404: Not Found", LOG_RESPONSE_PREFIX);
                 return new ArrayList<>();
 
             default:
@@ -121,17 +126,17 @@ public class PostcodeLookupService {
                             new ObjectMapper()
                                     .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
                     log.error(
-                            LOG_RESPONSE_PREFIX
-                                    + error.getError().getStatuscode()
-                                    + ": "
-                                    + error.getError().getMessage());
+                            "{} status {}: {}",
+                            LOG_RESPONSE_PREFIX,
+                            error.getError().getStatuscode(),
+                            error.getError().getMessage());
                     throw new PostcodeLookupProcessingException(
                             LOG_RESPONSE_PREFIX
                                     + error.getError().getStatuscode()
                                     + ": "
                                     + error.getError().getMessage());
                 } catch (Exception e) {
-                    log.error(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
+                    log.error("{}unknown error: {}", LOG_RESPONSE_PREFIX, response.body());
                 }
                 throw new PostcodeLookupProcessingException(
                         "Error processing postcode lookup: " + response.body());

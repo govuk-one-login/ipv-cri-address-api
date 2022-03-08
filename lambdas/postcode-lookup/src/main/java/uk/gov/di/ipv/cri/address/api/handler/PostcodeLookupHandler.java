@@ -42,7 +42,7 @@ public class PostcodeLookupHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         String postcode = input.getPathParameters().get("postcode");
-        log.debug("Postcode: " + postcode);
+        log.debug("Postcode: {}", postcode);
 
         try {
             List<PostcodeResult> results = postcodeLookupService.lookupPostcode(postcode);
@@ -50,15 +50,15 @@ public class PostcodeLookupHandler
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
 
         } catch (PostcodeLookupProcessingException e) {
-            log.error("PostcodeLookupProcessingException: " + e.getMessage());
+            log.error("PostcodeLookupProcessingException: {}", e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         } catch (PostcodeLookupValidationException e) {
-            log.error("PostcodeLookupValidationException: " + e.getMessage());
+            log.error("PostcodeLookupValidationException: {}", e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
         } catch (Exception e) {
-            log.error("Exception: " + e.getMessage());
+            log.error("Exception: {}", e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         }

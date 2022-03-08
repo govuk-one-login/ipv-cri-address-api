@@ -93,7 +93,7 @@ class PostcodeLookupServiceTest {
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
                 .thenReturn(mockResponse);
         assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
-        verify(log).error("Ordnance Survey Responded with 404: Not Found");
+        verify(log).error(contains("404: Not Found"), any(String.class));
     }
 
     @Test
@@ -107,7 +107,7 @@ class PostcodeLookupServiceTest {
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
                 .thenReturn(mockResponse);
         assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
-        verify(log, times(1)).error(contains("Ordnance Survey Responded with unknown error"));
+        verify(log, times(1)).error(contains("unknown error"), any(String.class), any());
     }
 
     @Test
@@ -130,7 +130,11 @@ class PostcodeLookupServiceTest {
                 .thenReturn(mockResponse);
         assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
         verify(log, times(1))
-                .error(contains("Requested postcode must contain a minimum of the sector"));
+                .error(
+                        any(String.class),
+                        any(String.class),
+                        any(int.class),
+                        contains("Requested postcode must contain a minimum of the sector"));
     }
 
     @Test
@@ -144,7 +148,7 @@ class PostcodeLookupServiceTest {
         assertThrows(
                 PostcodeLookupProcessingException.class,
                 () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
-        verify(log, times(1)).error(contains("Ordnance Survey Responded with unknown error"));
+        verify(log, times(1)).error(contains("unknown error"), any(String.class), any());
     }
 
     @Test
