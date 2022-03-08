@@ -1,6 +1,7 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JWSAlgorithm;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import java.security.cert.CertificateEncodingException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
@@ -151,6 +153,77 @@ class AddressSessionServiceTest {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(sessionRequest));
                         });
+        assertThat(exception.getMessage(), containsString("Could not parse request JWT"));
+    }
+
+    @Test
+    void shouldThrowValidationExceptionClientX509CertDoesNotMatchPrivateKey() {
+        SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
+        SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
+                new SessionRequestBuilder.SignedJWTBuilder()
+                        .setCertificateFile("wrong-cert.crt.pem");
+        SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
+
+        Map<String, String> configMap = correctConfigMap(signedJWTBuilder);
+        when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
+                .thenReturn(configMap);
+
+        ValidationException exception =
+                assertThrows(
+                        ValidationException.class,
+                        () -> {
+                            addressSessionService.validateSessionRequest(
+                                    marshallToJSON(sessionRequest));
+                        });
+
+        assertThat(exception.getMessage(), containsString("JWT signature verification failed"));
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenJWTHeaderDoesNotMatchConfig() {
+        SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
+        SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
+                new SessionRequestBuilder.SignedJWTBuilder()
+                        .setSigningAlgorithm(JWSAlgorithm.RS384);
+        SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
+
+        Map<String, String> configMap = correctConfigMap(signedJWTBuilder);
+        when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
+                .thenReturn(configMap);
+
+        ValidationException exception =
+                assertThrows(
+                        ValidationException.class,
+                        () -> {
+                            addressSessionService.validateSessionRequest(
+                                    marshallToJSON(sessionRequest));
+                        });
+
+        assertThat(
+                exception.getMessage(),
+                containsString("jwsAlgorithm does not match configuration"));
+    }
+
+    @Test
+    void shouldThrowValidationException() {
+        SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
+        SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
+                new SessionRequestBuilder.SignedJWTBuilder()
+                        .setNow(Instant.now().minus(24, ChronoUnit.DAYS));
+        SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
+
+        Map<String, String> configMap = correctConfigMap(signedJWTBuilder);
+        when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
+                .thenReturn(configMap);
+
+        ValidationException exception =
+                assertThrows(
+                        ValidationException.class,
+                        () -> {
+                            addressSessionService.validateSessionRequest(
+                                    marshallToJSON(sessionRequest));
+                        });
+
         assertThat(exception.getMessage(), containsString("could not parse JWT"));
     }
 

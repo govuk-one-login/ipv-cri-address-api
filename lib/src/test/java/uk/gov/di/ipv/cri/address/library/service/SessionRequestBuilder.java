@@ -62,6 +62,7 @@ public class SessionRequestBuilder {
         private JWSAlgorithm signingAlgorithm = JWSAlgorithm.RS256;
         private PrivateKey privateKey = null;
         private Certificate certificate = null;
+        private String certificateFile = "address-cri-test.crt.pem";
 
         public SignedJWTBuilder setKeyUse(KeyUse keyUse) {
             this.keyUse = keyUse;
@@ -75,6 +76,11 @@ public class SessionRequestBuilder {
 
         public SignedJWTBuilder setSigningAlgorithm(JWSAlgorithm signingAlgorithm) {
             this.signingAlgorithm = signingAlgorithm;
+            return this;
+        }
+
+        public SignedJWTBuilder setCertificateFile(String certificateFile) {
+            this.certificateFile = certificateFile;
             return this;
         }
 
@@ -103,7 +109,7 @@ public class SessionRequestBuilder {
             try {
 
                 privateKey = getPrivateKeyFromResources("address-cri-test.pk8");
-                certificate = generateCertificate("address-cri-test.crt.pem");
+                certificate = generateCertificate(certificateFile);
 
                 String kid = UUID.randomUUID().toString();
                 String ipv_session_id = UUID.randomUUID().toString();

@@ -1,7 +1,0 @@
-{
-  "response_type": "code",
-  "client_id": "ipv-core",
-  "state": "0e3a2b28-3d48-4583-bc84-dbe40434d5a3",
-  "redirect_uri": "https://www.example/com/callback",
-  "request": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0dCIsImlhdCI6MTUxNjIzOTAyMn0.SbcN-ywpLObhMbbaMCtW1Un8LYhQzHsEth9LvTk4oQQ"
-}

@@ -76,42 +76,47 @@ public class AddressSessionService {
 
         try {
 
-            SessionRequest sessionRequest =
-                    new ObjectMapper().readValue(requestBody, SessionRequest.class);
+            SessionRequest sessionRequest = parseSessionRequest(requestBody);
+            Map<String, String> clientAuthenticationConfig =
+                    getClientAuthenticationConfig(sessionRequest.getClientId());
 
-            String clientId = sessionRequest.getClientId();
-            Map<String, String> clientAuthNConfig = getClientAuthenticationConfig(clientId);
+            verifyRequestUri(sessionRequest, clientAuthenticationConfig);
 
-            if (clientAuthNConfig == null || clientAuthNConfig.isEmpty()) {
-                throw new ValidationException("no configuration for client id");
-            }
-            verifyRequestUri(sessionRequest, clientAuthNConfig);
-
-            SignedJWT signedJWT = SignedJWT.parse(sessionRequest.getRequestJWT());
-            verifyJWTHeader(clientAuthNConfig, signedJWT);
-            verifyJWTClaimsSet(clientAuthNConfig, signedJWT);
-            verifyJWTSignature(clientAuthNConfig, signedJWT);
+            SignedJWT signedJWT = parseRequestJWT(sessionRequest);
+            verifyJWTHeader(clientAuthenticationConfig, signedJWT);
+            verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
+            verifyJWTSignature(clientAuthenticationConfig, signedJWT);
 
             return sessionRequest;
 
         } catch (NullPointerException e) {
             throw new ValidationException("could not parse session request", e);
-        } catch (ParseException e) {
-            throw new ValidationException("could not parse JWT", e);
-        } catch (JOSEException e) {
-            throw new ValidationException("JWT signature verification failed", e);
-        } catch (JsonProcessingException e) {
-            throw new ValidationException("could not parse request body", e);
-        } catch (CertificateException e) {
-            throw new ServerException("could not parse certificate from config", e);
-        } catch (BadJWTException e) {
-            throw new ValidationException("Invalid JWT ClaimsSet", e);
         }
     }
 
-    private Map<String, String> getClientAuthenticationConfig(String clientId) {
+    private SessionRequest parseSessionRequest(String requestBody) throws ValidationException {
+        try {
+            return new ObjectMapper().readValue(requestBody, SessionRequest.class);
+        } catch (JsonProcessingException e) {
+            throw new ValidationException("could not parse request body", e);
+        }
+    }
+
+    private SignedJWT parseRequestJWT(SessionRequest sessionRequest) throws ValidationException {
+        try {
+            return SignedJWT.parse(sessionRequest.getRequestJWT());
+        } catch (ParseException e) {
+            throw new ValidationException("Could not parse request JWT", e);
+        }
+    }
+
+    private Map<String, String> getClientAuthenticationConfig(String clientId)
+            throws ValidationException {
         String path = String.format(SSM_PARAM_CLIENT_JWT_AUTH_PATH, clientId);
         Map<String, String> clientConfig = configurationService.getParametersForPath(path);
+        if (clientConfig == null || clientConfig.isEmpty()) {
+            throw new ValidationException("no configuration for client id");
+        }
         return clientConfig;
     }
 
@@ -133,23 +138,31 @@ public class AddressSessionService {
     }
 
     private void verifyJWTSignature(Map<String, String> authenticationMap, SignedJWT signedJWT)
-            throws CertificateException, JOSEException, ValidationException {
+            throws ValidationException {
         String publicCertificateToVerify = authenticationMap.get("publicCertificateToVerify");
-        Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
+        try {
+            Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
 
-        if (!validSignature(signedJWT, certificateFromConfig)) {
-            throw new ValidationException("JWT signature verification failed");
+            if (!validSignature(signedJWT, certificateFromConfig)) {
+                throw new ValidationException("JWT signature verification failed");
+            }
+        } catch (CertificateException | JOSEException e) {
+            throw new ValidationException("JWT signature verification failed", e);
         }
     }
 
     private void verifyJWTClaimsSet(Map<String, String> clientAuthNConfig, SignedJWT signedJWT)
-            throws BadJWTException, ParseException {
+            throws ValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
                         new JWTClaimsSet.Builder().issuer(clientAuthNConfig.get("issuer")).build(),
                         new HashSet<>(Arrays.asList("exp", "nbf")));
 
-        verifier.verify(signedJWT.getJWTClaimsSet(), null);
+        try {
+            verifier.verify(signedJWT.getJWTClaimsSet(), null);
+        } catch (BadJWTException | ParseException e) {
+            throw new ValidationException("could not parse JWT", e);
+        }
     }
 
     private Certificate getCertificateFromConfig(String base64) throws CertificateException {
