@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
-import software.amazon.lambda.powertools.logging.LoggingUtils;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
@@ -43,7 +42,7 @@ public class PostcodeLookupHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         String postcode = input.getPathParameters().get("postcode");
-        LoggingUtils.appendKey("postcode", postcode);
+        log.debug("Postcode: " + postcode);
 
         try {
             List<PostcodeResult> results = postcodeLookupService.lookupPostcode(postcode);
