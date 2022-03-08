@@ -95,13 +95,13 @@ public class PostcodeLookupService {
 
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            // If we were interrupted, allow the thread to correctly continue with the interrupt
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
 
             // Now throw our prettier exception
+            throw new PostcodeLookupProcessingException(
+                    "Error sending request for postcode lookup", e);
+        } catch (IOException e) {
             throw new PostcodeLookupProcessingException(
                     "Error sending request for postcode lookup", e);
         }
