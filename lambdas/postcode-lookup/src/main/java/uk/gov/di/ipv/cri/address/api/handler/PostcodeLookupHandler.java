@@ -1,11 +1,16 @@
 package uk.gov.di.ipv.cri.address.api.handler;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
+import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
+import software.amazon.lambda.powertools.logging.Logging;
+import software.amazon.lambda.powertools.logging.LoggingUtils;
+import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
@@ -20,6 +25,7 @@ public class PostcodeLookupHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private final PostcodeLookupService postcodeLookupService;
+    Logger log = LogManager.getLogger();
 
     public PostcodeLookupHandler(PostcodeLookupService postcodeLookupService) {
         this.postcodeLookupService = postcodeLookupService;
@@ -31,16 +37,13 @@ public class PostcodeLookupHandler
     }
 
     @Override
+    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST)
+    @Metrics(captureColdStart = true)
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
 
-        LambdaLogger logger = context.getLogger();
-        postcodeLookupService.setLogger(logger);
-
-        logger.log("PostcodeLookup Invoked");
-        logger.log("Input: " + input.getPathParameters().get("postcode"));
-
         String postcode = input.getPathParameters().get("postcode");
+        LoggingUtils.appendKey("postcode", postcode);
 
         try {
             List<PostcodeResult> results = postcodeLookupService.lookupPostcode(postcode);
@@ -48,15 +51,15 @@ public class PostcodeLookupHandler
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
 
         } catch (PostcodeLookupProcessingException e) {
-            logger.log("PostcodeLookupProcessingException: " + e.getMessage());
+            log.error("PostcodeLookupProcessingException: " + e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         } catch (PostcodeLookupValidationException e) {
-            logger.log("PostcodeLookupValidationException: " + e.getMessage());
+            log.error("PostcodeLookupValidationException: " + e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
         } catch (Exception e) {
-            logger.log("Exception: " + e.getMessage());
+            log.error("Exception: " + e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         }

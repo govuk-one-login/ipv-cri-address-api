@@ -1,10 +1,11 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
-import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.library.models.PostcodeResult;
@@ -30,7 +31,7 @@ public class PostcodeLookupService {
 
     private final ConfigurationService configurationService;
 
-    private LambdaLogger logger;
+    Logger log = LogManager.getLogger();
 
     public PostcodeLookupService() {
         configurationService = new ConfigurationService();
@@ -39,29 +40,13 @@ public class PostcodeLookupService {
                         .version(HttpClient.Version.HTTP_2)
                         .connectTimeout(Duration.ofSeconds(10))
                         .build();
-        logger =
-                new LambdaLogger() {
-                    @Override
-                    public void log(String message) {
-                        System.out.println(message); // NOSONAR
-                    }
-
-                    @Override
-                    public void log(byte[] message) {
-                        System.out.println(new String(message)); // NOSONAR
-                    }
-                };
-    }
-
-    public void setLogger(LambdaLogger logger) {
-        this.logger = logger;
     }
 
     public PostcodeLookupService(
-            ConfigurationService configurationService, HttpClient client, LambdaLogger logger) {
+            ConfigurationService configurationService, HttpClient client, Logger log) {
         this.configurationService = configurationService;
         this.client = client;
-        this.logger = logger;
+        this.log = log;
     }
 
     public List<PostcodeResult> lookupPostcode(String postcode)
@@ -116,18 +101,18 @@ public class PostcodeLookupService {
                     error =
                             new ObjectMapper()
                                     .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
-                    logger.log(
+                    log.error(
                             LOG_RESPONSE_PREFIX
                                     + error.getError().getStatuscode()
                                     + ": "
                                     + error.getError().getMessage());
                 } catch (Exception e) {
-                    logger.log(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
+                    log.error(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
                 }
                 return new ArrayList<>();
 
             case HttpStatus.SC_NOT_FOUND:
-                logger.log(LOG_RESPONSE_PREFIX + "404: Not Found");
+                log.error(LOG_RESPONSE_PREFIX + "404: Not Found");
                 return new ArrayList<>();
 
             default:
@@ -135,7 +120,7 @@ public class PostcodeLookupService {
                     error =
                             new ObjectMapper()
                                     .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
-                    logger.log(
+                    log.error(
                             LOG_RESPONSE_PREFIX
                                     + error.getError().getStatuscode()
                                     + ": "
@@ -146,7 +131,7 @@ public class PostcodeLookupService {
                                     + ": "
                                     + error.getError().getMessage());
                 } catch (Exception e) {
-                    logger.log(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
+                    log.error(LOG_RESPONSE_PREFIX + "unknown error: " + response.body());
                 }
                 throw new PostcodeLookupProcessingException(
                         "Error processing postcode lookup: " + response.body());

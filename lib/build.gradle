@@ -8,9 +8,8 @@ dependencies {
 			configurations.dynamodb,
 			configurations.jackson,
 			configurations.gson,
-			configurations.nimbus
-
-	runtimeOnly configurations.logging_runtime
+			configurations.nimbus,
+			configurations.log4j
 
 	testImplementation configurations.tests
 

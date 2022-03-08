@@ -49,7 +49,7 @@ subprojects {
 		lambda
 		lambda_tests
 		lettuce
-		logging_runtime
+		log4j
 		nimbus
 		ssm
 		tests
@@ -72,8 +72,8 @@ subprojects {
 
 		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
 
-		logging_runtime "com.amazonaws:aws-lambda-java-log4j2:1.5.1",
-				"org.slf4j:slf4j-nop:1.7.36"
+		log4j "org.apache.logging.log4j:log4j-api:2.17.2",
+				"org.apache.logging.log4j:log4j-core:2.17.2"
 
 		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
 				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",
