@@ -43,13 +43,13 @@ public class PostcodeLookupService {
                 new LambdaLogger() {
                     @Override
                     public void log(String message) {
-                        System.out.println(message);
-                    } // NOSONAR
+                        System.out.println(message); // NOSONAR
+                    }
 
                     @Override
                     public void log(byte[] message) {
-                        System.out.println(new String(message));
-                    } // NOSONAR
+                        System.out.println(new String(message)); // NOSONAR
+                    }
                 };
     }
 
