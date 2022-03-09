@@ -9,27 +9,27 @@ import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
 import java.util.Map;
 
-public class DomainProbe {
+public class EventProbe {
 
     private static final Logger LOGGER = LogManager.getLogger();
     private static final MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
 
-    public DomainProbe log(Level level, Exception e) {
+    public EventProbe log(Level level, Exception e) {
         LOGGER.log(level, e);
         return this;
     }
 
-    public DomainProbe counterMetric(String key) {
+    public EventProbe counterMetric(String key) {
         metricsLogger.putMetric(key, 1d);
         return this;
     }
 
-    public DomainProbe counterMetric(String key, double value) {
+    public EventProbe counterMetric(String key, double value) {
         metricsLogger.putMetric(key, value);
         return this;
     }
 
-    public DomainProbe auditEvent(Object event) {
+    public EventProbe auditEvent(Object event) {
         LOGGER.info(() -> "sending audit event " + event);
         return this;
     }

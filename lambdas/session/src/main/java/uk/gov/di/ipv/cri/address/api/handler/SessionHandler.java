@@ -12,7 +12,7 @@ import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
 import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
-import uk.gov.di.ipv.cri.address.library.helpers.DomainProbe;
+import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
 import java.util.Map;
@@ -30,16 +30,16 @@ public class SessionHandler
     protected static final String SESSION_ID = "session_id";
     public static final String EVENT_SESSION_CREATED = "session_created";
     private final AddressSessionService addressSessionService;
-    private final DomainProbe domainProbe;
+    private final EventProbe eventProbe;
 
     public SessionHandler() {
         addressSessionService = new AddressSessionService();
-        domainProbe = new DomainProbe();
+        eventProbe = new EventProbe();
     }
 
-    public SessionHandler(AddressSessionService addressSessionService, DomainProbe domainProbe) {
+    public SessionHandler(AddressSessionService addressSessionService, EventProbe eventProbe) {
         this.addressSessionService = addressSessionService;
-        this.domainProbe = domainProbe;
+        this.eventProbe = eventProbe;
     }
 
     @Override
@@ -53,24 +53,24 @@ public class SessionHandler
             SessionRequest sessionRequest =
                     addressSessionService.validateSessionRequest(input.getBody());
 
-            domainProbe.addDimensions(Map.of("issuer", sessionRequest.getClientId()));
+            eventProbe.addDimensions(Map.of("issuer", sessionRequest.getClientId()));
 
             UUID sessionId = addressSessionService.createAndSaveAddressSession(sessionRequest);
 
-            domainProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
+            eventProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     CREATED, Map.of(SESSION_ID, sessionId.toString()));
 
         } catch (ValidationException e) {
 
-            domainProbe.log(INFO, e).counterMetric(EVENT_SESSION_CREATED, 0d);
+            eventProbe.log(INFO, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     BAD_REQUEST, ErrorResponse.SESSION_VALIDATION_ERROR);
         } catch (ServerException e) {
 
-            domainProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
+            eventProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_CONFIG_ERROR);

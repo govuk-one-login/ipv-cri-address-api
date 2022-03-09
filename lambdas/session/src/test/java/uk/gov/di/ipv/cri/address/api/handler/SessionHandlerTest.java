@@ -15,7 +15,7 @@ import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
 import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.DomainProbe;
+import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
 import java.util.Map;
@@ -39,20 +39,20 @@ class SessionHandlerTest {
 
     @Mock private SessionRequest sessionRequest;
 
-    @Mock private DomainProbe domainProbe;
+    @Mock private EventProbe eventProbe;
 
     private SessionHandler sessionHandler;
 
     @BeforeEach
     void setUp() {
-        sessionHandler = new SessionHandler(addressSessionService, domainProbe);
+        sessionHandler = new SessionHandler(addressSessionService, eventProbe);
     }
 
     @Test
     void shouldCreateAndSaveAddressSession()
             throws ValidationException, ServerException, JsonProcessingException {
 
-        when(domainProbe.counterMetric(anyString())).thenReturn(domainProbe);
+        when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
 
         UUID sessionId = UUID.randomUUID();
         when(sessionRequest.getClientId()).thenReturn("ipv-core");
@@ -68,8 +68,8 @@ class SessionHandlerTest {
         Map responseBody = new ObjectMapper().readValue(responseEvent.getBody(), Map.class);
         assertEquals(sessionId.toString(), responseBody.get(SESSION_ID));
 
-        verify(domainProbe).addDimensions(Map.of("issuer", "ipv-core"));
-        verify(domainProbe).counterMetric("session_created");
+        verify(eventProbe).addDimensions(Map.of("issuer", "ipv-core"));
+        verify(eventProbe).counterMetric("session_created");
     }
 
     @Test
@@ -80,7 +80,7 @@ class SessionHandlerTest {
         ValidationException validationException = new ValidationException("");
         when(addressSessionService.validateSessionRequest("some json"))
                 .thenThrow(validationException);
-        setupDomainProbeErrorBehaviour();
+        setupEventProbeErrorBehaviour();
 
         APIGatewayProxyResponseEvent responseEvent =
                 sessionHandler.handleRequest(apiGatewayProxyRequestEvent, null);
@@ -90,8 +90,8 @@ class SessionHandlerTest {
         assertEquals(
                 ErrorResponse.SESSION_VALIDATION_ERROR.getMessage(), responseBody.get("message"));
 
-        verify(domainProbe).counterMetric("session_created", 0d);
-        verify(domainProbe).log(Level.INFO, validationException);
+        verify(eventProbe).counterMetric("session_created", 0d);
+        verify(eventProbe).log(Level.INFO, validationException);
         verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 
@@ -102,7 +102,7 @@ class SessionHandlerTest {
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(addressSessionService.validateSessionRequest("some json"))
                 .thenThrow(new ServerException(new NullPointerException()));
-        setupDomainProbeErrorBehaviour();
+        setupEventProbeErrorBehaviour();
 
         APIGatewayProxyResponseEvent responseEvent =
                 sessionHandler.handleRequest(apiGatewayProxyRequestEvent, null);
@@ -111,12 +111,12 @@ class SessionHandlerTest {
         assertEquals(ErrorResponse.SERVER_CONFIG_ERROR.getCode(), responseBody.get("code"));
         assertEquals(ErrorResponse.SERVER_CONFIG_ERROR.getMessage(), responseBody.get("message"));
 
-        verify(domainProbe).counterMetric("session_created", 0d);
+        verify(eventProbe).counterMetric("session_created", 0d);
         verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 
-    private void setupDomainProbeErrorBehaviour() {
-        when(domainProbe.counterMetric(anyString(), anyDouble())).thenReturn(domainProbe);
-        when(domainProbe.log(any(Level.class), any(Exception.class))).thenReturn(domainProbe);
+    private void setupEventProbeErrorBehaviour() {
+        when(eventProbe.counterMetric(anyString(), anyDouble())).thenReturn(eventProbe);
+        when(eventProbe.log(any(Level.class), any(Exception.class))).thenReturn(eventProbe);
     }
 }
