@@ -67,6 +67,7 @@ Resources:
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Environment:
         Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-session
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -95,6 +96,7 @@ Resources:
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       Environment:
         Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-postcode-lookup
       Policies:
         - AWSLambdaBasicExecutionRole
