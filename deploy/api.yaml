@@ -3,11 +3,6 @@ info:
   version: "0.1"
   title: "Address Credential Issuer API"
 
-x-amazon-apigateway-request-validators:
-  body:
-    validateRequestBody: true
-    validateRequestParameters: false
-
 paths:
   /postcode-lookup/{postcode}:
     get:
@@ -15,7 +10,7 @@ paths:
         - in: path
           name: postcode
           required: true
-          description: The postcode to look up
+          description: The postcode to look up650861
           schema:
             type: string
       responses:

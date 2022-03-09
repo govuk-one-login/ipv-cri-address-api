@@ -1,5 +1,3 @@
-import org.gradle.api.JavaVersion
-
 plugins {
 	id "java"
 	id "org.sonarqube" version "3.3"
@@ -49,7 +47,6 @@ subprojects {
 		lambda
 		lambda_tests
 		lettuce
-		log4j
 		nimbus
 		ssm
 		tests
@@ -72,17 +69,10 @@ subprojects {
 
 		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
 
-		log4j "org.apache.logging.log4j:log4j-api:2.17.2",
-				"org.apache.logging.log4j:log4j-core:2.17.2"
-
 		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
 				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",
 				"com.fasterxml.jackson.core:jackson-annotations:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${dependencyVersions.jackson_version}",
-				"org.hibernate.validator:hibernate-validator:7.0.2.Final",
-				"org.glassfish:jakarta.el:4.0.2",
-				"jakarta.xml.bind:jakarta.xml.bind-api:3.0.1",
-				"com.sun.xml.bind:jaxb-impl:3.0.2"
+				"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${dependencyVersions.jackson_version}"
 
 		powertools "software.amazon.lambda:powertools-logging:${dependencyVersions.powertools_version}",
 				"software.amazon.lambda:powertools-metrics:${dependencyVersions.powertools_version}"

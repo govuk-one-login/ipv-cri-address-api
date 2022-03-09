@@ -9,7 +9,7 @@ dependencies {
 			configurations.jackson,
 			configurations.gson,
 			configurations.nimbus,
-			configurations.log4j
+			configurations.powertools
 
 	testImplementation configurations.tests
 
