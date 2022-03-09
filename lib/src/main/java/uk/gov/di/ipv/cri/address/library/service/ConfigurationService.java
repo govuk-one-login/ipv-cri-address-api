@@ -47,7 +47,7 @@ public class ConfigurationService {
 
     public Map<String, String> getParametersForPath(String path) {
         String format = String.format("/%s/%s", parameterPrefix, path);
-        return ssmProvider.recursive().getMultiple(format.replaceAll("//", "/"));
+        return ssmProvider.recursive().getMultiple(format.replace("//", "/"));
     }
 
     public enum SSMParameterName {

@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -69,7 +68,7 @@ class SessionHandlerTest {
         Map responseBody = new ObjectMapper().readValue(responseEvent.getBody(), Map.class);
         assertEquals(sessionId.toString(), responseBody.get(SESSION_ID));
 
-        verify(domainProbe).addDimensions(eq(Map.of("issuer", "ipv-core")));
+        verify(domainProbe).addDimensions(Map.of("issuer", "ipv-core"));
         verify(domainProbe).counterMetric("session_created");
     }
 
@@ -102,7 +101,7 @@ class SessionHandlerTest {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(addressSessionService.validateSessionRequest("some json"))
-                .thenThrow(new ServerException("", new NullPointerException()));
+                .thenThrow(new ServerException(new NullPointerException()));
         setupDomainProbeErrorBehaviour();
 
         APIGatewayProxyResponseEvent responseEvent =

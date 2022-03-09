@@ -30,7 +30,7 @@ public class DomainProbe {
     }
 
     public DomainProbe auditEvent(Object event) {
-        // no-op for now
+        LOGGER.info(() -> "sending audit event " + event);
         return this;
     }
 

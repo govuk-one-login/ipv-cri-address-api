@@ -74,24 +74,18 @@ public class AddressSessionService {
     public SessionRequest validateSessionRequest(String requestBody)
             throws ValidationException, ServerException {
 
-        try {
+        SessionRequest sessionRequest = parseSessionRequest(requestBody);
+        Map<String, String> clientAuthenticationConfig =
+                getClientAuthenticationConfig(sessionRequest.getClientId());
 
-            SessionRequest sessionRequest = parseSessionRequest(requestBody);
-            Map<String, String> clientAuthenticationConfig =
-                    getClientAuthenticationConfig(sessionRequest.getClientId());
+        verifyRequestUri(sessionRequest, clientAuthenticationConfig);
 
-            verifyRequestUri(sessionRequest, clientAuthenticationConfig);
+        SignedJWT signedJWT = parseRequestJWT(sessionRequest);
+        verifyJWTHeader(clientAuthenticationConfig, signedJWT);
+        verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
+        verifyJWTSignature(clientAuthenticationConfig, signedJWT);
 
-            SignedJWT signedJWT = parseRequestJWT(sessionRequest);
-            verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-            verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
-            verifyJWTSignature(clientAuthenticationConfig, signedJWT);
-
-            return sessionRequest;
-
-        } catch (NullPointerException e) {
-            throw new ValidationException("could not parse session request", e);
-        }
+        return sessionRequest;
     }
 
     private SessionRequest parseSessionRequest(String requestBody) throws ValidationException {
@@ -115,17 +109,22 @@ public class AddressSessionService {
         String path = String.format(SSM_PARAM_CLIENT_JWT_AUTH_PATH, clientId);
         Map<String, String> clientConfig = configurationService.getParametersForPath(path);
         if (clientConfig == null || clientConfig.isEmpty()) {
-            throw new ValidationException("no configuration for client id");
+            throw new ValidationException(
+                    String.format("no configuration for client id '%s'", clientId));
         }
         return clientConfig;
     }
 
     private void verifyRequestUri(SessionRequest sessionRequest, Map<String, String> clientConfig)
             throws ValidationException {
-        URI redirectUri = URI.create(clientConfig.get("redirectUri"));
-        if (sessionRequest.getRedirectUri() == null
-                || !sessionRequest.getRedirectUri().equals(redirectUri)) {
-            throw new ValidationException("redirect uri does not match configuration");
+        URI configRedirectUri = URI.create(clientConfig.get("redirectUri"));
+        URI requestRedirectUri = sessionRequest.getRedirectUri();
+        if (requestRedirectUri == null || !requestRedirectUri.equals(configRedirectUri)) {
+            throw new ValidationException(
+                    "redirect uri "
+                            + requestRedirectUri
+                            + " does not match configuration uri "
+                            + configRedirectUri);
         }
     }
 
@@ -138,7 +137,7 @@ public class AddressSessionService {
     }
 
     private void verifyJWTSignature(Map<String, String> authenticationMap, SignedJWT signedJWT)
-            throws ValidationException {
+            throws ValidationException, ServerException {
         String publicCertificateToVerify = authenticationMap.get("publicCertificateToVerify");
         try {
             Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
@@ -146,8 +145,10 @@ public class AddressSessionService {
             if (!validSignature(signedJWT, certificateFromConfig)) {
                 throw new ValidationException("JWT signature verification failed");
             }
-        } catch (CertificateException | JOSEException e) {
+        } catch (JOSEException e) {
             throw new ValidationException("JWT signature verification failed", e);
+        } catch (CertificateException e) {
+            throw new ServerException(e);
         }
     }
 

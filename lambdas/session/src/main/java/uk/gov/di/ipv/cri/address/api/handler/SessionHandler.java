@@ -28,6 +28,7 @@ public class SessionHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     protected static final String SESSION_ID = "session_id";
+    public static final String EVENT_SESSION_CREATED = "session_created";
     private final AddressSessionService addressSessionService;
     private final DomainProbe domainProbe;
 
@@ -56,20 +57,20 @@ public class SessionHandler
 
             UUID sessionId = addressSessionService.createAndSaveAddressSession(sessionRequest);
 
-            domainProbe.counterMetric("session_created").auditEvent(sessionRequest);
+            domainProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     CREATED, Map.of(SESSION_ID, sessionId.toString()));
 
         } catch (ValidationException e) {
 
-            domainProbe.log(INFO, e).counterMetric("session_created", 0d);
+            domainProbe.log(INFO, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     BAD_REQUEST, ErrorResponse.SESSION_VALIDATION_ERROR);
         } catch (ServerException e) {
 
-            domainProbe.log(ERROR, e).counterMetric("session_created", 0d);
+            domainProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_CONFIG_ERROR);

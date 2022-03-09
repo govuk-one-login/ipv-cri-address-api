@@ -132,7 +132,8 @@ class AddressSessionServiceTest {
                         });
         assertThat(
                 exception.getMessage(),
-                containsString("redirect uri does not match configuration"));
+                containsString(
+                        "redirect uri https://www.example.com/not-valid-callback does not match configuration uri https://www.example/com/callback"));
     }
 
     @Test
