@@ -7,8 +7,6 @@ import software.amazon.lambda.powertools.parameters.SecretsProvider;
 import java.util.Objects;
 import java.util.Optional;
 
-import static uk.gov.di.ipv.cri.address.library.constants.OrdnanceSurveyConstants.POSTCODE_LOOKUP_API;
-
 public class ConfigurationService {
 
     private static final long DEFAULT_SESSION_ADDRESS_TTL_IN_SECS = 172800L;
@@ -49,7 +47,8 @@ public class ConfigurationService {
     public enum SSMParameterName {
         ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
         ADDRESS_SESSION_TTL("AddressSessionTtl"),
-        OS_API_KEY("OrdinanceSurveyAPIKey");
+        ORDNANCE_SURVEY_API_KEY("OrdnanceSurveyAPIKey"),
+        ORDNANCE_SURVEY_API_URL("OrdnanceSurveyAPIURL");
 
         public final String parameterName;
 
@@ -60,11 +59,10 @@ public class ConfigurationService {
 
     public String getOsApiKey() {
 
-        return secretsProvider.get(getParameterName(SSMParameterName.OS_API_KEY));
+        return secretsProvider.get(getParameterName(SSMParameterName.ORDNANCE_SURVEY_API_KEY));
     }
 
-    // This is exposed here so that we can unit test URL failures
     public String getOsPostcodeAPIUrl() {
-        return POSTCODE_LOOKUP_API;
+        return ssmProvider.get(getParameterName(SSMParameterName.ORDNANCE_SURVEY_API_URL));
     }
 }

@@ -23,7 +23,6 @@ import static org.mockito.Mockito.contains;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static uk.gov.di.ipv.cri.address.library.constants.OrdnanceSurveyConstants.POSTCODE_LOOKUP_API;
 
 @ExtendWith(MockitoExtension.class)
 class PostcodeLookupServiceTest {
@@ -159,9 +158,7 @@ class PostcodeLookupServiceTest {
         when(mockResponse.statusCode()).thenReturn(HttpStatus.SC_OK);
         when(mockResponse.body())
                 .thenReturn(
-                        "{\"header\":{\"uri\":\""
-                                + POSTCODE_LOOKUP_API
-                                + "?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"BUILDING_NUMBER\":\"TESTADDRESS\",\"THOROUGHFARE_NAME\":\"TESTSTREET\",\"POST_TOWN\":\"TESTTOWN\",\"POSTCODE\":\"ZZ11ZZ\",\"RPC\":\"1\",\"X_COORDINATE\":123456.78,\"Y_COORDINATE\":234567.89,\"STATUS\":\"APPROVED\",\"LOGICAL_STATUS_CODE\":\"1\",\"CLASSIFICATION_CODE\":\"RD03\",\"CLASSIFICATION_CODE_DESCRIPTION\":\"Semi-Detached\",\"LOCAL_CUSTODIAN_CODE\":1234,\"LOCAL_CUSTODIAN_CODE_DESCRIPTION\":\"TESTTOWN\",\"COUNTRY_CODE\":\"E\",\"COUNTRY_CODE_DESCRIPTION\":\"ThisrecordiswithinEngland\",\"POSTAL_ADDRESS_CODE\":\"D\",\"POSTAL_ADDRESS_CODE_DESCRIPTION\":\"ArecordwhichislinkedtoPAF\",\"BLPU_STATE_CODE\":\"2\",\"BLPU_STATE_CODE_DESCRIPTION\":\"Inuse\",\"TOPOGRAPHY_LAYER_TOID\":\"osgb12345567890\",\"LAST_UPDATE_DATE\":\"10/02/2016\",\"ENTRY_DATE\":\"12/01/2000\",\"BLPU_STATE_DATE\":\"15/06/2009\",\"LANGUAGE\":\"EN\",\"MATCH\":1.0,\"MATCH_DESCRIPTION\":\"EXACT\",\"DELIVERY_POINT_SUFFIX\":\"1A\"}}]}");
+                        "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"BUILDING_NUMBER\":\"TESTADDRESS\",\"THOROUGHFARE_NAME\":\"TESTSTREET\",\"POST_TOWN\":\"TESTTOWN\",\"POSTCODE\":\"ZZ11ZZ\",\"RPC\":\"1\",\"X_COORDINATE\":123456.78,\"Y_COORDINATE\":234567.89,\"STATUS\":\"APPROVED\",\"LOGICAL_STATUS_CODE\":\"1\",\"CLASSIFICATION_CODE\":\"RD03\",\"CLASSIFICATION_CODE_DESCRIPTION\":\"Semi-Detached\",\"LOCAL_CUSTODIAN_CODE\":1234,\"LOCAL_CUSTODIAN_CODE_DESCRIPTION\":\"TESTTOWN\",\"COUNTRY_CODE\":\"E\",\"COUNTRY_CODE_DESCRIPTION\":\"ThisrecordiswithinEngland\",\"POSTAL_ADDRESS_CODE\":\"D\",\"POSTAL_ADDRESS_CODE_DESCRIPTION\":\"ArecordwhichislinkedtoPAF\",\"BLPU_STATE_CODE\":\"2\",\"BLPU_STATE_CODE_DESCRIPTION\":\"Inuse\",\"TOPOGRAPHY_LAYER_TOID\":\"osgb12345567890\",\"LAST_UPDATE_DATE\":\"10/02/2016\",\"ENTRY_DATE\":\"12/01/2000\",\"BLPU_STATE_DATE\":\"15/06/2009\",\"LANGUAGE\":\"EN\",\"MATCH\":1.0,\"MATCH_DESCRIPTION\":\"EXACT\",\"DELIVERY_POINT_SUFFIX\":\"1A\"}}]}");
 
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
                 .thenReturn(mockResponse);

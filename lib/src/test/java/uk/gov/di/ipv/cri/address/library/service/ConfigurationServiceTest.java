@@ -44,10 +44,11 @@ class ConfigurationServiceTest {
     }
 
     @Test
-    void shouldGetOrdinanceSurveyAPIKey() {
+    void shouldGetOrdnanceSurveyAPIKey() {
         when(secretsProvider.get(
                         "/stack-name/"
-                                + ConfigurationService.SSMParameterName.OS_API_KEY.parameterName))
+                                + ConfigurationService.SSMParameterName.ORDNANCE_SURVEY_API_KEY
+                                        .parameterName))
                 .thenReturn("1234567890");
 
         assertEquals("1234567890", configurationService.getOsApiKey());

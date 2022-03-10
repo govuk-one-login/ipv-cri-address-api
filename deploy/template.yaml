@@ -14,10 +14,15 @@ Parameters:
       - prod
     ConstraintDescription: specify dev, staging, integration or prod for environment
 
-  OrdinanceSurveyAPIKey:
-    Description: Ordinance Survey API Key
+  OrdnanceSurveyAPIKey:
+    Description: Ordnance Survey API Key
     Type: String
     Default: testapikey
+
+  OrdnanceSurveyAPIURL:
+    Description: Ordnance Survey API URL
+    Type: String
+    Default: "https://api.os.uk/search/places/v1/postcode"
 
 Globals:
   Function:
@@ -101,7 +106,13 @@ Resources:
               Action:
                 - 'secretsmanager:*'
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${AWS::StackName}/OrdinanceSurveyAPIKey*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${AWS::StackName}/OrdnanceSurveyAPIKey*"
+            - Sid: ReadParametersPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIURL"
 
   AddressCriCodeSigning:
     Type: AWS::Lambda::CodeSigningConfig
@@ -166,6 +177,14 @@ Resources:
       Type: String
       Description: address session dynamodb table name
 
+  ParameterOrdnanceSurveyAPIURL:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIURL"
+      Value: !Ref OrdnanceSurveyAPIURL
+      Type: String
+      Description: Ordnance Survey Postcode Lookup API URL
+
   ParameterAddressSessionTtl:
     Type: AWS::SSM::Parameter
     Properties:
@@ -174,12 +193,12 @@ Resources:
       Type: String
       Description: default time to live for an address session item (seconds)
 
-  SecretOrdinanceSurveyAPIKey:
+  SecretOrdnanceSurveyAPIKey:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub "/${AWS::StackName}/OrdinanceSurveyAPIKey"
-      SecretString: !Ref OrdinanceSurveyAPIKey
-      Description: API key for the Ordinance Survey API
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIKey"
+      SecretString: !Ref OrdnanceSurveyAPIKey
+      Description: API key for the Ordnance Survey API
 
   SessionFunctionPermission:
     Type: AWS::Lambda::Permission
