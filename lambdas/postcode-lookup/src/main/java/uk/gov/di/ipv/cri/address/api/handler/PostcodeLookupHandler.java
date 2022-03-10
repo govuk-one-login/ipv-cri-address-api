@@ -15,7 +15,7 @@ import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
-import uk.gov.di.ipv.cri.address.library.models.PostcodeResult;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.service.PostcodeLookupService;
 
 import java.util.List;
@@ -45,7 +45,7 @@ public class PostcodeLookupHandler
         log.debug("Postcode: {}", postcode);
 
         try {
-            List<PostcodeResult> results = postcodeLookupService.lookupPostcode(postcode);
+            List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
 

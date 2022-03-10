@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PostcodeResult {
+public class CanonicalAddress {
     private final String uprn;
     private final String organisationName;
     private final String departmentName;
@@ -19,7 +19,7 @@ public class PostcodeResult {
     private final String postcode;
     private final String countryCode;
 
-    public PostcodeResult(Result result) {
+    public CanonicalAddress(Result result) {
         var dpa = result.getDpa();
         this.uprn = dpa.getUprn();
         this.organisationName = dpa.getOrganisationName();

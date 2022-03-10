@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
-import uk.gov.di.ipv.cri.address.library.models.PostcodeResult;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.OrdnanceSurveyPostcodeResponse;
 
@@ -49,7 +49,7 @@ public class PostcodeLookupService {
         this.log = log;
     }
 
-    public List<PostcodeResult> lookupPostcode(String postcode)
+    public List<CanonicalAddress> lookupPostcode(String postcode)
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     JsonProcessingException {
 
@@ -150,7 +150,7 @@ public class PostcodeLookupService {
 
         // Map the postcode response to our model
         return postcodeResponse.getResults().stream()
-                .map(PostcodeResult::new)
+                .map(CanonicalAddress::new)
                 .collect(Collectors.toList());
     }
 }
