@@ -10,7 +10,7 @@ paths:
         - in: path
           name: postcode
           required: true
-          description: The postcode to look up650861
+          description: The postcode to look up
           schema:
             type: string
       responses:
@@ -32,7 +32,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PostcodeLookupResponse"
-      x-amazon-apigateway-request-validator: "Validate body"
+      x-amazon-apigateway-request-validator: "Validate request"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
@@ -127,12 +127,12 @@ components:
         session_id:
           type: "string"
     PostcodeLookupResponse:
-      title: "Postcode Lookup Response Schema"
+      title: "Postcode Lookup Response"
       type: "array"
       items:
-        $ref: "#/components/schemas/PostcodeLookupAddress"
-    PostcodeLookupAddress:
-      title: "Postcode Lookup Address"
+        $ref: "#/components/schemas/CanonicalAddress"
+    CanonicalAddress:
+      title: "Canonical Address"
       type: "object"
       properties:
         uprn:
@@ -173,5 +173,14 @@ components:
           example: "SW1A 1AA"
         countryCode:
           type: "string"
-          example: "GB"
+          example: "GBR"
+
+x-amazon-apigateway-request-validators:
+  Validate body:
+    validateRequestParameters: false
+    validateRequestBody: true
+
+  Validate request:
+    validateRequestBody: false
+    validateRequestParameters: true
 
