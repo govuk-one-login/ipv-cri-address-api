@@ -14,9 +14,18 @@ import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverag
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import com.nimbusds.oauth2.sdk.AccessTokenResponse;
+import com.nimbusds.oauth2.sdk.ErrorObject;
+import com.nimbusds.oauth2.sdk.GrantType;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
+import com.nimbusds.oauth2.sdk.TokenRequest;
+import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
+import com.nimbusds.oauth2.sdk.token.Tokens;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-
+import uk.gov.di.ipv.cri.address.library.validation.ValidationResult;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.security.PublicKey;
@@ -37,15 +46,15 @@ import java.util.UUID;
 public class AddressSessionService {
 
     private final DataStore<AddressSessionItem> dataStore;
-    private final ConfigurationService configurationService;
     private final Clock clock;
+    private final ConfigurationService configurationService;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressSessionService() {
         this.configurationService = new ConfigurationService();
         this.dataStore =
                 new DataStore<>(
-                        this.configurationService.getAddressSessionTableName(),
+                        configurationService.getAddressSessionTableName(),
                         AddressSessionItem.class,
                         DataStore.getClient());
         clock = Clock.systemUTC();
@@ -70,6 +79,8 @@ public class AddressSessionService {
         addressSessionItem.setState(sessionRequest.getState());
         addressSessionItem.setClientId(sessionRequest.getClientId());
         addressSessionItem.setRedirectUri(sessionRequest.getRedirectUri());
+        // TODO: create authorization_code, this is temporary
+        addressSessionItem.setAuthorizationCode(UUID.randomUUID().toString());
         dataStore.create(addressSessionItem);
         return addressSessionItem.getSessionId();
     }
@@ -202,5 +213,20 @@ public class AddressSessionService {
             throw new ClientConfigurationException(
                     new IllegalStateException("unknown public JWT signing key"));
         }
+    }
+
+    public TokenResponse createToken(TokenRequest tokenRequest) {
+        AccessToken accessToken =
+                new BearerAccessToken(
+                        configurationService.getBearerAccessTokenTtl(), tokenRequest.getScope());
+        return new AccessTokenResponse(new Tokens(accessToken, null));
+    }
+
+    public void writeToken(
+            AccessTokenResponse tokenResponse, AddressSessionItem addressSessionItem) {
+        addressSessionItem.setAccessToken(
+                tokenResponse.getTokens().getBearerAccessToken().toAuthorizationHeader());
+
+        dataStore.update(addressSessionItem);
     }
 }

@@ -14,6 +14,10 @@ public class AddressSessionItem {
     private String state;
     private URI redirectUri;
 
+    private String accessToken;
+
+    private String authorizationCode;
+
     public AddressSessionItem() {
         sessionId = UUID.randomUUID();
     }
@@ -57,5 +61,19 @@ public class AddressSessionItem {
 
     public URI getRedirectUri() {
         return redirectUri;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAuthorizationCode(String authorizationCode) {
+        this.authorizationCode = authorizationCode;
+    }
+
+    public String getAuthorizationCode() {
+        return authorizationCode;
     }
 }
