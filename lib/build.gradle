@@ -6,7 +6,10 @@ dependencies {
 
 	implementation configurations.lambda,
 			configurations.dynamodb,
-			configurations.nimbus
+			configurations.jackson,
+			configurations.gson,
+			configurations.nimbus,
+			configurations.powertools
 
 	testImplementation configurations.tests
 

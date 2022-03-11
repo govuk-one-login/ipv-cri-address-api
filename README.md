@@ -18,9 +18,16 @@ The command to run is:
 
 `gds aws <account> -- sam deploy -t deploy/template.yaml --guided`
 
+You will be asked for the Ordnance Survey API Key at this point.
+In production, this key is stored in the AWS Secrets Manager.
+
 Any time you wish to deploy, run:
 
 `gds aws <account> -- ./deploy.sh`
+
+If you wish to test your lambda functions locally, you can update the "postcode.event" file and then run:
+
+`gds aws <account> -- ./runlocal.sh`
 
 
 ## Deploy to AWS lambda
