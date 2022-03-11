@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
-import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
+import uk.gov.di.ipv.cri.address.library.exceptions.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exceptions.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
@@ -50,7 +50,7 @@ class SessionHandlerTest {
 
     @Test
     void shouldCreateAndSaveAddressSession()
-            throws SessionValidationException, ServerException, JsonProcessingException {
+            throws SessionValidationException, ClientConfigurationException, JsonProcessingException {
 
         when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
 
@@ -74,7 +74,7 @@ class SessionHandlerTest {
 
     @Test
     void shouldCatchValidationExceptionAndReturn400Response()
-            throws SessionValidationException, ServerException, JsonProcessingException {
+            throws SessionValidationException, ClientConfigurationException, JsonProcessingException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         SessionValidationException sessionValidationException = new SessionValidationException("");
@@ -97,11 +97,11 @@ class SessionHandlerTest {
 
     @Test
     void shouldCatchServerExceptionAndReturn500Response()
-            throws SessionValidationException, ServerException, JsonProcessingException {
+            throws SessionValidationException, ClientConfigurationException, JsonProcessingException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(addressSessionService.validateSessionRequest("some json"))
-                .thenThrow(new ServerException(new NullPointerException()));
+                .thenThrow(new ClientConfigurationException(new NullPointerException()));
         setupEventProbeErrorBehaviour();
 
         APIGatewayProxyResponseEvent responseEvent =

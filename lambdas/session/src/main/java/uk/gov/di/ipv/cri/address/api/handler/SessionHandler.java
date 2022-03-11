@@ -10,7 +10,7 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
-import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
+import uk.gov.di.ipv.cri.address.library.exceptions.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exceptions.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
@@ -70,7 +70,7 @@ public class SessionHandler
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     BAD_REQUEST, ErrorResponse.SESSION_VALIDATION_ERROR);
-        } catch (ServerException e) {
+        } catch (ClientConfigurationException e) {
 
             eventProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
