@@ -130,17 +130,17 @@ public class AddressSessionService {
         }
     }
 
-    private void verifyJWTHeader(Map<String, String> authenticationMap, SignedJWT signedJWT)
+    private void verifyJWTHeader(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
-        JWSAlgorithm jwsAlgorithm = JWSAlgorithm.parse(authenticationMap.get("authenticationAlg"));
+        JWSAlgorithm jwsAlgorithm = JWSAlgorithm.parse(clientAuthenticationConfig.get("authenticationAlg"));
         if (jwsAlgorithm != signedJWT.getHeader().getAlgorithm()) {
             throw new SessionValidationException("jwsAlgorithm does not match configuration");
         }
     }
 
-    private void verifyJWTSignature(Map<String, String> authenticationMap, SignedJWT signedJWT)
+    private void verifyJWTSignature(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException, ServerException {
-        String publicCertificateToVerify = authenticationMap.get("publicCertificateToVerify");
+        String publicCertificateToVerify = clientAuthenticationConfig.get("publicCertificateToVerify");
         try {
             Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
 
@@ -154,11 +154,11 @@ public class AddressSessionService {
         }
     }
 
-    private void verifyJWTClaimsSet(Map<String, String> clientAuthNConfig, SignedJWT signedJWT)
+    private void verifyJWTClaimsSet(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
-                        new JWTClaimsSet.Builder().issuer(clientAuthNConfig.get("issuer")).build(),
+                        new JWTClaimsSet.Builder().issuer(clientAuthenticationConfig.get("issuer")).build(),
                         new HashSet<>(Arrays.asList("exp", "nbf")));
 
         try {
