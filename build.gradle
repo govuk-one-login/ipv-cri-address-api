@@ -56,6 +56,10 @@ subprojects {
 	}
 
 	dependencies {
+		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
+				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",
+				"com.fasterxml.jackson.core:jackson-annotations:${dependencyVersions.jackson_version}",
+				"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${dependencyVersions.jackson_version}"
 
 		dynamodb "com.amazonaws:aws-java-sdk-dynamodb:${dependencyVersions.aws_sdk_version}",
 				"software.amazon.awssdk:dynamodb-enhanced:2.17.116"
