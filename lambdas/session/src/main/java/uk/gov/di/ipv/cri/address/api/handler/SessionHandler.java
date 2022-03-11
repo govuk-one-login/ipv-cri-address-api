@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
@@ -32,6 +33,7 @@ public class SessionHandler
     private final AddressSessionService addressSessionService;
     private final EventProbe eventProbe;
 
+    @ExcludeFromGeneratedCoverageReport
     public SessionHandler() {
         addressSessionService = new AddressSessionService();
         eventProbe = new EventProbe();

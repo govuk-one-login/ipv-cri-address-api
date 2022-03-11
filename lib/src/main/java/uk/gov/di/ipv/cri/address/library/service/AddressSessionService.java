@@ -9,6 +9,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
+import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
 import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
@@ -48,6 +49,7 @@ public class AddressSessionService {
         clock = Clock.systemUTC();
     }
 
+    @ExcludeFromGeneratedCoverageReport
     public AddressSessionService(
             DataStore<AddressSessionItem> dataStore,
             ConfigurationService configurationService,
