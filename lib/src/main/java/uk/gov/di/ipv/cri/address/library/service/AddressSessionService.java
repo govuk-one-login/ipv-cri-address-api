@@ -12,7 +12,7 @@ import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
-import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
+import uk.gov.di.ipv.cri.address.library.exceptions.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
@@ -74,7 +74,7 @@ public class AddressSessionService {
     }
 
     public SessionRequest validateSessionRequest(String requestBody)
-            throws ValidationException, ServerException {
+            throws SessionValidationException, ServerException {
 
         SessionRequest sessionRequest = parseSessionRequest(requestBody);
         Map<String, String> clientAuthenticationConfig =
@@ -90,39 +90,39 @@ public class AddressSessionService {
         return sessionRequest;
     }
 
-    private SessionRequest parseSessionRequest(String requestBody) throws ValidationException {
+    private SessionRequest parseSessionRequest(String requestBody) throws SessionValidationException {
         try {
             return new ObjectMapper().readValue(requestBody, SessionRequest.class);
         } catch (JsonProcessingException e) {
-            throw new ValidationException("could not parse request body", e);
+            throw new SessionValidationException("could not parse request body", e);
         }
     }
 
-    private SignedJWT parseRequestJWT(SessionRequest sessionRequest) throws ValidationException {
+    private SignedJWT parseRequestJWT(SessionRequest sessionRequest) throws SessionValidationException {
         try {
             return SignedJWT.parse(sessionRequest.getRequestJWT());
         } catch (ParseException e) {
-            throw new ValidationException("Could not parse request JWT", e);
+            throw new SessionValidationException("Could not parse request JWT", e);
         }
     }
 
     private Map<String, String> getClientAuthenticationConfig(String clientId)
-            throws ValidationException {
+            throws SessionValidationException {
         String path = String.format(SSM_PARAM_CLIENT_JWT_AUTH_PATH, clientId);
         Map<String, String> clientConfig = configurationService.getParametersForPath(path);
         if (clientConfig == null || clientConfig.isEmpty()) {
-            throw new ValidationException(
+            throw new SessionValidationException(
                     String.format("no configuration for client id '%s'", clientId));
         }
         return clientConfig;
     }
 
     private void verifyRequestUri(SessionRequest sessionRequest, Map<String, String> clientConfig)
-            throws ValidationException {
+            throws SessionValidationException {
         URI configRedirectUri = URI.create(clientConfig.get("redirectUri"));
         URI requestRedirectUri = sessionRequest.getRedirectUri();
         if (requestRedirectUri == null || !requestRedirectUri.equals(configRedirectUri)) {
-            throw new ValidationException(
+            throw new SessionValidationException(
                     "redirect uri "
                             + requestRedirectUri
                             + " does not match configuration uri "
@@ -131,31 +131,31 @@ public class AddressSessionService {
     }
 
     private void verifyJWTHeader(Map<String, String> authenticationMap, SignedJWT signedJWT)
-            throws ValidationException {
+            throws SessionValidationException {
         JWSAlgorithm jwsAlgorithm = JWSAlgorithm.parse(authenticationMap.get("authenticationAlg"));
         if (jwsAlgorithm != signedJWT.getHeader().getAlgorithm()) {
-            throw new ValidationException("jwsAlgorithm does not match configuration");
+            throw new SessionValidationException("jwsAlgorithm does not match configuration");
         }
     }
 
     private void verifyJWTSignature(Map<String, String> authenticationMap, SignedJWT signedJWT)
-            throws ValidationException, ServerException {
+            throws SessionValidationException, ServerException {
         String publicCertificateToVerify = authenticationMap.get("publicCertificateToVerify");
         try {
             Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
 
             if (!validSignature(signedJWT, certificateFromConfig)) {
-                throw new ValidationException("JWT signature verification failed");
+                throw new SessionValidationException("JWT signature verification failed");
             }
         } catch (JOSEException e) {
-            throw new ValidationException("JWT signature verification failed", e);
+            throw new SessionValidationException("JWT signature verification failed", e);
         } catch (CertificateException e) {
             throw new ServerException(e);
         }
     }
 
     private void verifyJWTClaimsSet(Map<String, String> clientAuthNConfig, SignedJWT signedJWT)
-            throws ValidationException {
+            throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
                         new JWTClaimsSet.Builder().issuer(clientAuthNConfig.get("issuer")).build(),
@@ -164,7 +164,7 @@ public class AddressSessionService {
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);
         } catch (BadJWTException | ParseException e) {
-            throw new ValidationException("could not parse JWT", e);
+            throw new SessionValidationException("could not parse JWT", e);
         }
     }
 

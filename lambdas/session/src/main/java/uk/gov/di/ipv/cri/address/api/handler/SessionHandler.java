@@ -11,7 +11,7 @@ import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverag
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
-import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
+import uk.gov.di.ipv.cri.address.library.exceptions.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
@@ -64,7 +64,7 @@ public class SessionHandler
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     CREATED, Map.of(SESSION_ID, sessionId.toString()));
 
-        } catch (ValidationException e) {
+        } catch (SessionValidationException e) {
 
             eventProbe.log(INFO, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 

@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
-import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
+import uk.gov.di.ipv.cri.address.library.exceptions.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
@@ -50,7 +50,7 @@ class SessionHandlerTest {
 
     @Test
     void shouldCreateAndSaveAddressSession()
-            throws ValidationException, ServerException, JsonProcessingException {
+            throws SessionValidationException, ServerException, JsonProcessingException {
 
         when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
 
@@ -74,12 +74,12 @@ class SessionHandlerTest {
 
     @Test
     void shouldCatchValidationExceptionAndReturn400Response()
-            throws ValidationException, ServerException, JsonProcessingException {
+            throws SessionValidationException, ServerException, JsonProcessingException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
-        ValidationException validationException = new ValidationException("");
+        SessionValidationException sessionValidationException = new SessionValidationException("");
         when(addressSessionService.validateSessionRequest("some json"))
-                .thenThrow(validationException);
+                .thenThrow(sessionValidationException);
         setupEventProbeErrorBehaviour();
 
         APIGatewayProxyResponseEvent responseEvent =
@@ -91,13 +91,13 @@ class SessionHandlerTest {
                 ErrorResponse.SESSION_VALIDATION_ERROR.getMessage(), responseBody.get("message"));
 
         verify(eventProbe).counterMetric("session_created", 0d);
-        verify(eventProbe).log(Level.INFO, validationException);
+        verify(eventProbe).log(Level.INFO, sessionValidationException);
         verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 
     @Test
     void shouldCatchServerExceptionAndReturn500Response()
-            throws ValidationException, ServerException, JsonProcessingException {
+            throws SessionValidationException, ServerException, JsonProcessingException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(addressSessionService.validateSessionRequest("some json"))

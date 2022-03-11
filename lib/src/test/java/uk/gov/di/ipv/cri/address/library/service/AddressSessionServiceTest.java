@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exceptions.ServerException;
-import uk.gov.di.ipv.cri.address.library.exceptions.ValidationException;
+import uk.gov.di.ipv.cri.address.library.exceptions.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
@@ -77,9 +77,9 @@ class AddressSessionServiceTest {
     @Test
     void shouldThrowValidationExceptionWhenSessionRequestIsInvalid() {
 
-        ValidationException exception =
+        SessionValidationException exception =
                 assertThrows(
-                        ValidationException.class,
+                        SessionValidationException.class,
                         () -> {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(Map.of("not", "a-session-request")));
@@ -99,9 +99,9 @@ class AddressSessionServiceTest {
         when(mockConfigurationService.getParametersForPath(
                         "/clients/bad-client-id/jwtAuthentication"))
                 .thenReturn(Map.of());
-        ValidationException exception =
+        SessionValidationException exception =
                 assertThrows(
-                        ValidationException.class,
+                        SessionValidationException.class,
                         () -> {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(sessionRequest));
@@ -123,9 +123,9 @@ class AddressSessionServiceTest {
 
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(correctConfigMap(signedJWTBuilder));
-        ValidationException exception =
+        SessionValidationException exception =
                 assertThrows(
-                        ValidationException.class,
+                        SessionValidationException.class,
                         () -> {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(sessionRequest));
@@ -147,9 +147,9 @@ class AddressSessionServiceTest {
 
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(correctConfigMap(signedJWTBuilder));
-        ValidationException exception =
+        SessionValidationException exception =
                 assertThrows(
-                        ValidationException.class,
+                        SessionValidationException.class,
                         () -> {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(sessionRequest));
@@ -169,9 +169,9 @@ class AddressSessionServiceTest {
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(configMap);
 
-        ValidationException exception =
+        SessionValidationException exception =
                 assertThrows(
-                        ValidationException.class,
+                        SessionValidationException.class,
                         () -> {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(sessionRequest));
@@ -192,9 +192,9 @@ class AddressSessionServiceTest {
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(configMap);
 
-        ValidationException exception =
+        SessionValidationException exception =
                 assertThrows(
-                        ValidationException.class,
+                        SessionValidationException.class,
                         () -> {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(sessionRequest));
@@ -217,9 +217,9 @@ class AddressSessionServiceTest {
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(configMap);
 
-        ValidationException exception =
+        SessionValidationException exception =
                 assertThrows(
-                        ValidationException.class,
+                        SessionValidationException.class,
                         () -> {
                             addressSessionService.validateSessionRequest(
                                     marshallToJSON(sessionRequest));
@@ -229,7 +229,7 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldValidateSignedJWT() throws IOException, ValidationException, ServerException {
+    void shouldValidateSignedJWT() throws IOException, SessionValidationException, ServerException {
         SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
         SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
                 new SessionRequestBuilder.SignedJWTBuilder();
