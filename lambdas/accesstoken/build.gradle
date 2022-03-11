@@ -1,18 +1,30 @@
 plugins {
-	id 'java'
-}
-
-version 'unspecified'
-
-repositories {
-	mavenCentral()
+	id "java"
+	id 'io.freefair.aspectj.post-compile-weaving' version '6.3.0'
 }
 
 dependencies {
-	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+	implementation project(":lib"),
+			configurations.lambda,
+			configurations.nimbus,
+			configurations.gson,
+			configurations.jackson
+
+	aspect configurations.powertools
+
+	testImplementation configurations.tests
+	testRuntimeOnly configurations.test_runtime
 }
 
+task buildZip(type: Zip) {
+	from compileJava
+	from processResources
+	into('lib') {
+		from configurations.runtimeClasspath
+	}
+}
+
+build.finalizedBy(buildZip)
 test {
 	useJUnitPlatform()
 }
