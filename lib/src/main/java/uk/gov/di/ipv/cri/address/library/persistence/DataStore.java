@@ -10,6 +10,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,11 +29,16 @@ public class DataStore<T> {
         this.dynamoDbEnhancedClient = dynamoDbEnhancedClient;
     }
 
-    public static DynamoDbEnhancedClient getClient() {
+    public static DynamoDbEnhancedClient getClient(URI endpointOverride) {
         DynamoDbClientBuilder clientBuilder =
-                DynamoDbClient.builder()
-                        .httpClient(UrlConnectionHttpClient.create())
-                        .region(Region.EU_WEST_2);
+                getDynamoDbClientBuilder(
+                        DynamoDbClient.builder().endpointOverride(endpointOverride));
+
+        return DynamoDbEnhancedClient.builder().dynamoDbClient(clientBuilder.build()).build();
+    }
+
+    public static DynamoDbEnhancedClient getClient() {
+        DynamoDbClientBuilder clientBuilder = getDynamoDbClientBuilder(DynamoDbClient.builder());
 
         return DynamoDbEnhancedClient.builder().dynamoDbClient(clientBuilder.build()).build();
     }
@@ -83,5 +89,9 @@ public class DataStore<T> {
     private DynamoDbTable<T> getTable() {
         return dynamoDbEnhancedClient.table(
                 tableName, TableSchema.fromBean(this.typeParameterClass));
+    }
+
+    private static DynamoDbClientBuilder getDynamoDbClientBuilder(DynamoDbClientBuilder builder) {
+        return builder.httpClient(UrlConnectionHttpClient.create()).region(Region.EU_WEST_2);
     }
 }
