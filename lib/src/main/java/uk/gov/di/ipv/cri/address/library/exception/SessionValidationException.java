@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.exceptions;
+package uk.gov.di.ipv.cri.address.library.exception;
 
 public class SessionValidationException extends Exception {
     public SessionValidationException(String message, Exception e) {

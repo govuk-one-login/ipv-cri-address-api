@@ -13,8 +13,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
-import uk.gov.di.ipv.cri.address.library.exceptions.ClientConfigurationException;
-import uk.gov.di.ipv.cri.address.library.exceptions.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
+import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
