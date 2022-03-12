@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import org.apache.http.HttpStatus;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -21,9 +22,6 @@ import java.util.UUID;
 
 import static org.apache.logging.log4j.Level.ERROR;
 import static org.apache.logging.log4j.Level.INFO;
-import static software.amazon.awssdk.http.HttpStatusCode.BAD_REQUEST;
-import static software.amazon.awssdk.http.HttpStatusCode.CREATED;
-import static software.amazon.awssdk.http.HttpStatusCode.INTERNAL_SERVER_ERROR;
 
 public class SessionHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -62,20 +60,20 @@ public class SessionHandler
             eventProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    CREATED, Map.of(SESSION_ID, sessionId.toString()));
+                    HttpStatus.SC_CREATED, Map.of(SESSION_ID, sessionId.toString()));
 
         } catch (SessionValidationException e) {
 
             eventProbe.log(INFO, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    BAD_REQUEST, ErrorResponse.SESSION_VALIDATION_ERROR);
+                    HttpStatus.SC_BAD_REQUEST, ErrorResponse.SESSION_VALIDATION_ERROR);
         } catch (ClientConfigurationException e) {
 
             eventProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_CONFIG_ERROR);
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_CONFIG_ERROR);
         }
     }
 }
