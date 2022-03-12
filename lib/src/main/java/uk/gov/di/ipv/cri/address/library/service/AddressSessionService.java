@@ -36,7 +36,6 @@ import java.util.UUID;
 
 public class AddressSessionService {
 
-    public static final String SSM_PARAM_CLIENT_JWT_AUTH_PATH = "/clients/%s/jwtAuthentication";
     private final DataStore<AddressSessionItem> dataStore;
     private final ConfigurationService configurationService;
     private final Clock clock;
@@ -112,7 +111,7 @@ public class AddressSessionService {
 
     private Map<String, String> getClientAuthenticationConfig(String clientId)
             throws SessionValidationException {
-        String path = String.format(SSM_PARAM_CLIENT_JWT_AUTH_PATH, clientId);
+        String path = String.format("/clients/%s/jwtAuthentication", clientId);
         Map<String, String> clientConfig = configurationService.getParametersForPath(path);
         if (clientConfig == null || clientConfig.isEmpty()) {
             throw new SessionValidationException(
