@@ -41,6 +41,7 @@ public class AddressSessionService {
     private final ConfigurationService configurationService;
     private final Clock clock;
 
+    @ExcludeFromGeneratedCoverageReport
     public AddressSessionService() {
         this.configurationService = new ConfigurationService();
         this.dataStore =
@@ -51,7 +52,6 @@ public class AddressSessionService {
         clock = Clock.systemUTC();
     }
 
-    @ExcludeFromGeneratedCoverageReport
     public AddressSessionService(
             DataStore<AddressSessionItem> dataStore,
             ConfigurationService configurationService,

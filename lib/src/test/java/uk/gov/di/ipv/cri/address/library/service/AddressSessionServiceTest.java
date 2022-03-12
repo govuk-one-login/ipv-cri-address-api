@@ -159,16 +159,15 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldThrowValidationExceptionClientX509CertDoesNotMatchPrivateKey() {
+    void shouldThrowValidationExceptionWhenClientX509CertDoesNotMatchPrivateKey() {
         SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
         SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
                 new SessionRequestBuilder.SignedJWTBuilder()
                         .setCertificateFile("wrong-cert.crt.pem");
         SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
 
-        Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder);
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
-                .thenReturn(configMap);
+                .thenReturn(standardSSMConfigMap(signedJWTBuilder));
 
         SessionValidationException exception =
                 assertThrows(
@@ -207,16 +206,15 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldThrowValidationException() {
+    void shouldThrowValidationExceptionWhenJWTIsExpired() {
         SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
         SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
                 new SessionRequestBuilder.SignedJWTBuilder()
-                        .setNow(Instant.now().minus(24, ChronoUnit.DAYS));
+                        .setNow(Instant.now().minus(1, ChronoUnit.DAYS));
         SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
 
-        Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder);
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
-                .thenReturn(configMap);
+                .thenReturn(standardSSMConfigMap(signedJWTBuilder));
 
         SessionValidationException exception =
                 assertThrows(
@@ -230,7 +228,7 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldValidateSignedJWT()
+    void shouldValidateJWTSignedWithRSAKey()
             throws IOException, SessionValidationException, ClientConfigurationException {
         SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
         SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
@@ -249,7 +247,7 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldValidateSignedJWTWithEcPki()
+    void shouldValidateJWTSignedWithECKey()
             throws IOException, SessionValidationException, ClientConfigurationException {
         SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
         SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
