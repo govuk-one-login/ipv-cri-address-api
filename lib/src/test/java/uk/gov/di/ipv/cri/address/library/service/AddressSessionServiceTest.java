@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -122,7 +123,7 @@ class AddressSessionServiceTest {
         SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
 
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
-                .thenReturn(correctConfigMap(signedJWTBuilder));
+                .thenReturn(standardSSMConfigMap(signedJWTBuilder));
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
@@ -146,7 +147,7 @@ class AddressSessionServiceTest {
                 Base64.getEncoder().encodeToString("not a jwt".getBytes(StandardCharsets.UTF_8)));
 
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
-                .thenReturn(correctConfigMap(signedJWTBuilder));
+                .thenReturn(standardSSMConfigMap(signedJWTBuilder));
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
@@ -165,7 +166,7 @@ class AddressSessionServiceTest {
                         .setCertificateFile("wrong-cert.crt.pem");
         SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
 
-        Map<String, String> configMap = correctConfigMap(signedJWTBuilder);
+        Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder);
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(configMap);
 
@@ -185,12 +186,11 @@ class AddressSessionServiceTest {
         SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
         SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
                 new SessionRequestBuilder.SignedJWTBuilder()
-                        .setSigningAlgorithm(JWSAlgorithm.RS384);
+                        .setSigningAlgorithm(JWSAlgorithm.RS512);
         SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
 
-        Map<String, String> configMap = correctConfigMap(signedJWTBuilder);
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
-                .thenReturn(configMap);
+                .thenReturn(standardSSMConfigMap(signedJWTBuilder));
 
         SessionValidationException exception =
                 assertThrows(
@@ -202,7 +202,8 @@ class AddressSessionServiceTest {
 
         assertThat(
                 exception.getMessage(),
-                containsString("jwsAlgorithm does not match configuration"));
+                containsString(
+                        "jwt signing algorithm RS512 does not match signing algorithm configured for client: RS256"));
     }
 
     @Test
@@ -213,7 +214,7 @@ class AddressSessionServiceTest {
                         .setNow(Instant.now().minus(24, ChronoUnit.DAYS));
         SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
 
-        Map<String, String> configMap = correctConfigMap(signedJWTBuilder);
+        Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder);
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(configMap);
 
@@ -229,13 +230,37 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldValidateSignedJWT() throws IOException, SessionValidationException, ClientConfigurationException {
+    void shouldValidateSignedJWT()
+            throws IOException, SessionValidationException, ClientConfigurationException {
         SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
         SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
                 new SessionRequestBuilder.SignedJWTBuilder();
         SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
 
-        Map<String, String> configMap = correctConfigMap(signedJWTBuilder);
+        when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
+                .thenReturn(standardSSMConfigMap(signedJWTBuilder));
+
+        SessionRequest result =
+                addressSessionService.validateSessionRequest(marshallToJSON(sessionRequest));
+        assertThat(result.getState(), equalTo(sessionRequest.getState()));
+        assertThat(result.getClientId(), equalTo(sessionRequest.getClientId()));
+        assertThat(result.getRedirectUri(), equalTo(sessionRequest.getRedirectUri()));
+        assertThat(result.getResponseType(), equalTo(sessionRequest.getResponseType()));
+    }
+
+    @Test
+    void shouldValidateSignedJWTWithEcPki()
+            throws IOException, SessionValidationException, ClientConfigurationException {
+        SessionRequestBuilder sessionRequestBuilder = new SessionRequestBuilder();
+        SessionRequestBuilder.SignedJWTBuilder signedJWTBuilder =
+                new SessionRequestBuilder.SignedJWTBuilder();
+        signedJWTBuilder.setPrivateKeyFile("signing_ec.pk8");
+        signedJWTBuilder.setCertificateFile("signing_ec.crt.pem");
+        signedJWTBuilder.setSigningAlgorithm(JWSAlgorithm.ES384);
+        SessionRequest sessionRequest = sessionRequestBuilder.build(signedJWTBuilder);
+
+        Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder);
+        configMap.put("authenticationAlg", "ES384");
         when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
                 .thenReturn(configMap);
 
@@ -247,15 +272,18 @@ class AddressSessionServiceTest {
         assertThat(result.getResponseType(), equalTo(sessionRequest.getResponseType()));
     }
 
-    private Map<String, String> correctConfigMap(SessionRequestBuilder.SignedJWTBuilder builder) {
+    private Map<String, String> standardSSMConfigMap(
+            SessionRequestBuilder.SignedJWTBuilder builder) {
         try {
-            return Map.of(
-                    "redirectUri", "https://www.example/com/callback",
-                    "authenticationAlg", "RS256",
-                    "issuer", "ipv-core",
+
+            HashMap<String, String> map = new HashMap<>();
+            map.put("redirectUri", "https://www.example/com/callback");
+            map.put("authenticationAlg", "RS256");
+            map.put("issuer", "ipv-core");
+            map.put(
                     "publicCertificateToVerify",
-                            Base64.getEncoder()
-                                    .encodeToString(builder.getCertificate().getEncoded()));
+                    Base64.getEncoder().encodeToString(builder.getCertificate().getEncoded()));
+            return map;
         } catch (CertificateEncodingException e) {
             throw new IllegalStateException(e);
         }

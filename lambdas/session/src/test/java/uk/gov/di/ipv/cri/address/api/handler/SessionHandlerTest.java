@@ -50,7 +50,8 @@ class SessionHandlerTest {
 
     @Test
     void shouldCreateAndSaveAddressSession()
-            throws SessionValidationException, ClientConfigurationException, JsonProcessingException {
+            throws SessionValidationException, ClientConfigurationException,
+                    JsonProcessingException {
 
         when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
 
@@ -74,7 +75,8 @@ class SessionHandlerTest {
 
     @Test
     void shouldCatchValidationExceptionAndReturn400Response()
-            throws SessionValidationException, ClientConfigurationException, JsonProcessingException {
+            throws SessionValidationException, ClientConfigurationException,
+                    JsonProcessingException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         SessionValidationException sessionValidationException = new SessionValidationException("");
@@ -97,7 +99,8 @@ class SessionHandlerTest {
 
     @Test
     void shouldCatchServerExceptionAndReturn500Response()
-            throws SessionValidationException, ClientConfigurationException, JsonProcessingException {
+            throws SessionValidationException, ClientConfigurationException,
+                    JsonProcessingException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(addressSessionService.validateSessionRequest("some json"))

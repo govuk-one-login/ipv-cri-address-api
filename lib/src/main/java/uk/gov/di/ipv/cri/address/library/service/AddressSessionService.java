@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -22,6 +23,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Clock;
@@ -90,7 +92,8 @@ public class AddressSessionService {
         return sessionRequest;
     }
 
-    private SessionRequest parseSessionRequest(String requestBody) throws SessionValidationException {
+    private SessionRequest parseSessionRequest(String requestBody)
+            throws SessionValidationException {
         try {
             return new ObjectMapper().readValue(requestBody, SessionRequest.class);
         } catch (JsonProcessingException e) {
@@ -98,7 +101,8 @@ public class AddressSessionService {
         }
     }
 
-    private SignedJWT parseRequestJWT(SessionRequest sessionRequest) throws SessionValidationException {
+    private SignedJWT parseRequestJWT(SessionRequest sessionRequest)
+            throws SessionValidationException {
         try {
             return SignedJWT.parse(sessionRequest.getRequestJWT());
         } catch (ParseException e) {
@@ -130,21 +134,29 @@ public class AddressSessionService {
         }
     }
 
-    private void verifyJWTHeader(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+    private void verifyJWTHeader(
+            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
-        JWSAlgorithm jwsAlgorithm = JWSAlgorithm.parse(clientAuthenticationConfig.get("authenticationAlg"));
-        if (jwsAlgorithm != signedJWT.getHeader().getAlgorithm()) {
-            throw new SessionValidationException("jwsAlgorithm does not match configuration");
+        JWSAlgorithm configuredAlgorithm =
+                JWSAlgorithm.parse(clientAuthenticationConfig.get("authenticationAlg"));
+        JWSAlgorithm jwtAlgorithm = signedJWT.getHeader().getAlgorithm();
+        if (jwtAlgorithm != configuredAlgorithm) {
+            throw new SessionValidationException(
+                    String.format(
+                            "jwt signing algorithm %s does not match signing algorithm configured for client: %s",
+                            jwtAlgorithm, configuredAlgorithm));
         }
     }
 
-    private void verifyJWTSignature(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+    private void verifyJWTSignature(
+            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException, ClientConfigurationException {
-        String publicCertificateToVerify = clientAuthenticationConfig.get("publicCertificateToVerify");
+        String publicCertificateToVerify =
+                clientAuthenticationConfig.get("publicCertificateToVerify");
         try {
-            Certificate certificateFromConfig = getCertificateFromConfig(publicCertificateToVerify);
+            PublicKey pubicKeyFromConfig = getPubicKeyFromConfig(publicCertificateToVerify);
 
-            if (!validSignature(signedJWT, certificateFromConfig)) {
+            if (!validSignature(signedJWT, pubicKeyFromConfig)) {
                 throw new SessionValidationException("JWT signature verification failed");
             }
         } catch (JOSEException e) {
@@ -154,11 +166,14 @@ public class AddressSessionService {
         }
     }
 
-    private void verifyJWTClaimsSet(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+    private void verifyJWTClaimsSet(
+            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
-                        new JWTClaimsSet.Builder().issuer(clientAuthenticationConfig.get("issuer")).build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer(clientAuthenticationConfig.get("issuer"))
+                                .build(),
                         new HashSet<>(Arrays.asList("exp", "nbf")));
 
         try {
@@ -168,16 +183,25 @@ public class AddressSessionService {
         }
     }
 
-    private Certificate getCertificateFromConfig(String base64) throws CertificateException {
+    private PublicKey getPubicKeyFromConfig(String base64) throws CertificateException {
         byte[] binaryCertificate = Base64.getDecoder().decode(base64);
         CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        return factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
+        Certificate certificate =
+                factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
+        return certificate.getPublicKey();
     }
 
-    private boolean validSignature(SignedJWT signedJWT, Certificate clientCertificate)
-            throws JOSEException {
-        PublicKey publicKey = clientCertificate.getPublicKey();
-        RSASSAVerifier rsassaVerifier = new RSASSAVerifier((RSAPublicKey) publicKey);
-        return signedJWT.verify(rsassaVerifier);
+    private boolean validSignature(SignedJWT signedJWT, PublicKey clientPublicKey)
+            throws JOSEException, ClientConfigurationException {
+        if (clientPublicKey instanceof RSAPublicKey) {
+            RSASSAVerifier rsassaVerifier = new RSASSAVerifier((RSAPublicKey) clientPublicKey);
+            return signedJWT.verify(rsassaVerifier);
+        } else if (clientPublicKey instanceof ECPublicKey) {
+            ECDSAVerifier ecdsaVerifier = new ECDSAVerifier((ECPublicKey) clientPublicKey);
+            return signedJWT.verify(ecdsaVerifier);
+        } else {
+            throw new ClientConfigurationException(
+                    new IllegalStateException("unknown public JWT signing key"));
+        }
     }
 }

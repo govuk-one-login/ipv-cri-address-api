@@ -3,8 +3,8 @@ package uk.gov.di.ipv.cri.address.library.service;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
@@ -18,6 +18,8 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
@@ -56,18 +58,13 @@ public class SessionRequestBuilder {
 
     static class SignedJWTBuilder {
 
-        private KeyUse keyUse = KeyUse.SIGNATURE;
         private String issuer = "ipv-core";
         private Instant now = Instant.now();
         private JWSAlgorithm signingAlgorithm = JWSAlgorithm.RS256;
         private PrivateKey privateKey = null;
         private Certificate certificate = null;
         private String certificateFile = "address-cri-test.crt.pem";
-
-        public SignedJWTBuilder setKeyUse(KeyUse keyUse) {
-            this.keyUse = keyUse;
-            return this;
-        }
+        private String privateKeyFile = "address-cri-test.pk8";
 
         public SignedJWTBuilder setNow(Instant now) {
             this.now = now;
@@ -84,12 +81,13 @@ public class SessionRequestBuilder {
             return this;
         }
 
-        public void setIssuer(String issuer) {
-            this.issuer = issuer;
+        public SignedJWTBuilder setPrivateKeyFile(String privateKeyFile) {
+            this.privateKeyFile = privateKeyFile;
+            return this;
         }
 
-        public PrivateKey getPrivateKey() {
-            return privateKey;
+        public void setIssuer(String issuer) {
+            this.issuer = issuer;
         }
 
         public Certificate getCertificate() {
@@ -108,7 +106,7 @@ public class SessionRequestBuilder {
         public SignedJWT build() {
             try {
 
-                privateKey = getPrivateKeyFromResources("address-cri-test.pk8");
+                privateKey = getPrivateKeyFromResources(privateKeyFile);
                 certificate = generateCertificate(certificateFile);
 
                 String kid = UUID.randomUUID().toString();
@@ -126,7 +124,11 @@ public class SessionRequestBuilder {
                                         .claim("claims", Map.of("vc_http_api", Map.of()))
                                         .build());
 
-                signedJWT.sign(new RSASSASigner(this.privateKey));
+                if (privateKey instanceof RSAPrivateKey) {
+                    signedJWT.sign(new RSASSASigner(this.privateKey));
+                } else {
+                    signedJWT.sign(new ECDSASigner((ECPrivateKey) this.privateKey));
+                }
 
                 return signedJWT;
             } catch (JOSEException e) {
@@ -137,7 +139,11 @@ public class SessionRequestBuilder {
         private PrivateKey getPrivateKeyFromResources(String resourceName) {
             try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName)) {
                 PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(is.readAllBytes());
-                return KeyFactory.getInstance("RSA").generatePrivate(spec);
+                if (this.signingAlgorithm.toString().startsWith("RS")) {
+                    return KeyFactory.getInstance("RSA").generatePrivate(spec);
+                } else {
+                    return KeyFactory.getInstance("EC").generatePrivate(spec);
+                }
 
             } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
                 throw new IllegalStateException(e);
