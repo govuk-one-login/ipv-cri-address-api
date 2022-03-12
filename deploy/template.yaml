@@ -14,6 +14,22 @@ Parameters:
       - prod
     ConstraintDescription: specify dev, staging, integration or prod for environment
 
+Conditions:
+  CreateDevResources: !Equals
+    - !Ref Environment
+    - dev
+  CreateStagingResources: !Equals
+    - !Ref Environment
+    - staging
+  CreateIntegrationResources: !Equals
+    - !Ref Environment
+    - integration
+  CreateProdResources: !Equals
+    - !Ref Environment
+    - prod
+  CreateNonProdResources: !Not
+    - Condition: CreateProdResources
+
   OrdnanceSurveyAPIKey:
     Description: Ordnance Survey API Key
     Type: String
@@ -202,6 +218,7 @@ Resources:
 
   ParameterIPVCoreStubPublicCertificateToVerify:
     Type: AWS::SSM::Parameter
+    Condition: CreateNonProdResources
     Properties:
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/publicCertificateToVerify
       Value: MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw==
@@ -209,6 +226,7 @@ Resources:
 
   ParameterIPVCoreStubAuthenticationAlg:
     Type: AWS::SSM::Parameter
+    Condition: CreateNonProdResources
     Properties:
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg
       Value: RS256
@@ -216,6 +234,7 @@ Resources:
 
   ParameterIPVCoreStubRedirectURI:
     Type: AWS::SSM::Parameter
+    Condition: CreateNonProdResources
     Properties:
       Type: String
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/redirectUri
@@ -223,6 +242,7 @@ Resources:
 
   ParameterIPVCoreStubIssuer:
     Type: AWS::SSM::Parameter
+    Condition: CreateNonProdResources
     Properties:
       Type: String
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer
