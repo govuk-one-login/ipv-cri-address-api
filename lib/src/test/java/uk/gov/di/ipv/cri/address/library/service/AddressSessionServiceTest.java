@@ -17,7 +17,6 @@ import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateEncodingException;
@@ -28,13 +27,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -66,7 +64,7 @@ class AddressSessionServiceTest {
         addressSessionService.createAndSaveAddressSession(sessionRequest);
         verify(mockDataStore).create(mockAddressSessionItem.capture());
         AddressSessionItem capturedValue = mockAddressSessionItem.getValue();
-        assertTrue(capturedValue.getSessionId() instanceof UUID);
+        assertNotNull(capturedValue.getSessionId());
         assertThat(capturedValue.getExpiryDate(), equalTo(fixedInstant.getEpochSecond() + 1));
         assertThat(capturedValue.getClientId(), equalTo("a client id"));
         assertThat(capturedValue.getState(), equalTo("state"));
@@ -285,11 +283,6 @@ class AddressSessionServiceTest {
         } catch (CertificateEncodingException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    private String getRequestBody(String file) throws IOException {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(file);
-        return new String(inputStream.readAllBytes());
     }
 
     private String marshallToJSON(Object sessionRequest) throws IOException {
