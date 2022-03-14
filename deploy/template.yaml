@@ -42,7 +42,7 @@ Conditions:
 
 Globals:
   Function:
-    : !Ref AddressCriCodeSigning
+    CodeSigningConfigArn: !Ref AddressCriCodeSigning
     Timeout: 30 # seconds
     Runtime: java11
     AutoPublishAlias: live
