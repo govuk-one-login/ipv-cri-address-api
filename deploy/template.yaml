@@ -9,10 +9,20 @@ Parameters:
     Type: String
     AllowedValues:
       - dev
+      - build
       - staging
       - integration
       - prod
-    ConstraintDescription: specify dev, staging, integration or prod for environment
+    ConstraintDescription: specify dev, build, staging, integration or prod for environment
+  OrdnanceSurveyAPIKey:
+    Description: Ordnance Survey API Key
+    Type: String
+    Default: testapikey
+
+  OrdnanceSurveyAPIURL:
+    Description: Ordnance Survey API URL
+    Type: String
+    Default: "https://api.os.uk/search/places/v1/postcode"
 
 Conditions:
   CreateDevResources: !Equals
@@ -30,18 +40,9 @@ Conditions:
   CreateNonProdResources: !Not
     - Condition: CreateProdResources
 
-  OrdnanceSurveyAPIKey:
-    Description: Ordnance Survey API Key
-    Type: String
-    Default: testapikey
-
-  OrdnanceSurveyAPIURL:
-    Description: Ordnance Survey API URL
-    Type: String
-    Default: "https://api.os.uk/search/places/v1/postcode"
-
 Globals:
   Function:
+    : !Ref AddressCriCodeSigning
     Timeout: 30 # seconds
     Runtime: java11
     AutoPublishAlias: live
