@@ -54,12 +54,12 @@ destroy fe
 
 
 
-core -[#green]> api: /token
+core -[#green]> api: /token (auth code)
 activate api
 api -> api: create token
 api -> db: write token
 return token
-core -[#green]> api: /credential/issue
+core -[#green]> api: /credential/issue (token)
 activate api
 api -> api: use AuthenticationResult in verifiable-credential
 return verifiable-credential

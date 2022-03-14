@@ -4,9 +4,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -47,20 +47,20 @@ public class PostcodeLookupHandler
         try {
             List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
 
-            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, results);
 
         } catch (PostcodeLookupProcessingException e) {
             log.error("PostcodeLookupProcessingException: {}", e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         } catch (PostcodeLookupValidationException e) {
             log.error("PostcodeLookupValidationException: {}", e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
+                    HttpStatus.SC_BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
         } catch (Exception e) {
             log.error("Exception: {}", e.getMessage());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         }
     }
 }

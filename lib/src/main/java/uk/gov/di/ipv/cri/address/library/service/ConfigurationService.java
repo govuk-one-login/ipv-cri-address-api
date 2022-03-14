@@ -4,6 +4,7 @@ import software.amazon.lambda.powertools.parameters.ParamManager;
 import software.amazon.lambda.powertools.parameters.SSMProvider;
 import software.amazon.lambda.powertools.parameters.SecretsProvider;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -42,6 +43,11 @@ public class ConfigurationService {
 
     public String getParameterName(SSMParameterName parameterName) {
         return String.format("/%s/%s", parameterPrefix, parameterName.parameterName);
+    }
+
+    public Map<String, String> getParametersForPath(String path) {
+        String format = String.format("/%s/%s", parameterPrefix, path);
+        return ssmProvider.recursive().getMultiple(format.replace("//", "/"));
     }
 
     public enum SSMParameterName {

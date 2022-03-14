@@ -82,7 +82,8 @@ subprojects {
 
 		tests "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}",
 				"org.junit.jupiter:junit-jupiter-params:${dependencyVersions.junit}",
-				"org.mockito:mockito-junit-jupiter:4.3.1"
+				"org.mockito:mockito-junit-jupiter:4.3.1",
+				"org.hamcrest:hamcrest:2.2"
 
 		test_runtime "org.junit.jupiter:junit-jupiter-engine:${dependencyVersions.junit}"
 	}
