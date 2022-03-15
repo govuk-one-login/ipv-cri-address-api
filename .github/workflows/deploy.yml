@@ -36,11 +36,11 @@ jobs:
       - name: Gradle build
         run: ./gradlew clean build
 
-      - name: SAM build
-        run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} --parameter-overrides CodeSigningConfigArn=${{ secrets.CODE_SIGNING_CONFIG_ARN }}
-
       - name: SAM Validate
         run: sam validate --region ${{ env.AWS_REGION }} -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
+      
+      - name: SAM build
+        run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
 
       - name: SAM package
         run: |
