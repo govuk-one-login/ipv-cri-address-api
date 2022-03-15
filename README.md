@@ -42,6 +42,6 @@ Required GitHub secrets:
 
 | Secret | Description |
 | ------ | ----------- |
-| AWS_ROLE_ARN | Assumed role IAM ARN |
-| AWS_PROFILE_PATH | Parameter Store path to the signing profile versioned ARN |
-| AWS_ROLE_SESSION | Assumed Role Session ID |
+| ARTIFACT_SOURCE_BUCKET_NAME | Upload artifact bucket |
+| GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
+| SIGNING_PROFILE_NAME | Signing profile name |
