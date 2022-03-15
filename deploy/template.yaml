@@ -3,6 +3,10 @@ Transform: "AWS::Serverless-2016-10-31"
 Description: "Digital Identity IPV CRI Address API"
 
 Parameters:
+  CodeSigningConfigArn:
+    Type: String
+    Description: >
+      The ARN of the Code Signing Config to use, provided by the deployment pipeline
   Environment:
     Description: environment name
     Default: dev
@@ -42,7 +46,7 @@ Conditions:
 
 Globals:
   Function:
-    CodeSigningConfigArn: !Ref AddressCriCodeSigning
+    CodeSigningConfigArn: !Ref CodeSigningConfigArn
     Timeout: 30 # seconds
     Runtime: java11
     AutoPublishAlias: live
@@ -137,16 +141,6 @@ Resources:
                 - ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIURL"
-
-  AddressCriCodeSigning:
-    Type: AWS::Lambda::CodeSigningConfig
-    Properties:
-      Description: "Code Signing for Address CRI API"
-      AllowedPublishers:
-        SigningProfileVersionArns:
-          - "{{resolve:ssm:/dev/credentialIssuers/cri/sam/signingProfileVersionArn}}"
-      CodeSigningPolicies:
-        UntrustedArtifactOnDeployment: "Enforce"
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
