@@ -64,14 +64,12 @@ public class AccessTokenHandler
                             authorizationCodeFromRequest);
 
             if (addressSessionItem == null) {
-                String message = String.format("Session with could not be found in the database.");
-                LOGGER.error(message);
+                LOGGER.error("Session with could not be found in the database.");
                 return ApiGatewayResponseGenerator.proxyJsonResponse(
                         OAuth2Error.INVALID_GRANT.getHTTPStatusCode(),
                         OAuth2Error.INVALID_GRANT.toJSONObject());
             }
-            if (!authorizationCodeFromRequest.equalsIgnoreCase(
-                    addressSessionItem.getAuthorizationCode())) {
+            if (!authorizationCodeFromRequest.equals(addressSessionItem.getAuthorizationCode())) {
                 LOGGER.error(
                         "Access Token could not be issued. The supplied authorization code was not found in the database.");
                 return ApiGatewayResponseGenerator.proxyJsonResponse(
@@ -89,7 +87,9 @@ public class AccessTokenHandler
 
         } catch (ParseException e) {
             LOGGER.error(
-                    "Token request could not be parsed: " + e.getErrorObject().getDescription(), e);
+                    "Token request could not be parsed: {} {}",
+                    e.getErrorObject().getDescription(),
+                    e);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     getHttpStatusCodeForErrorResponse(e.getErrorObject()),
                     e.getErrorObject().toJSONObject());

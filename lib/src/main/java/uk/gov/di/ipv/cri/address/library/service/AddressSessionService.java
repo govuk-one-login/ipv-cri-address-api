@@ -252,7 +252,7 @@ public class AddressSessionService {
             final String authorizationCode) {
         DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
         DynamoDbIndex<AddressSessionItem> index =
-                addressSessionTable.index("authorizationCode-index");
+                addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
 
         AttributeValue attVal = AttributeValue.builder().s(authorizationCode).build();
 
