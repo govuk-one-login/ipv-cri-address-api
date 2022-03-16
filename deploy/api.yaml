@@ -284,15 +284,13 @@ components:
           example: "GBR"
         residentFrom:
           type: "string"
-          format: "date"
           example: "2020-01-01"
         residentTo:
           type: "string"
-          format: "date"
           example: "2020-12-31"
         currentResidency:
-          type: "boolean"
-          example: true
+          type: "string"
+          example: "true"
 
 
 x-amazon-apigateway-request-validators:

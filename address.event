@@ -3,11 +3,11 @@
   "path": "/address",
   "httpMethod": "PUT",
   "headers": {
-    "session_id": "6af6e06c-324c-495c-8977-8cbf9f526093"
+    "session_id": "1ae930db-1116-433a-a64e-8b5e6512f987"
   },
   "multiValueHeaders": {
     "session_id": [
-      "6af6e06c-324c-495c-8977-8cbf9f526093"
+      "1ae930db-1116-433a-a64e-8b5e6512f987"
     ]
   },
   "queryStringParameters": null,

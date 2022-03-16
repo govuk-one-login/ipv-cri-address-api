@@ -7,6 +7,8 @@ Parameters:
     Type: String
     Description: >
       The ARN of the Code Signing Config to use, provided by the deployment pipeline
+    Default: "none"
+
   Environment:
     Description: environment name
     Default: dev
@@ -35,6 +37,12 @@ Parameters:
     Default: "https://api.os.uk/search/places/v1/postcode"
 
 Conditions:
+  UseCodeSigning:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref CodeSigningConfigArn
+          - "none"
+
   CreateDevResources: !Equals
     - !Ref Environment
     - dev
@@ -95,6 +103,10 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
+      CodeSigningConfigArn: !If
+        - UseCodeSigning
+        - !Ref CodeSigningConfigArn
+        - !Ref AWS::NoValue
       CodeUri: ../lambdas/session/build/distributions/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Environment:
@@ -124,8 +136,11 @@ Resources:
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
-    DependsOn: [SecretOrdnanceSurveyAPIKey, ParameterOrdnanceSurveyAPIURL]
     Properties:
+      CodeSigningConfigArn: !If
+        - UseCodeSigning
+        - !Ref CodeSigningConfigArn
+        - !Ref AWS::NoValue
       CodeUri: ../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       Environment:
@@ -168,6 +183,10 @@ Resources:
   AddressFunction:
     Type: AWS::Serverless::Function
     Properties:
+      CodeSigningConfigArn: !If
+        - UseCodeSigning
+        - !Ref CodeSigningConfigArn
+        - !Ref AWS::NoValue
       CodeUri: ../lambdas/address/build/distributions/address.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       Environment:
