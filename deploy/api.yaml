@@ -4,6 +4,60 @@ info:
   title: "Address Credential Issuer API"
 
 paths:
+  /address:
+    put:
+      parameters:
+        - in: header
+          name: "session_id"
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddressRequest"
+        required: true
+      responses:
+        200:
+          description: "Address saved successfully"
+        201:
+          description: "Address saved and credential issued"
+          content:
+            application/json:
+              schema:
+                type: string
+        400:
+          description: "Bad request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        401:
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      x-amazon-apigateway-request-validator: "Validate body"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddressFunction.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+
   /postcode-lookup/{postcode}:
     get:
       parameters:
@@ -13,6 +67,12 @@ paths:
           description: The postcode to look up
           schema:
             type: string
+        - in: header
+          name: "session_id"
+          schema:
+            type: string
+            format: uuid
+          required: true
       responses:
         "400":
           description: "400 response"
@@ -32,7 +92,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PostcodeLookupResponse"
-      x-amazon-apigateway-request-validator: "Validate request"
+      x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
@@ -131,6 +191,11 @@ components:
       type: "array"
       items:
         $ref: "#/components/schemas/CanonicalAddress"
+    AddressRequest:
+      title: "Address Update Request"
+      type: "array"
+      items:
+        $ref: "#/components/schemas/CanonicalAddressWithResidency"
     CanonicalAddress:
       title: "Canonical Address"
       type: "object"
@@ -174,6 +239,61 @@ components:
         countryCode:
           type: "string"
           example: "GBR"
+    CanonicalAddressWithResidency:
+      title: "Canonical Address with Residency Dates"
+      type: "object"
+      properties:
+        uprn:
+          type: "string"
+          example: "1234567890"
+        organisationName:
+          type: "string"
+          example: "Some Organisation"
+        departmentName:
+          type: "string"
+          example: "Some Department"
+        subBuildingName:
+          type: "string"
+          example: "Some Sub Building"
+        buildingNumber:
+          type: "string"
+          example: "1"
+        dependentThoroughfare:
+          type: "string"
+          example: "Some Street"
+        doubleDependentLocality:
+          type: "string"
+          example: "Some Town"
+        dependentLocality:
+          type: "string"
+          example: "Some Area"
+        buildingName:
+          type: "string"
+          example: "Some Building"
+        thoroughfareName:
+          type: "string"
+          example: "Some Street"
+        postTown:
+          type: "string"
+          example: "Some Town"
+        postcode:
+          type: "string"
+          example: "SW1A 1AA"
+        countryCode:
+          type: "string"
+          example: "GBR"
+        residentFrom:
+          type: "string"
+          format: "date"
+          example: "2020-01-01"
+        residentTo:
+          type: "string"
+          format: "date"
+          example: "2020-12-31"
+        currentResidency:
+          type: "boolean"
+          example: true
+
 
 x-amazon-apigateway-request-validators:
   Validate body:
@@ -182,5 +302,9 @@ x-amazon-apigateway-request-validators:
 
   Validate request:
     validateRequestBody: false
+    validateRequestParameters: true
+
+  Validate both:
+    validateRequestBody: true
     validateRequestParameters: true
 

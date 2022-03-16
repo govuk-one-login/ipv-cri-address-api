@@ -12,8 +12,8 @@ import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
-import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.exception.*;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
@@ -28,11 +28,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class AddressSessionService {
 
@@ -202,5 +198,59 @@ public class AddressSessionService {
             throw new ClientConfigurationException(
                     new IllegalStateException("unknown public JWT signing key"));
         }
+    }
+
+    public List<CanonicalAddressWithResidency> parseAddresses(String addressBody)
+            throws AddressProcessingException {
+        List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            addresses = mapper.readValue(addressBody, List.class);
+        } catch (JsonProcessingException e) {
+            throw new AddressProcessingException(
+                    "could not parse addresses..." + e.getMessage(), e);
+        }
+
+        return addresses;
+    }
+
+    public AddressSessionItem getSession(String sessionId) throws SessionNotFoundException {
+        return dataStore.getItem(sessionId);
+    }
+
+    public void validateSessionId(String sessionId)
+            throws SessionValidationException, SessionNotFoundException, SessionExpiredException {
+        if (sessionId == null) {
+            throw new SessionValidationException("session id is null");
+        }
+        if (sessionId.isEmpty()) {
+            throw new SessionValidationException("session id is empty");
+        }
+
+        AddressSessionItem sessionItem = dataStore.getItem(sessionId);
+        if (sessionItem == null) {
+            throw new SessionNotFoundException("session not found");
+        }
+
+        if (sessionItem.getExpiryDate() < clock.instant().getEpochSecond()) {
+            throw new SessionExpiredException("session expired");
+        }
+    }
+
+    public void saveAddresses(String sessionId, List<CanonicalAddressWithResidency> addresses)
+            throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
+        validateSessionId(sessionId);
+
+        var sessionItem = dataStore.getItem(sessionId);
+        sessionItem.setAddresses(addresses);
+        dataStore.update(sessionItem);
+    }
+
+    public List<CanonicalAddressWithResidency> getAddresses(String sessionId)
+            throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
+        validateSessionId(sessionId);
+
+        var sessionItem = dataStore.getItem(sessionId);
+        return sessionItem.getAddresses();
     }
 }

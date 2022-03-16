@@ -1,9 +1,12 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
+import uk.gov.di.ipv.cri.address.library.helpers.AddressListConverter;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @DynamoDbBean
@@ -13,9 +16,12 @@ public class AddressSessionItem {
     private String clientId;
     private String state;
     private URI redirectUri;
+    private List<CanonicalAddressWithResidency> addresses;
 
     public AddressSessionItem() {
+
         sessionId = UUID.randomUUID();
+        addresses = new ArrayList<>();
     }
 
     @DynamoDbPartitionKey()
@@ -57,5 +63,18 @@ public class AddressSessionItem {
 
     public URI getRedirectUri() {
         return redirectUri;
+    }
+
+    @DynamoDbConvertedBy(AddressListConverter.class)
+    public List<CanonicalAddressWithResidency> getAddresses() {
+        // Handle sessions created before the addresses were added to the session
+        if (addresses == null) {
+            addresses = new ArrayList<>();
+        }
+        return addresses;
+    }
+
+    public void setAddresses(List<CanonicalAddressWithResidency> addresses) {
+        this.addresses = addresses;
     }
 }

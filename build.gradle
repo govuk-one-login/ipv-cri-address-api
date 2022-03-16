@@ -72,7 +72,8 @@ subprojects {
 		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
 				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",
 				"com.fasterxml.jackson.core:jackson-annotations:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${dependencyVersions.jackson_version}"
+				"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${dependencyVersions.jackson_version}",
+				"com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${dependencyVersions.jackson_version}"
 
 		powertools "software.amazon.lambda:powertools-logging:${dependencyVersions.powertools_version}",
 				"software.amazon.lambda:powertools-metrics:${dependencyVersions.powertools_version}"

@@ -1,4 +1,21 @@
-{"resource":"/postcode-lookup/{postcode}","path":"/postcode-lookup/ls104ql","httpMethod":"GET","headers":null,"multiValueHeaders":null,"queryStringParameters":null,"multiValueQueryStringParameters":null,"pathParameters":{"postcode":"ls104ql"},"stageVariables":null,
+{
+  "resource": "/postcode-lookup/{postcode}",
+  "path": "/postcode-lookup/ls104ql",
+  "httpMethod": "GET",
+  "headers": {
+    "session_id": "6af6e06c-324c-495c-8977-8cbf9f526093"
+  },
+  "multiValueHeaders": {
+    "session_id": [
+      "6af6e06c-324c-495c-8977-8cbf9f526093"
+    ]
+  },
+  "queryStringParameters": null,
+  "multiValueQueryStringParameters": null,
+  "pathParameters": {
+    "postcode": "ls104ql"
+  },
+  "stageVariables": null,
   "requestContext": {
     "accountId": "123456789012",
     "resourceId": "123456",
