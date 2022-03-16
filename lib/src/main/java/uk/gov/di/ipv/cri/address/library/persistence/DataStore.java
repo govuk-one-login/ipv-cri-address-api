@@ -47,6 +47,11 @@ public class DataStore<T> {
         getTable().putItem(item);
     }
 
+    public DynamoDbTable<T> getTable() {
+        return dynamoDbEnhancedClient.table(
+                tableName, TableSchema.fromBean(this.typeParameterClass));
+    }
+
     public T getItem(String partitionValue, String sortValue) {
         return getItemByKey(
                 Key.builder().partitionValue(partitionValue).sortValue(sortValue).build());
@@ -84,11 +89,6 @@ public class DataStore<T> {
 
     private T delete(Key key) {
         return getTable().deleteItem(key);
-    }
-
-    private DynamoDbTable<T> getTable() {
-        return dynamoDbEnhancedClient.table(
-                tableName, TableSchema.fromBean(this.typeParameterClass));
     }
 
     private static DynamoDbClientBuilder getDynamoDbClientBuilder(DynamoDbClientBuilder builder) {

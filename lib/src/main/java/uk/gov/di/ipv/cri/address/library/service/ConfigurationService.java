@@ -3,8 +3,9 @@ package uk.gov.di.ipv.cri.address.library.service;
 import software.amazon.lambda.powertools.parameters.ParamManager;
 import software.amazon.lambda.powertools.parameters.SSMProvider;
 import software.amazon.lambda.powertools.parameters.SecretsProvider;
-import java.util.Map;
+
 import java.net.URI;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 

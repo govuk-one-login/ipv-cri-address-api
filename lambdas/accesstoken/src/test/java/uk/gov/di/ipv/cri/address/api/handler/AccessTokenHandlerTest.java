@@ -54,7 +54,6 @@ class AccessTokenHandlerTest {
         String tokenRequestBody =
                 "code=12345&redirect_uri=http://test.com&grant_type=authorization_code&client_id=test_client_id";
         event.withBody(tokenRequestBody);
-        event.withHeaders(Map.of(AccessTokenHandler.SESSION_ID, "a-session-id"));
         AddressSessionItem AddressSessionItem = mock(AddressSessionItem.class);
         AccessToken accessToken = new BearerAccessToken();
         tokenResponse = new AccessTokenResponse(new Tokens(accessToken, null));
@@ -62,7 +61,8 @@ class AccessTokenHandlerTest {
         // TODO: This here as a placeholder pending the story that generates the authorization code
         when(AddressSessionItem.getAuthorizationCode()).thenReturn("12345");
         when(mockAddressSessionService.createToken(any())).thenReturn(tokenResponse);
-        when(mockAddressSessionService.getAddressSessionItem(any())).thenReturn(AddressSessionItem);
+        when(mockAddressSessionService.getAddressSessionItemByAuthorizationCode(any()))
+                .thenReturn(AddressSessionItem);
         when(mockAddressSessionService.validateTokenRequest(any()))
                 .thenReturn(ValidationResult.createValidResult());
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
@@ -71,7 +71,7 @@ class AccessTokenHandlerTest {
                 objectMapper.readValue(response.getBody(), new TypeReference<>() {});
         assertEquals(
                 ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
-        assertEquals(200, response.getStatusCode());
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
         assertEquals(
                 tokenResponse.toSuccessResponse().getTokens().getAccessToken().getValue(),
                 responseBody.get("access_token").toString());
@@ -82,7 +82,6 @@ class AccessTokenHandlerTest {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         String invalidTokenRequest = "invalid-token-request";
         event.withBody(invalidTokenRequest);
-        event.withHeaders(Map.of(AccessTokenHandler.SESSION_ID, "a-session-id"));
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
@@ -103,7 +102,6 @@ class AccessTokenHandlerTest {
                         + GrantType.IMPLICIT.getValue()
                         + "&client_id=test_client_id";
 
-        event.withHeaders(Map.of(AccessTokenHandler.SESSION_ID, "a-session-id"));
         event.withBody(tokenRequestBody);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
@@ -126,7 +124,6 @@ class AccessTokenHandlerTest {
         String tokenRequestBody =
                 "code=12345&redirect_uri=http://test.com&grant_type=authorization_code&client_id=test_client_id";
         event.withBody(tokenRequestBody);
-        event.withHeaders(Map.of(AccessTokenHandler.SESSION_ID, "a-session-id"));
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
@@ -145,12 +142,12 @@ class AccessTokenHandlerTest {
                 "code=12345&redirect_uri=http://test.com&grant_type=authorization_code&client_id=test_client_id";
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         event.withBody(tokenRequestBody);
-        event.withHeaders(Map.of(AccessTokenHandler.SESSION_ID, "a-session-id"));
 
         when(mockAddressSessionService.validateTokenRequest(any()))
                 .thenReturn(ValidationResult.createValidResult());
 
-        when(mockAddressSessionService.getAddressSessionItem(any())).thenReturn(null);
+        when(mockAddressSessionService.getAddressSessionItemByAuthorizationCode(any()))
+                .thenReturn(null);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 

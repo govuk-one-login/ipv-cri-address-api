@@ -180,13 +180,6 @@ Resources:
       CodeSigningPolicies:
         UntrustedArtifactOnDeployment: "Enforce"
 
-  SessionFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt SessionFunction.Arn
-      Principal: apigateway.amazonaws.com
-
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
