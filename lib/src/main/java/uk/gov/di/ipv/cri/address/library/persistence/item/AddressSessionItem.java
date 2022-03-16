@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @DynamoDbBean
 public class AddressSessionItem {
+    public static final String AUTHORIZATION_CODE_INDEX = "authorizationCode-index";
     private UUID sessionId;
     private long expiryDate;
     private String clientId;
@@ -72,7 +73,7 @@ public class AddressSessionItem {
         return accessToken;
     }
 
-    @DynamoDbSecondaryPartitionKey(indexNames = "authorizationCode-index")
+    @DynamoDbSecondaryPartitionKey(indexNames = AUTHORIZATION_CODE_INDEX)
     public void setAuthorizationCode(String authorizationCode) {
         this.authorizationCode = authorizationCode;
     }
