@@ -105,7 +105,7 @@ paths:
         type: "aws_proxy"
 
   /session:
-    put:
+    post:
       requestBody:
         content:
           application/json:
@@ -160,7 +160,7 @@ components:
         client_id:
           type: "string"
           minLength: 1
-          example: "ipv-core"
+          example: "ipv-core-stub"
         state:
           type: "string"
           example: "state"
@@ -168,7 +168,7 @@ components:
         redirect_uri:
           type: "string"
           format: "uri"
-          example: "https://www.example/com/callback"
+          example: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
         request:
           type: "string"
           pattern: "[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_\\-\\+\\/=]+"

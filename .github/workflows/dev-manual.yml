@@ -1,17 +1,18 @@
-name: Deploy
+name: DevManual
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+
 jobs:
   deploy:
-    name: Deploy
+    name: DevManual
     runs-on: ubuntu-latest
-    environment: di-ipv-cri-address-build
+    environment: di-ipv-cri-dev
     timeout-minutes: 15
     env:
       AWS_REGION: eu-west-2
-      ENVIRONMENT: build
+      ENVIRONMENT: dev
+      STACK_NAME: di-ipv-cri-address-api-dev
+      ROLLBACK_ACTION: "--disable-rollback"
     permissions:
       id-token: write
       contents: read
@@ -31,30 +32,26 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
+          # role-session-name: ${{ secrets.AWS_ROLE_SESSION }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Gradle build
         run: ./gradlew clean build
-
+        
       - name: SAM Validate
         run: sam validate --region ${{ env.AWS_REGION }} -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
-      
+
       - name: SAM build
-        run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
+        run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} 
 
-      - name: SAM package
+      # - name: Upload API config
+      #   run: aws s3 cp deploy/api.yaml s3://${{ secrets.AWS_CONFIG_BUCKET }}/${{ env.ENVIRONMENT }}/api.yaml
+
+      - name: SAM deploy
         run: |
-          sam package -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} \
+          sam deploy -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} \
+            --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} \
             --signing-profiles SessionFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
-            PostcodeLookupFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
-            --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
-            --region ${{ env.AWS_REGION }} --output-template-file=cf-template.yaml
-
-      - name: Zip the CloudFormation template
-        run: zip template.zip cf-template.yaml
-
-      - name: Upload zipped CloudFormation artifact to S3
-        env:
-          ARTIFACT_SOURCE_BUCKET_NAME: ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }}
-        run: aws s3 cp template.zip "s3://$ARTIFACT_SOURCE_BUCKET_NAME/template.zip"
-
+            --stack-name ${{ env.STACK_NAME }} --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
+            --s3-prefix ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM \
+            --parameter-overrides CodeSigningConfigArn=${{ secrets.CODE_SIGNING_CONFIG_ARN }}

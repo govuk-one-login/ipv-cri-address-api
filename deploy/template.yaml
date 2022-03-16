@@ -3,16 +3,26 @@ Transform: "AWS::Serverless-2016-10-31"
 Description: "Digital Identity IPV CRI Address API"
 
 Parameters:
+  CodeSigningConfigArn:
+    Type: String
+    Description: >
+      The ARN of the Code Signing Config to use, provided by the deployment pipeline
   Environment:
     Description: environment name
     Default: dev
     Type: String
     AllowedValues:
       - dev
+      - build
       - staging
       - integration
       - prod
-    ConstraintDescription: specify dev, staging, integration or prod for environment
+    ConstraintDescription: specify dev, build, staging, integration or prod for environment
+
+  OrdnanceSurveyAPIURL:
+    Description: Ordnance Survey API URL
+    Type: String
+    Default: "https://api.os.uk/search/places/v1/postcode"
 
   OrdnanceSurveyAPIKey:
     Description: Ordnance Survey API Key
@@ -42,6 +52,7 @@ Conditions:
 
 Globals:
   Function:
+    CodeSigningConfigArn: !Ref CodeSigningConfigArn
     Timeout: 30 # seconds
     Runtime: java11
     AutoPublishAlias: live
@@ -65,8 +76,8 @@ Resources:
       TracingEnabled: true
       Name: !Sub "Address CRI - ${AWS::StackName}"
       StageName: !Sub Environment
-#      Auth:
-#        DefaultAuthorizer: AWS_IAM
+      #      Auth:
+      #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
         openapi: "3.0.1" # workaround to get `sam validate` to work
         paths: # workaround to get `sam validate` to work
@@ -183,16 +194,6 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-  AddressCriCodeSigning:
-    Type: AWS::Lambda::CodeSigningConfig
-    Properties:
-      Description: "Code Signing for Address CRI API"
-      AllowedPublishers:
-        SigningProfileVersionArns:
-          - "{{resolve:ssm:/dev/credentialIssuers/cri/sam/signingProfileVersionArn}}"
-      CodeSigningPolicies:
-        UntrustedArtifactOnDeployment: "Enforce"
-
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -292,13 +293,6 @@ Resources:
       Type: String
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer
       Value: ipv-core-stub
-
-  SecretOrdnanceSurveyAPIKey:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIKey"
-      SecretString: !Ref OrdnanceSurveyAPIKey
-      Description: API key for the Ordnance Survey API
 
   SessionFunctionPermission:
     Type: AWS::Lambda::Permission

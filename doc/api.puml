@@ -22,14 +22,14 @@ end box
 core -[#green]> fe : /authorize\n{ jwt }
 activate fe
 
-fe -> api: PUT /session\n{ jwt }
+fe -> api: POST /session\n{ OAuth as json }
 activate api
 api -> api: validate JWT
 api -> api: create session
 api -> db: write session
 return session-id
 
-
+== Postcode start ==
 
 fe-[#blue]>fe: display post code page
 
