@@ -10,10 +10,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
-import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
-import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
-import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
@@ -23,9 +19,21 @@ import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
+import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
+import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.validation.ValidationResult;
+
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.security.PublicKey;
@@ -39,7 +47,9 @@ import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -69,6 +79,13 @@ public class AddressSessionService {
         this.clock = clock;
     }
 
+    public ValidationResult<ErrorObject> validateTokenRequest(TokenRequest tokenRequest) {
+        if (!tokenRequest.getAuthorizationGrant().getType().equals(GrantType.AUTHORIZATION_CODE)) {
+            return new ValidationResult<>(false, OAuth2Error.UNSUPPORTED_GRANT_TYPE);
+        }
+        return ValidationResult.createValidResult();
+    }
+
     public UUID createAndSaveAddressSession(SessionRequest sessionRequest) {
 
         AddressSessionItem addressSessionItem = new AddressSessionItem();
@@ -79,7 +96,8 @@ public class AddressSessionService {
         addressSessionItem.setState(sessionRequest.getState());
         addressSessionItem.setClientId(sessionRequest.getClientId());
         addressSessionItem.setRedirectUri(sessionRequest.getRedirectUri());
-        // TODO: create authorization_code, this is temporary
+        // TODO: create authorization_code, this is temporary see:
+        // https://govukverify.atlassian.net/browse/KBV-237
         addressSessionItem.setAuthorizationCode(UUID.randomUUID().toString());
         dataStore.create(addressSessionItem);
         return addressSessionItem.getSessionId();
@@ -228,5 +246,25 @@ public class AddressSessionService {
                 tokenResponse.getTokens().getBearerAccessToken().toAuthorizationHeader());
 
         dataStore.update(addressSessionItem);
+    }
+
+    public AddressSessionItem getAddressSessionItemByAuthorizationCode(
+            final String authorizationCode) {
+        DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
+        DynamoDbIndex<AddressSessionItem> index =
+                addressSessionTable.index("authorizationCode-index");
+
+        AttributeValue attVal = AttributeValue.builder().s(authorizationCode).build();
+
+        QueryConditional queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+
+        var items =
+                index.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build());
+        List<AddressSessionItem> item =
+                items.stream().map(Page::items).findFirst().orElse(Collections.emptyList());
+
+        return item.isEmpty() ? null : item.get(0);
     }
 }

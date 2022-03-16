@@ -27,7 +27,6 @@ public class AccessTokenHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private static final Logger LOGGER = LogManager.getLogger();
-    public static final String SESSION_ID = "session_id";
     private final AddressSessionService addressSessionService;
 
     public AccessTokenHandler(AddressSessionService addressSessionService) {
@@ -41,7 +40,6 @@ public class AccessTokenHandler
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         try {
-            String sessionId = input.getHeaders().get(SESSION_ID);
             TokenRequest tokenRequest = createTokenRequest(input.getBody());
 
             ValidationResult<ErrorObject> validationResult =
@@ -62,13 +60,11 @@ public class AccessTokenHandler
                             .getValue();
 
             AddressSessionItem addressSessionItem =
-                    addressSessionService.getAddressSessionItem(sessionId);
+                    addressSessionService.getAddressSessionItemByAuthorizationCode(
+                            authorizationCodeFromRequest);
 
             if (addressSessionItem == null) {
-                String message =
-                        String.format(
-                                "Session with id:%s could not be found in the database.",
-                                sessionId);
+                String message = String.format("Session with could not be found in the database.");
                 LOGGER.error(message);
                 return ApiGatewayResponseGenerator.proxyJsonResponse(
                         OAuth2Error.INVALID_GRANT.getHTTPStatusCode(),
@@ -90,6 +86,7 @@ public class AccessTokenHandler
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_OK, accessTokenResponse.toJSONObject());
+
         } catch (ParseException e) {
             LOGGER.error(
                     "Token request could not be parsed: " + e.getErrorObject().getDescription(), e);
