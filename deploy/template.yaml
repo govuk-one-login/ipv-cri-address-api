@@ -84,7 +84,6 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
-    DependsOn: [SessionFunction, PostcodeLookupFunction]
 
   SessionFunction:
     Type: AWS::Serverless::Function
@@ -179,13 +178,6 @@ Resources:
           - "{{resolve:ssm:/dev/credentialIssuers/cri/sam/signingProfileVersionArn}}"
       CodeSigningPolicies:
         UntrustedArtifactOnDeployment: "Enforce"
-
-  AccessTokenFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt AccessTokenFunction.Arn
-      Principal: apigateway.amazonaws.com
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -288,10 +280,22 @@ Resources:
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer
       Value: ipv-core-stub
 
+  SecretOrdnanceSurveyAPIKey:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIKey"
+      SecretString: !Ref OrdnanceSurveyAPIKey
+      Description: API key for the Ordnance Survey API
+
+  AccessTokenFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt AccessTokenFunction.Arn
+      Principal: apigateway.amazonaws.com
+
   SessionFunctionPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - SessionFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt SessionFunction.Arn
@@ -299,8 +303,6 @@ Resources:
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - PostcodeLookupFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt PostcodeLookupFunction.Arn
