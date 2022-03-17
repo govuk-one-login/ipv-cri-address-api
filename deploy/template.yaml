@@ -5,6 +5,7 @@ Description: "Digital Identity IPV CRI Address API"
 Parameters:
   CodeSigningConfigArn:
     Type: String
+    Default: "none"
     Description: >
       The ARN of the Code Signing Config to use, provided by the deployment pipeline
   Environment:
@@ -42,7 +43,10 @@ Conditions:
 
 Globals:
   Function:
-    CodeSigningConfigArn: !Ref CodeSigningConfigArn
+    CodeSigningConfigArn: !If
+      - CreateDevResources
+      - !Ref AWS::NoValue
+      - !Ref CodeSigningConfigArn
     Timeout: 30 # seconds
     Runtime: java11
     AutoPublishAlias: live
