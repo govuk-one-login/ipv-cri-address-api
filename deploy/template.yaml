@@ -64,8 +64,8 @@ Resources:
       AccessLogSetting:
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
       TracingEnabled: true
-      Name: !Sub "Address CRI - ${AWS::StackName}"
-      StageName: !Sub Environment
+      Name: !Sub "address-cri-${AWS::StackName}"
+      StageName: !Ref Environment
       #      Auth:
       #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
@@ -262,12 +262,16 @@ Outputs:
   SessionFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for session function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
+    Export:
+      Name: SessionFunctionApi
   SessionFunction:
     Value: !GetAtt SessionFunction.Arn
 
   PostcodeLookupFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
+    Export:
+      Name: PostcodeLookupFunctionApi
   PostcodeLookupFunction:
     Value: !GetAtt PostcodeLookupFunction.Arn
 
