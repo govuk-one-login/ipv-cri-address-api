@@ -1,9 +1,11 @@
 package uk.gov.di.ipv.cri.address.library.helpers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
@@ -20,8 +22,11 @@ public class AddressListConverter implements AttributeConverter {
     ObjectMapper mapper;
 
     public AddressListConverter() {
-        mapper = new ObjectMapper();
-        mapper.registerModule(new Jdk8Module());
+        mapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .registerModule(new JavaTimeModule())
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     @Override
@@ -32,8 +37,6 @@ public class AddressListConverter implements AttributeConverter {
         JavaType stringType = mapper.getTypeFactory().constructType(String.class);
         JavaType mapType =
                 mapper.getTypeFactory().constructMapType(Map.class, stringType, stringType);
-
-        String json = null;
 
         List<AttributeValue> list = new ArrayList<>();
 

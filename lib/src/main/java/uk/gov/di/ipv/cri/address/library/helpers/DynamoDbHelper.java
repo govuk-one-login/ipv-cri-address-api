@@ -2,6 +2,8 @@ package uk.gov.di.ipv.cri.address.library.helpers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
@@ -10,13 +12,16 @@ import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 
 public class DynamoDbHelper {
 
-    public class CanonicalAddressWithResidencyConverter
+    public static class CanonicalAddressWithResidencyConverter
             implements AttributeConverter<CanonicalAddressWithResidency> {
-        private AttributeConverter<CanonicalAddressWithResidency> instance;
-        private final ObjectMapper mapper = new ObjectMapper();
+        private final AttributeConverter<CanonicalAddressWithResidency> instance;
+        private final ObjectMapper mapper;
 
         public CanonicalAddressWithResidencyConverter() {
+
             instance = new CanonicalAddressWithResidencyConverter();
+            mapper = new ObjectMapper();
+            mapper.registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
         }
 
         @Override

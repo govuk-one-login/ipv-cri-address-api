@@ -5,10 +5,12 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
+import java.util.Optional;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @DynamoDBDocument
 public class CanonicalAddress {
-    private String uprn;
+    private Optional<Integer> uprn;
     private String organisationName;
     private String departmentName;
     private String subBuildingName;
@@ -24,7 +26,11 @@ public class CanonicalAddress {
 
     public CanonicalAddress(Result result) {
         var dpa = result.getDpa();
-        this.uprn = dpa.getUprn();
+        if (dpa.getUprn() != null && !dpa.getUprn().isEmpty()) {
+            this.uprn = Optional.of(Integer.parseInt(dpa.getUprn()));
+        } else {
+            this.uprn = Optional.empty();
+        }
         this.organisationName = dpa.getOrganisationName();
         this.departmentName = dpa.getDepartmentName();
         this.subBuildingName = dpa.getSubBuildingName();
@@ -45,11 +51,11 @@ public class CanonicalAddress {
     }
 
     @DynamoDBAttribute(attributeName = "UPRN")
-    public String getUprn() {
+    public Optional<Integer> getUprn() {
         return uprn;
     }
 
-    public void setUprn(String uprn) {
+    public void setUprn(Optional<Integer> uprn) {
         this.uprn = uprn;
     }
 

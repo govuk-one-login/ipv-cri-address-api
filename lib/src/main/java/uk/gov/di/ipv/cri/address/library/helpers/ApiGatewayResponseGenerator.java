@@ -3,6 +3,7 @@ package uk.gov.di.ipv.cri.address.library.helpers;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,9 @@ public class ApiGatewayResponseGenerator {
 
     private static final String JSON_CONTENT_TYPE_VALUE = "application/json";
     private static final ObjectMapper objectMapper =
-            new ObjectMapper().registerModule(new JavaTimeModule());
+            new ObjectMapper()
+                    .registerModule(new JavaTimeModule()) // Fix time formats
+                    .registerModule(new Jdk8Module()); // Allow Java 8 types (eg: Optional)
     private static final Logger LOGGER = LoggerFactory.getLogger(ApiGatewayResponseGenerator.class);
 
     private ApiGatewayResponseGenerator() {}

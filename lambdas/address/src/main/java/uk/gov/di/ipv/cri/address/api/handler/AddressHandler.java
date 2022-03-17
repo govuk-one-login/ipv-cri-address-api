@@ -50,7 +50,7 @@ public class AddressHandler
             sessionService.saveAddresses(sessionId, addresses);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_CREATED, Map.of(SESSION_ID, sessionId));
+                    HttpStatus.SC_CREATED, sessionService.getAddresses(sessionId));
 
         } catch (SessionValidationException
                 | SessionNotFoundException
