@@ -262,12 +262,16 @@ Outputs:
   SessionFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for session function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
+    Export:
+      Name: SessionFunctionApi
   SessionFunction:
     Value: !GetAtt SessionFunction.Arn
 
   PostcodeLookupFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
+    Export:
+      Name: PostcodeLookupFunctionApi
   PostcodeLookupFunction:
     Value: !GetAtt PostcodeLookupFunction.Arn
 
