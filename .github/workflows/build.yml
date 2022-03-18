@@ -2,6 +2,8 @@ name: Build
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths-ignore:
+      - 'infra/**'
 jobs:
   build:
     name: Build
