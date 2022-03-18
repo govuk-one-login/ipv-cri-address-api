@@ -32,9 +32,16 @@ If you wish to test your lambda functions locally, you can update the "postcode.
 
 ## Deploy to AWS lambda
 
-Automated GitHub actions deployments to di-ipv-cri-dev have been enabled for this repository.
+Automated GitHub actions deployments to di-ipv-cri-dev and di-ipv-cri-address-build have been enabled for this repository.
 
 The automated deployments are triggered on a push to main after PR approval.
+
+There are two environments required for this repository:
+
+* di-ipv-cri-address-build - configured for the lambda deployments.
+* di-ipv-cri-address-infra-build - configured for the infrastructure deployments.
+
+Both environments require the same secrets but different values according to the stack.
 
 GitHub secrets are required which must be configured in an environment for security reasons.
 
