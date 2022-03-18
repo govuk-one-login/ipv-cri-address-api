@@ -1,9 +1,6 @@
 package uk.gov.di.ipv.cri.address.library.models;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
-import uk.gov.di.ipv.cri.address.library.helpers.OptionalBooleanConverter;
-import uk.gov.di.ipv.cri.address.library.helpers.OptionalDateConverter;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
 import java.util.Date;
@@ -23,7 +20,6 @@ public class CanonicalAddressWithResidency extends CanonicalAddress {
         super(result);
     }
 
-    @DynamoDbConvertedBy(OptionalDateConverter.class)
     public Optional<Date> getResidentFrom() {
         return residentFrom;
     }
@@ -32,7 +28,6 @@ public class CanonicalAddressWithResidency extends CanonicalAddress {
         this.residentFrom = residentFrom;
     }
 
-    @DynamoDbConvertedBy(OptionalDateConverter.class)
     public Optional<Date> getResidentTo() {
         return residentTo;
     }
@@ -41,7 +36,6 @@ public class CanonicalAddressWithResidency extends CanonicalAddress {
         this.residentTo = residentTo;
     }
 
-    @DynamoDbConvertedBy(OptionalBooleanConverter.class)
     public Optional<Boolean> getCurrentResidency() {
         return currentResidency;
     }
