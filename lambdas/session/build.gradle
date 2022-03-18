@@ -1,6 +1,7 @@
 plugins {
 	id "java"
-	id 'io.freefair.aspectj.post-compile-weaving' version '6.3.0'
+	id "io.freefair.aspectj.post-compile-weaving" version "6.3.0"
+	id "jacoco"
 }
 
 dependencies {
@@ -27,4 +28,11 @@ build.finalizedBy(buildZip)
 
 test {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required.set(true)
+	}
 }

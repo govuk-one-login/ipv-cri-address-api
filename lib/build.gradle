@@ -1,5 +1,6 @@
 plugins {
 	id "java-library"
+	id "jacoco"
 }
 
 dependencies {
@@ -25,4 +26,11 @@ tasks.named("jar") {
 
 test {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required.set(true)
+	}
 }
