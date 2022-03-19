@@ -265,6 +265,8 @@ Resources:
 Outputs:
   AddressApiBaseUrl:
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
 
   SessionFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for session function"
