@@ -1,4 +1,4 @@
-name: Deploy
+name: Package for Build
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy
+    name: Package
     runs-on: ubuntu-latest
     environment: di-ipv-cri-address-build
     timeout-minutes: 15
