@@ -11,6 +11,7 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +56,8 @@ public class ClassToMapConverter<T> implements AttributeConverter<T> {
                         AttributeValue.builder().s(entry.getValue().toString()).build());
             } else if (Integer.class.equals(entry.getValue().getClass())
                     || Double.class.equals(entry.getValue().getClass())
+                    || Float.class.equals(entry.getValue().getClass())
+                    || BigDecimal.class.equals(entry.getValue().getClass())
                     || Long.class.equals(entry.getValue().getClass())) {
                 attributeValueMap.put(
                         entry.getKey().toString(),
@@ -79,6 +82,8 @@ public class ClassToMapConverter<T> implements AttributeConverter<T> {
                                 AttributeValue.builder().s(optional.get().toString()).build());
                     } else if (Integer.class.equals(optional.get().getClass())
                             || Double.class.equals(optional.get().getClass())
+                            || Float.class.equals(optional.get().getClass())
+                            || BigDecimal.class.equals(optional.get().getClass())
                             || Long.class.equals(optional.get().getClass())) {
                         attributeValueMap.put(
                                 entry.getKey().toString(),
