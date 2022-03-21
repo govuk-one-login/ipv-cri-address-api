@@ -8,12 +8,12 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClassListOfMapConverter<T> implements AttributeConverter<List<T>> {
+public class ListOfMapConverter<T> implements AttributeConverter<List<T>> {
 
     ClassToMapConverter<T> converter;
 
-    public ClassListOfMapConverter() {
-        converter = new ClassToMapConverter<T>();
+    public ListOfMapConverter() {
+        converter = new ClassToMapConverter<>();
     }
 
     @Override

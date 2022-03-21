@@ -1,7 +1,7 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
-import uk.gov.di.ipv.cri.address.library.helpers.ClassListOfMapConverter;
+import uk.gov.di.ipv.cri.address.library.helpers.ListOfMapConverter;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 
 import java.net.URI;
@@ -65,7 +65,7 @@ public class AddressSessionItem {
         return redirectUri;
     }
 
-    @DynamoDbConvertedBy(ClassListOfMapConverter.class)
+    @DynamoDbConvertedBy(ListOfMapConverter.class)
     public List<CanonicalAddressWithResidency> getAddresses() {
         // Handle sessions created before the addresses were added to the session
         if (addresses == null) {
