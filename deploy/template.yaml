@@ -20,6 +20,11 @@ Parameters:
       - prod
     ConstraintDescription: specify dev, build, staging, integration or prod for environment
 
+  OrdnanceSurveyAPIKey:
+    Description: Ordnance Survey API Key
+    Type: String
+    Default: testapikey
+
   OrdnanceSurveyAPIURL:
     Description: Ordnance Survey API URL
     Type: String
@@ -167,17 +172,6 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
-
-
-  AddressCriCodeSigning:
-    Type: AWS::Lambda::CodeSigningConfig
-    Properties:
-      Description: "Code Signing for Address CRI API"
-      AllowedPublishers:
-        SigningProfileVersionArns:
-          - "{{resolve:ssm:/dev/credentialIssuers/cri/sam/signingProfileVersionArn}}"
-      CodeSigningPolicies:
-        UntrustedArtifactOnDeployment: "Enforce"
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"

@@ -8,7 +8,6 @@ dependencies {
 	implementation configurations.lambda,
 			configurations.jackson,
 			configurations.dynamodb,
-			configurations.jackson,
 			configurations.gson,
 			configurations.nimbus,
 			configurations.powertools
