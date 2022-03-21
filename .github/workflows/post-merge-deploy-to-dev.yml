@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: deploy-to-dev
+    name: Deploy to dev
     runs-on: ubuntu-latest
     environment: di-ipv-cri-dev
     timeout-minutes: 15
