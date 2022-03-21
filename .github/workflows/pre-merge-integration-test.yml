@@ -14,7 +14,7 @@ jobs:
     env:
       AWS_REGION: eu-west-2
       ENVIRONMENT: dev
-      STACK_NAME: address-cri-api
+      STACK_NAME_PREFIX: address-cri-api
       ROLLBACK_ACTION: "--disable-rollback"
     permissions:
       id-token: write
@@ -49,15 +49,17 @@ jobs:
 
       - name: SAM deploy integration test stack
         run: |
-          STACK_NAME=${{ env.STACK_NAME }}-${{ steps.vars.outputs.sha_short }}
+          STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
           sam deploy -t deploy/template.yaml \
             --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} \
             --stack-name $STACK_NAME --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix $STACK_NAME --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM
+
       - name: Run API integration tests
-        run: echo "🤞 now run acceptance tests..."
+        run: echo "🤞 now run integration tests..."
+
       - name: Delete integration test stack
         if: always()
         run: |
-          STACK_NAME=${{ env.STACK_NAME }}-${{ steps.vars.outputs.sha_short }}
+          STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
           sam delete --stack-name $STACK_NAME --region ${{ env.AWS_REGION }} --no-prompts
