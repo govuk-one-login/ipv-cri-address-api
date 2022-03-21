@@ -171,6 +171,7 @@ components:
           example: "authorization_code"
         code:
           type: "string"
+          minLength: 1
         redirect_uri:
           type: "string"
           format: "uri"

@@ -2,6 +2,7 @@ package uk.gov.di.ipv.cri.address.library.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
@@ -16,11 +17,10 @@ import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
@@ -28,6 +28,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
+import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
@@ -55,6 +56,10 @@ import java.util.UUID;
 
 public class AddressSessionService {
 
+    public static final String CODE = "code";
+    public static final String REDIRECT_URI = "redirect_uri";
+    public static final String GRANT_TYPE = "grant_type";
+    public static final String CLIENT_ID = "client_id";
     private final DataStore<AddressSessionItem> dataStore;
     private final Clock clock;
     private final ConfigurationService configurationService;
@@ -83,6 +88,7 @@ public class AddressSessionService {
         if (!tokenRequest.getAuthorizationGrant().getType().equals(GrantType.AUTHORIZATION_CODE)) {
             return new ValidationResult<>(false, OAuth2Error.UNSUPPORTED_GRANT_TYPE);
         }
+
         return ValidationResult.createValidResult();
     }
 
@@ -118,6 +124,61 @@ public class AddressSessionService {
         verifyJWTSignature(clientAuthenticationConfig, signedJWT);
 
         return sessionRequest;
+    }
+
+    public TokenRequest createTokenRequest(String requestBody)
+            throws com.nimbusds.oauth2.sdk.ParseException {
+        // The URI is not needed/consumed in the resultant TokenRequest
+        // therefore any value can be passed here to ensure the parse method
+        // successfully materialises a TokenRequest
+        URI arbitraryUri = URI.create("https://gds");
+        HTTPRequest request = new HTTPRequest(HTTPRequest.Method.POST, arbitraryUri);
+        request.setQuery(requestBody);
+
+        boolean invalidTokenRequest =
+                request.getQueryParameters()
+                        .keySet()
+                        .containsAll(List.of(CODE, CLIENT_ID, REDIRECT_URI, GRANT_TYPE));
+
+        if (!invalidTokenRequest) {
+            throw new AccessTokenRequestException(OAuth2Error.INVALID_REQUEST);
+        }
+
+        validateTokenRequest(request.getQueryParameters());
+
+        request.setContentType(ContentType.APPLICATION_URLENCODED.getType());
+        return TokenRequest.parse(request);
+    }
+
+    private void validateTokenRequest(Map<String, List<String>> queryParameters)
+            throws AccessTokenRequestException {
+
+        var authorizationCode =
+                getValueOrThrow(queryParameters.getOrDefault(CODE, Collections.emptyList()));
+        var redirectUri =
+                getValueOrThrow(
+                        queryParameters.getOrDefault(REDIRECT_URI, Collections.emptyList()));
+        var grantType =
+                getValueOrThrow(queryParameters.getOrDefault(GRANT_TYPE, Collections.emptyList()));
+
+        var addressSessionItem = getAddressSessionItemByValue(authorizationCode);
+        if (!grantType.equals(GrantType.AUTHORIZATION_CODE.getValue())) {
+            throw new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
+        }
+        if (addressSessionItem == null
+                || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
+            throw new AccessTokenRequestException(OAuth2Error.INVALID_GRANT);
+        }
+        if (!redirectUri.equals(addressSessionItem.getRedirectUri().toString())) {
+            throw new AccessTokenRequestException(OAuth2Error.INVALID_GRANT);
+        }
+    }
+
+    public <T> T getValueOrThrow(List<T> list) {
+        if (list.size() == 1) return list.get(0);
+
+        throw new IllegalArgumentException(
+                String.format("Parameter must have exactly one value: %s", list));
     }
 
     private SessionRequest parseSessionRequest(String requestBody)
@@ -248,23 +309,20 @@ public class AddressSessionService {
         dataStore.update(addressSessionItem);
     }
 
-    public AddressSessionItem getAddressSessionItemByAuthorizationCode(
-            final String authorizationCode) {
-        DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
-        DynamoDbIndex<AddressSessionItem> index =
-                addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+    public AddressSessionItem getAddressSessionItemByValue(final String value) {
+        var addressSessionTable = dataStore.getTable();
+        var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        var attVal = AttributeValue.builder().s(value).build();
 
-        AttributeValue attVal = AttributeValue.builder().s(authorizationCode).build();
-
-        QueryConditional queryConditional =
+        var queryConditional =
                 QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
 
-        var items =
-                index.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build());
-        List<AddressSessionItem> item =
-                items.stream().map(Page::items).findFirst().orElse(Collections.emptyList());
+        var queryEnhancedRequest =
+                QueryEnhancedRequest.builder().queryConditional(queryConditional).build();
 
-        return item.isEmpty() ? null : item.get(0);
+        var items = index.query(queryEnhancedRequest);
+        var item = items.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
+
+        return getValueOrThrow(item);
     }
 }
