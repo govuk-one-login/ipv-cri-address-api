@@ -52,7 +52,6 @@ jobs:
           STACK_NAME=${{ env.STACK_NAME }}-${{ steps.vars.outputs.sha_short }}
           sam deploy -t deploy/template.yaml \
             --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} \
-            --signing-profiles SessionFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             --stack-name $STACK_NAME --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix $STACK_NAME --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM
       - name: Run API integration tests
