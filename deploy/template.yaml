@@ -263,11 +263,16 @@ Resources:
 
 
 Outputs:
+  AddressApiBaseUrl:
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
+
   SessionFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for session function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
     Export:
-      Name: SessionFunctionApi
+      Name: !Sub ${AWS::StackName}-SessionFunctionApi
   SessionFunction:
     Value: !GetAtt SessionFunction.Arn
 
@@ -275,7 +280,7 @@ Outputs:
     Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
     Export:
-      Name: PostcodeLookupFunctionApi
+      Name: !Sub ${AWS::StackName}-PostcodeLookupFunctionApi
   PostcodeLookupFunction:
     Value: !GetAtt PostcodeLookupFunction.Arn
 
