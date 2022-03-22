@@ -3,8 +3,14 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'infra/**'
+    paths:
+      - 'infrastructure/lambda/**'
+      - 'gradle/**'
+      - 'lambdas/**'
+      - 'lib/**'
+      - 'build.gradle'
+      - 'gradlew'
+      - 'settings.gradle'
 jobs:
   deploy:
     name: Deploy
@@ -39,14 +45,14 @@ jobs:
         run: ./gradlew clean build
 
       - name: SAM Validate
-        run: sam validate --region ${{ env.AWS_REGION }} -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
+        run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/lambda/template.yaml
       
       - name: SAM build
-        run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
+        run: sam build -t infrastructure/lambda/template.yaml
 
       - name: SAM package
         run: |
-          sam package -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} \
+          sam package -t infrastructure/lambda/template.yaml  \
             --signing-profiles SessionFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             PostcodeLookupFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             AccessTokenFunction=${{ secrets.SIGNING_PROFILE_NAME }} \

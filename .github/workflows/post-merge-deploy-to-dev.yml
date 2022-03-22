@@ -3,6 +3,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'infrastructure/lambda/**'
+      - 'gradle/**'
+      - 'lambdas/**'
+      - 'lib/**'
+      - 'build.gradle'
+      - 'gradlew'
+      - 'settings.gradle'
   workflow_dispatch: # deploy manually
 
 jobs:
@@ -38,17 +46,17 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: SAM Validate
-        run: sam validate --region ${{ env.AWS_REGION }} -t deploy/template.yaml
+        run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/lambda/template.yaml
 
       - name: Gradle build
         run: ./gradlew clean build
 
       - name: SAM build
-        run: sam build -t deploy/template.yaml
+        run: sam build -t infrastructure/lambda/template.yaml
 
       - name: SAM deploy
         run: |
-          sam deploy -t deploy/template.yaml \
+          sam deploy -t infrastructure/lambda/template.yaml \
             --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} \
             --stack-name ${{ env.STACK_NAME }} --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM

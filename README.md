@@ -16,7 +16,7 @@ Before your **first** deploy, build a sam config toml file.
 
 The command to run is: 
 
-`gds aws <account> -- sam deploy -t deploy/template.yaml --guided`
+`gds aws <account> -- sam deploy -t infrastructure/lambda/template.yaml --guided`
 
 You will be asked for the Ordnance Survey API Key at this point.
 In production, this key is stored in the AWS Secrets Manager.
@@ -32,16 +32,10 @@ If you wish to test your lambda functions locally, you can update the "postcode.
 
 ## Deploy to AWS lambda
 
-Automated GitHub actions deployments to di-ipv-cri-dev and di-ipv-cri-address-build have been enabled for this repository.
+Automated GitHub actions deployments to di-ipv-cri-build have been enabled for this repository.
+Manual GitHub actions deployments to di-ipv-cri-address-dev can be triggered from the GitHub actions menu.
 
 The automated deployments are triggered on a push to main after PR approval.
-
-There are two environments required for this repository:
-
-* di-ipv-cri-address-build - configured for the lambda deployments.
-* di-ipv-cri-address-infra-build - configured for the infrastructure deployments.
-
-Both environments require the same secrets but different values according to the stack.
 
 GitHub secrets are required which must be configured in an environment for security reasons.
 
@@ -52,3 +46,11 @@ Required GitHub secrets:
 | ARTIFACT_SOURCE_BUCKET_NAME | Upload artifact bucket |
 | GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
 | SIGNING_PROFILE_NAME | Signing profile name |
+
+Additional GitHub secrets for the deployment of the parameters
+
+| Secret | Description |
+| ------ | ----------- |
+| PARAM_ARTIFACT_SOURCE_BUCKET_NAME | Upload artifact bucket |
+| PARAM_GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
+| PARAM_SIGNING_PROFILE_NAME | Signing profile name |
