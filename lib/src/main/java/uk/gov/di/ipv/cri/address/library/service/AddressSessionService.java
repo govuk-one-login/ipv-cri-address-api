@@ -237,13 +237,20 @@ public class AddressSessionService {
         }
     }
 
-    public void saveAddresses(String sessionId, List<CanonicalAddressWithResidency> addresses)
+    public AddressSessionItem saveAddresses(
+            String sessionId, List<CanonicalAddressWithResidency> addresses)
             throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
         validateSessionId(sessionId);
 
         var sessionItem = dataStore.getItem(sessionId);
         sessionItem.setAddresses(addresses);
+        if (!addresses.isEmpty()) {
+            // We can create an authorization code
+            sessionItem.setAuthorizationCode(UUID.randomUUID());
+        }
         dataStore.update(sessionItem);
+
+        return sessionItem;
     }
 
     public List<CanonicalAddressWithResidency> getAddresses(String sessionId)

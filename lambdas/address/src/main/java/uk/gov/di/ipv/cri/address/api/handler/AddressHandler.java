@@ -15,7 +15,9 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.address.library.models.AuthorizationResponse;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
+import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
 import java.util.*;
@@ -47,10 +49,16 @@ public class AddressHandler
         try {
             List<CanonicalAddressWithResidency> addresses =
                     sessionService.parseAddresses(input.getBody());
-            sessionService.saveAddresses(sessionId, addresses);
 
-            return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_CREATED, sessionService.getAddresses(sessionId));
+            // If we have at least one address, we can return a 201 with the authorization code
+            if (!addresses.isEmpty()) {
+                AddressSessionItem session = sessionService.saveAddresses(sessionId, addresses);
+                return ApiGatewayResponseGenerator.proxyJsonResponse(
+                        HttpStatus.SC_CREATED, new AuthorizationResponse(session));
+            }
+
+            // If we don't have at least one address, do not save
+            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, "");
 
         } catch (SessionValidationException
                 | SessionNotFoundException

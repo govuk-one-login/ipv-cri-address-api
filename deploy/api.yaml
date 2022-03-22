@@ -27,7 +27,7 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/AuthorizationResponse"
         400:
           description: "Bad request"
           content:
@@ -173,6 +173,24 @@ components:
           type: "string"
           pattern: "[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_\\-\\+\\/=]+"
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0dCIsImlhdCI6MTUxNjIzOTAyMn0.SbcN-ywpLObhMbbaMCtW1Un8LYhQzHsEth9LvTk4oQQ"
+    AuthorizationResponse:
+      required:
+        - "redirect_uri"
+        - "code"
+        - "state"
+      type: "object"
+      properties:
+        code:
+          type: "string"
+          example: "981bb74c-3b5e-462e-ba3a-abf868e5da68"
+        state:
+          type: "string"
+          example: "state"
+          minLength: 1
+        redirect_uri:
+          type: "string"
+          format: "uri"
+          example: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
     Error:
       title: "Error Schema"
       type: "object"
@@ -242,50 +260,11 @@ components:
           example: "GBR"
           description: "ISO 3-Letter Country Code"
     CanonicalAddressWithResidency:
+      allOf:
+        - $ref: "#/components/schemas/CanonicalAddress"
       title: "Canonical Address with Residency Dates"
       type: "object"
       properties:
-        uprn:
-          type: "number"
-          example: 1234567890
-          description: "Unique Property Reference Number"
-        organisationName:
-          type: "string"
-          example: "Some Organisation"
-        departmentName:
-          type: "string"
-          example: "Some Department"
-        subBuildingName:
-          type: "string"
-          example: "Some Sub Building"
-        buildingNumber:
-          type: "string"
-          example: "1"
-        dependentThoroughfare:
-          type: "string"
-          example: "Some Street"
-        doubleDependentLocality:
-          type: "string"
-          example: "Some Town"
-        dependentLocality:
-          type: "string"
-          example: "Some Area"
-        buildingName:
-          type: "string"
-          example: "Some Building"
-        thoroughfareName:
-          type: "string"
-          example: "Some Street"
-        postTown:
-          type: "string"
-          example: "Some Town"
-        postcode:
-          type: "string"
-          example: "SW1A 1AA"
-        countryCode:
-          type: "string"
-          example: "GBR"
-          description: "ISO 3-Letter Country Code"
         residentFrom:
           description: "Date in epoch format"
           type: "number"

@@ -1,5 +1,6 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexHashKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 import uk.gov.di.ipv.cri.address.library.helpers.ListOfMapConverter;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
@@ -17,6 +18,7 @@ public class AddressSessionItem {
     private String state;
     private URI redirectUri;
     private List<CanonicalAddressWithResidency> addresses;
+    private UUID authorizationCode;
 
     public AddressSessionItem() {
 
@@ -29,8 +31,13 @@ public class AddressSessionItem {
         return sessionId;
     }
 
-    public void setSessionId(UUID sessionId) {
-        this.sessionId = sessionId;
+    @DynamoDBIndexHashKey
+    public UUID getAuthorizationCode() {
+        return authorizationCode;
+    }
+
+    public void setAuthorizationCode(UUID authorizationCode) {
+        this.authorizationCode = authorizationCode;
     }
 
     public long getExpiryDate() {
