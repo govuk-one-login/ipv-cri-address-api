@@ -30,7 +30,7 @@ import java.util.UUID;
 
 public class SessionRequestBuilder {
 
-    private SessionRequest sessionRequest;
+    private final SessionRequest sessionRequest;
 
     public SessionRequestBuilder() {
         this.sessionRequest = new SessionRequest();
@@ -61,7 +61,6 @@ public class SessionRequestBuilder {
         private String issuer = "ipv-core";
         private Instant now = Instant.now();
         private JWSAlgorithm signingAlgorithm = JWSAlgorithm.RS256;
-        private PrivateKey privateKey = null;
         private Certificate certificate = null;
         private String certificateFile = "address-cri-test.crt.pem";
         private String privateKeyFile = "address-cri-test.pk8";
@@ -106,7 +105,7 @@ public class SessionRequestBuilder {
         public SignedJWT build() {
             try {
 
-                privateKey = getPrivateKeyFromResources(privateKeyFile);
+                PrivateKey privateKey = getPrivateKeyFromResources(privateKeyFile);
                 certificate = generateCertificate(certificateFile);
 
                 String kid = UUID.randomUUID().toString();
@@ -125,9 +124,9 @@ public class SessionRequestBuilder {
                                         .build());
 
                 if (privateKey instanceof RSAPrivateKey) {
-                    signedJWT.sign(new RSASSASigner(this.privateKey));
+                    signedJWT.sign(new RSASSASigner(privateKey));
                 } else {
-                    signedJWT.sign(new ECDSASigner((ECPrivateKey) this.privateKey));
+                    signedJWT.sign(new ECDSASigner((ECPrivateKey) privateKey));
                 }
 
                 return signedJWT;
@@ -138,6 +137,7 @@ public class SessionRequestBuilder {
 
         private PrivateKey getPrivateKeyFromResources(String resourceName) {
             try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName)) {
+                assert is != null;
                 PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(is.readAllBytes());
                 if (this.signingAlgorithm.toString().startsWith("RS")) {
                     return KeyFactory.getInstance("RSA").generatePrivate(spec);

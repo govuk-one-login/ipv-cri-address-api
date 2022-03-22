@@ -25,7 +25,7 @@ public class PostcodeLookupHandler
 
     private final PostcodeLookupService postcodeLookupService;
     private final AddressSessionService addressSessionService;
-    Logger log = LogManager.getLogger();
+    final Logger log = LogManager.getLogger();
     protected static final String SESSION_ID = "session_id";
 
     public PostcodeLookupHandler(
@@ -54,7 +54,6 @@ public class PostcodeLookupHandler
         log.debug("Postcode: {}", postcode);
 
         try {
-            var session = addressSessionService.getSession(sessionId);
             addressSessionService.validateSessionId(sessionId);
 
             log.info("Session passed validation");

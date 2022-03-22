@@ -66,7 +66,7 @@ class SessionHandlerTest {
                 sessionHandler.handleRequest(apiGatewayProxyRequestEvent, null);
 
         assertEquals(HttpStatus.SC_CREATED, responseEvent.getStatusCode());
-        Map responseBody = new ObjectMapper().readValue(responseEvent.getBody(), Map.class);
+        var responseBody = new ObjectMapper().readValue(responseEvent.getBody(), Map.class);
         assertEquals(sessionId.toString(), responseBody.get(SESSION_ID));
 
         verify(eventProbe).addDimensions(Map.of("issuer", "ipv-core"));

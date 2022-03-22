@@ -79,10 +79,9 @@ class AddressSessionServiceTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> {
-                            addressSessionService.validateSessionRequest(
-                                    marshallToJSON(Map.of("not", "a-session-request")));
-                        });
+                        () ->
+                                addressSessionService.validateSessionRequest(
+                                        marshallToJSON(Map.of("not", "a-session-request"))));
         assertThat(exception.getMessage(), containsString("could not parse request body"));
         verifyNoInteractions(mockConfigurationService);
     }
@@ -101,10 +100,9 @@ class AddressSessionServiceTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> {
-                            addressSessionService.validateSessionRequest(
-                                    marshallToJSON(sessionRequest));
-                        });
+                        () ->
+                                addressSessionService.validateSessionRequest(
+                                        marshallToJSON(sessionRequest)));
         assertThat(exception.getMessage(), containsString("no configuration for client id"));
         verify(mockConfigurationService)
                 .getParametersForPath("/clients/bad-client-id/jwtAuthentication");
@@ -125,10 +123,9 @@ class AddressSessionServiceTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> {
-                            addressSessionService.validateSessionRequest(
-                                    marshallToJSON(sessionRequest));
-                        });
+                        () ->
+                                addressSessionService.validateSessionRequest(
+                                        marshallToJSON(sessionRequest)));
         assertThat(
                 exception.getMessage(),
                 containsString(
@@ -149,10 +146,9 @@ class AddressSessionServiceTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> {
-                            addressSessionService.validateSessionRequest(
-                                    marshallToJSON(sessionRequest));
-                        });
+                        () ->
+                                addressSessionService.validateSessionRequest(
+                                        marshallToJSON(sessionRequest)));
         assertThat(exception.getMessage(), containsString("Could not parse request JWT"));
     }
 
@@ -170,10 +166,9 @@ class AddressSessionServiceTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> {
-                            addressSessionService.validateSessionRequest(
-                                    marshallToJSON(sessionRequest));
-                        });
+                        () ->
+                                addressSessionService.validateSessionRequest(
+                                        marshallToJSON(sessionRequest)));
 
         assertThat(exception.getMessage(), containsString("JWT signature verification failed"));
     }
@@ -192,10 +187,9 @@ class AddressSessionServiceTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> {
-                            addressSessionService.validateSessionRequest(
-                                    marshallToJSON(sessionRequest));
-                        });
+                        () ->
+                                addressSessionService.validateSessionRequest(
+                                        marshallToJSON(sessionRequest)));
 
         assertThat(
                 exception.getMessage(),
@@ -217,10 +211,9 @@ class AddressSessionServiceTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> {
-                            addressSessionService.validateSessionRequest(
-                                    marshallToJSON(sessionRequest));
-                        });
+                        () ->
+                                addressSessionService.validateSessionRequest(
+                                        marshallToJSON(sessionRequest)));
 
         assertThat(exception.getMessage(), containsString("could not parse JWT"));
     }

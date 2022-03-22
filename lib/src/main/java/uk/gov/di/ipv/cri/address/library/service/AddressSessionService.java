@@ -303,7 +303,7 @@ public class AddressSessionService {
         return addresses;
     }
 
-    public AddressSessionItem getSession(String sessionId) throws SessionNotFoundException {
+    public AddressSessionItem getSession(String sessionId) {
         return dataStore.getItem(sessionId);
     }
 

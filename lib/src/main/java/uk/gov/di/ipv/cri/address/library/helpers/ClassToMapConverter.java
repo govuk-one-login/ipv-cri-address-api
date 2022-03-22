@@ -11,15 +11,14 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public class ClassToMapConverter<T> implements AttributeConverter<T> {
-    ObjectMapper mapper;
-    Class<T> persistentClass;
+    final ObjectMapper mapper;
+    final Class<T> persistentClass;
 
     public ClassToMapConverter() {
         this(null);
@@ -42,67 +41,61 @@ public class ClassToMapConverter<T> implements AttributeConverter<T> {
         JavaType mapType =
                 mapper.getTypeFactory().constructMapType(Map.class, stringType, objectType);
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map;
         try {
             map = mapper.readValue(mapper.writeValueAsString(input), mapType);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
         Map<String, AttributeValue> attributeValueMap = new HashMap<>();
-        for (Map.Entry entry : map.entrySet()) {
-            if (String.class.equals(entry.getValue().getClass())) {
-                attributeValueMap.put(
-                        entry.getKey().toString(),
-                        AttributeValue.builder().s(entry.getValue().toString()).build());
-            } else if (Integer.class.equals(entry.getValue().getClass())
-                    || Double.class.equals(entry.getValue().getClass())
-                    || Float.class.equals(entry.getValue().getClass())
-                    || BigDecimal.class.equals(entry.getValue().getClass())
-                    || Long.class.equals(entry.getValue().getClass())) {
-                attributeValueMap.put(
-                        entry.getKey().toString(),
-                        AttributeValue.builder().n(entry.getValue().toString()).build());
-            } else if (Boolean.class.equals(entry.getValue().getClass())) {
-                attributeValueMap.put(
-                        entry.getKey().toString(),
-                        AttributeValue.builder()
-                                .bool(Boolean.parseBoolean(entry.getValue().toString()))
-                                .build());
-            } else if (Date.class.equals(entry.getValue().getClass())) {
-                Date v = (Date) entry.getValue();
-                attributeValueMap.put(
-                        entry.getKey().toString(),
-                        AttributeValue.builder().n(String.valueOf(v.getTime())).build());
-            } else if (Optional.class.equals(entry.getValue().getClass())) {
-                Optional optional = (Optional) entry.getValue();
-                if (optional.isPresent()) {
-                    if (String.class.equals(optional.get().getClass())) {
-                        attributeValueMap.put(
-                                entry.getKey().toString(),
-                                AttributeValue.builder().s(optional.get().toString()).build());
-                    } else if (Integer.class.equals(optional.get().getClass())
-                            || Double.class.equals(optional.get().getClass())
-                            || Float.class.equals(optional.get().getClass())
-                            || BigDecimal.class.equals(optional.get().getClass())
-                            || Long.class.equals(optional.get().getClass())) {
-                        attributeValueMap.put(
-                                entry.getKey().toString(),
-                                AttributeValue.builder().n(optional.get().toString()).build());
-                    } else if (Boolean.class.equals(optional.get().getClass())) {
-                        attributeValueMap.put(
-                                entry.getKey().toString(),
-                                AttributeValue.builder()
-                                        .bool(Boolean.valueOf(optional.get().toString()))
-                                        .build());
-                    } else if (Date.class.equals(optional.get().getClass())) {
-                        Date v = (Date) optional.get();
-                        attributeValueMap.put(
-                                entry.getKey().toString(),
-                                AttributeValue.builder().n(String.valueOf(v.getTime())).build());
+        map.forEach(
+                (key, val) -> {
+                    Object value = null;
+                    String className = val.getClass().getSimpleName();
+
+                    if (Optional.class.equals(val.getClass())) {
+                        Optional<?> optional = (Optional<?>) val;
+                        if (optional.isPresent()) {
+                            value = optional.get();
+                            className = value.getClass().getSimpleName();
+                        } else {
+                            className = "null";
+                        }
+                    } else {
+                        value = val;
                     }
-                }
-            }
-        }
+
+                    if (value != null)
+                        switch (className) {
+                            case "Integer":
+                            case "BigDecimal":
+                            case "Long":
+                            case "Double":
+                            case "Float":
+                                attributeValueMap.put(
+                                        key, AttributeValue.builder().n(value.toString()).build());
+                                break;
+                            case "Boolean":
+                                attributeValueMap.put(
+                                        key,
+                                        AttributeValue.builder()
+                                                .bool(Boolean.parseBoolean(value.toString()))
+                                                .build());
+                                break;
+                            case "Date":
+                                Date date = (Date) value;
+                                attributeValueMap.put(
+                                        key,
+                                        AttributeValue.builder()
+                                                .n(String.valueOf(date.getTime()))
+                                                .build());
+                                break;
+                            default:
+                                attributeValueMap.put(
+                                        key, AttributeValue.builder().s(value.toString()).build());
+                                break;
+                        }
+                });
         return AttributeValue.builder().m(attributeValueMap).build();
     }
 
@@ -119,12 +112,13 @@ public class ClassToMapConverter<T> implements AttributeConverter<T> {
             }
         }
 
+        //noinspection unchecked
         return (T) map;
     }
 
     @Override
     public EnhancedType<T> type() {
-        return (EnhancedType<T>) EnhancedType.of(persistentClass.getClass());
+        return EnhancedType.of(persistentClass);
     }
 
     @Override

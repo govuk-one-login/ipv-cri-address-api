@@ -51,7 +51,6 @@ class AccessTokenHandlerTest {
     @Mock private AddressSessionService mockAddressSessionService;
 
     private AccessTokenHandler handler;
-    private TokenResponse tokenResponse;
 
     @BeforeEach
     void setUp() {
@@ -66,7 +65,7 @@ class AccessTokenHandlerTest {
         event.withBody(tokenRequestBody);
         AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);
         AccessToken accessToken = new BearerAccessToken();
-        tokenResponse = new AccessTokenResponse(new Tokens(accessToken, null));
+        TokenResponse tokenResponse = new AccessTokenResponse(new Tokens(accessToken, null));
 
         // TODO: This here as a placeholder pending the story that generates the authorization code
         TokenRequest tokenRequest = mock(TokenRequest.class);

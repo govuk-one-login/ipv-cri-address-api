@@ -29,7 +29,7 @@ public class AddressHandler
 
     Logger log = LogManager.getLogger();
 
-    private AddressSessionService sessionService;
+    private final AddressSessionService sessionService;
 
     public AddressHandler() {
         sessionService = new AddressSessionService();

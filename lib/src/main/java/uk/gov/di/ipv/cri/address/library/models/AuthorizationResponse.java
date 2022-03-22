@@ -6,9 +6,9 @@ import java.net.URI;
 import java.util.UUID;
 
 public class AuthorizationResponse {
-    private UUID code;
-    private URI redirect_uri;
-    private String state;
+    private final UUID code;
+    private final URI redirect_uri;
+    private final String state;
 
     public AuthorizationResponse(AddressSessionItem session) {
         this.code = session.getAuthorizationCode();

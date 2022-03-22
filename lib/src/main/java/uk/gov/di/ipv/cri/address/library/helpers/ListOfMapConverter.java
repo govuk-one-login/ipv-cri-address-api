@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ListOfMapConverter<T> implements AttributeConverter<List<T>> {
 
-    ClassToMapConverter<T> converter;
+    final ClassToMapConverter<T> converter;
 
     public ListOfMapConverter() {
         converter = new ClassToMapConverter<>();

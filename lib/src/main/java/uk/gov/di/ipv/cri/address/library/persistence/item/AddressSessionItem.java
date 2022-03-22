@@ -1,8 +1,6 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import uk.gov.di.ipv.cri.address.library.helpers.ListOfMapConverter;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 
