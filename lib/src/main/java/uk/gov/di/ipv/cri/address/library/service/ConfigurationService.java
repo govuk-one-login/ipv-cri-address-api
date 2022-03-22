@@ -4,6 +4,7 @@ import software.amazon.lambda.powertools.parameters.ParamManager;
 import software.amazon.lambda.powertools.parameters.SSMProvider;
 import software.amazon.lambda.powertools.parameters.SecretsProvider;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -11,6 +12,7 @@ import java.util.Optional;
 public class ConfigurationService {
 
     private static final long DEFAULT_SESSION_ADDRESS_TTL_IN_SECS = 172800L;
+    private static final long DEFAULT_BEARER_TOKEN_TTL_IN_SECS = 3600L;
     private final SSMProvider ssmProvider;
     private final SecretsProvider secretsProvider;
     private final String parameterPrefix;
@@ -50,6 +52,28 @@ public class ConfigurationService {
         return ssmProvider.recursive().getMultiple(format.replace("//", "/"));
     }
 
+    public URI getDynamoDbEndpointOverride() {
+        String dynamoDbEndpointOverride = System.getenv("DYNAMODB_ENDPOINT_OVERRIDE");
+        if (dynamoDbEndpointOverride != null && !dynamoDbEndpointOverride.isEmpty()) {
+            return URI.create(System.getenv("DYNAMODB_ENDPOINT_OVERRIDE"));
+        }
+        return null;
+    }
+
+    public String getAddressAuthCodesTableName() {
+        return System.getenv("ADDRESS_AUTH_CODES_TABLE_NAME");
+    }
+
+    public long getBearerAccessTokenTtl() {
+        return Optional.ofNullable(System.getenv("BEARER_TOKEN_TTL"))
+                .map(Long::valueOf)
+                .orElse(DEFAULT_BEARER_TOKEN_TTL_IN_SECS);
+    }
+
+    public String getAccessTokensTableName() {
+        return System.getenv("ADDRESS_ACCESS_TOKENS_TABLE_NAME");
+    }
+
     public enum SSMParameterName {
         ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
         ADDRESS_SESSION_TTL("AddressSessionTtl"),
@@ -64,7 +88,6 @@ public class ConfigurationService {
     }
 
     public String getOsApiKey() {
-
         return secretsProvider.get(getParameterName(SSMParameterName.ORDNANCE_SURVEY_API_KEY));
     }
 

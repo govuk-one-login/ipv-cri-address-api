@@ -1,10 +1,13 @@
-name: DevManual
+name: Deploy to dev
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # deploy manually
 
 jobs:
   deploy:
-    name: DevManual
+    name: deploy-to-dev
     runs-on: ubuntu-latest
     environment: di-ipv-cri-dev
     timeout-minutes: 15
@@ -32,26 +35,20 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
-          # role-session-name: ${{ secrets.AWS_ROLE_SESSION }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM Validate
+        run: sam validate --region ${{ env.AWS_REGION }} -t deploy/template.yaml
 
       - name: Gradle build
         run: ./gradlew clean build
-        
-      - name: SAM Validate
-        run: sam validate --region ${{ env.AWS_REGION }} -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }}
 
       - name: SAM build
-        run: sam build -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} 
-
-      # - name: Upload API config
-      #   run: aws s3 cp deploy/api.yaml s3://${{ secrets.AWS_CONFIG_BUCKET }}/${{ env.ENVIRONMENT }}/api.yaml
+        run: sam build -t deploy/template.yaml
 
       - name: SAM deploy
         run: |
-          sam deploy -t deploy/template.yaml --config-env ${{ env.ENVIRONMENT }} \
+          sam deploy -t deploy/template.yaml \
             --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} \
-            --signing-profiles SessionFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             --stack-name ${{ env.STACK_NAME }} --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
-            --s3-prefix ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM \
-            --parameter-overrides CodeSigningConfigArn=${{ secrets.CODE_SIGNING_CONFIG_ARN }}
+            --s3-prefix ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM

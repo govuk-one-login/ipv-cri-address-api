@@ -5,10 +5,9 @@ Description: "Digital Identity IPV CRI Address API"
 Parameters:
   CodeSigningConfigArn:
     Type: String
+    Default: "none"
     Description: >
       The ARN of the Code Signing Config to use, provided by the deployment pipeline
-    Default: "none"
-
   Environment:
     Description: environment name
     Default: dev
@@ -31,10 +30,6 @@ Parameters:
     Type: String
     Default: testapikey
 
-  OrdnanceSurveyAPIURL:
-    Description: Ordnance Survey API URL
-    Type: String
-    Default: "https://api.os.uk/search/places/v1/postcode"
 
 Conditions:
   UseCodeSigning:
@@ -60,7 +55,10 @@ Conditions:
 
 Globals:
   Function:
-    CodeSigningConfigArn: !Ref CodeSigningConfigArn
+    CodeSigningConfigArn: !If
+      - CreateDevResources
+      - !Ref AWS::NoValue
+      - !Ref CodeSigningConfigArn
     Timeout: 30 # seconds
     Runtime: java11
     AutoPublishAlias: live
@@ -82,8 +80,8 @@ Resources:
       AccessLogSetting:
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
       TracingEnabled: true
-      Name: !Sub "Address CRI - ${AWS::StackName}"
-      StageName: !Sub Environment
+      Name: !Sub "address-cri-${AWS::StackName}"
+      StageName: !Ref Environment
       #      Auth:
       #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
@@ -98,15 +96,11 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
-    DependsOn: [SessionFunction, PostcodeLookupFunction, AddressFunction]
+    DependsOn: [SessionFunction, PostcodeLookupFunction, AddressFunction, AddressTokenFunction]
 
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeSigningConfigArn: !If
-        - UseCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
       CodeUri: ../lambdas/session/build/distributions/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Environment:
@@ -137,10 +131,6 @@ Resources:
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeSigningConfigArn: !If
-        - UseCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
       CodeUri: ../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       Environment:
@@ -212,6 +202,33 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+
+
+  AccessTokenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/accesstoken/build/distributions/accesstoken.zip
+      Handler: uk.gov.di.ipv.cri.address.api.handler.AccessTokenHandler::handleRequest
+      Environment:
+        Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-access-token
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - DynamoDBWritePolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -228,6 +245,7 @@ Resources:
         -
           AttributeName: "token"
           AttributeType: "S"
+
       KeySchema:
         -
           AttributeName: "sessionId"
@@ -313,6 +331,13 @@ Resources:
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer
       Value: ipv-core-stub
 
+  AccessTokenFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt AccessTokenFunction.Arn
+      Principal: apigateway.amazonaws.com
+
   SessionFunctionPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
@@ -342,21 +367,32 @@ Resources:
 
 
 Outputs:
+  AddressApiBaseUrl:
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
+
   SessionFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for session function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
+    Export:
+      Name: !Sub ${AWS::StackName}-SessionFunctionApi
   SessionFunction:
     Value: !GetAtt SessionFunction.Arn
 
   PostcodeLookupFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
+    Export:
+      Name: !Sub ${AWS::StackName}-PostcodeLookupFunctionApi
   PostcodeLookupFunction:
     Value: !GetAtt PostcodeLookupFunction.Arn
 
   AddressFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for address update function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address/"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressFunctionApi
   AddressFunction:
       Value: !GetAtt AddressFunction.Arn
 
@@ -367,6 +403,9 @@ Outputs:
   SessionFunctionIamRole:
     Description: "IAM role for the session function"
     Value: !GetAtt SessionFunctionRole.Arn
+
+  AccessTokenFunction:
+    Value: !GetAtt AccessTokenFunction.Arn
 
   AddressFunctionIamRole:
     Description: "IAM role for the address function"

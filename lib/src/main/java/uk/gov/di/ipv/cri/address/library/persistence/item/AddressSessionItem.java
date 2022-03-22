@@ -1,6 +1,7 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIndexHashKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 import uk.gov.di.ipv.cri.address.library.helpers.ListOfMapConverter;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 @DynamoDbBean
 public class AddressSessionItem {
+    public static final String AUTHORIZATION_CODE_INDEX = "authorizationCode-index";
     private UUID sessionId;
     private long expiryDate;
     private String clientId;
@@ -19,6 +21,8 @@ public class AddressSessionItem {
     private URI redirectUri;
     private List<CanonicalAddressWithResidency> addresses;
     private UUID authorizationCode;
+
+    private String accessToken;
 
     public AddressSessionItem() {
 
@@ -35,7 +39,7 @@ public class AddressSessionItem {
         this.sessionId = sessionId;
     }
 
-    @DynamoDBIndexHashKey(globalSecondaryIndexName = "authorizationCode-index")
+    @DynamoDbSecondaryPartitionKey(indexNames = AUTHORIZATION_CODE_INDEX)
     public UUID getAuthorizationCode() {
         return authorizationCode;
     }
@@ -74,6 +78,14 @@ public class AddressSessionItem {
 
     public URI getRedirectUri() {
         return redirectUri;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
     }
 
     @DynamoDbConvertedBy(ListOfMapConverter.class)

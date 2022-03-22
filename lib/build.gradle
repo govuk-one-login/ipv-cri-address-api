@@ -1,12 +1,13 @@
 plugins {
 	id "java-library"
+	id "jacoco"
 }
 
 dependencies {
 
 	implementation configurations.lambda,
-			configurations.dynamodb,
 			configurations.jackson,
+			configurations.dynamodb,
 			configurations.gson,
 			configurations.nimbus,
 			configurations.powertools
@@ -25,4 +26,11 @@ tasks.named("jar") {
 
 test {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required.set(true)
+	}
 }
