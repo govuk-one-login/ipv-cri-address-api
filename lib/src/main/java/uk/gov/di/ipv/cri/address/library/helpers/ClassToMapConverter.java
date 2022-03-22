@@ -46,7 +46,7 @@ public class ClassToMapConverter<T> implements AttributeConverter<T> {
         try {
             map = mapper.readValue(mapper.writeValueAsString(input), mapType);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         Map<String, AttributeValue> attributeValueMap = new HashMap<>();
         for (Map.Entry entry : map.entrySet()) {
