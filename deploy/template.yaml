@@ -20,11 +20,6 @@ Parameters:
       - prod
     ConstraintDescription: specify dev, build, staging, integration or prod for environment
 
-  OrdnanceSurveyAPIKey:
-    Description: Ordnance Survey API Key
-    Type: String
-    Default: testapikey
-
   OrdnanceSurveyAPIURL:
     Description: Ordnance Survey API URL
     Type: String
@@ -273,13 +268,6 @@ Resources:
       Type: String
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer
       Value: ipv-core-stub
-
-  SecretOrdnanceSurveyAPIKey:
-    Type: AWS::SecretsManager::Secret
-    Properties:
-      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIKey"
-      SecretString: !Ref OrdnanceSurveyAPIKey
-      Description: API key for the Ordnance Survey API
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
