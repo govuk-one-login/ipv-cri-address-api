@@ -28,11 +28,13 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
-import uk.gov.di.ipv.cri.address.library.exception.*;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
+import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
+import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
+import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.validation.ValidationResult;
@@ -164,13 +166,7 @@ public class AddressSessionService {
         if (!grantType.equals(GrantType.AUTHORIZATION_CODE.getValue())) {
             throw new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
         }
-        if (addressSessionItem == null
-                || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
-            throw new AccessTokenRequestException(OAuth2Error.INVALID_GRANT);
-        }
-        if (!redirectUri.equals(addressSessionItem.getRedirectUri().toString())) {
-            throw new AccessTokenRequestException(OAuth2Error.INVALID_GRANT);
-        }
+        throw new AccessTokenRequestException(OAuth2Error.INVALID_GRANT);
     }
 
     public <T> T getValueOrThrow(List<T> list) {
@@ -295,7 +291,7 @@ public class AddressSessionService {
 
     public List<CanonicalAddressWithResidency> parseAddresses(String addressBody)
             throws AddressProcessingException {
-        List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
+        List<CanonicalAddressWithResidency> addresses;
         try {
             ObjectMapper mapper = new ObjectMapper();
             addresses = mapper.readValue(addressBody, List.class);
