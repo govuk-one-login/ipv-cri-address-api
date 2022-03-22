@@ -31,7 +31,11 @@ public class AddressSessionItem {
         return sessionId;
     }
 
-    @DynamoDBIndexHashKey
+    public void setSessionId(UUID sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    @DynamoDBIndexHashKey(globalSecondaryIndexName = "authorizationCode-index")
     public UUID getAuthorizationCode() {
         return authorizationCode;
     }
