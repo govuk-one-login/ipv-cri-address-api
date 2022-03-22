@@ -96,7 +96,7 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
-    DependsOn: [SessionFunction, PostcodeLookupFunction, AddressFunction, AddressTokenFunction]
+    DependsOn: [SessionFunction, PostcodeLookupFunction, AddressFunction, AccessTokenFunction]
 
   SessionFunction:
     Type: AWS::Serverless::Function
