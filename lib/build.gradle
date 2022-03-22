@@ -6,8 +6,8 @@ plugins {
 dependencies {
 
 	implementation configurations.lambda,
-			configurations.dynamodb,
 			configurations.jackson,
+			configurations.dynamodb,
 			configurations.gson,
 			configurations.nimbus,
 			configurations.powertools

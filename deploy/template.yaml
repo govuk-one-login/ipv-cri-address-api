@@ -84,7 +84,6 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
-    DependsOn: [SessionFunction, PostcodeLookupFunction]
 
   SessionFunction:
     Type: AWS::Serverless::Function
@@ -141,6 +140,33 @@ Resources:
                 - ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIURL"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+
+
+  AccessTokenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/accesstoken/build/distributions/accesstoken.zip
+      Handler: uk.gov.di.ipv.cri.address.api.handler.AccessTokenHandler::handleRequest
+      Environment:
+        Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-access-token
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - DynamoDBWritePolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -243,10 +269,15 @@ Resources:
       Name: !Sub /${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer
       Value: ipv-core-stub
 
+  AccessTokenFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt AccessTokenFunction.Arn
+      Principal: apigateway.amazonaws.com
+
   SessionFunctionPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - SessionFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt SessionFunction.Arn
@@ -254,8 +285,6 @@ Resources:
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - PostcodeLookupFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt PostcodeLookupFunction.Arn
@@ -291,3 +320,6 @@ Outputs:
   SessionFunctionIamRole:
     Description: "IAM role for the session function"
     Value: !GetAtt SessionFunctionRole.Arn
+    
+  AccessTokenFunction:
+    Value: !GetAtt AccessTokenFunction.Arn
