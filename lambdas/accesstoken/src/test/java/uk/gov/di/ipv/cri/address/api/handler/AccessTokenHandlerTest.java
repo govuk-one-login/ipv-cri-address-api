@@ -49,7 +49,7 @@ class AccessTokenHandlerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Mock private Context context;
-    @Mock private EventProbe eventProbe;
+    private EventProbe eventProbe = new EventProbe();
     @Mock private AddressSessionService mockAddressSessionService;
 
     private AccessTokenHandler handler;

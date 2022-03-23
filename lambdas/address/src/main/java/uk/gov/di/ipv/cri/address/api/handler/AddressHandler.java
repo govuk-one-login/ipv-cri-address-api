@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.Level;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -47,7 +48,6 @@ public class AddressHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         String sessionId = input.getHeaders().get(SESSION_ID);
-        eventProbe.addDimensions(Map.of(SESSION_ID, sessionId));
         try {
             List<CanonicalAddressWithResidency> addresses =
                     sessionService.parseAddresses(input.getBody());
@@ -55,6 +55,7 @@ public class AddressHandler
             // If we have at least one address, we can return a 201 with the authorization code
             if (!addresses.isEmpty()) {
                 AddressSessionItem session = sessionService.saveAddresses(sessionId, addresses);
+                eventProbe.counterMetric("address");
                 return ApiGatewayResponseGenerator.proxyJsonResponse(
                         HttpStatus.SC_CREATED, new AuthorizationResponse(session));
             }
@@ -65,9 +66,11 @@ public class AddressHandler
         } catch (SessionValidationException
                 | SessionNotFoundException
                 | SessionExpiredException e) {
+            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, e.getMessage());
         } catch (AddressProcessingException e) {
+            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }

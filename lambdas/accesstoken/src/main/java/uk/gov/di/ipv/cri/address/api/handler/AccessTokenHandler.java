@@ -58,11 +58,13 @@ public class AccessTokenHandler
             AccessTokenResponse accessTokenResponse = tokenResponse.toSuccessResponse();
             addressSessionService.writeToken(accessTokenResponse, addressSessionItem);
 
+            eventProbe.counterMetric("accesstoken");
+
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_OK, accessTokenResponse.toJSONObject());
 
         } catch (ParseException e) {
-            eventProbe.log(Level.ERROR, e);
+            eventProbe.log(Level.ERROR, e).counterMetric("accesstoken", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     getHttpStatusCodeForErrorResponse(e.getErrorObject()),
                     e.getErrorObject().toJSONObject());

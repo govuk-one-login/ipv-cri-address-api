@@ -90,7 +90,6 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
-    DependsOn: [SessionFunction, PostcodeLookupFunction, AddressFunction, AccessTokenFunction]
 
   SessionFunction:
     Type: AWS::Serverless::Function
@@ -330,8 +329,6 @@ Resources:
 
   SessionFunctionPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - SessionFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt SessionFunction.Arn
@@ -339,8 +336,6 @@ Resources:
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - PostcodeLookupFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt PostcodeLookupFunction.Arn
@@ -348,8 +343,6 @@ Resources:
 
   AddressFunctionPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - AddressFunction
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt AddressFunction.Arn

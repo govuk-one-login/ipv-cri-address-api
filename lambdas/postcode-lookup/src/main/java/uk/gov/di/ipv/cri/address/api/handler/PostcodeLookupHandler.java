@@ -22,7 +22,6 @@ import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 import uk.gov.di.ipv.cri.address.library.service.PostcodeLookupService;
 
 import java.util.List;
-import java.util.Map;
 
 public class PostcodeLookupHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -56,36 +55,33 @@ public class PostcodeLookupHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         String sessionId = input.getHeaders().get(SESSION_ID);
-        eventProbe.addDimensions(Map.of(SESSION_ID, sessionId));
-
         String postcode = input.getPathParameters().get("postcode");
-        eventProbe.addDimensions(Map.of("postcode", postcode));
 
         try {
             addressSessionService.validateSessionId(sessionId);
             List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
-            eventProbe.addDimensions(Map.of("result_count", String.valueOf(results.size())));
+            eventProbe.counterMetric("postcode_lookup");
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, results);
 
         } catch (PostcodeLookupValidationException e) {
-            eventProbe.log(Level.ERROR, e);
+            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
         } catch (SessionValidationException e) {
-            eventProbe.log(Level.ERROR, e);
+            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, e.getMessage());
         } catch (SessionNotFoundException e) {
-            eventProbe.log(Level.ERROR, e);
+            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_NOT_FOUND, e.getMessage());
         } catch (SessionExpiredException e) {
-            eventProbe.log(Level.ERROR, e);
+            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_GONE, e.getMessage());
         } catch (Exception e) {
-            eventProbe.log(Level.ERROR, e);
+            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         }
