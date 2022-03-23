@@ -11,26 +11,35 @@ import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import org.apache.http.HttpStatus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
+import software.amazon.lambda.powertools.logging.Logging;
+import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
 public class AccessTokenHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private EventProbe eventProbe;
     private final AddressSessionService addressSessionService;
 
-    public AccessTokenHandler(AddressSessionService addressSessionService) {
+    public AccessTokenHandler(AddressSessionService addressSessionService, EventProbe eventProbe) {
         this.addressSessionService = addressSessionService;
+        this.eventProbe = eventProbe;
     }
 
     public AccessTokenHandler() {
+
         this.addressSessionService = new AddressSessionService();
+        this.eventProbe = new EventProbe();
     }
 
+    @Override
+    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST)
+    @Metrics(captureColdStart = true)
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         try {
@@ -53,10 +62,7 @@ public class AccessTokenHandler
                     HttpStatus.SC_OK, accessTokenResponse.toJSONObject());
 
         } catch (ParseException e) {
-            LOGGER.error(
-                    "Token request could not be parsed: {} {}",
-                    e.getErrorObject().getDescription(),
-                    e);
+            eventProbe.log(Level.ERROR, e);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     getHttpStatusCodeForErrorResponse(e.getErrorObject()),
                     e.getErrorObject().toJSONObject());

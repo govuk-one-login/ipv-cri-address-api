@@ -5,8 +5,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import org.apache.http.HttpStatus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -15,6 +13,7 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.models.AuthorizationResponse;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
@@ -27,16 +26,18 @@ public class AddressHandler
 
     protected static final String SESSION_ID = "session_id";
 
-    Logger log = LogManager.getLogger();
-
     private final AddressSessionService sessionService;
+
+    private EventProbe eventProbe;
 
     public AddressHandler() {
         sessionService = new AddressSessionService();
+        eventProbe = new EventProbe();
     }
 
-    public AddressHandler(AddressSessionService sessionService) {
+    public AddressHandler(AddressSessionService sessionService, EventProbe eventProbe) {
         this.sessionService = sessionService;
+        this.eventProbe = eventProbe;
     }
 
     @Override
@@ -46,6 +47,7 @@ public class AddressHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         String sessionId = input.getHeaders().get(SESSION_ID);
+        eventProbe.addDimensions(Map.of(SESSION_ID, sessionId));
         try {
             List<CanonicalAddressWithResidency> addresses =
                     sessionService.parseAddresses(input.getBody());
