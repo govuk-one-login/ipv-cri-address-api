@@ -131,7 +131,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Session"
-      x-amazon-apigateway-request-validator: "Validate body"
+      x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
@@ -396,14 +396,6 @@ components:
 
 
 x-amazon-apigateway-request-validators:
-  Validate body:
-    validateRequestParameters: false
-    validateRequestBody: true
-
-  Validate request:
-    validateRequestBody: false
-    validateRequestParameters: true
-
   Validate both:
     validateRequestBody: true
     validateRequestParameters: true

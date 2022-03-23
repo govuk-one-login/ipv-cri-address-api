@@ -25,12 +25,6 @@ Parameters:
     Type: String
     Default: "https://api.os.uk/search/places/v1/postcode"
 
-  OrdnanceSurveyAPIKey:
-    Description: Ordnance Survey API Key
-    Type: String
-    Default: testapikey
-
-
 Conditions:
   UseCodeSigning:
     Fn::Not:
@@ -173,10 +167,6 @@ Resources:
   AddressFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeSigningConfigArn: !If
-        - UseCodeSigning
-        - !Ref CodeSigningConfigArn
-        - !Ref AWS::NoValue
       CodeUri: ../lambdas/address/build/distributions/address.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       Environment:
