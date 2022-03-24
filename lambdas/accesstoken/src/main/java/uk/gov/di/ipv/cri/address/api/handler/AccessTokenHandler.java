@@ -13,6 +13,9 @@ import com.nimbusds.oauth2.sdk.TokenResponse;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
+import software.amazon.lambda.powertools.logging.Logging;
+import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
@@ -31,6 +34,9 @@ public class AccessTokenHandler
         this.addressSessionService = new AddressSessionService();
     }
 
+    @Override
+    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST)
+    @Metrics(captureColdStart = true)
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         try {
