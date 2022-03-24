@@ -293,44 +293,48 @@ class AddressSessionServiceTest {
 
     @Test
     void parseAddresses() throws AddressProcessingException {
-        String addresses = "[\n" +
-                "   {\n" +
-                "      \"uprn\": 72262801,\n" +
-                "      \"buildingNumber\": \"8\",\n" +
-                "      \"thoroughfareName\": \"GRANGE FIELDS WAY\",\n" +
-                "      \"postTown\": \"LEEDS\",\n" +
-                "      \"postcode\": \"LS10 4QL\",\n" +
-                "      \"countryCode\": \"GBR\",\n" +
-                "      \"residentFrom\": 1267142400000,\n" +
-                "      \"residentTo\": 1610755200000\n" +
-                "   },\n" +
-                "   {\n" +
-                "      \"uprn\": 63094965,\n" +
-                "      \"buildingNumber\": \"15\",\n" +
-                "      \"dependentLocality\": \"LOFTHOUSE\",\n" +
-                "      \"thoroughfareName\": \"RIDINGS LANE\",\n" +
-                "      \"postTown\": \"WAKEFIELD\",\n" +
-                "      \"postcode\": \"WF3 3SE\",\n" +
-                "      \"countryCode\": \"GBR\",\n" +
-                "      \"residentFrom\": 1610755200000,\n" +
-                "      \"residentTo\": 1627862400000\n" +
-                "   },\n" +
-                "   {\n" +
-                "      \"uprn\": 63042351,\n" +
-                "      \"buildingNumber\": \"5\",\n" +
-                "      \"thoroughfareName\": \"GATEWAYS\",\n" +
-                "      \"postTown\": \"WAKEFIELD\",\n" +
-                "      \"postcode\": \"WF1 2LZ\",\n" +
-                "      \"countryCode\": \"GBR\",\n" +
-                "      \"residentFrom\": 1627862400000,\n" +
-                "      \"currentResidency\": true\n" +
-                "   }\n" +
-                "]";
-        List<CanonicalAddressWithResidency> parsedAddresses = addressSessionService.parseAddresses(addresses);
+        String addresses =
+                "[\n"
+                        + "   {\n"
+                        + "      \"uprn\": 72262801,\n"
+                        + "      \"buildingNumber\": \"8\",\n"
+                        + "      \"thoroughfareName\": \"GRANGE FIELDS WAY\",\n"
+                        + "      \"postTown\": \"LEEDS\",\n"
+                        + "      \"postcode\": \"LS10 4QL\",\n"
+                        + "      \"countryCode\": \"GBR\",\n"
+                        + "      \"residentFrom\": 1267142400000,\n"
+                        + "      \"residentTo\": 1610755200000\n"
+                        + "   },\n"
+                        + "   {\n"
+                        + "      \"uprn\": 63094965,\n"
+                        + "      \"buildingNumber\": \"15\",\n"
+                        + "      \"dependentLocality\": \"LOFTHOUSE\",\n"
+                        + "      \"thoroughfareName\": \"RIDINGS LANE\",\n"
+                        + "      \"postTown\": \"WAKEFIELD\",\n"
+                        + "      \"postcode\": \"WF3 3SE\",\n"
+                        + "      \"countryCode\": \"GBR\",\n"
+                        + "      \"residentFrom\": 1610755200000,\n"
+                        + "      \"residentTo\": 1627862400000\n"
+                        + "   },\n"
+                        + "   {\n"
+                        + "      \"uprn\": 63042351,\n"
+                        + "      \"buildingNumber\": \"5\",\n"
+                        + "      \"thoroughfareName\": \"GATEWAYS\",\n"
+                        + "      \"postTown\": \"WAKEFIELD\",\n"
+                        + "      \"postcode\": \"WF1 2LZ\",\n"
+                        + "      \"countryCode\": \"GBR\",\n"
+                        + "      \"residentFrom\": 1627862400000,\n"
+                        + "      \"currentResidency\": true\n"
+                        + "   }\n"
+                        + "]";
+        List<CanonicalAddressWithResidency> parsedAddresses =
+                addressSessionService.parseAddresses(addresses);
         assertThat(parsedAddresses.size(), equalTo(3));
         assertThat(parsedAddresses.get(0).getUprn().orElse(0), equalTo(72262801));
         assertThat(parsedAddresses.get(0).getCurrentResidency().isPresent(), equalTo(false));
-        assertThat(parsedAddresses.get(0).getResidentFrom().orElse(new Date()), equalTo(Date.from(Instant.parse("2010-02-26T00:00:00.00Z"))));
+        assertThat(
+                parsedAddresses.get(0).getResidentFrom().orElse(new Date()),
+                equalTo(Date.from(Instant.parse("2010-02-26T00:00:00.00Z"))));
 
         assertThat(parsedAddresses.get(1).getCurrentResidency().isPresent(), equalTo(false));
         assertThat(parsedAddresses.get(2).getCurrentResidency().isPresent(), equalTo(true));
@@ -338,7 +342,8 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void saveAddressesSetsAuthorizationCode() throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
+    void saveAddressesSetsAuthorizationCode()
+            throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
         List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
         CanonicalAddressWithResidency address1 = new CanonicalAddressWithResidency();
         address1.setUprn(72262801);
@@ -376,7 +381,8 @@ class AddressSessionServiceTest {
         addresses.add(address3);
 
         AddressSessionItem addressSessionItem = new AddressSessionItem();
-        addressSessionItem.setExpiryDate(Date.from(fixedInstant.plus(Duration.ofDays(1))).getTime());
+        addressSessionItem.setExpiryDate(
+                Date.from(fixedInstant.plus(Duration.ofDays(1))).getTime());
 
         when(addressSessionService.getSession(anyString())).thenReturn(addressSessionItem);
 
@@ -384,25 +390,32 @@ class AddressSessionServiceTest {
         verify(mockDataStore).update(mockAddressSessionItem.capture());
         assertThat(mockAddressSessionItem.getValue().getAddresses(), equalTo(addresses));
         assertThat(mockAddressSessionItem.getValue().getAuthorizationCode(), notNullValue());
-
     }
 
     @Test
-    void saveAddressesThrowsSessionExpired() throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
+    void saveAddressesThrowsSessionExpired()
+            throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
         List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
 
         AddressSessionItem addressSessionItem = new AddressSessionItem();
 
         when(addressSessionService.getSession(anyString())).thenReturn(addressSessionItem);
 
-        assertThrows(SessionExpiredException.class, () -> addressSessionService.saveAddresses(String.valueOf(UUID.randomUUID()), addresses));
-
+        assertThrows(
+                SessionExpiredException.class,
+                () ->
+                        addressSessionService.saveAddresses(
+                                String.valueOf(UUID.randomUUID()), addresses));
     }
 
     @Test
-    void saveAddressesThrowsSessionNotFound() throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
+    void saveAddressesThrowsSessionNotFound()
+            throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
         List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
-        assertThrows(SessionNotFoundException.class, () -> addressSessionService.saveAddresses(String.valueOf(UUID.randomUUID()), addresses));
-
+        assertThrows(
+                SessionNotFoundException.class,
+                () ->
+                        addressSessionService.saveAddresses(
+                                String.valueOf(UUID.randomUUID()), addresses));
     }
 }

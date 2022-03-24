@@ -303,12 +303,13 @@ public class AddressSessionService {
             throws AddressProcessingException {
         List<CanonicalAddressWithResidency> addresses;
         try {
-            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module())
-                    .registerModule(new JavaTimeModule())
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            ObjectMapper mapper =
+                    new ObjectMapper()
+                            .registerModule(new Jdk8Module())
+                            .registerModule(new JavaTimeModule())
+                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-            addresses = mapper.readValue(addressBody, new TypeReference<>() {
-            });
+            addresses = mapper.readValue(addressBody, new TypeReference<>() {});
 
         } catch (JsonProcessingException e) {
             throw new AddressProcessingException(

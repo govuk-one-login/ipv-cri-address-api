@@ -68,18 +68,12 @@ public class PostcodeLookupHandler
             eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
-        } catch (SessionValidationException e) {
+        } catch (SessionValidationException
+                | SessionExpiredException
+                | SessionNotFoundException e) {
             eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, e.getMessage());
-        } catch (SessionNotFoundException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
-            return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_NOT_FOUND, e.getMessage());
-        } catch (SessionExpiredException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
-            return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_GONE, e.getMessage());
         } catch (Exception e) {
             eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(

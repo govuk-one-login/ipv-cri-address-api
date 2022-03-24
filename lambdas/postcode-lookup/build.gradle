@@ -5,10 +5,9 @@ plugins {
 }
 
 dependencies {
-	implementation project(":lib")
-	implementation configurations.lambda,
-			configurations.nimbus,
-			configurations.jackson
+	implementation project(":lib"),
+			configurations.lambda,
+			configurations.gson
 
 	aspect configurations.powertools
 
