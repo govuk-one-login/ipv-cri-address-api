@@ -171,19 +171,9 @@ public class AddressSessionService {
                 getValueOrThrow(queryParameters.getOrDefault(GRANT_TYPE, Collections.emptyList()));
 
         var addressSessionItem = getAddressSessionItemByValue(authorizationCode);
-        if (addressSessionItem == null
-                || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
-            throw new AccessTokenRequestException(
-                    "Cannot for the Address session item for the given authorization Code",
-                    OAuth2Error.INVALID_GRANT);
-        }
-        if (!URI.create(redirectUri).equals(addressSessionItem.getRedirectUri())) {
-            throw new AccessTokenRequestException(
-                    String.format(
-                            "Requested redirectUri: %s does not match existing redirectUri: %s",
-                            redirectUri, addressSessionItem.toString()),
-                    OAuth2Error.INVALID_GRANT);
-        }
+        throw new AccessTokenRequestException(
+                "Cannot for the Address session item for the given authorization Code",
+                OAuth2Error.INVALID_GRANT);
     }
 
     private SessionRequest parseSessionRequest(String requestBody)
