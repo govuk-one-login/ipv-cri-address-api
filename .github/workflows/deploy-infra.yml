@@ -1,0 +1,51 @@
+name: Deploy Parameters
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/parameter/**'
+jobs:
+  deploy-parameters:
+    name: Deploy Parameters
+    runs-on: ubuntu-latest
+    environment: di-ipv-cri-address-build
+    timeout-minutes: 15
+    env:
+      AWS_REGION: eu-west-2
+      ENVIRONMENT: build
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v1
+
+      - name: Assume temporary AWS role
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.PARAM_GH_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+        
+      - name: SAM Validate
+        run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/parameter/template.yaml
+
+      - name: SAM build
+        run: sam build -t infrastructure/parameter/template.yaml
+
+      - name: SAM package
+        run: |
+          sam package -t infra/template.yaml \
+            --s3-bucket ${{ secrets.PARAM_ARTIFACT_SOURCE_BUCKET_NAME }} \
+            --region ${{ env.AWS_REGION }} --output-template-file=cf-template.yaml
+
+      - name: Zip the CloudFormation template
+        run: zip template.zip cf-template.yaml
+
+      - name: Upload zipped CloudFormation artifact to S3
+        env:
+          ARTIFACT_SOURCE_BUCKET_NAME: ${{ secrets.PARAM_ARTIFACT_SOURCE_BUCKET_NAME }}
+        run: aws s3 cp template.zip "s3://$PARAM_ARTIFACT_SOURCE_BUCKET_NAME/template.zip"
+
