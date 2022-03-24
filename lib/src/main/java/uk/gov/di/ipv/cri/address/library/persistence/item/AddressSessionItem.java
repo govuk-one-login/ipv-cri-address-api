@@ -97,4 +97,30 @@ public class AddressSessionItem {
     public void setAddresses(List<CanonicalAddressWithResidency> addresses) {
         this.addresses = Objects.requireNonNullElseGet(addresses, ArrayList::new);
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder()
+                .append("AddressSessionItem{")
+                .append("sessionId=")
+                .append(sessionId)
+                .append(", expiryDate=")
+                .append(expiryDate)
+                .append(", clientId='")
+                .append(clientId)
+                .append('\'')
+                .append(", state='")
+                .append(state)
+                .append('\'')
+                .append(", redirectUri=")
+                .append(redirectUri)
+                .append(", accessToken='")
+                .append(accessToken)
+                .append('\'')
+                .append(", authorizationCode='")
+                .append(authorizationCode)
+                .append('\'')
+                .append('}')
+                .toString();
+    }
 }

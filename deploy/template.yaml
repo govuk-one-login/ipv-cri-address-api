@@ -225,40 +225,32 @@ Resources:
       TableName: !Sub "address-session-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
-        -
-          AttributeName: "sessionId"
+        - AttributeName: "sessionId"
           AttributeType: "S"
-        -
-          AttributeName: "authorizationCode"
+        - AttributeName: "authorizationCode"
           AttributeType: "S"
-        -
-          AttributeName: "token"
+        - AttributeName: "token"
           AttributeType: "S"
-
       KeySchema:
-        -
-          AttributeName: "sessionId"
+        - AttributeName: "sessionId"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
-        -
-          IndexName: "authorizationCode-index"
+        - IndexName: "authorizationCode-index"
           KeySchema:
-            -
-              AttributeName: "authorizationCode"
+            - AttributeName: "authorizationCode"
               KeyType: "HASH"
           Projection:
             NonKeyAttributes:
-              - "session-id"
+              - "sessionId"
+              - "redirectUri"
             ProjectionType: "INCLUDE"
-        -
-          IndexName: "token-index"
+        - IndexName: "token-index"
           KeySchema:
-            -
-              AttributeName: "token"
+            - AttributeName: "token"
               KeyType: "HASH"
           Projection:
             NonKeyAttributes:
-              - "session-id"
+              - "sessionId"
             ProjectionType: "INCLUDE"
       TimeToLiveSpecification:
         AttributeName: expiry-date

@@ -7,4 +7,8 @@ public class AccessTokenRequestException extends ParseException {
     public AccessTokenRequestException(ErrorObject error) {
         super(error.getCode(), error);
     }
+
+    public AccessTokenRequestException(String message, ErrorObject error) {
+        super(message, error);
+    }
 }

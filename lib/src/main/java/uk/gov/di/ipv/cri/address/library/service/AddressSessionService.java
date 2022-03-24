@@ -21,6 +21,9 @@ import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
+import software.amazon.awssdk.core.pagination.sync.SdkIterable;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
@@ -56,6 +59,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class AddressSessionService {
@@ -139,7 +143,7 @@ public class AddressSessionService {
         boolean invalidTokenRequest =
                 request.getQueryParameters()
                         .keySet()
-                        .containsAll(List.of(CODE, CLIENT_ID, REDIRECT_URI, GRANT_TYPE));
+                        .containsAll(Set.of(CODE, CLIENT_ID, REDIRECT_URI, GRANT_TYPE));
 
         if (!invalidTokenRequest) {
             throw new AccessTokenRequestException(OAuth2Error.INVALID_REQUEST);
@@ -163,17 +167,19 @@ public class AddressSessionService {
                 getValueOrThrow(queryParameters.getOrDefault(GRANT_TYPE, Collections.emptyList()));
 
         var addressSessionItem = getAddressSessionItemByValue(authorizationCode);
-        if (!grantType.equals(GrantType.AUTHORIZATION_CODE.getValue())) {
-            throw new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
+        if (addressSessionItem == null
+                || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
+            throw new AccessTokenRequestException(
+                    "Cannot for the Address session item for the given authorization Code",
+                    OAuth2Error.INVALID_GRANT);
         }
-        throw new AccessTokenRequestException(OAuth2Error.INVALID_GRANT);
-    }
-
-    public <T> T getValueOrThrow(List<T> list) {
-        if (list.size() == 1) return list.get(0);
-
-        throw new IllegalArgumentException(
-                String.format("Parameter must have exactly one value: %s", list));
+        if (!URI.create(redirectUri).equals(addressSessionItem.getRedirectUri())) {
+            throw new AccessTokenRequestException(
+                    String.format(
+                            "Requested redirectUri: %s does not match existing redirectUri: %s",
+                            redirectUri, addressSessionItem.toString()),
+                    OAuth2Error.INVALID_GRANT);
+        }
     }
 
     private SessionRequest parseSessionRequest(String requestBody)
@@ -353,19 +359,29 @@ public class AddressSessionService {
     }
 
     public AddressSessionItem getAddressSessionItemByValue(final String value) {
-        var addressSessionTable = dataStore.getTable();
-        var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
-        var attVal = AttributeValue.builder().s(value).build();
+        DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
+        DynamoDbIndex<AddressSessionItem> index =
+                addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
 
-        var queryConditional =
+        AttributeValue attVal = AttributeValue.builder().s(value).build();
+
+        QueryConditional queryConditional =
                 QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
 
-        var queryEnhancedRequest =
-                QueryEnhancedRequest.builder().queryConditional(queryConditional).build();
+        SdkIterable<Page<AddressSessionItem>> items =
+                index.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build());
 
-        var items = index.query(queryEnhancedRequest);
-        var item = items.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
+        List<AddressSessionItem> item =
+                items.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
 
         return getValueOrThrow(item);
+    }
+
+    private <T> T getValueOrThrow(List<T> list) {
+        if (list.size() == 1) return list.get(0);
+
+        throw new IllegalArgumentException(
+                String.format("Parameter must have exactly one value: %s", list));
     }
 }
