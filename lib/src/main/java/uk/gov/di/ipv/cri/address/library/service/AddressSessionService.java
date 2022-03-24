@@ -1,7 +1,11 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -299,8 +303,13 @@ public class AddressSessionService {
             throws AddressProcessingException {
         List<CanonicalAddressWithResidency> addresses;
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            addresses = mapper.readValue(addressBody, List.class);
+            ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module())
+                    .registerModule(new JavaTimeModule())
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            addresses = mapper.readValue(addressBody, new TypeReference<>() {
+            });
+
         } catch (JsonProcessingException e) {
             throw new AddressProcessingException(
                     "could not parse addresses..." + e.getMessage(), e);
