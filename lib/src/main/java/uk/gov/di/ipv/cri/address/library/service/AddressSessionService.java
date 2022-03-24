@@ -102,6 +102,7 @@ public class AddressSessionService {
         addressSessionItem.setState(sessionRequest.getState());
         addressSessionItem.setClientId(sessionRequest.getClientId());
         addressSessionItem.setRedirectUri(sessionRequest.getRedirectUri());
+        addressSessionItem.setSubject(sessionRequest.getSubject());
         // TODO: create authorization_code, this is temporary see:
         // https://govukverify.atlassian.net/browse/KBV-237
         addressSessionItem.setAuthorizationCode(UUID.randomUUID().toString());
@@ -120,7 +121,8 @@ public class AddressSessionService {
 
         SignedJWT signedJWT = parseRequestJWT(sessionRequest);
         verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-        verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
+        String subject = verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
+        sessionRequest.setSubject(subject);
         verifyJWTSignature(clientAuthenticationConfig, signedJWT);
 
         return sessionRequest;
@@ -255,7 +257,7 @@ public class AddressSessionService {
         }
     }
 
-    private void verifyJWTClaimsSet(
+    private String verifyJWTClaimsSet(
             Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
@@ -266,7 +268,9 @@ public class AddressSessionService {
                         new HashSet<>(Arrays.asList("exp", "nbf")));
 
         try {
-            verifier.verify(signedJWT.getJWTClaimsSet(), null);
+            JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
+            verifier.verify(jwtClaimsSet, null);
+            return jwtClaimsSet.getSubject();
         } catch (BadJWTException | ParseException e) {
             throw new SessionValidationException("could not parse JWT", e);
         }

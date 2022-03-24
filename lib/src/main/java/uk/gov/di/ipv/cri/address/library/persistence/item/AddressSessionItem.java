@@ -20,6 +20,8 @@ public class AddressSessionItem {
 
     private String authorizationCode;
 
+    private String subject;
+
     public AddressSessionItem() {
         sessionId = UUID.randomUUID();
     }
@@ -71,6 +73,14 @@ public class AddressSessionItem {
 
     public String getAccessToken() {
         return accessToken;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getSubject() {
+        return subject;
     }
 
     @DynamoDbSecondaryPartitionKey(indexNames = AUTHORIZATION_CODE_INDEX)
