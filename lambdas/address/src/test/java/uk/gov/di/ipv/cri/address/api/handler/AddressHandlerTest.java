@@ -112,14 +112,11 @@ class AddressHandlerTest {
     }
 
     @Test
-    void EmptyAddressesReturns200()
-            throws JsonProcessingException, AddressProcessingException, SessionExpiredException,
-                    SessionValidationException, SessionNotFoundException {
+    void EmptyAddressesReturns200() throws AddressProcessingException {
 
         when(apiGatewayProxyRequestEvent.getHeaders())
                 .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
-        AddressSessionItem addressSessionItem = new AddressSessionItem();
 
         List<CanonicalAddressWithResidency> canonicalAddressWithResidencies = new ArrayList<>();
 

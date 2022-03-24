@@ -28,7 +28,7 @@ public class PostcodeLookupHandler
 
     private final PostcodeLookupService postcodeLookupService;
     private final AddressSessionService addressSessionService;
-    private EventProbe eventProbe;
+    private final EventProbe eventProbe;
     protected static final String SESSION_ID = "session_id";
 
     public PostcodeLookupHandler(
