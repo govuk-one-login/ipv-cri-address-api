@@ -66,11 +66,11 @@ public class AddressHandler
         } catch (SessionValidationException
                 | SessionNotFoundException
                 | SessionExpiredException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
+            eventProbe.log(Level.ERROR, e).counterMetric("address", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, e.getMessage());
         } catch (AddressProcessingException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
+            eventProbe.log(Level.ERROR, e).counterMetric("address", 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
