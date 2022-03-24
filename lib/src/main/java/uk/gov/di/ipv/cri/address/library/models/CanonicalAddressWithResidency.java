@@ -8,9 +8,9 @@ import java.util.Optional;
 
 @DynamoDBDocument
 public class CanonicalAddressWithResidency extends CanonicalAddress {
-    private Optional<Date> residentFrom;
-    private Optional<Date> residentTo;
-    private Optional<Boolean> currentResidency;
+    private Date residentFrom;
+    private Date residentTo;
+    private Boolean currentResidency;
 
     public CanonicalAddressWithResidency() {
         super();
@@ -21,26 +21,26 @@ public class CanonicalAddressWithResidency extends CanonicalAddress {
     }
 
     public Optional<Date> getResidentFrom() {
-        return residentFrom;
+        return Optional.ofNullable(residentFrom);
     }
 
-    public void setResidentFrom(Optional<Date> residentFrom) {
+    public void setResidentFrom(Date residentFrom) {
         this.residentFrom = residentFrom;
     }
 
     public Optional<Date> getResidentTo() {
-        return residentTo;
+        return Optional.ofNullable(residentTo);
     }
 
-    public void setResidentTo(Optional<Date> residentTo) {
+    public void setResidentTo(Date residentTo) {
         this.residentTo = residentTo;
     }
 
     public Optional<Boolean> getCurrentResidency() {
-        return currentResidency;
+        return Optional.ofNullable(currentResidency);
     }
 
-    public void setCurrentResidency(Optional<Boolean> currentResidency) {
+    public void setCurrentResidency(Boolean currentResidency) {
         this.currentResidency = currentResidency;
     }
 }

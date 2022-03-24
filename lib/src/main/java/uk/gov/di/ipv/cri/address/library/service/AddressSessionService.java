@@ -309,12 +309,6 @@ public class AddressSessionService {
 
     public void validateSessionId(String sessionId)
             throws SessionValidationException, SessionNotFoundException, SessionExpiredException {
-        if (sessionId == null) {
-            throw new SessionValidationException("session id is null");
-        }
-        if (sessionId.isEmpty()) {
-            throw new SessionValidationException("session id is empty");
-        }
 
         AddressSessionItem sessionItem = dataStore.getItem(sessionId);
         if (sessionItem == null) {
@@ -332,22 +326,15 @@ public class AddressSessionService {
         validateSessionId(sessionId);
 
         var sessionItem = dataStore.getItem(sessionId);
-        sessionItem.setAddresses(addresses);
-        if (!addresses.isEmpty()) {
-            // We can create an authorization code
-            sessionItem.setAuthorizationCode(UUID.randomUUID());
+        if (sessionItem == null) {
+            throw new SessionNotFoundException("session not found");
         }
+
+        sessionItem.setAddresses(addresses);
+        sessionItem.setAuthorizationCode(UUID.randomUUID());
         dataStore.update(sessionItem);
 
         return sessionItem;
-    }
-
-    public List<CanonicalAddressWithResidency> getAddresses(String sessionId)
-            throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
-        validateSessionId(sessionId);
-
-        var sessionItem = dataStore.getItem(sessionId);
-        return sessionItem.getAddresses();
     }
 
     public TokenResponse createToken(TokenRequest tokenRequest) {
