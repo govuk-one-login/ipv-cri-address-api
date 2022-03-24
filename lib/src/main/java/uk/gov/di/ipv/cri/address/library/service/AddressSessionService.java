@@ -12,7 +12,6 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
-import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.TokenRequest;
@@ -36,7 +35,6 @@ import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-import uk.gov.di.ipv.cri.address.library.validation.ValidationResult;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -86,14 +84,6 @@ public class AddressSessionService {
         this.dataStore = dataStore;
         this.configurationService = configurationService;
         this.clock = clock;
-    }
-
-    public ValidationResult<ErrorObject> validateTokenRequest(TokenRequest tokenRequest) {
-        if (!tokenRequest.getAuthorizationGrant().getType().equals(GrantType.AUTHORIZATION_CODE)) {
-            return new ValidationResult<>(false, OAuth2Error.UNSUPPORTED_GRANT_TYPE);
-        }
-
-        return ValidationResult.createValidResult();
     }
 
     public UUID createAndSaveAddressSession(SessionRequest sessionRequest) {
