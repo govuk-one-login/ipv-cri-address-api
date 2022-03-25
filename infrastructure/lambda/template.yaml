@@ -244,7 +244,7 @@ Resources:
   AddressSessionTtlParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub /${EnvironmentName}/AddressSessionTtl
+      Name: !Sub "/${AWS::StackName}/AddressSessionTtl"
       Type: String
       Value: !FindInMap [AddressSessionTtlMapping, EnvironmentName, !Ref 'EnvironmentName']
       Description: default time to live for an address session item (seconds)
@@ -252,38 +252,39 @@ Resources:
   IPVCoreStubAuthenticationAlgParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub /${EnvironmentName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg"
       Type: String
       Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, EnvironmentName, !Ref 'EnvironmentName']
 
   IPVCoreStubIssuerParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub /${EnvironmentName}/clients/ipv-core-stub/jwtAuthentication/issuer
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer"
       Type: String
       Value: !FindInMap [IPVCoreStubIssuerMapping, EnvironmentName, !Ref 'EnvironmentName']
 
   IPVCoreStubPublicCertificateToVerifyParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub /${EnvironmentName}/clients/ipv-core-stub/jwtAuthentication/publicCertificateToVerify
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/publicCertificateToVerify"
       Type: String
       Value: !FindInMap [IPVCoreStubPublicCertificateToVerifyMapping, EnvironmentName, !Ref 'EnvironmentName']
 
   IPVCoreStubRedirectURIParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub /${EnvironmentName}/clients/ipv-core-stub/jwtAuthentication/redirectUri
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/redirectUri"
       Type: String
       Value: !FindInMap [IPVCoreStubRedirectURIMapping, EnvironmentName, !Ref 'EnvironmentName']
 
   OrdnanceSurveyAPIURLParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub /${EnvironmentName}/OrdnanceSurveyAPIURL
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIURL"
       Type: String
       Value: !FindInMap [OrdnanceSurveyAPIURLMapping, EnvironmentName, !Ref 'EnvironmentName']
       Description: Ordnance Survey Postcode Lookup API URL
+
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
