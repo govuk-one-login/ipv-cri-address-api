@@ -2,14 +2,7 @@ name: Build
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - 'infrastructure/lambda/**'
-      - 'gradle/**'
-      - 'lambdas/**'
-      - 'lib/**'
-      - 'build.gradle'
-      - 'gradlew'
-      - 'settings.gradle'
+
 jobs:
   build:
     name: Build

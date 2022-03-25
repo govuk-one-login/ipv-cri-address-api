@@ -3,14 +3,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'infrastructure/lambda/**'
-      - 'gradle/**'
-      - 'lambdas/**'
-      - 'lib/**'
-      - 'build.gradle'
-      - 'gradlew'
-      - 'settings.gradle'
   workflow_dispatch: # deploy manually
 
 jobs:
@@ -21,9 +13,7 @@ jobs:
     timeout-minutes: 15
     env:
       AWS_REGION: eu-west-2
-      ENVIRONMENT: dev
       STACK_NAME: di-ipv-cri-address-api-dev
-      ROLLBACK_ACTION: "--disable-rollback"
     permissions:
       id-token: write
       contents: read
@@ -56,6 +46,6 @@ jobs:
       - name: SAM deploy
         run: |
           sam deploy -t infrastructure/lambda/template.yaml \
-            --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} \
+            --no-fail-on-empty-changeset --no-confirm-changeset \
             --stack-name ${{ env.STACK_NAME }} --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM
