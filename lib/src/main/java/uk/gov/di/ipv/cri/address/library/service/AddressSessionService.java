@@ -169,7 +169,7 @@ public class AddressSessionService {
             throw new AccessTokenRequestException(
                     String.format(
                             "Requested redirectUri: %s does not match existing redirectUri: %s",
-                            redirectUri, addressSessionItem.toString()),
+                            redirectUri, addressSessionItem),
                     OAuth2Error.INVALID_GRANT);
         }
     }
