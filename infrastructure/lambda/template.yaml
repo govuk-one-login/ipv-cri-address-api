@@ -21,7 +21,7 @@ Parameters:
 
 Conditions:
   CreateDevResources: !Equals
-    - !Ref Environment
+    - !Ref EnvironmentName
     - dev
 
 Globals:
