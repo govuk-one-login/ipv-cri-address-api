@@ -116,7 +116,7 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/session/build/distributions/session.zip
+      CodeUri: ../../lambdas/session/build/distributions/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Environment:
         Variables:
@@ -146,7 +146,7 @@ Resources:
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
+      CodeUri: ../../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       Environment:
         Variables:
@@ -174,7 +174,7 @@ Resources:
   AccessTokenFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/accesstoken/build/distributions/accesstoken.zip
+      CodeUri: ../../lambdas/accesstoken/build/distributions/accesstoken.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.AccessTokenHandler::handleRequest
       Environment:
         Variables:
