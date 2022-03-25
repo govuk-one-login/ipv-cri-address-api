@@ -90,14 +90,6 @@ public class AddressSessionService {
         this.clock = clock;
     }
 
-    public ValidationResult<ErrorObject> validateTokenRequest(TokenRequest tokenRequest) {
-        if (!tokenRequest.getAuthorizationGrant().getType().equals(GrantType.AUTHORIZATION_CODE)) {
-            return new ValidationResult<>(false, OAuth2Error.UNSUPPORTED_GRANT_TYPE);
-        }
-
-        return ValidationResult.createValidResult();
-    }
-
     public UUID createAndSaveAddressSession(SessionRequest sessionRequest) {
 
         AddressSessionItem addressSessionItem = new AddressSessionItem();
@@ -165,9 +157,22 @@ public class AddressSessionService {
                 getValueOrThrow(queryParameters.getOrDefault(GRANT_TYPE, Collections.emptyList()));
 
         var addressSessionItem = getAddressSessionItemByValue(authorizationCode);
-        throw new AccessTokenRequestException(
-                "Cannot for the Address session item for the given authorization Code",
-                OAuth2Error.INVALID_GRANT);
+        if (!grantType.equals(GrantType.AUTHORIZATION_CODE.getValue())) {
+            throw new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
+        }
+        if (addressSessionItem == null
+                || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
+            throw new AccessTokenRequestException(
+                    "Cannot for the Address session item for the given authorization Code",
+                    OAuth2Error.INVALID_GRANT);
+        }
+        if (!URI.create(redirectUri).equals(addressSessionItem.getRedirectUri())) {
+            throw new AccessTokenRequestException(
+                    String.format(
+                            "Requested redirectUri: %s does not match existing redirectUri: %s",
+                            redirectUri, addressSessionItem),
+                    OAuth2Error.INVALID_GRANT);
+        }
     }
 
     private SessionRequest parseSessionRequest(String requestBody)
@@ -331,7 +336,7 @@ public class AddressSessionService {
         }
 
         sessionItem.setAddresses(addresses);
-        sessionItem.setAuthorizationCode(UUID.randomUUID());
+        sessionItem.setAuthorizationCode(UUID.randomUUID().toString());
         dataStore.update(sessionItem);
 
         return sessionItem;

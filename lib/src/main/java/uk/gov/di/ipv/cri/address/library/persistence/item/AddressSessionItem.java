@@ -22,7 +22,7 @@ public class AddressSessionItem {
     private String state;
     private URI redirectUri;
     private List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
-    private UUID authorizationCode;
+    private String authorizationCode;
 
     private String accessToken;
 
@@ -41,11 +41,11 @@ public class AddressSessionItem {
     }
 
     @DynamoDbSecondaryPartitionKey(indexNames = AUTHORIZATION_CODE_INDEX)
-    public UUID getAuthorizationCode() {
+    public String getAuthorizationCode() {
         return authorizationCode;
     }
 
-    public void setAuthorizationCode(UUID authorizationCode) {
+    public void setAuthorizationCode(String authorizationCode) {
         this.authorizationCode = authorizationCode;
     }
 
