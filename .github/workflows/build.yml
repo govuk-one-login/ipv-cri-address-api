@@ -28,7 +28,7 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Build
-        run: ./gradlew spotlessCheck
+        run: ./gradlew spotlessApply
       - name: Perform Static Analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
