@@ -19,8 +19,28 @@ Parameters:
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
 
-Mappings:
+Conditions:
+  CreateDevResources: !Equals
+    - !Ref EnvironmentName
+    - dev
 
+Globals:
+  Function:
+    CodeSigningConfigArn: !If
+      - CreateDevResources
+      - !Ref AWS::NoValue
+      - !Ref CodeSigningConfigArn
+    Timeout: 30 # seconds
+    Runtime: java11
+    AutoPublishAlias: live
+    Tracing: Active
+    MemorySize: 512
+    Environment:
+      Variables:
+        AWS_STACK_NAME: !Sub ${AWS::StackName}
+        POWERTOOLS_LOG_LEVEL: INFO
+
+Mappings:
   AddressSessionTtlMapping:
     EnvironmentName:
       dev: "172800" # 2 days
@@ -69,22 +89,6 @@ Mappings:
       integration: "https://api.os.uk/search/places/v1/postcode"
       production: "https://api.os.uk/search/places/v1/postcode"
 
-Globals:
-  Function:
-    CodeSigningConfigArn: !If
-      - CreateDevResources
-      - !Ref AWS::NoValue
-      - !Ref CodeSigningConfigArn
-    Timeout: 30 # seconds
-    Runtime: java11
-    AutoPublishAlias: live
-    Tracing: Active
-    MemorySize: 512
-    Environment:
-      Variables:
-        AWS_STACK_NAME: !Sub ${AWS::StackName}
-        POWERTOOLS_LOG_LEVEL: INFO
-
 Resources:
   AddressApi:
     Type: AWS::Serverless::Api
@@ -97,7 +101,7 @@ Resources:
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
-      StageName: !Ref Environment
+      StageName: !Ref EnvironmentName
       #      Auth:
       #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
@@ -116,7 +120,7 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/session/build/distributions/session.zip
+      CodeUri: ../../lambdas/session/build/distributions/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Environment:
         Variables:
@@ -146,7 +150,7 @@ Resources:
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
+      CodeUri: ../../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       Environment:
         Variables:
@@ -174,7 +178,7 @@ Resources:
   AccessTokenFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/accesstoken/build/distributions/accesstoken.zip
+      CodeUri: ../../lambdas/accesstoken/build/distributions/accesstoken.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.AccessTokenHandler::handleRequest
       Environment:
         Variables:
@@ -310,13 +314,13 @@ Resources:
 
 Outputs:
   AddressApiBaseUrl:
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
 
   SessionFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for session function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/session/"
     Export:
       Name: !Sub ${AWS::StackName}-SessionFunctionApi
   SessionFunction:
@@ -324,7 +328,7 @@ Outputs:
 
   PostcodeLookupFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/postcode-lookup/"
     Export:
       Name: !Sub ${AWS::StackName}-PostcodeLookupFunctionApi
   PostcodeLookupFunction:
