@@ -76,13 +76,13 @@ class PostcodeLookupHanderTest {
     }
 
     @Test
-    void SessionValidationReturns400()
+    void SessionErrorThrows400()
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
-                    SessionExpiredException, SessionValidationException, SessionNotFoundException {
+                    SessionExpiredException, SessionNotFoundException {
 
         setupEventProbeErrorBehaviour();
 
-        SessionValidationException exception = new SessionValidationException("Session is empty");
+        SessionNotFoundException exception = new SessionNotFoundException("Session not found");
 
         when(apiGatewayProxyRequestEvent.getHeaders())
                 .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));

@@ -10,6 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import uk.gov.di.ipv.cri.address.library.exception.ClassToMapException;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -45,7 +46,7 @@ public class ClassToMapConverter<T> implements AttributeConverter<T> {
         try {
             map = mapper.readValue(mapper.writeValueAsString(input), mapType);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new ClassToMapException(e);
         }
         Map<String, AttributeValue> attributeValueMap = new HashMap<>();
         map.forEach(

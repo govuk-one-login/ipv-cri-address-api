@@ -26,6 +26,7 @@ public class AddressHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     protected static final String SESSION_ID = "session_id";
+    protected static final String LAMBDA_NAME = "address";
 
     private final AddressSessionService sessionService;
 
@@ -55,7 +56,7 @@ public class AddressHandler
             // If we have at least one address, we can return a 201 with the authorization code
             if (!addresses.isEmpty()) {
                 AddressSessionItem session = sessionService.saveAddresses(sessionId, addresses);
-                eventProbe.counterMetric("address");
+                eventProbe.counterMetric(LAMBDA_NAME);
                 return ApiGatewayResponseGenerator.proxyJsonResponse(
                         HttpStatus.SC_CREATED, new AuthorizationResponse(session));
             }
@@ -66,7 +67,7 @@ public class AddressHandler
         } catch (SessionValidationException
                 | SessionNotFoundException
                 | SessionExpiredException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("address", 0d);
+            eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, e.getMessage());
         } catch (AddressProcessingException e) {

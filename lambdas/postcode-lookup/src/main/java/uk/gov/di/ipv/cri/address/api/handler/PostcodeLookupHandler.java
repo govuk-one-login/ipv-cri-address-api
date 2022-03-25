@@ -14,7 +14,6 @@ import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
@@ -30,6 +29,7 @@ public class PostcodeLookupHandler
     private final AddressSessionService addressSessionService;
     private final EventProbe eventProbe;
     protected static final String SESSION_ID = "session_id";
+    protected static final String LAMBDA_NAME = "postcode_lookup";
 
     public PostcodeLookupHandler(
             PostcodeLookupService postcodeLookupService,
@@ -60,22 +60,20 @@ public class PostcodeLookupHandler
         try {
             addressSessionService.validateSessionId(sessionId);
             List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
-            eventProbe.counterMetric("postcode_lookup");
+            eventProbe.counterMetric(LAMBDA_NAME);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, results);
 
         } catch (PostcodeLookupValidationException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
+            eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
-        } catch (SessionValidationException
-                | SessionExpiredException
-                | SessionNotFoundException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
+        } catch (SessionExpiredException | SessionNotFoundException e) {
+            eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("postcode_lookup", 0d);
+            eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         }

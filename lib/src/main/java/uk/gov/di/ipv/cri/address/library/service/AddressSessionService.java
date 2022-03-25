@@ -313,7 +313,7 @@ public class AddressSessionService {
     }
 
     public void validateSessionId(String sessionId)
-            throws SessionValidationException, SessionNotFoundException, SessionExpiredException {
+            throws SessionNotFoundException, SessionExpiredException {
 
         AddressSessionItem sessionItem = dataStore.getItem(sessionId);
         if (sessionItem == null) {
