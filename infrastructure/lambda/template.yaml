@@ -19,8 +19,28 @@ Parameters:
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
 
-Mappings:
+Conditions:
+  CreateDevResources: !Equals
+    - !Ref Environment
+    - dev
 
+Globals:
+  Function:
+    CodeSigningConfigArn: !If
+      - CreateDevResources
+      - !Ref AWS::NoValue
+      - !Ref CodeSigningConfigArn
+    Timeout: 30 # seconds
+    Runtime: java11
+    AutoPublishAlias: live
+    Tracing: Active
+    MemorySize: 512
+    Environment:
+      Variables:
+        AWS_STACK_NAME: !Sub ${AWS::StackName}
+        POWERTOOLS_LOG_LEVEL: INFO
+
+Mappings:
   AddressSessionTtlMapping:
     EnvironmentName:
       dev: "172800" # 2 days
@@ -68,22 +88,6 @@ Mappings:
       staging: "https://api.os.uk/search/places/v1/postcode"
       integration: "https://api.os.uk/search/places/v1/postcode"
       production: "https://api.os.uk/search/places/v1/postcode"
-
-Globals:
-  Function:
-    CodeSigningConfigArn: !If
-      - CreateDevResources
-      - !Ref AWS::NoValue
-      - !Ref CodeSigningConfigArn
-    Timeout: 30 # seconds
-    Runtime: java11
-    AutoPublishAlias: live
-    Tracing: Active
-    MemorySize: 512
-    Environment:
-      Variables:
-        AWS_STACK_NAME: !Sub ${AWS::StackName}
-        POWERTOOLS_LOG_LEVEL: INFO
 
 Resources:
   AddressApi:
