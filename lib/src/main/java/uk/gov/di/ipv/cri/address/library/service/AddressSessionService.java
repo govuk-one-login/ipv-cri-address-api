@@ -39,7 +39,6 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-import uk.gov.di.ipv.cri.address.library.validation.ValidationResult;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;

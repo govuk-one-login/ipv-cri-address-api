@@ -20,12 +20,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateEncodingException;
-import java.time.*;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -257,6 +264,255 @@ class AddressSessionServiceTest {
         assertThat(result.getResponseType(), equalTo(sessionRequest.getResponseType()));
     }
 
+    @Test
+    void shouldCallCreateTokenRequestSuccessfully() throws com.nimbusds.oauth2.sdk.ParseException {
+        String authCodeValue = "12345";
+        String redirectUri = "http://test.com";
+        String tokenRequestBody =
+                String.format(
+                        "code=%S&redirect_uri=%S&grant_type=authorization_code&client_id=test_client_id",
+                        authCodeValue, redirectUri);
+        var attVal = AttributeValue.builder().s(authCodeValue).build();
+        var queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
+        Page<AddressSessionItem> item = Page.create(List.of(mockAddressSessionItem));
+        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
+
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
+        when(mockAuthorizationCodeIndex.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                .thenReturn(pageSdkIterableMock);
+        when(mockAddressSessionItem.getAuthorizationCode()).thenReturn(authCodeValue);
+        when(mockAddressSessionItem.getRedirectUri()).thenReturn(URI.create(redirectUri));
+        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
+
+        TokenRequest tokenRequest = addressSessionService.createTokenRequest(tokenRequestBody);
+        AuthorizationCodeGrant authorizationCodeGrant =
+                (AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant();
+        assertThat(tokenRequest, notNullValue());
+        assertThat(
+                authorizationCodeGrant.getAuthorizationCode().getValue(), equalTo(authCodeValue));
+    }
+
+    @Test
+    void shouldThrowInvalidRequestWhenTokenRequestUrlParamsIsInComplete() {
+        String redirectUri = "http://test.com";
+        String tokenRequestBody =
+                String.format(
+                        "redirect_uri=%S&grant_type=authorization_code&client_id=test_client_id",
+                        redirectUri);
+
+        AccessTokenRequestException exception =
+                assertThrows(
+                        AccessTokenRequestException.class,
+                        () -> addressSessionService.createTokenRequest(tokenRequestBody));
+
+        assertThat(exception.getMessage(), containsString(OAuth2Error.INVALID_REQUEST_CODE));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAddressSessionItemDoesNotExistForTheRequestedAuthorizationCode() {
+        String authCodeValue = "12345";
+        String redirectUri = "http://test.com";
+        String tokenRequestBody =
+                String.format(
+                        "code=%S&redirect_uri=%S&grant_type=authorization_code&client_id=test_client_id",
+                        authCodeValue, redirectUri);
+
+        var attVal = AttributeValue.builder().s(authCodeValue).build();
+        var queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
+        Page<AddressSessionItem> item = Page.create(List.of(mockAddressSessionItem));
+        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
+
+        when(mockAddressSessionItem.getAuthorizationCode()).thenReturn("wrong-authorization-code");
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
+        when(mockAuthorizationCodeIndex.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                .thenReturn(pageSdkIterableMock);
+
+        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
+        AccessTokenRequestException exception =
+                assertThrows(
+                        AccessTokenRequestException.class,
+                        () -> addressSessionService.createTokenRequest(tokenRequestBody));
+
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "Cannot for the Address session item for the given authorization Code"));
+        assertThat(exception.getErrorObject(), equalTo(OAuth2Error.INVALID_GRANT));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNoMatchingAddressSessionItemForTheRequestedAuthorizationCode() {
+        String authCodeValue = "12345";
+        String redirectUri = "http://test.com";
+        String tokenRequestBody =
+                String.format(
+                        "code=%S&redirect_uri=%S&grant_type=authorization_code&client_id=test_client_id",
+                        authCodeValue, redirectUri);
+
+        var attVal = AttributeValue.builder().s(authCodeValue).build();
+        var queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
+        Page<AddressSessionItem> item = Page.create(List.of(mockAddressSessionItem));
+        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
+
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
+        when(mockAuthorizationCodeIndex.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                .thenReturn(pageSdkIterableMock);
+
+        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
+        AccessTokenRequestException exception =
+                assertThrows(
+                        AccessTokenRequestException.class,
+                        () -> addressSessionService.createTokenRequest(tokenRequestBody));
+
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "Cannot for the Address session item for the given authorization Code"));
+        assertThat(exception.getErrorObject(), equalTo(OAuth2Error.INVALID_GRANT));
+    }
+
+    @Test
+    void shouldThrowInValidGrantExceptionWhenRedirectUriDoesNotMatchTheRetrievedItemRedirectUri() {
+        String authCodeValue = "12345";
+        String redirectUri = "http://test.com";
+        String tokenRequestBody =
+                String.format(
+                        "code=%S&redirect_uri=%S&grant_type=authorization_code&client_id=test_client_id",
+                        authCodeValue, redirectUri);
+
+        var attVal = AttributeValue.builder().s(authCodeValue).build();
+        var queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
+        Page<AddressSessionItem> item = Page.create(List.of(mockAddressSessionItem));
+        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
+
+        when(mockAddressSessionItem.getAuthorizationCode()).thenReturn(authCodeValue);
+        when(mockAddressSessionItem.getRedirectUri())
+                .thenReturn(URI.create("http://different-redirectUri"));
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
+        when(mockAuthorizationCodeIndex.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                .thenReturn(pageSdkIterableMock);
+
+        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
+        AccessTokenRequestException exception =
+                assertThrows(
+                        AccessTokenRequestException.class,
+                        () -> addressSessionService.createTokenRequest(tokenRequestBody));
+
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "Requested redirectUri: HTTP://TEST.COM does not match existing redirectUri"));
+        assertThat(exception.getErrorObject(), equalTo(OAuth2Error.INVALID_GRANT));
+    }
+
+    @Test
+    void shouldThrowUnSupportGrantTypeExceptionWhenAuthorizationGrantTypeIsInValid() {
+        String authCodeValue = "12345";
+        String redirectUri = "http://test.com";
+        String tokenRequestBody =
+                String.format(
+                        "code=%S&redirect_uri=%S&grant_type=implicit&client_id=test_client_id",
+                        authCodeValue, redirectUri);
+
+        var attVal = AttributeValue.builder().s(authCodeValue).build();
+        var queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
+        Page<AddressSessionItem> item = Page.create(List.of(mockAddressSessionItem));
+        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
+
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
+        when(mockAuthorizationCodeIndex.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                .thenReturn(pageSdkIterableMock);
+
+        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
+        AccessTokenRequestException exception =
+                assertThrows(
+                        AccessTokenRequestException.class,
+                        () -> addressSessionService.createTokenRequest(tokenRequestBody));
+
+        assertThat(exception.getMessage(), containsString(OAuth2Error.UNSUPPORTED_GRANT_TYPE_CODE));
+    }
+
+    @Test
+    void shouldThrowExceptionCreateTokenRequestSuccessfully() {
+        String authCodeValue = "12345";
+        String redirectUri = "http://test.com";
+        String tokenRequestBody =
+                String.format(
+                        "code=%S&redirect_uri=%S&grant_type=authorization_code&client_id=test_client_id",
+                        authCodeValue, redirectUri);
+        var attVal = AttributeValue.builder().s(authCodeValue).build();
+        var queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
+        Page<AddressSessionItem> item =
+                Page.create(List.of(mockAddressSessionItem, mockAddressSessionItem));
+        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
+
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
+        when(mockAuthorizationCodeIndex.query(
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                .thenReturn(pageSdkIterableMock);
+        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
+
+        IllegalArgumentException exception =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> addressSessionService.createTokenRequest(tokenRequestBody));
+
+        assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
+    }
+
     private Map<String, String> standardSSMConfigMap(
             SessionRequestBuilder.SignedJWTBuilder builder) {
         try {
@@ -272,6 +528,31 @@ class AddressSessionServiceTest {
         } catch (CertificateEncodingException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    @Test
+    void shouldCallCreateTokenWithATokenRequest() {
+        TokenRequest tokenRequest = mock(TokenRequest.class);
+        TokenResponse tokenResponse = addressSessionService.createToken(tokenRequest);
+
+        verify(tokenRequest).getScope();
+        assertThat(tokenResponse, notNullValue());
+    }
+
+    @Test
+    void shouldCallwriteTokenAndUpdateDataStore() {
+        AccessTokenResponse accessTokenResponse = mock(AccessTokenResponse.class);
+        AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);
+
+        Tokens mockTokens = mock(Tokens.class);
+        when(accessTokenResponse.getTokens()).thenReturn(mockTokens);
+        BearerAccessToken mockBearerAccessToken = mock(BearerAccessToken.class);
+        when(mockTokens.getBearerAccessToken()).thenReturn(mockBearerAccessToken);
+        when(mockBearerAccessToken.toAuthorizationHeader()).thenReturn("some-authorization-header");
+        addressSessionService.writeToken(accessTokenResponse, addressSessionItem);
+
+        verify(mockDataStore).update(addressSessionItem);
+        assertThat(accessTokenResponse, notNullValue());
     }
 
     private String marshallToJSON(Object sessionRequest) throws IOException {
