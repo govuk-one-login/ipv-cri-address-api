@@ -48,12 +48,11 @@ class AddressHandlerTest {
 
     @Test
     void SessionValidationReturns400()
-            throws SessionExpiredException, SessionValidationException, SessionNotFoundException,
-                    AddressProcessingException {
+            throws SessionExpiredException, SessionNotFoundException, AddressProcessingException {
 
         setupEventProbeErrorBehaviour();
 
-        SessionValidationException exception = new SessionValidationException("Session is empty");
+        SessionNotFoundException exception = new SessionNotFoundException("Session not found");
 
         when(apiGatewayProxyRequestEvent.getHeaders())
                 .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));

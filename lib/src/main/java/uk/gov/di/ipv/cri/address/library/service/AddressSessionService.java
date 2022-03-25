@@ -327,7 +327,7 @@ public class AddressSessionService {
 
     public AddressSessionItem saveAddresses(
             String sessionId, List<CanonicalAddressWithResidency> addresses)
-            throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
+            throws SessionExpiredException, SessionNotFoundException {
         validateSessionId(sessionId);
 
         var sessionItem = dataStore.getItem(sessionId);

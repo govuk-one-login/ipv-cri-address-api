@@ -12,7 +12,6 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.models.AuthorizationResponse;
@@ -64,14 +63,12 @@ public class AddressHandler
             // If we don't have at least one address, do not save
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, "");
 
-        } catch (SessionValidationException
-                | SessionNotFoundException
-                | SessionExpiredException e) {
+        } catch (SessionNotFoundException | SessionExpiredException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, e.getMessage());
         } catch (AddressProcessingException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("address", 0d);
+            eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
