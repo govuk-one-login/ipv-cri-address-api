@@ -16,8 +16,7 @@ jobs:
     env:
       AWS_REGION: eu-west-2
       ENVIRONMENT: dev
-      STACK_NAME_PREFIX: address-cri-api
-      ROLLBACK_ACTION: "--disable-rollback"
+      STACK_NAME_PREFIX: pre-merge-integration
     permissions:
       id-token: write
       contents: read
@@ -52,9 +51,14 @@ jobs:
         run: |
           STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
           sam deploy -t infrastructure/lambda/template.yaml \
-            --no-fail-on-empty-changeset --no-confirm-changeset ${{ env.ROLLBACK_ACTION }} --parameter-overrides EnvironmentName=dev \
-            --stack-name $STACK_NAME --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
-            --s3-prefix $STACK_NAME --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM
+            --no-fail-on-empty-changeset \
+            --no-confirm-changeset \
+            --parameter-overrides Environment=${{ env.ENVIRONMENT }} \
+            --stack-name $STACK_NAME \
+            --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
+            --s3-prefix $STACK_NAME \
+            --region ${{ env.AWS_REGION }} \
+            --capabilities CAPABILITY_IAM
 
       - name: Run API integration tests
         run: echo "🤞 now run integration tests..."
