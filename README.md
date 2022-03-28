@@ -35,7 +35,7 @@ Before your **first** deploy, build a sam config toml file.
 
 The command to run is: 
 
-`gds aws  di-ipv-cri-dev -- sam deploy -t deploy/template.yaml --guided`
+`gds aws  di-ipv-cri-dev -- sam deploy -t infrastructure/lambda/template.yaml --guided`
 
 You will be asked for the Ordnance Survey API Key at this point.
 In production, this key is stored in the AWS Secrets Manager.
@@ -47,7 +47,8 @@ Any time you wish to deploy, run:
 
 ## Deploy to AWS lambda
 
-Automated GitHub actions deployments to di-ipv-cri-dev have been enabled for this repository.
+Automated GitHub actions deployments to di-ipv-cri-build have been enabled for this repository.
+Manual GitHub actions deployments to di-ipv-cri-address-dev can be triggered from the GitHub actions menu.
 
 The automated deployments are triggered on a push to main after PR approval.
 
@@ -60,3 +61,11 @@ Required GitHub secrets:
 | ARTIFACT_SOURCE_BUCKET_NAME | Upload artifact bucket |
 | GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
 | SIGNING_PROFILE_NAME | Signing profile name |
+
+Additional GitHub secrets for the deployment of the parameters
+
+| Secret | Description |
+| ------ | ----------- |
+| PARAM_ARTIFACT_SOURCE_BUCKET_NAME | Upload artifact bucket |
+| PARAM_GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
+| PARAM_SIGNING_PROFILE_NAME | Signing profile name |

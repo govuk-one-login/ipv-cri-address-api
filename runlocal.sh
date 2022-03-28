@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -e
+./gradlew
 if [ -z "$1" ]
 then
 	echo "Please pass the name of a '.event' file to pass to the event handler."
 
 else
-  sam build -t deploy/template.yaml --config-env dev
-  sam validate -t deploy/template.yaml --config-env dev
+  sam build -t infrastructure/lambda/template.yaml --config-env dev
+  sam validate -t infrastructure/lambda/template.yaml --config-env dev
   case $1 in
     postcode)
       sam local invoke PostcodeLookupFunction -e "$1.event"
