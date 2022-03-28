@@ -1,7 +1,11 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -11,11 +15,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
-import com.nimbusds.oauth2.sdk.AccessTokenResponse;
-import com.nimbusds.oauth2.sdk.GrantType;
-import com.nimbusds.oauth2.sdk.OAuth2Error;
-import com.nimbusds.oauth2.sdk.TokenRequest;
-import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
@@ -31,8 +31,12 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
+import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
+import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
+import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
@@ -96,9 +100,6 @@ public class AddressSessionService {
         addressSessionItem.setState(sessionRequest.getState());
         addressSessionItem.setClientId(sessionRequest.getClientId());
         addressSessionItem.setRedirectUri(sessionRequest.getRedirectUri());
-        // TODO: create authorization_code, this is temporary see:
-        // https://govukverify.atlassian.net/browse/KBV-237
-        addressSessionItem.setAuthorizationCode(UUID.randomUUID().toString());
         dataStore.create(addressSessionItem);
         return addressSessionItem.getSessionId();
     }
@@ -285,6 +286,60 @@ public class AddressSessionService {
             throw new ClientConfigurationException(
                     new IllegalStateException("unknown public JWT signing key"));
         }
+    }
+
+    public List<CanonicalAddressWithResidency> parseAddresses(String addressBody)
+            throws AddressProcessingException {
+        List<CanonicalAddressWithResidency> addresses;
+        try {
+            ObjectMapper mapper =
+                    new ObjectMapper()
+                            .registerModule(new Jdk8Module())
+                            .registerModule(new JavaTimeModule())
+                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            addresses = mapper.readValue(addressBody, new TypeReference<>() {});
+
+        } catch (JsonProcessingException e) {
+            throw new AddressProcessingException(
+                    "could not parse addresses..." + e.getMessage(), e);
+        }
+
+        return addresses;
+    }
+
+    public AddressSessionItem getSession(String sessionId) {
+        return dataStore.getItem(sessionId);
+    }
+
+    public void validateSessionId(String sessionId)
+            throws SessionNotFoundException, SessionExpiredException {
+
+        AddressSessionItem sessionItem = dataStore.getItem(sessionId);
+        if (sessionItem == null) {
+            throw new SessionNotFoundException("session not found");
+        }
+
+        if (sessionItem.getExpiryDate() < clock.instant().getEpochSecond()) {
+            throw new SessionExpiredException("session expired");
+        }
+    }
+
+    public AddressSessionItem saveAddresses(
+            String sessionId, List<CanonicalAddressWithResidency> addresses)
+            throws SessionExpiredException, SessionNotFoundException {
+        validateSessionId(sessionId);
+
+        var sessionItem = dataStore.getItem(sessionId);
+        if (sessionItem == null) {
+            throw new SessionNotFoundException("session not found");
+        }
+
+        sessionItem.setAddresses(addresses);
+        sessionItem.setAuthorizationCode(UUID.randomUUID().toString());
+        dataStore.update(sessionItem);
+
+        return sessionItem;
     }
 
     public TokenResponse createToken(TokenRequest tokenRequest) {

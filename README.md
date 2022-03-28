@@ -5,7 +5,26 @@ Address Collector Credential Issuer API
 
 > Ensure that you are using the java version specified in `.sdkmanrc`.
 
-Build with `./gradlew clean build`
+Build with `./gradlew`
+
+This will run "build", "test", "buildZip", and "spotLess" reformatting
+
+## Test Locally
+Ensure you have built the project using the command above
+
+At present, only two lambdas can be tested locally, however this can easily extended.
+
+To test the `Address` lambda, run the following command:
+
+`gds aws di-ipv-cri-dev -- ./runlocal.sh address`
+
+This will pass data from the file "address.event" to the lambda.
+
+To test the `PostcodeLookup` lambda, run the following command:
+
+`gds aws di-ipv-cri-dev -- ./runlocal.sh postcode`
+
+
 
 ## Deploy to dev account
 
@@ -16,18 +35,14 @@ Before your **first** deploy, build a sam config toml file.
 
 The command to run is: 
 
-`gds aws <account> -- sam deploy -t infrastructure/lambda/template.yaml --guided`
+`gds aws  di-ipv-cri-dev -- sam deploy -t infrastructure/lambda/template.yaml --guided`
 
 You will be asked for the Ordnance Survey API Key at this point.
 In production, this key is stored in the AWS Secrets Manager.
 
 Any time you wish to deploy, run:
 
-`gds aws <account> -- ./deploy.sh`
-
-If you wish to test your lambda functions locally, you can update the "postcode.event" file and then run:
-
-`gds aws <account> -- ./runlocal.sh`
+`gds aws  di-ipv-cri-dev -- ./deploy.sh`
 
 
 ## Deploy to AWS lambda

@@ -27,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
+import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
@@ -48,14 +49,14 @@ class AccessTokenHandlerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Mock private Context context;
+    private EventProbe eventProbe = new EventProbe();
     @Mock private AddressSessionService mockAddressSessionService;
 
     private AccessTokenHandler handler;
-    private TokenResponse tokenResponse;
 
     @BeforeEach
     void setUp() {
-        handler = new AccessTokenHandler(mockAddressSessionService);
+        handler = new AccessTokenHandler(mockAddressSessionService, eventProbe);
     }
 
     @Test
@@ -66,7 +67,7 @@ class AccessTokenHandlerTest {
         event.withBody(tokenRequestBody);
         AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);
         AccessToken accessToken = new BearerAccessToken();
-        tokenResponse = new AccessTokenResponse(new Tokens(accessToken, null));
+        TokenResponse tokenResponse = new AccessTokenResponse(new Tokens(accessToken, null));
 
         // TODO: This here as a placeholder pending the story that generates the authorization code
         TokenRequest tokenRequest = mock(TokenRequest.class);
@@ -105,7 +106,7 @@ class AccessTokenHandlerTest {
         String invalidTokenRequest = "invalid-token-request";
         event.withBody(invalidTokenRequest);
 
-        handler = new AccessTokenHandler(spyAddressSessionService);
+        handler = new AccessTokenHandler(spyAddressSessionService, eventProbe);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         ErrorObject errorResponse = createErrorObjectFromResponse(response.getBody());

@@ -20,6 +20,12 @@ Parameters:
     ConstraintDescription: must be dev, build, staging, integration or production
 
 Conditions:
+  UseCodeSigning:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref CodeSigningConfigArn
+          - "none"
+
   CreateDevResources: !Equals
     - !Ref EnvironmentName
     - dev
@@ -159,6 +165,9 @@ Resources:
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName:
+              Ref: AddressSessionTable
         - Statement:
             - Sid: ReadSecretsPolicy
               Effect: Allow
@@ -172,6 +181,48 @@ Resources:
                 - ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIURL"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+
+  AddressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/address/build/distributions/address.zip
+      Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
+      Environment:
+        Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-address
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
 
@@ -311,6 +362,13 @@ Resources:
       FunctionName: !GetAtt PostcodeLookupFunction.Arn
       Principal: apigateway.amazonaws.com
 
+  AddressFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt AddressFunction.Arn
+      Principal: apigateway.amazonaws.com
+
 
 Outputs:
   AddressApiBaseUrl:
@@ -334,6 +392,14 @@ Outputs:
   PostcodeLookupFunction:
     Value: !GetAtt PostcodeLookupFunction.Arn
 
+  AddressFunctionApi:
+    Description: "API Gateway endpoint URL for Prod stage for address update function"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address/"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressFunctionApi
+  AddressFunction:
+      Value: !GetAtt AddressFunction.Arn
+
   PostcodeLookupFunctionIamRole:
     Description: "IAM role for the postcode lookup function"
     Value: !GetAtt PostcodeLookupFunctionRole.Arn
@@ -341,6 +407,10 @@ Outputs:
   SessionFunctionIamRole:
     Description: "IAM role for the session function"
     Value: !GetAtt SessionFunctionRole.Arn
-    
+
   AccessTokenFunction:
     Value: !GetAtt AccessTokenFunction.Arn
+
+  AddressFunctionIamRole:
+    Description: "IAM role for the address function"
+    Value: !GetAtt AddressFunctionRole.Arn

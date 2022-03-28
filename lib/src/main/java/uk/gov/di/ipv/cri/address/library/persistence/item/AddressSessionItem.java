@@ -1,10 +1,16 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
+import uk.gov.di.ipv.cri.address.library.helpers.ListOfMapConverter;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @DynamoDbBean
@@ -15,12 +21,13 @@ public class AddressSessionItem {
     private String clientId;
     private String state;
     private URI redirectUri;
+    private List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
+    private String authorizationCode;
 
     private String accessToken;
 
-    private String authorizationCode;
-
     public AddressSessionItem() {
+
         sessionId = UUID.randomUUID();
     }
 
@@ -31,6 +38,15 @@ public class AddressSessionItem {
 
     public void setSessionId(UUID sessionId) {
         this.sessionId = sessionId;
+    }
+
+    @DynamoDbSecondaryPartitionKey(indexNames = AUTHORIZATION_CODE_INDEX)
+    public String getAuthorizationCode() {
+        return authorizationCode;
+    }
+
+    public void setAuthorizationCode(String authorizationCode) {
+        this.authorizationCode = authorizationCode;
     }
 
     public long getExpiryDate() {
@@ -73,13 +89,13 @@ public class AddressSessionItem {
         return accessToken;
     }
 
-    @DynamoDbSecondaryPartitionKey(indexNames = AUTHORIZATION_CODE_INDEX)
-    public void setAuthorizationCode(String authorizationCode) {
-        this.authorizationCode = authorizationCode;
+    @DynamoDbConvertedBy(ListOfMapConverter.class)
+    public List<CanonicalAddressWithResidency> getAddresses() {
+        return addresses;
     }
 
-    public String getAuthorizationCode() {
-        return authorizationCode;
+    public void setAddresses(List<CanonicalAddressWithResidency> addresses) {
+        this.addresses = Objects.requireNonNullElseGet(addresses, ArrayList::new);
     }
 
     @Override

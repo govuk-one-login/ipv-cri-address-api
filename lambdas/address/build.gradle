@@ -1,13 +1,13 @@
 plugins {
 	id "java"
-	id "io.freefair.aspectj.post-compile-weaving" version "6.3.0"
-	id "jacoco"
+	id 'io.freefair.aspectj.post-compile-weaving' version '6.3.0'
 }
 
 dependencies {
-	implementation project(":lib"),
-			configurations.lambda,
-			configurations.gson
+	implementation project(":lib")
+	implementation configurations.lambda,
+			configurations.nimbus,
+			configurations.jackson
 
 	aspect configurations.powertools
 
@@ -25,14 +25,6 @@ task buildZip(type: Zip) {
 }
 
 build.finalizedBy(buildZip)
-
 test {
 	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required.set(true)
-	}
 }
