@@ -52,50 +52,56 @@ public class ClassToMapConverter<T> implements AttributeConverter<T> {
         map.forEach(
                 (key, val) -> {
                     Object value = null;
-                    String className = val.getClass().getSimpleName();
+                    // If our value is null, leave it out the map
+                    if (val != null) {
 
-                    if (Optional.class.equals(val.getClass())) {
-                        Optional<?> optional = (Optional<?>) val;
-                        if (optional.isPresent()) {
-                            value = optional.get();
-                            className = value.getClass().getSimpleName();
+                        String className = val.getClass().getSimpleName();
+
+                        if (Optional.class.equals(val.getClass())) {
+                            Optional<?> optional = (Optional<?>) val;
+                            if (optional.isPresent()) {
+                                value = optional.get();
+                                className = value.getClass().getSimpleName();
+                            } else {
+                                className = "null";
+                            }
                         } else {
-                            className = "null";
+                            value = val;
                         }
-                    } else {
-                        value = val;
-                    }
 
-                    if (value != null)
-                        switch (className) {
-                            case "Integer":
-                            case "BigDecimal":
-                            case "Long":
-                            case "Double":
-                            case "Float":
-                                attributeValueMap.put(
-                                        key, AttributeValue.builder().n(value.toString()).build());
-                                break;
-                            case "Boolean":
-                                attributeValueMap.put(
-                                        key,
-                                        AttributeValue.builder()
-                                                .bool(Boolean.parseBoolean(value.toString()))
-                                                .build());
-                                break;
-                            case "Date":
-                                Date date = (Date) value;
-                                attributeValueMap.put(
-                                        key,
-                                        AttributeValue.builder()
-                                                .n(String.valueOf(date.getTime()))
-                                                .build());
-                                break;
-                            default:
-                                attributeValueMap.put(
-                                        key, AttributeValue.builder().s(value.toString()).build());
-                                break;
-                        }
+                        if (value != null)
+                            switch (className) {
+                                case "Integer":
+                                case "BigDecimal":
+                                case "Long":
+                                case "Double":
+                                case "Float":
+                                    attributeValueMap.put(
+                                            key,
+                                            AttributeValue.builder().n(value.toString()).build());
+                                    break;
+                                case "Boolean":
+                                    attributeValueMap.put(
+                                            key,
+                                            AttributeValue.builder()
+                                                    .bool(Boolean.parseBoolean(value.toString()))
+                                                    .build());
+                                    break;
+                                case "Date":
+                                    Date date = (Date) value;
+                                    attributeValueMap.put(
+                                            key,
+                                            AttributeValue.builder()
+                                                    .n(String.valueOf(date.getTime()))
+                                                    .build());
+                                    break;
+                                default:
+                                    attributeValueMap.put(
+                                            key,
+                                            AttributeValue.builder().s(value.toString()).build());
+                                    break;
+                            }
+                    }
                 });
         return AttributeValue.builder().m(attributeValueMap).build();
     }
