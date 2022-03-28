@@ -46,6 +46,6 @@ jobs:
       - name: SAM deploy
         run: |
           sam deploy -t infrastructure/lambda/template.yaml \
-            --no-fail-on-empty-changeset --no-confirm-changeset --parameter-overrides EnvironmentName=dev \
+            --no-fail-on-empty-changeset --no-confirm-changeset --parameter-overrides Environment=dev \
             --stack-name ${{ env.STACK_NAME }} --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix ${{ env.STACK_NAME }} --region ${{ env.AWS_REGION }} --capabilities CAPABILITY_IAM

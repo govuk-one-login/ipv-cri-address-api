@@ -8,7 +8,7 @@ Parameters:
     Default: "none"
     Description: >
       The ARN of the Code Signing Config to use, provided by the deployment pipeline
-  EnvironmentName:
+  Environment:
     Description: "The environment type"
     Type: "String"
     AllowedValues:
@@ -27,7 +27,7 @@ Conditions:
           - "none"
 
   CreateDevResources: !Equals
-    - !Ref EnvironmentName
+    - !Ref Environment
     - dev
 
 Globals:
@@ -48,7 +48,7 @@ Globals:
 
 Mappings:
   AddressSessionTtlMapping:
-    EnvironmentName:
+    Environment:
       dev: "172800" # 2 days
       build: "172800" # 2 days
       staging: "172800" # 2 days
@@ -56,7 +56,7 @@ Mappings:
       production: "172800" # 2 days
 
   IPVCoreStubAuthenticationAlgMapping:
-    EnvironmentName:
+    Environment:
       dev: "RS256"
       build: "RS256"
       staging: "RS256"
@@ -64,7 +64,7 @@ Mappings:
       production: "RS256"
 
   IPVCoreStubIssuerMapping:
-    EnvironmentName:
+    Environment:
       dev: "ipv-core-stub"
       build: "ipv-core-stub"
       staging: "ipv-core-stub"
@@ -72,7 +72,7 @@ Mappings:
       production: "ipv-core-stub"
 
   IPVCoreStubPublicCertificateToVerifyMapping:
-    EnvironmentName:
+    Environment:
       dev: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
       build: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
       staging: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
@@ -80,7 +80,7 @@ Mappings:
       production: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
 
   IPVCoreStubRedirectURIMapping:
-    EnvironmentName:
+    Environment:
       dev: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       build: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       staging: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
@@ -88,7 +88,7 @@ Mappings:
       production: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
 
   OrdnanceSurveyAPIURLMapping:
-    EnvironmentName:
+    Environment:
       dev: "https://api.os.uk/search/places/v1/postcode"
       build: "https://api.os.uk/search/places/v1/postcode"
       staging: "https://api.os.uk/search/places/v1/postcode"
@@ -107,7 +107,7 @@ Resources:
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
-      StageName: !Ref EnvironmentName
+      StageName: !Ref Environment
       #      Auth:
       #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
@@ -301,7 +301,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/AddressSessionTtl"
       Type: String
-      Value: !FindInMap [AddressSessionTtlMapping, EnvironmentName, !Ref 'EnvironmentName']
+      Value: !FindInMap [AddressSessionTtlMapping, Environment, !Ref 'Environment']
       Description: default time to live for an address session item (seconds)
 
   IPVCoreStubAuthenticationAlgParameter:
@@ -309,35 +309,35 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg"
       Type: String
-      Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, EnvironmentName, !Ref 'EnvironmentName']
+      Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
 
   IPVCoreStubIssuerParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer"
       Type: String
-      Value: !FindInMap [IPVCoreStubIssuerMapping, EnvironmentName, !Ref 'EnvironmentName']
+      Value: !FindInMap [IPVCoreStubIssuerMapping, Environment, !Ref 'Environment']
 
   IPVCoreStubPublicCertificateToVerifyParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/publicCertificateToVerify"
       Type: String
-      Value: !FindInMap [IPVCoreStubPublicCertificateToVerifyMapping, EnvironmentName, !Ref 'EnvironmentName']
+      Value: !FindInMap [IPVCoreStubPublicCertificateToVerifyMapping, Environment, !Ref 'Environment']
 
   IPVCoreStubRedirectURIParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/redirectUri"
       Type: String
-      Value: !FindInMap [IPVCoreStubRedirectURIMapping, EnvironmentName, !Ref 'EnvironmentName']
+      Value: !FindInMap [IPVCoreStubRedirectURIMapping, Environment, !Ref 'Environment']
 
   OrdnanceSurveyAPIURLParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIURL"
       Type: String
-      Value: !FindInMap [OrdnanceSurveyAPIURLMapping, EnvironmentName, !Ref 'EnvironmentName']
+      Value: !FindInMap [OrdnanceSurveyAPIURLMapping, Environment, !Ref 'Environment']
       Description: Ordnance Survey Postcode Lookup API URL
 
 
@@ -372,13 +372,13 @@ Resources:
 
 Outputs:
   AddressApiBaseUrl:
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
 
   SessionFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for session function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/session/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
     Export:
       Name: !Sub ${AWS::StackName}-SessionFunctionApi
   SessionFunction:
@@ -386,7 +386,7 @@ Outputs:
 
   PostcodeLookupFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/postcode-lookup/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
     Export:
       Name: !Sub ${AWS::StackName}-PostcodeLookupFunctionApi
   PostcodeLookupFunction:
@@ -394,7 +394,7 @@ Outputs:
 
   AddressFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for address update function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/address/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressFunctionApi
   AddressFunction:
