@@ -198,7 +198,7 @@ Resources:
   AddressFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../lambdas/address/build/distributions/address.zip
+      CodeUri: ../../lambdas/address/build/distributions/address.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       Environment:
         Variables:
