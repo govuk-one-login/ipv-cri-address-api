@@ -394,7 +394,7 @@ Outputs:
 
   AddressFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for address update function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/address/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressFunctionApi
   AddressFunction:
