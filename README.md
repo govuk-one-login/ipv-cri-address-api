@@ -52,7 +52,7 @@ Manual GitHub actions deployments to di-ipv-cri-address-dev can be triggered fro
 
 The automated deployments are triggered on a push to main after PR approval.
 
-GitHub secrets are required which must be configured in an environment for security reasons.
+GitHub secrets are required for deployment.
 
 Required GitHub secrets:
 
@@ -62,10 +62,3 @@ Required GitHub secrets:
 | GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
 | SIGNING_PROFILE_NAME | Signing profile name |
 
-Additional GitHub secrets for the deployment of the parameters
-
-| Secret | Description |
-| ------ | ----------- |
-| PARAM_ARTIFACT_SOURCE_BUCKET_NAME | Upload artifact bucket |
-| PARAM_GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
-| PARAM_SIGNING_PROFILE_NAME | Signing profile name |
