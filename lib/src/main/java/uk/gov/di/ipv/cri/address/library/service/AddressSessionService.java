@@ -362,6 +362,11 @@ public class AddressSessionService {
         DynamoDbIndex<AddressSessionItem> index =
                 addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
 
+        return getAddressSessionItem(index, value);
+    }
+
+    private AddressSessionItem getAddressSessionItem(
+            DynamoDbIndex<AddressSessionItem> index, String value) {
         AttributeValue attVal = AttributeValue.builder().s(value).build();
 
         QueryConditional queryConditional =
