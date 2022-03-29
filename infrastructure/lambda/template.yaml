@@ -108,8 +108,6 @@ Resources:
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
       StageName: !Ref Environment
-      #      Auth:
-      #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
         openapi: "3.0.1" # workaround to get `sam validate` to work
         paths: # workaround to get `sam validate` to work
