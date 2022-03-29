@@ -7,8 +7,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
-import com.nimbusds.oauth2.sdk.AuthorizationCode;
-import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.GrantType;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
@@ -30,10 +28,10 @@ import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
+import uk.gov.di.ipv.cri.address.library.service.AccessTokenService;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 
-import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -50,13 +48,13 @@ class AccessTokenHandlerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Mock private Context context;
     private EventProbe eventProbe = new EventProbe();
-    @Mock private AddressSessionService mockAddressSessionService;
+    @Mock private AccessTokenService mockAccessTokenService;
 
     private AccessTokenHandler handler;
 
     @BeforeEach
     void setUp() {
-        handler = new AccessTokenHandler(mockAddressSessionService, eventProbe);
+        handler = new AccessTokenHandler(mockAccessTokenService, eventProbe);
     }
 
     @Test
@@ -69,19 +67,10 @@ class AccessTokenHandlerTest {
         AccessToken accessToken = new BearerAccessToken();
         TokenResponse tokenResponse = new AccessTokenResponse(new Tokens(accessToken, null));
 
-        // TODO: This here as a placeholder pending the story that generates the authorization code
         TokenRequest tokenRequest = mock(TokenRequest.class);
-        when(tokenRequest.getAuthorizationGrant())
-                .thenReturn(
-                        new AuthorizationCodeGrant(
-                                new AuthorizationCode("12345"),
-                                URI.create("http://test.com"),
-                                null));
-        when(mockAddressSessionService.createTokenRequest(tokenRequestBody))
-                .thenReturn(tokenRequest);
-        when(mockAddressSessionService.createToken(any())).thenReturn(tokenResponse);
-        when(mockAddressSessionService.getAddressSessionItemByValue(any()))
-                .thenReturn(addressSessionItem);
+        when(mockAccessTokenService.createTokenRequest(tokenRequestBody)).thenReturn(tokenRequest);
+        when(mockAccessTokenService.createToken(any())).thenReturn(tokenResponse);
+        when(mockAccessTokenService.getAddressSession(tokenRequest)).thenReturn(addressSessionItem);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         Map<String, Object> responseBody =
@@ -97,16 +86,22 @@ class AccessTokenHandlerTest {
     @Test
     void shouldReturn400WhenInvalidTokenRequestProvided() throws Exception {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        ConfigurationService mockConfigurationService = mock(ConfigurationService.class);
         AddressSessionService spyAddressSessionService =
                 Mockito.spy(
                         new AddressSessionService(
                                 (DataStore<AddressSessionItem>) mock(DataStore.class),
-                                mock(ConfigurationService.class),
+                                mockConfigurationService,
                                 Clock.fixed(Instant.now(), ZoneId.systemDefault())));
         String invalidTokenRequest = "invalid-token-request";
         event.withBody(invalidTokenRequest);
 
-        handler = new AccessTokenHandler(spyAddressSessionService, eventProbe);
+        handler =
+                new AccessTokenHandler(
+                        new AccessTokenService(
+                                spyAddressSessionService,
+                                mockConfigurationService.getBearerAccessTokenTtl()),
+                        eventProbe);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         ErrorObject errorResponse = createErrorObjectFromResponse(response.getBody());
@@ -125,7 +120,7 @@ class AccessTokenHandlerTest {
                         + "&client_id=test_client_id";
 
         event.withBody(tokenRequestBody);
-        when(mockAddressSessionService.createTokenRequest(tokenRequestBody))
+        when(mockAccessTokenService.createTokenRequest(tokenRequestBody))
                 .thenThrow(new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE));
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
@@ -146,7 +141,7 @@ class AccessTokenHandlerTest {
                 "code=12345&redirect_uri=http://test.com&grant_type=authorization_code&client_id=test_client_id";
 
         event.withBody(tokenRequestBody);
-        when(mockAddressSessionService.createTokenRequest(tokenRequestBody))
+        when(mockAccessTokenService.createTokenRequest(tokenRequestBody))
                 .thenThrow(new AccessTokenRequestException(OAuth2Error.INVALID_GRANT));
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
@@ -165,7 +160,7 @@ class AccessTokenHandlerTest {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         event.withBody(tokenRequestBody);
 
-        when(mockAddressSessionService.createTokenRequest(tokenRequestBody))
+        when(mockAccessTokenService.createTokenRequest(tokenRequestBody))
                 .thenThrow(new AccessTokenRequestException(OAuth2Error.INVALID_GRANT));
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);

@@ -5,7 +5,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
-import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.TokenRequest;
@@ -18,22 +17,21 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.service.AccessTokenService;
 
 public class AccessTokenHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private EventProbe eventProbe;
-    private final AddressSessionService addressSessionService;
+    private final AccessTokenService accessTokenService;
 
-    public AccessTokenHandler(AddressSessionService addressSessionService, EventProbe eventProbe) {
-        this.addressSessionService = addressSessionService;
+    public AccessTokenHandler(AccessTokenService accessTokenService, EventProbe eventProbe) {
+        this.accessTokenService = accessTokenService;
         this.eventProbe = eventProbe;
     }
 
     public AccessTokenHandler() {
-
-        this.addressSessionService = new AddressSessionService();
+        this.accessTokenService = new AccessTokenService();
         this.eventProbe = new EventProbe();
     }
 
@@ -43,20 +41,14 @@ public class AccessTokenHandler
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         try {
-            TokenRequest tokenRequest = addressSessionService.createTokenRequest(input.getBody());
-
-            String authorizationCodeFromRequest =
-                    ((AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant())
-                            .getAuthorizationCode()
-                            .getValue();
+            TokenRequest tokenRequest = accessTokenService.createTokenRequest(input.getBody());
 
             AddressSessionItem addressSessionItem =
-                    addressSessionService.getAddressSessionItemByValue(
-                            authorizationCodeFromRequest);
+                    accessTokenService.getAddressSession(tokenRequest);
 
-            TokenResponse tokenResponse = addressSessionService.createToken(tokenRequest);
+            TokenResponse tokenResponse = accessTokenService.createToken(tokenRequest);
             AccessTokenResponse accessTokenResponse = tokenResponse.toSuccessResponse();
-            addressSessionService.writeToken(accessTokenResponse, addressSessionItem);
+            accessTokenService.writeToken(accessTokenResponse, addressSessionItem);
 
             eventProbe.counterMetric("accesstoken");
 
