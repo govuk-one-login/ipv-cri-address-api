@@ -61,7 +61,7 @@ class AddressHandlerTest {
         List<CanonicalAddressWithResidency> canonicalAddressWithResidencies = new ArrayList<>();
         CanonicalAddressWithResidency canonicalAddressWithResidency =
                 new CanonicalAddressWithResidency();
-        canonicalAddressWithResidency.setUprn(12345);
+        canonicalAddressWithResidency.setUprn("12345");
         canonicalAddressWithResidencies.add(canonicalAddressWithResidency);
 
         when(addressSessionService.parseAddresses(anyString()))
@@ -90,7 +90,7 @@ class AddressHandlerTest {
         List<CanonicalAddressWithResidency> canonicalAddressWithResidencies = new ArrayList<>();
         CanonicalAddressWithResidency canonicalAddressWithResidency =
                 new CanonicalAddressWithResidency();
-        canonicalAddressWithResidency.setUprn(12345);
+        canonicalAddressWithResidency.setUprn("12345");
         canonicalAddressWithResidencies.add(canonicalAddressWithResidency);
         addressSessionItem.setAddresses(canonicalAddressWithResidencies);
         AuthorizationResponse authorizationResponse = new AuthorizationResponse(addressSessionItem);
