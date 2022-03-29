@@ -8,7 +8,6 @@ jobs:
   deploy:
     name: Package for build
     runs-on: ubuntu-latest
-    environment: di-ipv-cri-address-build
     timeout-minutes: 15
     env:
       AWS_REGION: eu-west-2
