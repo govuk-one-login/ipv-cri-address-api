@@ -10,7 +10,7 @@ import java.util.Optional;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @DynamoDBDocument
 public class CanonicalAddress {
-    private Integer uprn;
+    private String uprn;
     private String organisationName;
     private String departmentName;
     private String subBuildingName;
@@ -27,7 +27,7 @@ public class CanonicalAddress {
     public CanonicalAddress(Result result) {
         var dpa = result.getDpa();
         if (dpa.getUprn() != null && !dpa.getUprn().isEmpty()) {
-            this.uprn = Integer.parseInt(dpa.getUprn());
+            this.uprn = dpa.getUprn();
         }
         this.organisationName = dpa.getOrganisationName();
         this.departmentName = dpa.getDepartmentName();
@@ -49,11 +49,11 @@ public class CanonicalAddress {
     }
 
     @DynamoDBAttribute(attributeName = "UPRN")
-    public Optional<Integer> getUprn() {
+    public Optional<String> getUprn() {
         return Optional.ofNullable(uprn);
     }
 
-    public void setUprn(Integer uprn) {
+    public void setUprn(String uprn) {
         this.uprn = uprn;
     }
 

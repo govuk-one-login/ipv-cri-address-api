@@ -586,7 +586,7 @@ class AddressSessionServiceTest {
         String addresses =
                 "[\n"
                         + "   {\n"
-                        + "      \"uprn\": 72262801,\n"
+                        + "      \"uprn\": \"72262801\",\n"
                         + "      \"buildingNumber\": \"8\",\n"
                         + "      \"thoroughfareName\": \"GRANGE FIELDS WAY\",\n"
                         + "      \"postTown\": \"LEEDS\",\n"
@@ -596,7 +596,7 @@ class AddressSessionServiceTest {
                         + "      \"residentTo\": 1610755200000\n"
                         + "   },\n"
                         + "   {\n"
-                        + "      \"uprn\": 63094965,\n"
+                        + "      \"uprn\": \"63094965\",\n"
                         + "      \"buildingNumber\": \"15\",\n"
                         + "      \"dependentLocality\": \"LOFTHOUSE\",\n"
                         + "      \"thoroughfareName\": \"RIDINGS LANE\",\n"
@@ -607,7 +607,7 @@ class AddressSessionServiceTest {
                         + "      \"residentTo\": 1627862400000\n"
                         + "   },\n"
                         + "   {\n"
-                        + "      \"uprn\": 63042351,\n"
+                        + "      \"uprn\": \"63042351\",\n"
                         + "      \"buildingNumber\": \"5\",\n"
                         + "      \"thoroughfareName\": \"GATEWAYS\",\n"
                         + "      \"postTown\": \"WAKEFIELD\",\n"
@@ -620,7 +620,7 @@ class AddressSessionServiceTest {
         List<CanonicalAddressWithResidency> parsedAddresses =
                 addressSessionService.parseAddresses(addresses);
         assertThat(parsedAddresses.size(), equalTo(3));
-        assertThat(parsedAddresses.get(0).getUprn().orElse(0), equalTo(72262801));
+        assertThat(parsedAddresses.get(0).getUprn().orElse(null), equalTo("72262801"));
         assertThat(parsedAddresses.get(0).getCurrentResidency().isPresent(), equalTo(false));
         assertThat(
                 parsedAddresses.get(0).getResidentFrom().orElse(new Date()),
@@ -636,7 +636,7 @@ class AddressSessionServiceTest {
             throws SessionExpiredException, SessionValidationException, SessionNotFoundException {
         List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
         CanonicalAddressWithResidency address1 = new CanonicalAddressWithResidency();
-        address1.setUprn(72262801);
+        address1.setUprn("72262801");
         address1.setBuildingNumber("8");
         address1.setThoroughfareName("GRANGE FIELDS WAY");
         address1.setPostTown("LEEDS");
@@ -646,7 +646,7 @@ class AddressSessionServiceTest {
         address1.setResidentTo(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
 
         CanonicalAddressWithResidency address2 = new CanonicalAddressWithResidency();
-        address2.setUprn(63094965);
+        address2.setUprn("63094965");
         address2.setBuildingNumber("15");
         address2.setThoroughfareName("RIDINGS LANE");
         address2.setDependentLocality("LOFTHOUSE");
@@ -657,7 +657,7 @@ class AddressSessionServiceTest {
         address2.setResidentTo(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
 
         CanonicalAddressWithResidency address3 = new CanonicalAddressWithResidency();
-        address3.setUprn(63042351);
+        address3.setUprn("63042351");
         address3.setBuildingNumber("5");
         address3.setThoroughfareName("GATEWAYS");
         address3.setPostTown("WAKEFIELD");
