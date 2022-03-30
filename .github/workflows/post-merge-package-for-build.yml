@@ -48,6 +48,7 @@ jobs:
             --signing-profiles SessionFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             PostcodeLookupFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             AccessTokenFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
+            AddressFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --region ${{ env.AWS_REGION }} --output-template-file=cf-template.yaml
 

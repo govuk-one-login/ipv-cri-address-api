@@ -20,12 +20,6 @@ Parameters:
     ConstraintDescription: must be dev, build, staging, integration or production
 
 Conditions:
-  UseCodeSigning:
-    Fn::Not:
-      - Fn::Equals:
-          - !Ref CodeSigningConfigArn
-          - "none"
-
   CreateDevResources: !Equals
     - !Ref Environment
     - dev
