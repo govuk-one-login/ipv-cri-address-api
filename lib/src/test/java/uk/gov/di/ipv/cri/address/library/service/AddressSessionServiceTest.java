@@ -72,6 +72,7 @@ class AddressSessionServiceTest {
         when(sessionRequest.getState()).thenReturn("state");
         when(sessionRequest.getRedirectUri())
                 .thenReturn(URI.create("https://www.example.com/callback"));
+        when(sessionRequest.getSubject()).thenReturn("a subject");
 
         addressSessionService.createAndSaveAddressSession(sessionRequest);
         verify(mockDataStore).create(mockAddressSessionItem.capture());
@@ -80,6 +81,7 @@ class AddressSessionServiceTest {
         assertThat(capturedValue.getExpiryDate(), equalTo(fixedInstant.getEpochSecond() + 1));
         assertThat(capturedValue.getClientId(), equalTo("a client id"));
         assertThat(capturedValue.getState(), equalTo("state"));
+        assertThat(capturedValue.getSubject(), equalTo("a subject"));
         assertThat(
                 capturedValue.getRedirectUri(),
                 equalTo(URI.create("https://www.example.com/callback")));
