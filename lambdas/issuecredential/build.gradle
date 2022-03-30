@@ -7,7 +7,8 @@ plugins {
 dependencies {
 	implementation project(":lib"),
 			configurations.lambda,
-			configurations.nimbus
+			configurations.nimbus,
+			configurations.dynamodb
 
 	aspect configurations.powertools
 

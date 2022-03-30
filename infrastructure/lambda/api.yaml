@@ -267,7 +267,7 @@ components:
       schema:
         type: string
     AccessToken:
-      name: accesstoken
+      name: access_token
       in: query
       required: true
       description: The accesstoken generated from the /token endpoint
@@ -277,13 +277,13 @@ components:
       name: sub
       in: query
       required: true
-      description: The sub supplied by IPV_CORE
+      description: The Credential subject supplied by IPV_CORE
       schema:
         type: string
   schemas:
     IssueRequest:
       required:
-        - "accesstoken"
+        - "access_token"
         - "sub"
       type: "object"
       properties:
