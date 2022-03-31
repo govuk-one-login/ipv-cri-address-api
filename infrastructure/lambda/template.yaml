@@ -102,8 +102,6 @@ Resources:
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
       StageName: !Ref Environment
-      #      Auth:
-      #        DefaultAuthorizer: AWS_IAM
       DefinitionBody:
         openapi: "3.0.1" # workaround to get `sam validate` to work
         paths: # workaround to get `sam validate` to work
@@ -281,6 +279,47 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expiry-date
         Enabled: true
+
+  ApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - AddressApiStage
+    Properties:
+      ApiStages:
+        - ApiId: !Ref AddressApi
+          Stage: !Ref Environment
+      Quota:
+        Limit: 500000
+        Period: DAY
+      Throttle:
+        BurstLimit: 100 # requests the API can handle concurrently
+        RateLimit: 50 # allowed requests per second
+
+  ApiKey1:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Description: Api key 1
+      Enabled: true
+
+  ApiKey2:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Description: Api key 2
+      Enabled: true
+
+  LinkUsagePlanApiKey1:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey1
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
+
+  LinkUsagePlanApiKey2:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey2
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
 
   ParameterAddressSessionTableName:
     Type: AWS::SSM::Parameter

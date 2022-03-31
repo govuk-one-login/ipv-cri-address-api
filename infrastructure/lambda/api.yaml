@@ -393,7 +393,14 @@ components:
         currentResidency:
           type: "boolean"
           example: true
-
+#  securitySchemes:
+#    api_key:
+#      type: "apiKey"
+#      name: "x-api-key"
+#      in: "header"
+#
+#security:
+#  - api_key: []
 
 x-amazon-apigateway-request-validators:
   Validate both:
