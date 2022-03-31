@@ -194,7 +194,7 @@ paths:
       This API is expected to be called by the IPV core backend directly as the
       final part of the OpenId/Oauth Flow
     parameters:
-      - name: authorization
+      - name: Authorization
         in: header
         required: true
         description: 'A valid access_token (e.g.: authorization: Bearer access-token-value).'
