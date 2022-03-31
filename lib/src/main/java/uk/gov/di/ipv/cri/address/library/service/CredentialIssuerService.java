@@ -1,15 +1,16 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.CredentialRequestException;
-import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
+import java.nio.charset.Charset;
 import java.time.Clock;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class CredentialIssuerService {
-    public static final String ACCESS_TOKEN = "access_token";
+    public static final String AUTHORIZATION = "Authorization";
     public static final String SUB = "sub";
     private final AddressSessionService addressSessionService;
 
@@ -33,11 +34,15 @@ public class CredentialIssuerService {
     }
 
     public UUID getSessionId(APIGatewayProxyRequestEvent input) throws CredentialRequestException {
-        var queryParams = queryParams(input);
-        var listHelper = new ListUtil();
-        var accessToken =
-                listHelper.getValueOrThrow(
-                        queryParams.getOrDefault(ACCESS_TOKEN, Collections.emptyList()));
+        var queryParams = queryParams(input.getBody());
+        if (!queryParams.containsKey(SUB)) {
+            throw new CredentialRequestException(ErrorResponse.INVALID_REQUEST_PARAM);
+        }
+        var subject = queryParams.get(SUB);
+        System.out.println("The input header is: ");
+        System.out.println(input.getHeaders());
+        var accessToken = getAccessToken(input.getHeaders());
+        System.out.println("This access token is: " + accessToken);
 
         AddressSessionItem addressSessionItem =
                 addressSessionService.getItemByGSIIndex(
@@ -46,13 +51,21 @@ public class CredentialIssuerService {
         return addressSessionItem.getSessionId();
     }
 
-    private Map<String, List<String>> queryParams(APIGatewayProxyRequestEvent input) {
-        return Optional.ofNullable(
-                        input.getQueryStringParameters().entrySet().stream()
-                                .collect(
-                                        Collectors.toMap(
-                                                Map.Entry::getKey, e -> List.of(e.getValue()))))
-                .orElseGet(Collections::emptyMap);
+    public String getAccessToken(Map<String, String> headers) throws CredentialRequestException {
+        return Optional.ofNullable(headers).stream()
+                .flatMap(x -> x.entrySet().stream())
+                .filter(e -> AUTHORIZATION.equalsIgnoreCase(e.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElseThrow(
+                        () ->
+                                new CredentialRequestException(
+                                        ErrorResponse.MISSING_AUTHORIZATION_HEADER));
+    }
+
+    private Map<String, String> queryParams(String body) {
+        return URLEncodedUtils.parse(body, Charset.defaultCharset()).stream()
+                .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
     }
 
     public List<CanonicalAddressWithResidency> getAddresses(UUID sessionId)

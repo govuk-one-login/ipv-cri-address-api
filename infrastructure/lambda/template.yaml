@@ -251,6 +251,23 @@ Resources:
         Variables:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - DynamoDBWritePolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -442,7 +459,7 @@ Outputs:
 
   IssueCredentialFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for address update function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/IssueCredentialFunction/"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/IssueCredentialFunction/"
     Export:
       Name: !Sub ${AWS::StackName}-IssueCredentialFunctionApi
   IssueCredentialFunction:

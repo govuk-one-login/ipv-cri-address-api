@@ -188,23 +188,35 @@ paths:
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
 
-  /credentials/issue:
+  /credential/issue:
     summary: Resource for the Address API
     description: >-
       This API is expected to be called by the IPV core backend directly as the
       final part of the OpenId/Oauth Flow
     parameters:
-      - $ref: "#/components/parameters/AccessToken"
-      - $ref: "#/components/parameters/Sub"
+      - name: authorization
+        in: header
+        required: true
+        description: 'A valid access_token (e.g.: authorization: Bearer access-token-value).'
+        schema:
+          type: string
     post:
       summary: Post request using a valid access_token
       description: Accepts form encoded param consisting of the access_token and subject
+      security:
+        - bearerAuth: []
       requestBody:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/IssueRequest'
-        required: true
+              required:
+                - sub
+              type: object
+              properties:
+                sub:
+                  type: string
+                  minLength: 1
+
       responses:
         '200':
           description: 201 Ok
@@ -225,7 +237,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-      x-amazon-apigateway-request-validator: "Validate body"
+      x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
@@ -266,34 +278,8 @@ components:
       description:  Required, and is the "redirect_uri" parameter was included in the authorization request
       schema:
         type: string
-    AccessToken:
-      name: access_token
-      in: query
-      required: true
-      description: The accesstoken generated from the /token endpoint
-      schema:
-        type: string
-    Sub:
-      name: sub
-      in: query
-      required: true
-      description: The Credential subject supplied by IPV_CORE
-      schema:
-        type: string
+
   schemas:
-    IssueRequest:
-      required:
-        - "access_token"
-        - "sub"
-      type: "object"
-      properties:
-        accesstoken:
-          type: "string"
-          example: "981bb74c-3b5e-462e-ba3a-abf868e5da68"
-          minLength: 1
-        sub:
-          type: string
-          minLength: 1
     TokenRequest:
       required:
         - "grant_type"
@@ -470,6 +456,10 @@ components:
         currentResidency:
           type: "boolean"
           example: true
+    securitySchemes:
+      bearerAuth:
+        type: http
+        scheme: bearer
 #  securitySchemes:
 #    api_key:
 #      type: "apiKey"
@@ -483,6 +473,4 @@ x-amazon-apigateway-request-validators:
   Validate both:
     validateRequestBody: true
     validateRequestParameters: true
-  Validate body:
-    validateRequestParameters: false
-    validateRequestBody: true
+

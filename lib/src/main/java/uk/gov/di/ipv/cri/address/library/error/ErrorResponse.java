@@ -27,7 +27,8 @@ public enum ErrorResponse {
     INVALID_POSTCODE(1018, "Invalid postcode param"),
     SESSION_VALIDATION_ERROR(1019, "Session Validation Exception"),
     SERVER_CONFIG_ERROR(1020, "Server Configuration Error"),
-    MISSING_ADDRESS_SESSION_ITEM(1021, "Missing address session item");
+    MISSING_ADDRESS_SESSION_ITEM(1021, "Missing address session item"),
+    MISSING_AUTHORIZATION_HEADER(1022, "Missing Authorization Header");
 
     private final int code;
     private final String message;
