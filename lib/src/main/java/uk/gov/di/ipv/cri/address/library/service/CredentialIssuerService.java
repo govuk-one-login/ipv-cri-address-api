@@ -3,14 +3,16 @@ package uk.gov.di.ipv.cri.address.library.service;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.CredentialRequestException;
+import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.nio.charset.Charset;
-import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,17 +22,15 @@ import java.util.stream.Collectors;
 public class CredentialIssuerService {
     public static final String AUTHORIZATION = "Authorization";
     public static final String SUB = "sub";
-    private final AddressSessionService addressSessionService;
+    private final DataStore<AddressSessionItem> dataStore;
 
     public CredentialIssuerService() {
         var configurationService = new ConfigurationService();
-        var dataStore = getDataStore(configurationService);
-        this.addressSessionService =
-                new AddressSessionService(dataStore, configurationService, Clock.systemUTC());
+        dataStore = getDataStore(configurationService);
     }
 
-    public CredentialIssuerService(AddressSessionService addressSessionService) {
-        this.addressSessionService = addressSessionService;
+    public CredentialIssuerService(DataStore<AddressSessionItem> dataStore) {
+        this.dataStore = dataStore;
     }
 
     public UUID getSessionId(APIGatewayProxyRequestEvent input) throws CredentialRequestException {
@@ -44,9 +44,13 @@ public class CredentialIssuerService {
         var accessToken = getAccessToken(input.getHeaders());
         System.out.println("This access token is: " + accessToken);
 
-        AddressSessionItem addressSessionItem =
-                addressSessionService.getItemByGSIIndex(
-                        accessToken, AddressSessionItem.TOKEN_INDEX);
+        DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
+        DynamoDbIndex<AddressSessionItem> index =
+                addressSessionTable.index(AddressSessionItem.TOKEN_INDEX);
+
+        var listHelper = new ListUtil();
+        var addressSessionItem =
+                listHelper.getValueOrThrow(dataStore.getItemByGsi(index, accessToken));
 
         return addressSessionItem.getSessionId();
     }
@@ -70,8 +74,7 @@ public class CredentialIssuerService {
 
     public List<CanonicalAddressWithResidency> getAddresses(UUID sessionId)
             throws CredentialRequestException {
-        AddressSessionItem addressSessionItem =
-                addressSessionService.getSession(sessionId.toString());
+        AddressSessionItem addressSessionItem = dataStore.getItem(sessionId.toString());
         if (addressSessionItem == null) {
             throw new CredentialRequestException(ErrorResponse.MISSING_ADDRESS_SESSION_ITEM);
         }

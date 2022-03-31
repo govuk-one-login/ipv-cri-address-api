@@ -14,14 +14,8 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
@@ -47,7 +41,6 @@ import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -284,24 +277,8 @@ public class AddressSessionService {
     public AddressSessionItem getItemByGSIIndex(final String value, String indexName) {
         DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
         DynamoDbIndex<AddressSessionItem> index = addressSessionTable.index(indexName);
-
-        return getAddressSessionItemByGSI(index, value);
-    }
-
-    private AddressSessionItem getAddressSessionItemByGSI(
-            DynamoDbIndex<AddressSessionItem> index, String value) {
-        AttributeValue attVal = AttributeValue.builder().s(value).build();
         var listHelper = new ListUtil();
-        QueryConditional queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
 
-        SdkIterable<Page<AddressSessionItem>> items =
-                index.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build());
-
-        List<AddressSessionItem> item =
-                items.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
-
-        return listHelper.getValueOrThrow(item);
+        return listHelper.getValueOrThrow(dataStore.getItemByGsi(index, value));
     }
 }

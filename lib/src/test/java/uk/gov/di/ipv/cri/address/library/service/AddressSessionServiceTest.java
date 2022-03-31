@@ -10,14 +10,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
@@ -38,7 +32,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -280,20 +273,12 @@ class AddressSessionServiceTest {
         item.setAuthorizationCode(authCodeValue);
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
         DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
-        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(Page.create(List.of(item)));
-
-        var attVal = AttributeValue.builder().s(authCodeValue).build();
-        var queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
 
         when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockDataStore.getItemByGsi(mockAuthorizationCodeIndex, authCodeValue))
+                .thenReturn(List.of(item));
         when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
                 .thenReturn(mockAuthorizationCodeIndex);
-        when(mockAuthorizationCodeIndex.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
-                .thenReturn(pageSdkIterableMock);
-        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
 
         AddressSessionItem addressSessionItem =
                 addressSessionService.getItemByGSIIndex(
@@ -309,21 +294,13 @@ class AddressSessionServiceTest {
         item.setSessionId(UUID.randomUUID());
         item.setAccessToken(accessTokenValue);
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
-        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(Page.create(List.of(item)));
-
-        var attVal = AttributeValue.builder().s(accessTokenValue).build();
-        var queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+        DynamoDbIndex<AddressSessionItem> mockTokenIndex = mock(DynamoDbIndex.class);
 
         when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockDataStore.getItemByGsi(mockTokenIndex, accessTokenValue))
+                .thenReturn(List.of(item));
         when(mockAddressSessionTable.index(AddressSessionItem.TOKEN_INDEX))
-                .thenReturn(mockAuthorizationCodeIndex);
-        when(mockAuthorizationCodeIndex.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
-                .thenReturn(pageSdkIterableMock);
-        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
+                .thenReturn(mockTokenIndex);
 
         AddressSessionItem addressSessionItem =
                 addressSessionService.getItemByGSIIndex(

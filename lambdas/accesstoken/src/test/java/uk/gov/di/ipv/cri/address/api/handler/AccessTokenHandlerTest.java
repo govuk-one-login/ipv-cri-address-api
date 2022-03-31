@@ -22,19 +22,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AccessTokenService;
-import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -87,19 +82,13 @@ class AccessTokenHandlerTest {
     void shouldReturn400WhenInvalidTokenRequestProvided() throws Exception {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         ConfigurationService mockConfigurationService = mock(ConfigurationService.class);
-        AddressSessionService spyAddressSessionService =
-                Mockito.spy(
-                        new AddressSessionService(
-                                (DataStore<AddressSessionItem>) mock(DataStore.class),
-                                mockConfigurationService,
-                                Clock.fixed(Instant.now(), ZoneId.systemDefault())));
         String invalidTokenRequest = "invalid-token-request";
         event.withBody(invalidTokenRequest);
 
         handler =
                 new AccessTokenHandler(
                         new AccessTokenService(
-                                spyAddressSessionService,
+                                (DataStore<AddressSessionItem>) mock(DataStore.class),
                                 mockConfigurationService.getBearerAccessTokenTtl()),
                         eventProbe);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);

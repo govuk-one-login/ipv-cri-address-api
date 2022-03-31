@@ -11,13 +11,14 @@ import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.net.URI;
-import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,20 +29,17 @@ public class AccessTokenService {
     public static final String REDIRECT_URI = "redirect_uri";
     public static final String GRANT_TYPE = "grant_type";
     public static final String CLIENT_ID = "client_id";
-    private final AddressSessionService addressSessionService;
+    private final DataStore<AddressSessionItem> dataStore;
     private final Long bearAccessTokenTtl;
 
-    public AccessTokenService(
-            AddressSessionService addressSessionService, Long bearerAccessTokenTtl) {
-        this.addressSessionService = addressSessionService;
+    public AccessTokenService(DataStore<AddressSessionItem> dataStore, Long bearerAccessTokenTtl) {
+        this.dataStore = dataStore;
         this.bearAccessTokenTtl = bearerAccessTokenTtl;
     }
 
     public AccessTokenService() {
         var configurationService = new ConfigurationService();
-        var dataStore = getDataStore(configurationService);
-        this.addressSessionService =
-                new AddressSessionService(dataStore, configurationService, Clock.systemUTC());
+        dataStore = getDataStore(configurationService);
         this.bearAccessTokenTtl = configurationService.getBearerAccessTokenTtl();
     }
 
@@ -51,8 +49,7 @@ public class AccessTokenService {
                         .getAuthorizationCode()
                         .getValue();
 
-        return addressSessionService.getItemByGSIIndex(
-                authorizationCodeFromRequest, AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        return getItemByAuthorizationCode(authorizationCodeFromRequest);
     }
 
     public TokenRequest createTokenRequest(String requestBody)
@@ -90,7 +87,7 @@ public class AccessTokenService {
         addressSessionItem.setAccessToken(
                 tokenResponse.getTokens().getBearerAccessToken().toAuthorizationHeader());
 
-        addressSessionService.update(addressSessionItem);
+        dataStore.update(addressSessionItem);
     }
 
     private void validateTokenRequest(Map<String, List<String>> queryParameters)
@@ -108,16 +105,15 @@ public class AccessTokenService {
                 listHelper.getValueOrThrow(
                         queryParameters.getOrDefault(GRANT_TYPE, Collections.emptyList()));
 
-        var addressSessionItem =
-                addressSessionService.getItemByGSIIndex(
-                        authorizationCode, AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        var addressSessionItem = getItemByAuthorizationCode(authorizationCode);
+
         if (!grantType.equals(GrantType.AUTHORIZATION_CODE.getValue())) {
             throw new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
         }
         if (addressSessionItem == null
                 || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
             throw new AccessTokenRequestException(
-                    "Cannot for the Address session item for the given authorization Code",
+                    "Cannot retrieve Address session item for the given authorization Code",
                     OAuth2Error.INVALID_GRANT);
         }
         if (!URI.create(redirectUri).equals(addressSessionItem.getRedirectUri())) {
@@ -134,5 +130,15 @@ public class AccessTokenService {
                 configurationService.getAddressSessionTableName(),
                 AddressSessionItem.class,
                 DataStore.getClient());
+    }
+
+    private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
+        DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
+        DynamoDbIndex<AddressSessionItem> index =
+                addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        var listHelper = new ListUtil();
+
+        return listHelper.getValueOrThrow(
+                dataStore.getItemByGsi(index, authorizationCodeFromRequest));
     }
 }
