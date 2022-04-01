@@ -59,11 +59,11 @@ Mappings:
 
   IPVCoreStubIssuerMapping:
     Environment:
-      dev: "ipv-core-stub"
-      build: "ipv-core-stub"
-      staging: "ipv-core-stub"
-      integration: "ipv-core-stub"
-      production: "ipv-core-stub"
+      dev: "https://dev.core.ipv.account.gov.uk"
+      build: "https://build.core.ipv.account.gov.uk"
+      staging: "https://staging.core.ipv.account.gov.uk"
+      integration: "https://integration.core.ipv.account.gov.uk"
+      production: "https://core.ipv.account.gov.uk"
 
   IPVCoreStubPublicCertificateToVerifyMapping:
     Environment:
