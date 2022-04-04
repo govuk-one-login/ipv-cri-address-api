@@ -62,3 +62,12 @@ Required GitHub secrets:
 | GH_ACTIONS_ROLE_ARN | Assumed role IAM ARN |
 | SIGNING_PROFILE_NAME | Signing profile name |
 
+For Dev the following equivalent GitHub secrets:
+
+| Secret                          | Description |
+|---------------------------------| ----------- |
+| DEV_ARTIFACT_SOURCE_BUCKET_NAME | Upload artifact bucket |
+| DEV_GH_ACTIONS_ROLE_ARN         | Assumed role IAM ARN |
+| DEV_SIGNING_PROFILE_NAME        | Signing profile name |
+
+
