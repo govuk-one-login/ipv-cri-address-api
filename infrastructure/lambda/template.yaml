@@ -279,7 +279,7 @@ Resources:
           AttributeType: "S"
         - AttributeName: "authorizationCode"
           AttributeType: "S"
-        - AttributeName: "token"
+        - AttributeName: "accessToken"
           AttributeType: "S"
       KeySchema:
         - AttributeName: "sessionId"
@@ -294,9 +294,9 @@ Resources:
               - "sessionId"
               - "redirectUri"
             ProjectionType: "INCLUDE"
-        - IndexName: "token-index"
+        - IndexName: "access-token-index"
           KeySchema:
-            - AttributeName: "token"
+            - AttributeName: "accessToken"
               KeyType: "HASH"
           Projection:
             NonKeyAttributes:

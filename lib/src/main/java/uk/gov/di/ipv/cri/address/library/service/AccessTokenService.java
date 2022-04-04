@@ -11,8 +11,6 @@ import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
@@ -125,20 +123,19 @@ public class AccessTokenService {
         }
     }
 
+    private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
+        var addressSessionTable = dataStore.getTable();
+        var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        var listHelper = new ListUtil();
+
+        return listHelper.getValueOrThrow(
+                dataStore.getItemByGsi(index, authorizationCodeFromRequest));
+    }
+
     private DataStore<AddressSessionItem> getDataStore(ConfigurationService configurationService) {
         return new DataStore<>(
                 configurationService.getAddressSessionTableName(),
                 AddressSessionItem.class,
                 DataStore.getClient());
-    }
-
-    private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
-        DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
-        DynamoDbIndex<AddressSessionItem> index =
-                addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
-        var listHelper = new ListUtil();
-
-        return listHelper.getValueOrThrow(
-                dataStore.getItemByGsi(index, authorizationCodeFromRequest));
     }
 }

@@ -299,12 +299,12 @@ class AddressSessionServiceTest {
         when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
         when(mockDataStore.getItemByGsi(mockTokenIndex, accessTokenValue))
                 .thenReturn(List.of(item));
-        when(mockAddressSessionTable.index(AddressSessionItem.TOKEN_INDEX))
+        when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
                 .thenReturn(mockTokenIndex);
 
         AddressSessionItem addressSessionItem =
                 addressSessionService.getItemByGSIIndex(
-                        accessTokenValue, AddressSessionItem.TOKEN_INDEX);
+                        accessTokenValue, AddressSessionItem.ACCESS_TOKEN_INDEX);
         assertThat(item.getSessionId(), equalTo(addressSessionItem.getSessionId()));
         assertThat(item.getAccessToken(), equalTo(addressSessionItem.getAccessToken()));
     }

@@ -3,8 +3,7 @@ package uk.gov.di.ipv.cri.address.library.service;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
@@ -20,7 +19,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class CredentialIssuerService {
-    public static final String AUTHORIZATION = "Authorization";
+    public static final String AUTHORIZATION_HEADER_KEY = "Authorization";
     public static final String SUB = "sub";
     private final DataStore<AddressSessionItem> dataStore;
 
@@ -33,20 +32,15 @@ public class CredentialIssuerService {
         this.dataStore = dataStore;
     }
 
-    public UUID getSessionId(APIGatewayProxyRequestEvent input) throws CredentialRequestException {
+    public UUID getSessionId(APIGatewayProxyRequestEvent input)
+            throws CredentialRequestException, DynamoDbException {
         var queryParams = queryParams(input.getBody());
         if (!queryParams.containsKey(SUB)) {
             throw new CredentialRequestException(ErrorResponse.INVALID_REQUEST_PARAM);
         }
-        var subject = queryParams.get(SUB);
-        System.out.println("The input header is: ");
-        System.out.println(input.getHeaders());
         var accessToken = getAccessToken(input.getHeaders());
-        System.out.println("This access token is: " + accessToken);
-
-        DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
-        DynamoDbIndex<AddressSessionItem> index =
-                addressSessionTable.index(AddressSessionItem.TOKEN_INDEX);
+        var addressSessionTable = dataStore.getTable();
+        var index = addressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX);
 
         var listHelper = new ListUtil();
         var addressSessionItem =
@@ -55,10 +49,19 @@ public class CredentialIssuerService {
         return addressSessionItem.getSessionId();
     }
 
-    public String getAccessToken(Map<String, String> headers) throws CredentialRequestException {
+    public List<CanonicalAddressWithResidency> getAddresses(UUID sessionId)
+            throws CredentialRequestException {
+        var addressSessionItem = dataStore.getItem(sessionId.toString());
+        if (addressSessionItem == null) {
+            throw new CredentialRequestException(ErrorResponse.MISSING_ADDRESS_SESSION_ITEM);
+        }
+        return addressSessionItem.getAddresses();
+    }
+
+    private String getAccessToken(Map<String, String> headers) throws CredentialRequestException {
         return Optional.ofNullable(headers).stream()
                 .flatMap(x -> x.entrySet().stream())
-                .filter(e -> AUTHORIZATION.equalsIgnoreCase(e.getKey()))
+                .filter(e -> AUTHORIZATION_HEADER_KEY.equalsIgnoreCase(e.getKey()))
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElseThrow(
@@ -70,15 +73,6 @@ public class CredentialIssuerService {
     private Map<String, String> queryParams(String body) {
         return URLEncodedUtils.parse(body, Charset.defaultCharset()).stream()
                 .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
-    }
-
-    public List<CanonicalAddressWithResidency> getAddresses(UUID sessionId)
-            throws CredentialRequestException {
-        AddressSessionItem addressSessionItem = dataStore.getItem(sessionId.toString());
-        if (addressSessionItem == null) {
-            throw new CredentialRequestException(ErrorResponse.MISSING_ADDRESS_SESSION_ITEM);
-        }
-        return addressSessionItem.getAddresses();
     }
 
     private DataStore<AddressSessionItem> getDataStore(ConfigurationService configurationService) {

@@ -144,11 +144,6 @@ paths:
         type: "aws_proxy"
 
   /token:
-    parameters:
-      - $ref: "#/components/parameters/GrantType"
-      - $ref: "#/components/parameters/Code"
-      - $ref: "#/components/parameters/RedirectUri"
-      - $ref: "#/components/parameters/ClientId"
     post:
       requestBody:
         content:
@@ -203,8 +198,6 @@ paths:
     post:
       summary: Post request using a valid access_token
       description: Accepts form encoded param consisting of the access_token and subject
-      security:
-        - bearerAuth: []
       requestBody:
         content:
           application/x-www-form-urlencoded:
@@ -456,10 +449,7 @@ components:
         currentResidency:
           type: "boolean"
           example: true
-    securitySchemes:
-      bearerAuth:
-        type: http
-        scheme: bearer
+
 #  securitySchemes:
 #    api_key:
 #      type: "apiKey"
