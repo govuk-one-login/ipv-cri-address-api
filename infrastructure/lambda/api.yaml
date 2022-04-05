@@ -144,6 +144,11 @@ paths:
         type: "aws_proxy"
 
   /token:
+    parameters:
+      - $ref: "#/components/parameters/GrantType"
+      - $ref: "#/components/parameters/Code"
+      - $ref: "#/components/parameters/RedirectUri"
+      - $ref: "#/components/parameters/ClientId"
     post:
       requestBody:
         content:
@@ -198,21 +203,10 @@ paths:
     post:
       summary: Post request using a valid access_token
       description: Accepts form encoded param consisting of the access_token and subject
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              required:
-                - sub
-              type: object
-              properties:
-                sub:
-                  type: string
-                  minLength: 1
 
       responses:
         '200':
-          description: 201 Ok
+          description: 200 Ok
           content:
             application/json:
               schema:
@@ -449,6 +443,7 @@ components:
         currentResidency:
           type: "boolean"
           example: true
+
 
 #  securitySchemes:
 #    api_key:

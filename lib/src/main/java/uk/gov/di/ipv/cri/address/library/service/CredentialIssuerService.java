@@ -1,8 +1,9 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.token.AccessTokenType;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.CredentialRequestException;
@@ -11,16 +12,13 @@ import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class CredentialIssuerService {
     public static final String AUTHORIZATION_HEADER_KEY = "Authorization";
-    public static final String SUB = "sub";
     private final DataStore<AddressSessionItem> dataStore;
 
     public CredentialIssuerService() {
@@ -33,18 +31,17 @@ public class CredentialIssuerService {
     }
 
     public UUID getSessionId(APIGatewayProxyRequestEvent input)
-            throws CredentialRequestException, DynamoDbException {
-        var queryParams = queryParams(input.getBody());
-        if (!queryParams.containsKey(SUB)) {
-            throw new CredentialRequestException(ErrorResponse.INVALID_REQUEST_PARAM);
-        }
-        var accessToken = getAccessToken(input.getHeaders());
+            throws CredentialRequestException, DynamoDbException, ParseException {
+
+        var accessToken = validateInputHeaderBearerToken(input.getHeaders());
+
         var addressSessionTable = dataStore.getTable();
         var index = addressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX);
 
         var listHelper = new ListUtil();
         var addressSessionItem =
-                listHelper.getValueOrThrow(dataStore.getItemByGsi(index, accessToken));
+                listHelper.getValueOrThrow(
+                        dataStore.getItemByGsi(index, accessToken.toAuthorizationHeader()));
 
         return addressSessionItem.getSessionId();
     }
@@ -58,21 +55,20 @@ public class CredentialIssuerService {
         return addressSessionItem.getAddresses();
     }
 
-    private String getAccessToken(Map<String, String> headers) throws CredentialRequestException {
-        return Optional.ofNullable(headers).stream()
-                .flatMap(x -> x.entrySet().stream())
-                .filter(e -> AUTHORIZATION_HEADER_KEY.equalsIgnoreCase(e.getKey()))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElseThrow(
-                        () ->
-                                new CredentialRequestException(
-                                        ErrorResponse.MISSING_AUTHORIZATION_HEADER));
-    }
+    private AccessToken validateInputHeaderBearerToken(Map<String, String> headers)
+            throws CredentialRequestException, ParseException {
+        var token =
+                Optional.ofNullable(headers).stream()
+                        .flatMap(x -> x.entrySet().stream())
+                        .filter(e -> AUTHORIZATION_HEADER_KEY.equalsIgnoreCase(e.getKey()))
+                        .map(Map.Entry::getValue)
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new CredentialRequestException(
+                                                ErrorResponse.MISSING_AUTHORIZATION_HEADER));
 
-    private Map<String, String> queryParams(String body) {
-        return URLEncodedUtils.parse(body, Charset.defaultCharset()).stream()
-                .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
+        return AccessToken.parse(token, AccessTokenType.BEARER);
     }
 
     private DataStore<AddressSessionItem> getDataStore(ConfigurationService configurationService) {

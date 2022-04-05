@@ -6,6 +6,9 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.common.contenttype.ContentType;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Test;
@@ -46,11 +49,14 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldReturnAddressAndAOneValueWhenIssueCredentialRequestIsValid()
-            throws CredentialRequestException {
+            throws CredentialRequestException, ParseException {
         UUID sessionId = UUID.randomUUID();
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        event.withBody("sub=12345");
-        event.withHeaders(Map.of(CredentialIssuerService.AUTHORIZATION_HEADER_KEY, "access-token"));
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
         when(mockAddressCredentialIssuerService.getSessionId(event)).thenReturn(sessionId);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
@@ -65,13 +71,18 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldThrowCredentialRequestExceptionWhenSubjectIsNotSupplied()
-            throws CredentialRequestException {
+            throws CredentialRequestException, ParseException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
         setupEventProbeErrorBehaviour();
         event.withHeaders(
                 Map.of(
                         CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
-                        UUID.randomUUID().toString()));
+                        accessToken.toAuthorizationHeader()));
 
         when(mockAddressCredentialIssuerService.getSessionId(event))
                 .thenThrow(CredentialRequestException.class);
@@ -88,9 +99,8 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied()
-            throws CredentialRequestException {
+            throws CredentialRequestException, ParseException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        event.withBody("sub=subject");
         setupEventProbeErrorBehaviour();
 
         when(mockAddressCredentialIssuerService.getSessionId(event))
@@ -109,10 +119,11 @@ class IssueCredentialHandlerTest {
     @Test
     void shouldThrowInterServerErrorWhenThereIsAnAWSError() throws JsonProcessingException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        event.withBody("sub=subject");
-        String accessTokenValue = "access-token";
+        AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
-                Map.of(CredentialIssuerService.AUTHORIZATION_HEADER_KEY, accessTokenValue));
+                Map.of(
+                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
 
         setupEventProbeErrorBehaviour();
         DataStore<AddressSessionItem> mockDataStore = mock(DataStore.class);
@@ -136,7 +147,7 @@ class IssueCredentialHandlerTest {
                         .errorMessage("AWS DynamoDbException Occurred")
                         .build();
 
-        when(mockDataStore.getItemByGsi(mockTokenIndex, accessTokenValue))
+        when(mockDataStore.getItemByGsi(mockTokenIndex, accessToken.toAuthorizationHeader()))
                 .thenThrow(
                         DynamoDbException.builder()
                                 .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)

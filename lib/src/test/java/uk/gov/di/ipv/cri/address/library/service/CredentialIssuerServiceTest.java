@@ -1,6 +1,9 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.token.AccessToken;
+import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,24 +34,21 @@ class CredentialIssuerServiceTest {
     @InjectMocks private CredentialIssuerService addressCredentialIssuerService;
 
     @Test
-    void shouldRetrieveSessionIdWhenInputHasValidAccessToken() throws CredentialRequestException {
+    void shouldRetrieveSessionIdWhenInputHasValidAccessToken()
+            throws CredentialRequestException, ParseException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        var accessTokenValue = UUID.randomUUID().toString();
+        AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
-                Map.of(CredentialIssuerService.AUTHORIZATION_HEADER_KEY, accessTokenValue));
-        event.withBody("sub=subject");
+                Map.of(
+                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
 
         var item = new AddressSessionItem();
-        item.setSessionId(UUID.randomUUID());
-        item.setAccessToken(accessTokenValue);
-        event.withHeaders(
-                Map.of(CredentialIssuerService.AUTHORIZATION_HEADER_KEY, accessTokenValue));
-
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
         DynamoDbIndex<AddressSessionItem> mockAccessTokenIndex = mock(DynamoDbIndex.class);
-
         when(mockAddressSessionDataStore.getTable()).thenReturn(mockAddressSessionTable);
-        when(mockAddressSessionDataStore.getItemByGsi(mockAccessTokenIndex, accessTokenValue))
+        when(mockAddressSessionDataStore.getItemByGsi(
+                        mockAccessTokenIndex, accessToken.toAuthorizationHeader()))
                 .thenReturn(Collections.singletonList(item));
         when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
                 .thenReturn(mockAccessTokenIndex);
@@ -62,7 +62,6 @@ class CredentialIssuerServiceTest {
     @Test
     void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied() {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        event.withBody("sub=subject");
 
         CredentialRequestException exception =
                 assertThrows(
@@ -77,10 +76,11 @@ class CredentialIssuerServiceTest {
     @Test
     void shouldThrowIlegalArgumentExceptionWhenSessionIdIsNotFoundUsingTheAccessTokenInTheInput() {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        var accessTokenValue = UUID.randomUUID().toString();
+        AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
-                Map.of(CredentialIssuerService.AUTHORIZATION_HEADER_KEY, accessTokenValue));
-        event.withBody("sub=subject");
+                Map.of(
+                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
 
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
         DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
@@ -97,16 +97,17 @@ class CredentialIssuerServiceTest {
     }
 
     @Test
-    void shouldThrowIllegalArgumentExceptionWhenInTheInputQueryParamHasNoAccessTokenKey() {
+    void shouldThrowParseExceptionWhenAuthorizationIsNotDoneThruBearerTokenAccess() {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        event.withQueryStringParameters(Map.of(CredentialIssuerService.SUB, "subject"));
+        var accessTokenValue = UUID.randomUUID().toString();
+        event.withHeaders(
+                Map.of(CredentialIssuerService.AUTHORIZATION_HEADER_KEY, accessTokenValue));
 
-        CredentialRequestException exception =
+        ParseException exception =
                 assertThrows(
-                        CredentialRequestException.class,
+                        ParseException.class,
                         () -> addressCredentialIssuerService.getSessionId(event));
         assertThat(
-                exception.getMessage(),
-                containsString(ErrorResponse.INVALID_REQUEST_PARAM.getMessage()));
+                exception.getMessage(), containsString("Invalid HTTP Authorization header value"));
     }
 }
