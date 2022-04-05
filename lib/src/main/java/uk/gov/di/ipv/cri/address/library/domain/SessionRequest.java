@@ -1,6 +1,7 @@
 package uk.gov.di.ipv.cri.address.library.domain;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.net.URI;
 import java.util.StringJoiner;
@@ -21,6 +22,8 @@ public class SessionRequest {
 
     @JsonAlias("request")
     private String requestJWT;
+
+    @JsonIgnore private transient String subject;
 
     public String getResponseType() {
         return responseType;
@@ -60,6 +63,14 @@ public class SessionRequest {
 
     public void setRequestJWT(String requestJWT) {
         this.requestJWT = requestJWT;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getSubject() {
+        return subject;
     }
 
     @Override
