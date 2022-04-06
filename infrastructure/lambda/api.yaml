@@ -17,7 +17,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddressRequest"
+              $ref: "#/components/schemas/Address"
         required: true
       responses:
         200:
@@ -142,6 +142,7 @@ paths:
         passthroughBehavior: "when_no_match"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
+
   /token:
     parameters:
       - $ref: "#/components/parameters/GrantType"
@@ -175,11 +176,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-      x-amazon-apigateway-request-validator: " Validate both"
+      x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AccessTokenFunction.Arn}/invocations
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+
+  /credential/issue:
+    summary: Resource for the Address API
+    description: >-
+      This API is expected to be called by the IPV core backend directly as the
+      final part of the OpenId/Oauth Flow
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+        description: 'A valid access_token (e.g.: authorization: Bearer access-token-value).'
+        schema:
+          type: string
+    post:
+      summary: Post request using a valid access_token
+      description: Accepts form encoded param consisting of the access_token and subject
+
+      responses:
+        '200':
+          description: 200 Ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Address"
+        '400':
+          description: 400 Bad Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: 500 Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+      x-amazon-apigateway-request-validator: "Validate both"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${IssueCredentialFunction.Arn}/invocations
         responses:
           default:
             statusCode: "200"
@@ -216,6 +265,7 @@ components:
       description:  Required, and is the "redirect_uri" parameter was included in the authorization request
       schema:
         type: string
+
   schemas:
     TokenRequest:
       required:
@@ -326,7 +376,7 @@ components:
       type: "array"
       items:
         $ref: "#/components/schemas/CanonicalAddress"
-    AddressRequest:
+    Address:
       title: "Address Update Request"
       type: "array"
       items:
@@ -393,6 +443,8 @@ components:
         currentResidency:
           type: "boolean"
           example: true
+
+
 #  securitySchemes:
 #    api_key:
 #      type: "apiKey"

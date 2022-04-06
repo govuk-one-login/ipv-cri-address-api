@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
@@ -15,27 +14,16 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
-import com.nimbusds.oauth2.sdk.*;
-import com.nimbusds.oauth2.sdk.http.HTTPRequest;
-import com.nimbusds.oauth2.sdk.token.AccessToken;
-import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
-import com.nimbusds.oauth2.sdk.token.Tokens;
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
-import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
@@ -53,19 +41,13 @@ import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public class AddressSessionService {
 
-    public static final String CODE = "code";
-    public static final String REDIRECT_URI = "redirect_uri";
-    public static final String GRANT_TYPE = "grant_type";
-    public static final String CLIENT_ID = "client_id";
     private final DataStore<AddressSessionItem> dataStore;
     private final Clock clock;
     private final ConfigurationService configurationService;
@@ -120,60 +102,6 @@ public class AddressSessionService {
         verifyJWTSignature(clientAuthenticationConfig, signedJWT);
 
         return sessionRequest;
-    }
-
-    public TokenRequest createTokenRequest(String requestBody)
-            throws com.nimbusds.oauth2.sdk.ParseException {
-        // The URI is not needed/consumed in the resultant TokenRequest
-        // therefore any value can be passed here to ensure the parse method
-        // successfully materialises a TokenRequest
-        URI arbitraryUri = URI.create("https://gds");
-        HTTPRequest request = new HTTPRequest(HTTPRequest.Method.POST, arbitraryUri);
-        request.setQuery(requestBody);
-
-        boolean invalidTokenRequest =
-                request.getQueryParameters()
-                        .keySet()
-                        .containsAll(Set.of(CODE, CLIENT_ID, REDIRECT_URI, GRANT_TYPE));
-
-        if (!invalidTokenRequest) {
-            throw new AccessTokenRequestException(OAuth2Error.INVALID_REQUEST);
-        }
-
-        validateTokenRequest(request.getQueryParameters());
-
-        request.setContentType(ContentType.APPLICATION_URLENCODED.getType());
-        return TokenRequest.parse(request);
-    }
-
-    private void validateTokenRequest(Map<String, List<String>> queryParameters)
-            throws AccessTokenRequestException {
-
-        var authorizationCode =
-                getValueOrThrow(queryParameters.getOrDefault(CODE, Collections.emptyList()));
-        var redirectUri =
-                getValueOrThrow(
-                        queryParameters.getOrDefault(REDIRECT_URI, Collections.emptyList()));
-        var grantType =
-                getValueOrThrow(queryParameters.getOrDefault(GRANT_TYPE, Collections.emptyList()));
-
-        var addressSessionItem = getAddressSessionItemByValue(authorizationCode);
-        if (!grantType.equals(GrantType.AUTHORIZATION_CODE.getValue())) {
-            throw new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
-        }
-        if (addressSessionItem == null
-                || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
-            throw new AccessTokenRequestException(
-                    "Cannot for the Address session item for the given authorization Code",
-                    OAuth2Error.INVALID_GRANT);
-        }
-        if (!URI.create(redirectUri).equals(addressSessionItem.getRedirectUri())) {
-            throw new AccessTokenRequestException(
-                    String.format(
-                            "Requested redirectUri: %s does not match existing redirectUri: %s",
-                            redirectUri, addressSessionItem),
-                    OAuth2Error.INVALID_GRANT);
-        }
     }
 
     private SessionRequest parseSessionRequest(String requestBody)
@@ -315,6 +243,10 @@ public class AddressSessionService {
         return dataStore.getItem(sessionId);
     }
 
+    public void update(AddressSessionItem addressSessionItem) {
+        dataStore.update(addressSessionItem);
+    }
+
     public void validateSessionId(String sessionId)
             throws SessionNotFoundException, SessionExpiredException {
 
@@ -345,45 +277,11 @@ public class AddressSessionService {
         return sessionItem;
     }
 
-    public TokenResponse createToken(TokenRequest tokenRequest) {
-        AccessToken accessToken =
-                new BearerAccessToken(
-                        configurationService.getBearerAccessTokenTtl(), tokenRequest.getScope());
-        return new AccessTokenResponse(new Tokens(accessToken, null));
-    }
-
-    public void writeToken(
-            AccessTokenResponse tokenResponse, AddressSessionItem addressSessionItem) {
-        addressSessionItem.setAccessToken(
-                tokenResponse.getTokens().getBearerAccessToken().toAuthorizationHeader());
-
-        dataStore.update(addressSessionItem);
-    }
-
-    public AddressSessionItem getAddressSessionItemByValue(final String value) {
+    public AddressSessionItem getItemByGSIIndex(final String value, String indexName) {
         DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
-        DynamoDbIndex<AddressSessionItem> index =
-                addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        DynamoDbIndex<AddressSessionItem> index = addressSessionTable.index(indexName);
+        var listHelper = new ListUtil();
 
-        AttributeValue attVal = AttributeValue.builder().s(value).build();
-
-        QueryConditional queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
-
-        SdkIterable<Page<AddressSessionItem>> items =
-                index.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build());
-
-        List<AddressSessionItem> item =
-                items.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
-
-        return getValueOrThrow(item);
-    }
-
-    private <T> T getValueOrThrow(List<T> list) {
-        if (list.size() == 1) return list.get(0);
-
-        throw new IllegalArgumentException(
-                String.format("Parameter must have exactly one value: %s", list));
+        return listHelper.getValueOrThrow(dataStore.getItemByGsi(index, value));
     }
 }

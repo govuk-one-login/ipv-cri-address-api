@@ -1,14 +1,18 @@
 package uk.gov.di.ipv.cri.address.library.persistence;
 
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
 
 import java.net.URI;
 import java.util.List;
@@ -67,6 +71,18 @@ public class DataStore<T> {
                         QueryConditional.keyEqualTo(
                                 Key.builder().partitionValue(partitionValue).build()))
                 .stream()
+                .flatMap(page -> page.items().stream())
+                .collect(Collectors.toList());
+    }
+
+    public List<T> getItemByGsi(DynamoDbIndex<T> index, String value) throws DynamoDbException {
+        var attVal = AttributeValue.builder().s(value).build();
+        var queryConditional =
+                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
+        var queryEnhancedRequest =
+                QueryEnhancedRequest.builder().queryConditional(queryConditional).build();
+
+        return index.query(queryEnhancedRequest).stream()
                 .flatMap(page -> page.items().stream())
                 .collect(Collectors.toList());
     }

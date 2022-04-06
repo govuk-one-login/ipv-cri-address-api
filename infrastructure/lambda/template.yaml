@@ -225,7 +225,6 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-
   AccessTokenFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -251,6 +250,32 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
+  IssueCredentialFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler::handleRequest
+      CodeUri: ../../lambdas/issuecredential/build/distributions/issuecredential.zip
+      Environment:
+        Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - DynamoDBWritePolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+
+
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -261,7 +286,7 @@ Resources:
           AttributeType: "S"
         - AttributeName: "authorizationCode"
           AttributeType: "S"
-        - AttributeName: "token"
+        - AttributeName: "accessToken"
           AttributeType: "S"
       KeySchema:
         - AttributeName: "sessionId"
@@ -276,9 +301,9 @@ Resources:
               - "sessionId"
               - "redirectUri"
             ProjectionType: "INCLUDE"
-        - IndexName: "token-index"
+        - IndexName: "access-token-index"
           KeySchema:
-            - AttributeName: "token"
+            - AttributeName: "accessToken"
               KeyType: "HASH"
           Projection:
             NonKeyAttributes:
@@ -381,6 +406,13 @@ Resources:
       Value: !FindInMap [OrdnanceSurveyAPIURLMapping, Environment, !Ref 'Environment']
       Description: Ordnance Survey Postcode Lookup API URL
 
+  IssueCredentialFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt IssueCredentialFunction.Arn
+      Principal: apigateway.amazonaws.com
+
   VerifiableCredentialIssuerParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -388,6 +420,7 @@ Resources:
       Type: String
       Value: !FindInMap [VerifiableCredentialIssuerMapping, Environment, !Ref 'Environment']
       Description: Issuer of the Verifiable Credential
+
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -440,13 +473,21 @@ Outputs:
   PostcodeLookupFunction:
     Value: !GetAtt PostcodeLookupFunction.Arn
 
+  IssueCredentialFunctionApi:
+    Description: "API Gateway endpoint URL for Prod stage for address update function"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/IssueCredentialFunction/"
+    Export:
+      Name: !Sub ${AWS::StackName}-IssueCredentialFunctionApi
+  IssueCredentialFunction:
+      Value: !GetAtt IssueCredentialFunction.Arn
+
   AddressFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for address update function"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressFunctionApi
   AddressFunction:
-      Value: !GetAtt AddressFunction.Arn
+    Value: !GetAtt AddressFunction.Arn
 
   PostcodeLookupFunctionIamRole:
     Description: "IAM role for the postcode lookup function"
@@ -462,3 +503,7 @@ Outputs:
   AddressFunctionIamRole:
     Description: "IAM role for the address function"
     Value: !GetAtt AddressFunctionRole.Arn
+
+  IssueCredentialFunctionIamRole:
+    Description: "IAM role for the IssueCredential function"
+    Value: !GetAtt IssueCredentialFunctionRole.Arn

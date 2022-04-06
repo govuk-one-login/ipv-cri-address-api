@@ -26,7 +26,9 @@ public enum ErrorResponse {
     SERVER_ERROR(1017, "Postcode search failed due to a server error"),
     INVALID_POSTCODE(1018, "Invalid postcode param"),
     SESSION_VALIDATION_ERROR(1019, "Session Validation Exception"),
-    SERVER_CONFIG_ERROR(1020, "Server Configuration Error");
+    SERVER_CONFIG_ERROR(1020, "Server Configuration Error"),
+    MISSING_ADDRESS_SESSION_ITEM(1021, "Missing address session item"),
+    MISSING_AUTHORIZATION_HEADER(1022, "Missing Authorization Header");
 
     private final int code;
     private final String message;
