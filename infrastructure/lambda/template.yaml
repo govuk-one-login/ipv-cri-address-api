@@ -89,6 +89,14 @@ Mappings:
       integration: "https://api.os.uk/search/places/v1/postcode"
       production: "https://api.os.uk/search/places/v1/postcode"
 
+  VerifiableCredentialIssuerMapping:
+    Environment:
+      dev: "https://dev-di-ipv-cri-address-front.london.cloudapps.digital"
+      build: "https://build-di-ipv-cri-address-front.london.cloudapps.digital"
+      staging: "https://staging-di-ipv-cri-address-front.london.cloudapps.digital"
+      integration: "https://address-cri.account.gov.uk"
+      production: "https://address-cri.account.gov.uk"
+
 Resources:
   AddressApi:
     Type: AWS::Serverless::Api
@@ -373,6 +381,13 @@ Resources:
       Value: !FindInMap [OrdnanceSurveyAPIURLMapping, Environment, !Ref 'Environment']
       Description: Ordnance Survey Postcode Lookup API URL
 
+  VerifiableCredentialIssuerParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/verifiable-credential/issuer"
+      Type: String
+      Value: !FindInMap [VerifiableCredentialIssuerMapping, Environment, !Ref 'Environment']
+      Description: Issuer of the Verifiable Credential
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
