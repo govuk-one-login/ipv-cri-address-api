@@ -82,6 +82,7 @@ public class AddressSessionService {
         addressSessionItem.setState(sessionRequest.getState());
         addressSessionItem.setClientId(sessionRequest.getClientId());
         addressSessionItem.setRedirectUri(sessionRequest.getRedirectUri());
+        addressSessionItem.setSubject(sessionRequest.getSubject());
         dataStore.create(addressSessionItem);
         return addressSessionItem.getSessionId();
     }
@@ -115,7 +116,9 @@ public class AddressSessionService {
     private SignedJWT parseRequestJWT(SessionRequest sessionRequest)
             throws SessionValidationException {
         try {
-            return SignedJWT.parse(sessionRequest.getRequestJWT());
+            SignedJWT signedJWT = SignedJWT.parse(sessionRequest.getRequestJWT());
+            sessionRequest.setSubject(signedJWT.getJWTClaimsSet().getSubject());
+            return signedJWT;
         } catch (ParseException e) {
             throw new SessionValidationException("Could not parse request JWT", e);
         }

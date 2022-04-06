@@ -26,6 +26,7 @@ public class AddressSessionItem {
     private String authorizationCode;
 
     private String accessToken;
+    private String subject;
 
     public AddressSessionItem() {
 
@@ -98,6 +99,14 @@ public class AddressSessionItem {
 
     public void setAddresses(List<CanonicalAddressWithResidency> addresses) {
         this.addresses = Objects.requireNonNullElseGet(addresses, ArrayList::new);
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getSubject() {
+        return subject;
     }
 
     @Override

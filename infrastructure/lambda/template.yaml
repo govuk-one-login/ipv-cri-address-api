@@ -59,11 +59,11 @@ Mappings:
 
   IPVCoreStubIssuerMapping:
     Environment:
-      dev: "ipv-core-stub"
-      build: "ipv-core-stub"
-      staging: "ipv-core-stub"
-      integration: "ipv-core-stub"
-      production: "ipv-core-stub"
+      dev: "https://dev.core.ipv.account.gov.uk"
+      build: "https://build.core.ipv.account.gov.uk"
+      staging: "https://staging.core.ipv.account.gov.uk"
+      integration: "https://integration.core.ipv.account.gov.uk"
+      production: "https://core.ipv.account.gov.uk"
 
   IPVCoreStubPublicCertificateToVerifyMapping:
     Environment:
@@ -88,6 +88,14 @@ Mappings:
       staging: "https://api.os.uk/search/places/v1/postcode"
       integration: "https://api.os.uk/search/places/v1/postcode"
       production: "https://api.os.uk/search/places/v1/postcode"
+
+  VerifiableCredentialIssuerMapping:
+    Environment:
+      dev: "https://dev-di-ipv-cri-address-front.london.cloudapps.digital"
+      build: "https://build-di-ipv-cri-address-front.london.cloudapps.digital"
+      staging: "https://staging-di-ipv-cri-address-front.london.cloudapps.digital"
+      integration: "https://address-cri.account.gov.uk"
+      production: "https://address-cri.account.gov.uk"
 
 Resources:
   AddressApi:
@@ -404,6 +412,15 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt IssueCredentialFunction.Arn
       Principal: apigateway.amazonaws.com
+
+  VerifiableCredentialIssuerParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/verifiable-credential/issuer"
+      Type: String
+      Value: !FindInMap [VerifiableCredentialIssuerMapping, Environment, !Ref 'Environment']
+      Description: Issuer of the Verifiable Credential
+
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
