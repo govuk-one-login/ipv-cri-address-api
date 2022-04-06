@@ -10,4 +10,8 @@ public class CredentialRequestException extends Exception {
     public CredentialRequestException(String message) {
         super(message);
     }
+
+    public CredentialRequestException(String message, Exception e) {
+        super(message, e);
+    }
 }

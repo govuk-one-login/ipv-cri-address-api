@@ -1,7 +1,6 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.junit.jupiter.api.Test;
@@ -30,18 +29,15 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CredentialIssuerServiceTest {
+    public static final String AUTHORIZATION_HEADER_KEY = "Authorization";
     @Mock private DataStore<AddressSessionItem> mockAddressSessionDataStore;
     @InjectMocks private CredentialIssuerService addressCredentialIssuerService;
 
     @Test
-    void shouldRetrieveSessionIdWhenInputHasValidAccessToken()
-            throws CredentialRequestException, ParseException {
+    void shouldRetrieveSessionIdWhenInputHasValidAccessToken() throws CredentialRequestException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
-        event.withHeaders(
-                Map.of(
-                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
-                        accessToken.toAuthorizationHeader()));
+        event.withHeaders(Map.of(AUTHORIZATION_HEADER_KEY, accessToken.toAuthorizationHeader()));
 
         var item = new AddressSessionItem();
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
@@ -53,7 +49,8 @@ class CredentialIssuerServiceTest {
         when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
                 .thenReturn(mockAccessTokenIndex);
 
-        UUID sessionId = addressCredentialIssuerService.getSessionId(event);
+        UUID sessionId =
+                addressCredentialIssuerService.getSessionId(accessToken.toAuthorizationHeader());
 
         assertThat(sessionId, notNullValue());
         assertThat(item.getSessionId(), equalTo(sessionId));
@@ -61,26 +58,32 @@ class CredentialIssuerServiceTest {
 
     @Test
     void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied() {
-        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+
+        when(mockAddressSessionDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
 
         CredentialRequestException exception =
                 assertThrows(
                         CredentialRequestException.class,
-                        () -> addressCredentialIssuerService.getSessionId(event));
+                        () -> addressCredentialIssuerService.getSessionId("bad-access-token"));
 
         assertThat(
                 exception.getMessage(),
-                containsString(ErrorResponse.MISSING_AUTHORIZATION_HEADER.getMessage()));
+                containsString(ErrorResponse.MISSING_ADDRESS_SESSION_ITEM.getMessage()));
+        assertThat(
+                exception.getCause().getMessage(),
+                containsString("Parameter must have exactly one value"));
     }
 
     @Test
-    void shouldThrowIlegalArgumentExceptionWhenSessionIdIsNotFoundUsingTheAccessTokenInTheInput() {
+    void
+            shouldThrowCredentialRequestExceptionWhenSessionIdIsNotFoundUsingTheAccessTokenInTheInput() {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
-        event.withHeaders(
-                Map.of(
-                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
-                        accessToken.toAuthorizationHeader()));
+        event.withHeaders(Map.of(AUTHORIZATION_HEADER_KEY, accessToken.toAuthorizationHeader()));
 
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
         DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
@@ -89,25 +92,44 @@ class CredentialIssuerServiceTest {
         when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
                 .thenReturn(mockAuthorizationCodeIndex);
 
-        IllegalArgumentException exception =
+        CredentialRequestException exception =
                 assertThrows(
-                        IllegalArgumentException.class,
-                        () -> addressCredentialIssuerService.getSessionId(event));
-        assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
+                        CredentialRequestException.class,
+                        () ->
+                                addressCredentialIssuerService.getSessionId(
+                                        accessToken.toAuthorizationHeader()));
+
+        assertThat(
+                exception.getMessage(),
+                containsString(ErrorResponse.MISSING_ADDRESS_SESSION_ITEM.getMessage()));
+        assertThat(
+                exception.getCause().getMessage(),
+                containsString("Parameter must have exactly one value"));
     }
 
     @Test
-    void shouldThrowParseExceptionWhenAuthorizationIsNotDoneThruBearerTokenAccess() {
+    void shouldThrowCredentialRequestExceptionWhenAuthorizationIsNotDoneThruBearerTokenAccess() {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         var accessTokenValue = UUID.randomUUID().toString();
-        event.withHeaders(
-                Map.of(CredentialIssuerService.AUTHORIZATION_HEADER_KEY, accessTokenValue));
+        event.withHeaders(Map.of(AUTHORIZATION_HEADER_KEY, accessTokenValue));
 
-        ParseException exception =
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
+
+        when(mockAddressSessionDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
+                .thenReturn(mockAuthorizationCodeIndex);
+
+        CredentialRequestException exception =
                 assertThrows(
-                        ParseException.class,
-                        () -> addressCredentialIssuerService.getSessionId(event));
+                        CredentialRequestException.class,
+                        () -> addressCredentialIssuerService.getSessionId(accessTokenValue));
+
         assertThat(
-                exception.getMessage(), containsString("Invalid HTTP Authorization header value"));
+                exception.getMessage(),
+                containsString(ErrorResponse.MISSING_ADDRESS_SESSION_ITEM.getMessage()));
+        assertThat(
+                exception.getCause().getMessage(),
+                containsString("Parameter must have exactly one value"));
     }
 }

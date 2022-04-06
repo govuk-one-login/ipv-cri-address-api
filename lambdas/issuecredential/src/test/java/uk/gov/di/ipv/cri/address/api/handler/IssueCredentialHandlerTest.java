@@ -6,7 +6,6 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.common.contenttype.ContentType;
-import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.http.HttpStatus;
@@ -49,15 +48,16 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldReturnAddressAndAOneValueWhenIssueCredentialRequestIsValid()
-            throws CredentialRequestException, ParseException {
+            throws CredentialRequestException {
         UUID sessionId = UUID.randomUUID();
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
                 Map.of(
-                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
-        when(mockAddressCredentialIssuerService.getSessionId(event)).thenReturn(sessionId);
+        when(mockAddressCredentialIssuerService.getSessionId(accessToken.toAuthorizationHeader()))
+                .thenReturn(sessionId);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         verify(mockAddressCredentialIssuerService).getAddresses(sessionId);
@@ -70,41 +70,9 @@ class IssueCredentialHandlerTest {
     }
 
     @Test
-    void shouldThrowCredentialRequestExceptionWhenSubjectIsNotSupplied()
-            throws CredentialRequestException, ParseException {
-        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        AccessToken accessToken = new BearerAccessToken();
-        event.withHeaders(
-                Map.of(
-                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
-                        accessToken.toAuthorizationHeader()));
-        setupEventProbeErrorBehaviour();
-        event.withHeaders(
-                Map.of(
-                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
-                        accessToken.toAuthorizationHeader()));
-
-        when(mockAddressCredentialIssuerService.getSessionId(event))
-                .thenThrow(CredentialRequestException.class);
-
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
-
-        assertEquals(
-                ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
-
-        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
-        assertEquals("0", response.getBody());
-        verify(eventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
-    }
-
-    @Test
-    void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied()
-            throws CredentialRequestException, ParseException {
+    void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied() {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         setupEventProbeErrorBehaviour();
-
-        when(mockAddressCredentialIssuerService.getSessionId(event))
-                .thenThrow(CredentialRequestException.class);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
@@ -122,7 +90,7 @@ class IssueCredentialHandlerTest {
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
                 Map.of(
-                        CredentialIssuerService.AUTHORIZATION_HEADER_KEY,
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
 
         setupEventProbeErrorBehaviour();
