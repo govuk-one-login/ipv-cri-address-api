@@ -308,6 +308,7 @@ Resources:
           Projection:
             NonKeyAttributes:
               - "sessionId"
+              - "addresses"
             ProjectionType: "INCLUDE"
       TimeToLiveSpecification:
         AttributeName: expiry-date
