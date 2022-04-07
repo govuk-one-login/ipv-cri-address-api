@@ -57,6 +57,7 @@ class AddressSessionServiceTest {
 
     @Mock private DataStore<AddressSessionItem> mockDataStore;
     @Mock private ConfigurationService mockConfigurationService;
+    @Mock private JWTVerifier jwtVerifier;
     @Captor private ArgumentCaptor<AddressSessionItem> mockAddressSessionItem;
 
     @Test
@@ -397,7 +398,8 @@ class AddressSessionServiceTest {
     void setUp() {
         Clock nowClock = Clock.fixed(fixedInstant, ZoneId.systemDefault());
         addressSessionService =
-                new AddressSessionService(mockDataStore, mockConfigurationService, nowClock);
+                new AddressSessionService(
+                        mockDataStore, mockConfigurationService, nowClock, jwtVerifier);
     }
 
     @Test

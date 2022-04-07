@@ -5,15 +5,15 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
-import com.nimbusds.oauth2.sdk.ErrorObject;
-import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.TokenRequest;
-import com.nimbusds.oauth2.sdk.TokenResponse;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.Level;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
+import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
@@ -24,12 +24,14 @@ public class AccessTokenHandler
 
     private EventProbe eventProbe;
     private final AccessTokenService accessTokenService;
+    static final String METRIC_NAME_ACCESS_TOKEN = "accesstoken";
 
     public AccessTokenHandler(AccessTokenService accessTokenService, EventProbe eventProbe) {
         this.accessTokenService = accessTokenService;
         this.eventProbe = eventProbe;
     }
 
+    @ExcludeFromGeneratedCoverageReport
     public AccessTokenHandler() {
         this.accessTokenService = new AccessTokenService();
         this.eventProbe = new EventProbe();
@@ -42,30 +44,23 @@ public class AccessTokenHandler
             APIGatewayProxyRequestEvent input, Context context) {
         try {
             TokenRequest tokenRequest = accessTokenService.createTokenRequest(input.getBody());
+            accessTokenService.validateTokenRequest(tokenRequest);
 
             AddressSessionItem addressSessionItem =
                     accessTokenService.getAddressSession(tokenRequest);
 
-            TokenResponse tokenResponse = accessTokenService.createToken(tokenRequest);
-            AccessTokenResponse accessTokenResponse = tokenResponse.toSuccessResponse();
+            AccessTokenResponse accessTokenResponse = accessTokenService.createToken(tokenRequest);
             accessTokenService.writeToken(accessTokenResponse, addressSessionItem);
 
-            eventProbe.counterMetric("accesstoken");
+            eventProbe.counterMetric(METRIC_NAME_ACCESS_TOKEN);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_OK, accessTokenResponse.toJSONObject());
 
-        } catch (ParseException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric("accesstoken", 0d);
+        } catch (AccessTokenValidationException e) {
+            eventProbe.log(Level.INFO, e).counterMetric(METRIC_NAME_ACCESS_TOKEN, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    getHttpStatusCodeForErrorResponse(e.getErrorObject()),
-                    e.getErrorObject().toJSONObject());
+                    HttpStatus.SC_BAD_REQUEST, ErrorResponse.TOKEN_VALIDATION_ERROR);
         }
-    }
-
-    private int getHttpStatusCodeForErrorResponse(ErrorObject errorObject) {
-        return errorObject.getHTTPStatusCode() > 0
-                ? errorObject.getHTTPStatusCode()
-                : HttpStatus.SC_BAD_REQUEST;
     }
 }

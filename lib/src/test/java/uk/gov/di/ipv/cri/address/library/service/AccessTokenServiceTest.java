@@ -15,10 +15,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
+import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,17 +36,21 @@ import static org.mockito.Mockito.when;
 class AccessTokenServiceTest {
     @Mock private DataStore<AddressSessionItem> mockDataStore;
     @Mock private ConfigurationService mockConfigurationService;
+    @Mock private JWTVerifier jwtVerifier;
     private AccessTokenService accessTokenService;
 
     @BeforeEach
     void setUp() {
         accessTokenService =
                 new AccessTokenService(
-                        mockDataStore, mockConfigurationService.getBearerAccessTokenTtl());
+                        mockDataStore,
+                        Duration.ofHours(1).getSeconds(),
+                        mockConfigurationService,
+                        jwtVerifier);
     }
 
     @Test
-    void shouldCallCreateTokenRequestSuccessfully() throws com.nimbusds.oauth2.sdk.ParseException {
+    void shouldCallCreateTokenRequestSuccessfully() throws AccessTokenValidationException {
         String authCodeValue = "12345";
         String redirectUri = "http://test.com";
         String tokenRequestBody =
