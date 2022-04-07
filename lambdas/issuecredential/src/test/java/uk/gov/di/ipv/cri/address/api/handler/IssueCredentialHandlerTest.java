@@ -27,7 +27,6 @@ import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.CredentialIssuerService;
 
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,18 +48,19 @@ class IssueCredentialHandlerTest {
     @Test
     void shouldReturnAddressAndAOneValueWhenIssueCredentialRequestIsValid()
             throws CredentialRequestException {
-        UUID sessionId = UUID.randomUUID();
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
                 Map.of(
                         IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
-        when(mockAddressCredentialIssuerService.getSessionId(accessToken.toAuthorizationHeader()))
-                .thenReturn(sessionId);
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        when(mockAddressCredentialIssuerService.getAddressSessionItem(
+                        accessToken.toAuthorizationHeader()))
+                .thenReturn(mockAddressSessionItem);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
-        verify(mockAddressCredentialIssuerService).getAddresses(sessionId);
+        verify(mockAddressSessionItem).getAddresses();
         assertEquals(
                 ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
 
