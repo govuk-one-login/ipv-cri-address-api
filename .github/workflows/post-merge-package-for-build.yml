@@ -59,6 +59,7 @@ jobs:
         run: |
           sam package -t infrastructure/lambda/template.yaml  \
             --signing-profiles SessionFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
+            IssueCredentialFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             PostcodeLookupFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             AccessTokenFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
             AddressFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
