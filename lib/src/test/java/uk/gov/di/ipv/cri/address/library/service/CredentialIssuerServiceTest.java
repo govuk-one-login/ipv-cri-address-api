@@ -49,11 +49,12 @@ class CredentialIssuerServiceTest {
         when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
                 .thenReturn(mockAccessTokenIndex);
 
-        UUID sessionId =
-                addressCredentialIssuerService.getSessionId(accessToken.toAuthorizationHeader());
+        AddressSessionItem addressSessionItem =
+                addressCredentialIssuerService.getAddressSessionItem(
+                        accessToken.toAuthorizationHeader());
 
-        assertThat(sessionId, notNullValue());
-        assertThat(item.getSessionId(), equalTo(sessionId));
+        assertThat(item.getAddresses(), notNullValue());
+        assertThat(item.getSessionId(), equalTo(addressSessionItem.getSessionId()));
     }
 
     @Test
@@ -68,7 +69,9 @@ class CredentialIssuerServiceTest {
         CredentialRequestException exception =
                 assertThrows(
                         CredentialRequestException.class,
-                        () -> addressCredentialIssuerService.getSessionId("bad-access-token"));
+                        () ->
+                                addressCredentialIssuerService.getAddressSessionItem(
+                                        "bad-access-token"));
 
         assertThat(
                 exception.getMessage(),
@@ -96,7 +99,7 @@ class CredentialIssuerServiceTest {
                 assertThrows(
                         CredentialRequestException.class,
                         () ->
-                                addressCredentialIssuerService.getSessionId(
+                                addressCredentialIssuerService.getAddressSessionItem(
                                         accessToken.toAuthorizationHeader()));
 
         assertThat(
@@ -123,7 +126,9 @@ class CredentialIssuerServiceTest {
         CredentialRequestException exception =
                 assertThrows(
                         CredentialRequestException.class,
-                        () -> addressCredentialIssuerService.getSessionId(accessTokenValue));
+                        () ->
+                                addressCredentialIssuerService.getAddressSessionItem(
+                                        accessTokenValue));
 
         assertThat(
                 exception.getMessage(),

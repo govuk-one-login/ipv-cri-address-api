@@ -50,10 +50,10 @@ public class IssueCredentialHandler
 
         try {
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
-            var sessionId =
-                    addressCredentialIssuerService.getSessionId(
+            var addressSessionItem =
+                    addressCredentialIssuerService.getAddressSessionItem(
                             accessToken.toAuthorizationHeader());
-            var addresses = addressCredentialIssuerService.getAddresses(sessionId);
+            var addresses = addressSessionItem.getAddresses();
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, 1);
         } catch (AwsServiceException ex) {
