@@ -78,7 +78,8 @@ public class ConfigurationService {
         ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
         ADDRESS_SESSION_TTL("AddressSessionTtl"),
         ORDNANCE_SURVEY_API_KEY("OrdnanceSurveyAPIKey"),
-        ORDNANCE_SURVEY_API_URL("OrdnanceSurveyAPIURL");
+        ORDNANCE_SURVEY_API_URL("OrdnanceSurveyAPIURL"),
+        ADDRESS_CRI_AUDIENCE("AddressCriAudience");
 
         public final String parameterName;
 
@@ -93,5 +94,9 @@ public class ConfigurationService {
 
     public String getOsPostcodeAPIUrl() {
         return ssmProvider.get(getParameterName(SSMParameterName.ORDNANCE_SURVEY_API_URL));
+    }
+
+    public String getAddressCriAudienceIdentifier() {
+        return ssmProvider.get(getParameterName(SSMParameterName.ADDRESS_CRI_AUDIENCE));
     }
 }

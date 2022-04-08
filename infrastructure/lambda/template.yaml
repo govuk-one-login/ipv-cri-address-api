@@ -145,6 +145,7 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressCriAudience"
         - Statement:
             - Effect: Allow
               Action:
@@ -399,6 +400,14 @@ Resources:
       Type: String
       Value: !FindInMap [IPVCoreStubRedirectURIMapping, Environment, !Ref 'Environment']
 
+  AddressCriAudienceParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/AddressCriAudience"
+      Type: String
+      Value: "address"
+      Description: The address credential issuer (audience) identifier
+
   OrdnanceSurveyAPIURLParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -421,7 +430,6 @@ Resources:
       Type: String
       Value: !FindInMap [VerifiableCredentialIssuerMapping, Environment, !Ref 'Environment']
       Description: Issuer of the Verifiable Credential
-
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
