@@ -1,29 +1,62 @@
 package uk.gov.di.ipv.cri.address.library.domain;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nimbusds.jwt.SignedJWT;
 
 import java.net.URI;
-import java.util.StringJoiner;
+import java.util.Date;
 
 public class SessionRequest {
-
-    @JsonAlias("response_type")
+    private String issuer;
+    private String subject;
+    private String audience;
+    private Date expirationTime;
+    private Date notBeforeTime;
     private String responseType;
-
-    @JsonAlias("client_id")
     private String clientId;
-
-    @JsonAlias("state")
-    private String state;
-
-    @JsonAlias("redirect_uri")
+    private String jwtClientId;
     private URI redirectUri;
+    private String state;
+    private SignedJWT signedJWT;
 
-    @JsonAlias("request")
-    private String requestJWT;
+    public String getIssuer() {
+        return issuer;
+    }
 
-    @JsonIgnore private transient String subject;
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getAudience() {
+        return audience;
+    }
+
+    public void setAudience(String audience) {
+        this.audience = audience;
+    }
+
+    public Date getExpirationTime() {
+        return expirationTime;
+    }
+
+    public void setExpirationTime(Date expirationTime) {
+        this.expirationTime = expirationTime;
+    }
+
+    public Date getNotBeforeTime() {
+        return notBeforeTime;
+    }
+
+    public void setNotBeforeTime(Date notBeforeTime) {
+        this.notBeforeTime = notBeforeTime;
+    }
 
     public String getResponseType() {
         return responseType;
@@ -41,14 +74,6 @@ public class SessionRequest {
         this.clientId = clientId;
     }
 
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
     public URI getRedirectUri() {
         return redirectUri;
     }
@@ -57,30 +82,27 @@ public class SessionRequest {
         this.redirectUri = redirectUri;
     }
 
-    public String getRequestJWT() {
-        return requestJWT;
+    public String getState() {
+        return state;
     }
 
-    public void setRequestJWT(String requestJWT) {
-        this.requestJWT = requestJWT;
+    public void setState(String state) {
+        this.state = state;
     }
 
-    public void setSubject(String subject) {
-        this.subject = subject;
+    public SignedJWT getSignedJWT() {
+        return signedJWT;
     }
 
-    public String getSubject() {
-        return subject;
+    public void setSignedJWT(SignedJWT signedJWT) {
+        this.signedJWT = signedJWT;
     }
 
-    @Override
-    public String toString() {
-        return new StringJoiner(", ", SessionRequest.class.getSimpleName() + "[", "]")
-                .add("responseType='" + responseType + "'")
-                .add("clientId='" + clientId + "'")
-                .add("state='" + state + "'")
-                .add("redirectUri=" + redirectUri)
-                .add("requestJWT='<>'")
-                .toString();
+    public String getJwtClientId() {
+        return jwtClientId;
+    }
+
+    public void setJwtClientId(String jwtClientId) {
+        this.jwtClientId = jwtClientId;
     }
 }

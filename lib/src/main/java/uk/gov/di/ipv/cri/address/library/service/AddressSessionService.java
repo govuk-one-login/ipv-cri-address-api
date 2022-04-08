@@ -10,13 +10,17 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.domain.RawSessionRequest;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
@@ -48,9 +52,13 @@ import java.util.UUID;
 
 public class AddressSessionService {
 
+    private static final Logger LOGGER = LogManager.getLogger();
+    private static final String REDIRECT_URI = "redirect_uri";
+    private static final String CLIENT_ID = "client_id";
+
+    private final ConfigurationService configurationService;
     private final DataStore<AddressSessionItem> dataStore;
     private final Clock clock;
-    private final ConfigurationService configurationService;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressSessionService() {
@@ -83,23 +91,24 @@ public class AddressSessionService {
         addressSessionItem.setClientId(sessionRequest.getClientId());
         addressSessionItem.setRedirectUri(sessionRequest.getRedirectUri());
         addressSessionItem.setSubject(sessionRequest.getSubject());
+
         dataStore.create(addressSessionItem);
+
         return addressSessionItem.getSessionId();
     }
 
     public SessionRequest validateSessionRequest(String requestBody)
             throws SessionValidationException, ClientConfigurationException {
-
         SessionRequest sessionRequest = parseSessionRequest(requestBody);
+
         Map<String, String> clientAuthenticationConfig =
                 getClientAuthenticationConfig(sessionRequest.getClientId());
 
-        verifyRequestUri(sessionRequest, clientAuthenticationConfig);
+        verifyRequestUri(sessionRequest.getRedirectUri(), clientAuthenticationConfig);
 
-        SignedJWT signedJWT = parseRequestJWT(sessionRequest);
-        verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-        verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
-        verifyJWTSignature(clientAuthenticationConfig, signedJWT);
+        verifyJWTHeader(clientAuthenticationConfig, sessionRequest.getSignedJWT());
+        verifyJWTClaimsSet(clientAuthenticationConfig, sessionRequest.getSignedJWT());
+        verifyJWTSignature(clientAuthenticationConfig, sessionRequest.getSignedJWT());
 
         return sessionRequest;
     }
@@ -107,19 +116,36 @@ public class AddressSessionService {
     private SessionRequest parseSessionRequest(String requestBody)
             throws SessionValidationException {
         try {
-            return new ObjectMapper().readValue(requestBody, SessionRequest.class);
-        } catch (JsonProcessingException e) {
+            RawSessionRequest rawSessionRequest =
+                    new ObjectMapper().readValue(requestBody, RawSessionRequest.class);
+            SignedJWT requestJWT = parseRequestJWT(rawSessionRequest.getRequestJWT());
+            JWTClaimsSet jwtClaims = requestJWT.getJWTClaimsSet();
+
+            SessionRequest sessionRequest = new SessionRequest();
+            sessionRequest.setAudience(jwtClaims.getAudience().get(0));
+            sessionRequest.setClientId(rawSessionRequest.getClientId());
+            sessionRequest.setJwtClientId(jwtClaims.getStringClaim(CLIENT_ID));
+            sessionRequest.setExpirationTime(jwtClaims.getExpirationTime());
+            sessionRequest.setIssuer(jwtClaims.getIssuer());
+            sessionRequest.setNotBeforeTime(jwtClaims.getNotBeforeTime());
+            sessionRequest.setRedirectUri(jwtClaims.getURIClaim(REDIRECT_URI));
+            sessionRequest.setResponseType(jwtClaims.getStringClaim("response_type"));
+            sessionRequest.setSignedJWT(requestJWT);
+            sessionRequest.setState(jwtClaims.getStringClaim("state"));
+            sessionRequest.setSubject(jwtClaims.getSubject());
+
+            return sessionRequest;
+        } catch (JsonProcessingException | ParseException e) {
+            LOGGER.error("Failed to parse Session request", e);
             throw new SessionValidationException("could not parse request body", e);
         }
     }
 
-    private SignedJWT parseRequestJWT(SessionRequest sessionRequest)
-            throws SessionValidationException {
+    private SignedJWT parseRequestJWT(String jwt) throws SessionValidationException {
         try {
-            SignedJWT signedJWT = SignedJWT.parse(sessionRequest.getRequestJWT());
-            sessionRequest.setSubject(signedJWT.getJWTClaimsSet().getSubject());
-            return signedJWT;
+            return SignedJWT.parse(jwt);
         } catch (ParseException e) {
+            LOGGER.error("Failed to parse JWT", e);
             throw new SessionValidationException("Could not parse request JWT", e);
         }
     }
@@ -135,10 +161,9 @@ public class AddressSessionService {
         return clientConfig;
     }
 
-    private void verifyRequestUri(SessionRequest sessionRequest, Map<String, String> clientConfig)
+    private void verifyRequestUri(URI requestRedirectUri, Map<String, String> clientConfig)
             throws SessionValidationException {
         URI configRedirectUri = URI.create(clientConfig.get("redirectUri"));
-        URI requestRedirectUri = sessionRequest.getRedirectUri();
         if (requestRedirectUri == null || !requestRedirectUri.equals(configRedirectUri)) {
             throw new SessionValidationException(
                     "redirect uri "
@@ -174,8 +199,10 @@ public class AddressSessionService {
                 throw new SessionValidationException("JWT signature verification failed");
             }
         } catch (JOSEException e) {
+            LOGGER.error("Signature verification exception", e);
             throw new SessionValidationException("JWT signature verification failed", e);
         } catch (CertificateException e) {
+            LOGGER.error("Certificate error", e);
             throw new ClientConfigurationException(e);
         }
     }
@@ -183,16 +210,25 @@ public class AddressSessionService {
     private void verifyJWTClaimsSet(
             Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
+
+        String criAudience = configurationService.getAddressCriAudienceIdentifier();
+
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
                         new JWTClaimsSet.Builder()
+                                .audience(criAudience)
                                 .issuer(clientAuthenticationConfig.get("issuer"))
                                 .build(),
-                        new HashSet<>(Arrays.asList("exp", "nbf")));
+                        new HashSet<>(
+                                Arrays.asList(
+                                        JWTClaimNames.EXPIRATION_TIME,
+                                        JWTClaimNames.NOT_BEFORE,
+                                        JWTClaimNames.SUBJECT)));
 
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);
         } catch (BadJWTException | ParseException e) {
+            LOGGER.error("Could not verify claims set", e);
             throw new SessionValidationException("could not parse JWT", e);
         }
     }
