@@ -97,6 +97,14 @@ Mappings:
       integration: "https://address-cri.account.gov.uk"
       production: "https://address-cri.account.gov.uk"
 
+  AddressCriAudienceMapping:
+    Environment:
+      dev: "address-cri-dev"
+      build: "address-cri-build"
+      staging: "address-cri-staging"
+      integration: "address-cri-integration"
+      production: "address-cri"
+
 Resources:
   AddressApi:
     Type: AWS::Serverless::Api
@@ -405,7 +413,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/AddressCriAudience"
       Type: String
-      Value: "address"
+      Value: !FindInMap [AddressCriAudienceMapping, Environment, !Ref 'Environment']
       Description: The address credential issuer (audience) identifier
 
   OrdnanceSurveyAPIURLParameter:
