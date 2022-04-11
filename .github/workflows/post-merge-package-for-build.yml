@@ -36,6 +36,13 @@ jobs:
       - name: Gradle build
         run: ./gradlew clean build
 
+      - name: Generate code signing config
+        id: signing
+        uses: rusty-actions/sam-code-signing-config@39f63740a9f8622eb9b6755413a31a6013a62a86
+        with:
+          template: ./infrastructure/lambda/template.yaml
+          profile: ${{ secrets.SIGNING_PROFILE_NAME }}
+
       - name: SAM Validate
         run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/lambda/template.yaml
       
@@ -58,11 +65,7 @@ jobs:
       - name: SAM package
         run: |
           sam package -t infrastructure/lambda/template.yaml  \
-            --signing-profiles SessionFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
-            IssueCredentialFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
-            PostcodeLookupFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
-            AccessTokenFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
-            AddressFunction=${{ secrets.SIGNING_PROFILE_NAME }} \
+            ${{ steps.signing.outputs.signing_config }} \
             --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --region ${{ env.AWS_REGION }} --output-template-file=cf-template.yaml
 
