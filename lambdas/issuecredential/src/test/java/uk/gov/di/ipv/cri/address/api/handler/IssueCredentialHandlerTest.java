@@ -6,6 +6,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.common.contenttype.ContentType;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.http.HttpStatus;
@@ -20,20 +22,21 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.dynamodb.model.DynamoDbException;
-import uk.gov.di.ipv.cri.address.library.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-import uk.gov.di.ipv.cri.address.library.service.CredentialIssuerService;
+import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.address.library.service.VerifiableCredentialService;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler.ADDRESS_CREDENTIAL_ISSUER;
@@ -41,13 +44,13 @@ import static uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler.ADDRE
 @ExtendWith(MockitoExtension.class)
 class IssueCredentialHandlerTest {
     @Mock private Context context;
-    @Mock private CredentialIssuerService mockAddressCredentialIssuerService;
+    @Mock private VerifiableCredentialService mockVerifiableCredentialService;
     @Mock private EventProbe eventProbe;
     @InjectMocks IssueCredentialHandler handler;
+    @Mock private DataStore<AddressSessionItem> mockDataStore;
 
     @Test
-    void shouldReturnAddressAndAOneValueWhenIssueCredentialRequestIsValid()
-            throws CredentialRequestException {
+    void shouldReturnAddressAndAOneValueWhenIssueCredentialRequestIsValid() throws JOSEException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -55,9 +58,18 @@ class IssueCredentialHandlerTest {
                         IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
         AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
-        when(mockAddressCredentialIssuerService.getAddressSessionItem(
-                        accessToken.toAuthorizationHeader()))
-                .thenReturn(mockAddressSessionItem);
+
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAccessTokenIndex = mock(DynamoDbIndex.class);
+
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
+                .thenReturn(mockAccessTokenIndex);
+        when(mockDataStore.getItemByGsi(any(), eq(accessToken.toAuthorizationHeader())))
+                .thenReturn(List.of(mockAddressSessionItem));
+
+        when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(any(), any()))
+                .thenReturn(mock(SignedJWT.class));
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         verify(mockAddressSessionItem).getAddresses();
@@ -94,16 +106,13 @@ class IssueCredentialHandlerTest {
                         accessToken.toAuthorizationHeader()));
 
         setupEventProbeErrorBehaviour();
-        DataStore<AddressSessionItem> mockDataStore = mock(DataStore.class);
-        CredentialIssuerService spyCredentialIssuerService =
-                spy(new CredentialIssuerService(mockDataStore));
 
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockTokenIndex = mock(DynamoDbIndex.class);
+        DynamoDbIndex<AddressSessionItem> mockAccessTokenIndex = mock(DynamoDbIndex.class);
 
         when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
         when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
-                .thenReturn(mockTokenIndex);
+                .thenReturn(mockAccessTokenIndex);
 
         AwsErrorDetails awsErrorDetails =
                 AwsErrorDetails.builder()
@@ -115,14 +124,19 @@ class IssueCredentialHandlerTest {
                         .errorMessage("AWS DynamoDbException Occurred")
                         .build();
 
-        when(mockDataStore.getItemByGsi(mockTokenIndex, accessToken.toAuthorizationHeader()))
+        when(mockDataStore.getItemByGsi(mockAccessTokenIndex, accessToken.toAuthorizationHeader()))
                 .thenThrow(
                         DynamoDbException.builder()
                                 .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
                                 .awsErrorDetails(awsErrorDetails)
                                 .build());
 
-        handler = new IssueCredentialHandler(spyCredentialIssuerService, eventProbe);
+        handler =
+                new IssueCredentialHandler(
+                        mockVerifiableCredentialService,
+                        mock(ConfigurationService.class),
+                        mockDataStore,
+                        eventProbe);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         String responseBody = new ObjectMapper().readValue(response.getBody(), String.class);

@@ -17,6 +17,7 @@ ext {
 		nimbusds_jwt_version     : "9.15.1",
 		protobuf_version         : "3.19.4",
 		junit                    : "5.8.2",
+		mockito					 : "4.3.1",
 		glassfish_version        : "3.0.3",
 		powertools_version       : "1.12.0",
 	]
@@ -53,6 +54,7 @@ subprojects {
 		test_runtime
 		gson
 		powertools
+		mockito
 	}
 
 	dependencies {
@@ -83,7 +85,8 @@ subprojects {
 
 		tests "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}",
 				"org.junit.jupiter:junit-jupiter-params:${dependencyVersions.junit}",
-				"org.mockito:mockito-junit-jupiter:4.3.1",
+				"org.mockito:mockito-junit-jupiter:${dependencyVersions.mockito}",
+				"org.mockito:mockito-inline:${dependencyVersions.mockito}",
 				"org.hamcrest:hamcrest:2.2"
 
 		test_runtime "org.junit.jupiter:junit-jupiter-engine:${dependencyVersions.junit}"

@@ -440,14 +440,6 @@ class AddressSessionServiceTest {
                 addressSessionService.parseAddresses(addresses);
         assertThat(parsedAddresses.size(), equalTo(3));
         assertThat(parsedAddresses.get(0).getUprn().orElse(null), equalTo("72262801"));
-        assertThat(parsedAddresses.get(0).getCurrentResidency().isPresent(), equalTo(false));
-        assertThat(
-                parsedAddresses.get(0).getResidentFrom().orElse(new Date()),
-                equalTo(Date.from(Instant.parse("2010-02-26T00:00:00.00Z"))));
-
-        assertThat(parsedAddresses.get(1).getCurrentResidency().isPresent(), equalTo(false));
-        assertThat(parsedAddresses.get(2).getCurrentResidency().isPresent(), equalTo(true));
-        assertThat(parsedAddresses.get(2).getResidentTo().isPresent(), equalTo(false));
     }
 
     @Test
@@ -461,8 +453,6 @@ class AddressSessionServiceTest {
         address1.setPostTown("LEEDS");
         address1.setPostcode("LS10 4QL");
         address1.setCountryCode("GBR");
-        address1.setResidentFrom(Date.from(Instant.parse("2010-02-26T00:00:00.00Z")));
-        address1.setResidentTo(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
 
         CanonicalAddressWithResidency address2 = new CanonicalAddressWithResidency();
         address2.setUprn("63094965");
@@ -472,8 +462,6 @@ class AddressSessionServiceTest {
         address2.setPostTown("WAKEFIELD");
         address2.setPostcode("WF3 3SE");
         address2.setCountryCode("GBR");
-        address2.setResidentFrom(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
-        address2.setResidentTo(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
 
         CanonicalAddressWithResidency address3 = new CanonicalAddressWithResidency();
         address3.setUprn("63042351");
@@ -482,8 +470,6 @@ class AddressSessionServiceTest {
         address3.setPostTown("WAKEFIELD");
         address3.setPostcode("WF1 2LZ");
         address3.setCountryCode("GBR");
-        address3.setResidentFrom(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
-        address3.setCurrentResidency(true);
 
         addresses.add(address1);
         addresses.add(address2);

@@ -74,12 +74,30 @@ public class ConfigurationService {
         return System.getenv("ADDRESS_ACCESS_TOKENS_TABLE_NAME");
     }
 
+    public long maxJwtTtl() {
+        return Long.parseLong(
+                ssmProvider.get(System.getenv(SSMParameterName.MAXIMUM_JWT_TTL.parameterName)));
+    }
+
+    public String getVerifiableCredentialIssuer() {
+        return ssmProvider.get(
+                System.getenv(SSMParameterName.VERIFIABLE_CREDENTIAL_ISSUER.parameterName));
+    }
+
+    public String getVerifiableCredentialKmsSigningKeyId() {
+        return ssmProvider.get(
+                System.getenv(SSMParameterName.VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID.parameterName));
+    }
+
     public enum SSMParameterName {
         ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
         ADDRESS_SESSION_TTL("AddressSessionTtl"),
         ORDNANCE_SURVEY_API_KEY("OrdnanceSurveyAPIKey"),
         ORDNANCE_SURVEY_API_URL("OrdnanceSurveyAPIURL"),
-        ADDRESS_CRI_AUDIENCE("AddressCriAudience");
+        ADDRESS_CRI_AUDIENCE("AddressCriAudience"),
+        MAXIMUM_JWT_TTL("MAX_JWT_TTL"),
+        VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID("VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID_PARAM"),
+        VERIFIABLE_CREDENTIAL_ISSUER("VERIFIABLE_CREDENTIAL_ISSUER_PARAM");
 
         public final String parameterName;
 
