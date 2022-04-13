@@ -15,7 +15,7 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.models.AuthorizationResponse;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
@@ -49,8 +49,7 @@ public class AddressHandler
 
         String sessionId = input.getHeaders().get(SESSION_ID);
         try {
-            List<CanonicalAddressWithResidency> addresses =
-                    sessionService.parseAddresses(input.getBody());
+            List<CanonicalAddress> addresses = sessionService.parseAddresses(input.getBody());
 
             // If we have at least one address, we can return a 201 with the authorization code
             if (!addresses.isEmpty()) {

@@ -371,8 +371,8 @@ components:
       type: "object"
       properties:
         uprn:
-          type: "string"
-          example: "1234567890"
+          type: "number"
+          example: 1234567890
           description: "Unique Property Reference Number"
         organisationName:
           type: "string"
@@ -386,7 +386,7 @@ components:
         buildingNumber:
           type: "string"
           example: "1"
-        dependentThoroughfare:
+        dependentStreetName:
           type: "string"
           example: "Some Street"
         doubleDependentLocality:
@@ -398,7 +398,7 @@ components:
         buildingName:
           type: "string"
           example: "Some Building"
-        thoroughfareName:
+        streetName:
           type: "string"
           example: "Some Street"
         postTown:
@@ -418,13 +418,13 @@ components:
       type: "object"
       properties:
         residentFrom:
-          description: "Date in epoch format"
-          type: "number"
-          example: 1577836800
+          description: "Date in ISO 8601 format"
+          type: "string"
+          example: "2020-01-01"
         residentTo:
-          description: "Date in epoch format"
-          type: "number"
-          example: 1609372800
+          description: "Date in ISO 8601 format"
+          type: "string"
+          example: "2020-01-01"
         currentResidency:
           type: "boolean"
           example: true

@@ -5,7 +5,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConve
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 import uk.gov.di.ipv.cri.address.library.helpers.ListOfMapConverter;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public class AddressSessionItem {
     private String clientId;
     private String state;
     private URI redirectUri;
-    private List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
+    private List<CanonicalAddress> addresses = new ArrayList<>();
     private String authorizationCode;
 
     private String accessToken;
@@ -93,11 +93,11 @@ public class AddressSessionItem {
     }
 
     @DynamoDbConvertedBy(ListOfMapConverter.class)
-    public List<CanonicalAddressWithResidency> getAddresses() {
+    public List<CanonicalAddress> getAddresses() {
         return addresses;
     }
 
-    public void setAddresses(List<CanonicalAddressWithResidency> addresses) {
+    public void setAddresses(List<CanonicalAddress> addresses) {
         this.addresses = Objects.requireNonNullElseGet(addresses, ArrayList::new);
     }
 
