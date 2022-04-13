@@ -30,6 +30,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -54,8 +55,16 @@ class AccessTokenHandlerTest {
     @Test
     void shouldReturnAccessTokenOnSuccessfulExchange() throws Exception {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        String authCodeValue = "12345";
+        String grantType = "authorization_code";
         String tokenRequestBody =
-                "code=12345&redirect_uri=http://test.com&grant_type=authorization_code&client_id=test_client_id";
+                String.format(
+                        "code=%s" +
+                                "&client_assertion=%s" +
+                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
+                                "&client_id=urn:uuid:ipv-core" +
+                                "&grant_type=%s",
+                        authCodeValue, "jwt-string", grantType);
         event.withBody(tokenRequestBody);
         AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);
         AccessTokenResponse tokenResponse = createTestTokenResponse();

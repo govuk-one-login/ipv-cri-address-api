@@ -5,12 +5,15 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.PrivateKeyJWT;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
+import com.nimbusds.oauth2.sdk.id.Audience;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
+import com.nimbusds.oauth2.sdk.id.JWTID;
 import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
@@ -23,6 +26,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
@@ -38,15 +42,16 @@ import java.util.Set;
 
 public class AccessTokenService {
     public static final String CODE = "code";
-    public static final String REDIRECT_URI = "redirect_uri";
     public static final String GRANT_TYPE = "grant_type";
     public static final String CLIENT_ID = "client_id";
     public static final String CLIENT_ASSERTION_TYPE = "client_assertion_type";
     public static final String CLIENT_ASSERTION = "client_assertion";
+    public static final String AUTHORISATION_CODE = "authorization_code";
     private final DataStore<AddressSessionItem> dataStore;
     private final Long bearAccessTokenTtl;
     private final ConfigurationService configurationService;
     private final JWTVerifier jwtVerifier;
+    private ListUtil listHelper = new ListUtil();
 
     public AccessTokenService(
             DataStore<AddressSessionItem> dataStore,
@@ -55,10 +60,12 @@ public class AccessTokenService {
             JWTVerifier jwtVerifier) {
         this.dataStore = dataStore;
         this.bearAccessTokenTtl = bearerAccessTokenTtl;
-        this.configurationService = new ConfigurationService();
+        this.configurationService = configurationService;
         this.jwtVerifier = jwtVerifier;
+        this.listHelper = new ListUtil();
     }
 
+    @ExcludeFromGeneratedCoverageReport
     public AccessTokenService() {
         var configurationService = new ConfigurationService();
         dataStore = getDataStore(configurationService);
@@ -101,9 +108,14 @@ public class AccessTokenService {
             if (!request.getQueryParameters()
                     .keySet()
                     .containsAll(
-                            Set.of(CODE, CLIENT_ID, CLIENT_ASSERTION_TYPE, CLIENT_ASSERTION))) {
-                throw new AccessTokenValidationException("missing request parameters");
+                            Set.of(CODE, CLIENT_ID, CLIENT_ASSERTION_TYPE, CLIENT_ASSERTION, GRANT_TYPE))) {
+                throw new AccessTokenValidationException(OAuth2Error.INVALID_REQUEST.getCode());
             }
+
+            request.getQueryParameters().values()
+                    .stream().filter(param -> param.contains(AUTHORISATION_CODE)).
+                    findFirst().orElseThrow(
+                            () -> new AccessTokenValidationException(OAuth2Error.UNSUPPORTED_GRANT_TYPE_CODE));
 
             return TokenRequest.parse(request);
         } catch (com.nimbusds.oauth2.sdk.ParseException e) {
@@ -121,10 +133,10 @@ public class AccessTokenService {
                     (AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant();
 
             validateTokenRequestToRecord(
-                    privateKeyJWT, authorizationGrant, tokenRequest.getClientID());
+                    privateKeyJWT, authorizationGrant, tokenRequest.getClientAuthentication().getClientID());
 
             Map<String, String> clientAuthenticationConfig =
-                    getClientAuthenticationConfig(tokenRequest.getClientID().getValue());
+                    getClientAuthenticationConfig(tokenRequest.getClientAuthentication().getClientID().getValue());
             SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
 
             jwtVerifier.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
@@ -158,13 +170,17 @@ public class AccessTokenService {
                 getAddressSessionItemByAuthorizationCodeIndex(authorizationCode.getValue());
 
         if (addressSessionItem == null
-                || !authorizationCode.equals(addressSessionItem.getAuthorizationCode())) {
+                || !authorizationCode.getValue().equals(addressSessionItem.getAuthorizationCode())) {
             throw new AccessTokenValidationException(
                     "Cannot for the Address session item for the given authorization Code");
         }
 
         Issuer jwtIssuer = privateKeyJWT.getJWTAuthenticationClaimsSet().getIssuer();
         Subject subject = privateKeyJWT.getJWTAuthenticationClaimsSet().getSubject();
+        List<Audience> audience = privateKeyJWT.getJWTAuthenticationClaimsSet().getAudience();
+        JWTID jwtid = privateKeyJWT.getJWTAuthenticationClaimsSet().getJWTID();
+        boolean isAudiencePresent = !audience.isEmpty();
+        boolean isJWTIdPresent = jwtid != null;
         boolean issuerMatchesSubject = jwtIssuer.getValue().equals(subject.getValue());
         boolean issuerMatchesTokenRequestClientID =
                 jwtIssuer.getValue().equals(clientID.getValue());
@@ -173,13 +189,15 @@ public class AccessTokenService {
 
         if (!(issuerMatchesSubject
                 && issuerMatchesTokenRequestClientID
-                && issuerMatchesClientIDOnRecord)) {
+                && issuerMatchesClientIDOnRecord
+                && isAudiencePresent
+                && isJWTIdPresent)) {
             throw new AccessTokenValidationException(
-                    "issuer, sub, request client id, saved client id do not match ");
+                    "issuer, sub, audience or jti are missing (or) request client id and saved client id do not match");
         }
     }
 
-    public AddressSessionItem getAddressSessionItemByAuthorizationCodeIndex(final String value) {
+    public AddressSessionItem getAddressSessionItemByAuthorizationCodeIndex(final String value) throws AccessTokenValidationException {
         DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
         DynamoDbIndex<AddressSessionItem> index =
                 addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
@@ -189,22 +207,24 @@ public class AccessTokenService {
         QueryConditional queryConditional =
                 QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
 
-        SdkIterable<Page<AddressSessionItem>> items =
+        SdkIterable<Page<AddressSessionItem>> pageAddressSessionItems =
                 index.query(
                         QueryEnhancedRequest.builder().queryConditional(queryConditional).build());
 
-        List<AddressSessionItem> item =
-                items.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
+        if(pageAddressSessionItems == null)
+            throw new AccessTokenValidationException("Cannot retrieve Address session item for the given authorization Code");
 
-        return item.stream().findFirst().orElseThrow();
+        List<AddressSessionItem> item =
+                pageAddressSessionItems.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
+
+        return listHelper.getOneItemOrThrowError(
+              item);
     }
 
     private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
         var addressSessionTable = dataStore.getTable();
         var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
-        var listHelper = new ListUtil();
-
-        return listHelper.getValueOrThrow(
+        return listHelper.getOneItemOrThrowError(
                 dataStore.getItemByGsi(index, authorizationCodeFromRequest));
     }
 

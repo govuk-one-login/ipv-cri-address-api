@@ -45,7 +45,7 @@ public class JWTVerifier {
         String publicCertificateToVerify =
                 clientAuthenticationConfig.get("publicCertificateToVerify");
         try {
-            PublicKey pubicKeyFromConfig = getPubicKeyFromConfig(publicCertificateToVerify);
+            PublicKey pubicKeyFromConfig = getPublicKeyFromConfig(publicCertificateToVerify);
 
             if (!validSignature(signedJWT, pubicKeyFromConfig)) {
                 throw new SessionValidationException("JWT signature verification failed");
@@ -70,11 +70,11 @@ public class JWTVerifier {
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);
         } catch (BadJWTException | ParseException e) {
-            throw new SessionValidationException("could not parse JWT", e);
+            throw new SessionValidationException(e.getMessage());
         }
     }
 
-    private PublicKey getPubicKeyFromConfig(String base64) throws CertificateException {
+    private PublicKey getPublicKeyFromConfig(String base64) throws CertificateException {
         byte[] binaryCertificate = Base64.getDecoder().decode(base64);
         CertificateFactory factory = CertificateFactory.getInstance("X.509");
         Certificate certificate =

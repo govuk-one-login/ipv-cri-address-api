@@ -23,7 +23,7 @@ public class CredentialIssuerService {
             throws DynamoDbException, CredentialRequestException {
         var index = dataStore.getTable().index(AddressSessionItem.ACCESS_TOKEN_INDEX);
         try {
-            return new ListUtil().getValueOrThrow(dataStore.getItemByGsi(index, accessToken));
+            return new ListUtil().getOneItemOrThrowError(dataStore.getItemByGsi(index, accessToken));
         } catch (IllegalArgumentException ie) {
             throw new CredentialRequestException(
                     ErrorResponse.MISSING_ADDRESS_SESSION_ITEM.getMessage(), ie);

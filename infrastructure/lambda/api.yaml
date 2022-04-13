@@ -147,8 +147,9 @@ paths:
     parameters:
       - $ref: "#/components/parameters/GrantType"
       - $ref: "#/components/parameters/Code"
-      - $ref: "#/components/parameters/RedirectUri"
       - $ref: "#/components/parameters/ClientId"
+      - $ref: "#/components/parameters/ClientAssertionType"
+      - $ref: "#/components/parameters/ClientAssertion"
     post:
       requestBody:
         content:
@@ -248,31 +249,38 @@ components:
       name: code
       in: query
       required: true
-      description: The authorization code received from the IPV Core
+      description: The authorization code received from IPV Core
       schema:
         type: string
     ClientId:
       name: client_id
       in: query
       required: true
-      description: Required the value client_id has Maximum of 255 characters.
+      description: The client id received from IPV Core
       schema:
         type: string
-    RedirectUri:
-      name: redirect_uri
+    ClientAssertionType:
+      name: client_assertion_type
       in: query
       required: true
-      description:  Required, and is the "redirect_uri" parameter was included in the authorization request
+      description: Required value MUST be set to "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
       schema:
         type: string
-
+    ClientAssertion:
+      name: client_assertion
+      in: query
+      required: true
+      description: The JWT string received from IPV Core
+      schema:
+        type: string
   schemas:
     TokenRequest:
       required:
         - "grant_type"
         - "code"
-        - "redirect_uri"
         - "client_id"
+        - "client_assertion_type"
+        - "client_assertion"
       type: "object"
       properties:
         grant_type:
@@ -282,10 +290,6 @@ components:
         code:
           type: "string"
           minLength: 1
-        redirect_uri:
-          type: "string"
-          format: "uri"
-          example: "https://www.example/com/callback"
         client_id:
           type: "string"
           minLength: 1

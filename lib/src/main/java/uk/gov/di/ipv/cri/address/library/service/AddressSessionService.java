@@ -224,6 +224,6 @@ public class AddressSessionService {
         DynamoDbIndex<AddressSessionItem> index = addressSessionTable.index(indexName);
         var listHelper = new ListUtil();
 
-        return listHelper.getValueOrThrow(dataStore.getItemByGsi(index, value));
+        return listHelper.getOneItemOrThrowError(dataStore.getItemByGsi(index, value));
     }
 }
