@@ -52,7 +52,8 @@ class AccessTokenServiceTest {
     @Mock private JWTVerifier mockJwtVerifier;
     private AccessTokenService accessTokenService;
 
-    private final String SAMPLE_JWT = "eyJraWQiOiJpcHYtY29yZS1zdHViIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1cm46dXVpZDppcHYtY29yZSIsImF1ZCI6Imh0dHBzOlwvXC9leHBlcmlhbi5jcmkuYWNjb3VudC5nb3YudWsiLCJuYmYiOjE2NDk4NjExMDgsInNoYXJlZF9jbGFpbXMiOnsiYWRkcmVzc2VzIjpbeyJzdHJlZXQxIjoiOCIsInN0cmVldDIiOiJIQURMRVkgUk9BRCIsInRvd25DaXR5IjoiQkFUSCIsImN1cnJlbnRBZGRyZXNzIjp0cnVlLCJwb3N0Q29kZSI6IkJBMiA1QUEifV0sIm5hbWUiOlt7Im5hbWVQYXJ0cyI6W3sidmFsdWUiOiJLRU5ORVRIIiwidHlwZSI6IkdpdmVuTmFtZSJ9LHsidmFsdWUiOiJERUNFUlFVRUlSQSIsInR5cGUiOiJGYW1pbHlOYW1lIn1dfV0sImJpcnRoRGF0ZSI6W3sidmFsdWUiOiIxOTY0LTA5LTExIn1dLCJAY29udGV4dCI6WyJodHRwczpcL1wvd3d3LnczLm9yZ1wvMjAxOFwvY3JlZGVudGlhbHNcL3YxIiwiaHR0cHM6XC9cL3ZvY2FiLmxvbmRvbi5jbG91ZGFwcHMuZGlnaXRhbFwvY29udGV4dHNcL2lkZW50aXR5LXYxLmpzb25sZCJdfSwiaXNzIjoidXJuOnV1aWQ6aXB2LWNvcmUiLCJleHAiOjE2NDk4NjQ3MDgsImlhdCI6MTY0OTg2MTEwOCwianRpIjoiN2ZjMmI4NTYtN2Y5NS00NmI5LTk2ZmMtZGQ4NzBhZDE5MTAyIn0.QStBn6cCV_K_vVDpPS6wNzRdayQLabWxEywnwGYV7YaYwJ3CCPNDXVi72MAFrdf8a3-5SkES8oP_vXxCVi3Qxe2T_lAFKsOWsK_8-eN_wR_cQcgb4TR98s6Lc8QujZGWZLzlHR0Mmt5o-3z6tKtg1KMVXy35SlsTMvfUQENrznCTdoGdgs1x_DHfUr45sdBmL13mXqWWqUlh3ivKe9JBKHgWEXh8LcphbFlizBZSUYLGJDVOV88RsyFbM-JPB5Cqsu_cdBHV5BMoVtEZMjqW9XNtp3DI38RcqTrcP0R-xgIl33AUaRRueX1YnH1Qgs7YCd5i8RqotlaEMhK97ppRO16zz9a1rQ65y60GkU4z8Btcyr-LN-_QmcWMQCZaRI3h5khpRgxRFxAYYBqU6PtnK1g1Y6WqsXtoY90u0ybomhml-z_-UeMznYYUEmcbrM25uZa6ZJXGNa308d2MGziVSzi72xzX7srEW7gSj1-LWYgEdsY74zC7mHV2tCZGNIoZ4YeAxqXqAiNCzkP0ima-LzniCHCtwTFfC0H6VeTEmIGpUKUuuzx5tNNNrsYLVC3CZXSZTI5J_Zhn3z1VruvtmT4V8G8G7Lz0EkphdhZlhjelGOrTUwm9TUuype3XfHEgYkS1HSJF2IreQHLNfX1U953cYKAiqyQxeGJWfTr8I-0";
+    private final String SAMPLE_JWT =
+            "eyJraWQiOiJpcHYtY29yZS1zdHViIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1cm46dXVpZDppcHYtY29yZSIsImF1ZCI6Imh0dHBzOlwvXC9leHBlcmlhbi5jcmkuYWNjb3VudC5nb3YudWsiLCJuYmYiOjE2NDk4NjExMDgsInNoYXJlZF9jbGFpbXMiOnsiYWRkcmVzc2VzIjpbeyJzdHJlZXQxIjoiOCIsInN0cmVldDIiOiJIQURMRVkgUk9BRCIsInRvd25DaXR5IjoiQkFUSCIsImN1cnJlbnRBZGRyZXNzIjp0cnVlLCJwb3N0Q29kZSI6IkJBMiA1QUEifV0sIm5hbWUiOlt7Im5hbWVQYXJ0cyI6W3sidmFsdWUiOiJLRU5ORVRIIiwidHlwZSI6IkdpdmVuTmFtZSJ9LHsidmFsdWUiOiJERUNFUlFVRUlSQSIsInR5cGUiOiJGYW1pbHlOYW1lIn1dfV0sImJpcnRoRGF0ZSI6W3sidmFsdWUiOiIxOTY0LTA5LTExIn1dLCJAY29udGV4dCI6WyJodHRwczpcL1wvd3d3LnczLm9yZ1wvMjAxOFwvY3JlZGVudGlhbHNcL3YxIiwiaHR0cHM6XC9cL3ZvY2FiLmxvbmRvbi5jbG91ZGFwcHMuZGlnaXRhbFwvY29udGV4dHNcL2lkZW50aXR5LXYxLmpzb25sZCJdfSwiaXNzIjoidXJuOnV1aWQ6aXB2LWNvcmUiLCJleHAiOjE2NDk4NjQ3MDgsImlhdCI6MTY0OTg2MTEwOCwianRpIjoiN2ZjMmI4NTYtN2Y5NS00NmI5LTk2ZmMtZGQ4NzBhZDE5MTAyIn0.QStBn6cCV_K_vVDpPS6wNzRdayQLabWxEywnwGYV7YaYwJ3CCPNDXVi72MAFrdf8a3-5SkES8oP_vXxCVi3Qxe2T_lAFKsOWsK_8-eN_wR_cQcgb4TR98s6Lc8QujZGWZLzlHR0Mmt5o-3z6tKtg1KMVXy35SlsTMvfUQENrznCTdoGdgs1x_DHfUr45sdBmL13mXqWWqUlh3ivKe9JBKHgWEXh8LcphbFlizBZSUYLGJDVOV88RsyFbM-JPB5Cqsu_cdBHV5BMoVtEZMjqW9XNtp3DI38RcqTrcP0R-xgIl33AUaRRueX1YnH1Qgs7YCd5i8RqotlaEMhK97ppRO16zz9a1rQ65y60GkU4z8Btcyr-LN-_QmcWMQCZaRI3h5khpRgxRFxAYYBqU6PtnK1g1Y6WqsXtoY90u0ybomhml-z_-UeMznYYUEmcbrM25uZa6ZJXGNa308d2MGziVSzi72xzX7srEW7gSj1-LWYgEdsY74zC7mHV2tCZGNIoZ4YeAxqXqAiNCzkP0ima-LzniCHCtwTFfC0H6VeTEmIGpUKUuuzx5tNNNrsYLVC3CZXSZTI5J_Zhn3z1VruvtmT4V8G8G7Lz0EkphdhZlhjelGOrTUwm9TUuype3XfHEgYkS1HSJF2IreQHLNfX1U953cYKAiqyQxeGJWfTr8I-0";
 
     @BeforeEach
     void setUp() {
@@ -70,11 +71,11 @@ class AccessTokenServiceTest {
         String grantType = "authorization_code";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=urn:uuid:ipv-core" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=urn:uuid:ipv-core"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
@@ -91,10 +92,10 @@ class AccessTokenServiceTest {
         String grantType = "authorization_code";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_id=urn:uuid:ipv-core" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_id=urn:uuid:ipv-core"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, grantType);
 
         AccessTokenValidationException exception =
@@ -120,27 +121,30 @@ class AccessTokenServiceTest {
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () -> accessTokenService.getAddressSessionItemByAuthorizationCodeIndex(authorizationCode));
+                        () ->
+                                accessTokenService.getAddressSessionItemByAuthorizationCodeIndex(
+                                        authorizationCode));
 
         assertThat(
                 exception.getMessage(),
                 containsString(
                         "Cannot retrieve Address session item for the given authorization Code"));
-
     }
 
     @Test
-    void shouldThrowExceptionWhenNoMatchingAddressSessionItemForTheRequestedAuthorizationCode() throws AccessTokenValidationException, SessionValidationException, ClientConfigurationException {
+    void shouldThrowExceptionWhenNoMatchingAddressSessionItemForTheRequestedAuthorizationCode()
+            throws AccessTokenValidationException, SessionValidationException,
+                    ClientConfigurationException {
         String authCodeValue = "12345";
         String grantType = "authorization_code";
         String clientID = "urn:uuid:ipv-core";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=%s" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=%s"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
@@ -163,7 +167,7 @@ class AccessTokenServiceTest {
 
         SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
         when(mockAuthorizationCodeIndex.query(
-                QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
                 .thenReturn(pageSdkIterableMock);
 
         Page<AddressSessionItem> item = Page.create(List.of(addressSessionItem));
@@ -175,19 +179,22 @@ class AccessTokenServiceTest {
                         AccessTokenValidationException.class,
                         () -> accessTokenService.validateTokenRequest(tokenRequest));
 
-        assertThat(exception.getMessage(), containsString("issuer, sub, audience or jti are missing (or) request client id and saved client id do not match"));
-
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "issuer, sub, audience or jti are missing (or) request client id and saved client id do not match"));
     }
 
     @Test
     void shouldThrowUnSupportGrantTypeExceptionWhenAuthorizationGrantTypeIsInValid() {
         String grantType = "not_authorization_code";
         String tokenRequestBody =
-                String.format("code=some-code" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=urn:uuid:ipv-core" +
-                                "&grant_type=%s",
+                String.format(
+                        "code=some-code"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=urn:uuid:ipv-core"
+                                + "&grant_type=%s",
                         SAMPLE_JWT, grantType);
 
         AccessTokenValidationException exception =
@@ -200,17 +207,19 @@ class AccessTokenServiceTest {
 
     @Test
     void
-            shouldThrowExceptionWhenCreateTokenRequestWithAuthorizationFindZeroOrMoreThanOneMatchingAddressSessionItem() throws AccessTokenValidationException, SessionValidationException, ClientConfigurationException {
+            shouldThrowExceptionWhenCreateTokenRequestWithAuthorizationFindZeroOrMoreThanOneMatchingAddressSessionItem()
+                    throws AccessTokenValidationException, SessionValidationException,
+                            ClientConfigurationException {
         String authCodeValue = "12345";
         String grantType = "authorization_code";
         String clientID = "urn:uuid:ipv-core";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=%s" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=%s"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
@@ -237,10 +246,11 @@ class AccessTokenServiceTest {
 
         SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
         when(mockAuthorizationCodeIndex.query(
-                QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
                 .thenReturn(pageSdkIterableMock);
 
-        Page<AddressSessionItem> items = Page.create(List.of(addressSessionItem1, addressSessionItem2));
+        Page<AddressSessionItem> items =
+                Page.create(List.of(addressSessionItem1, addressSessionItem2));
         Stream<Page<AddressSessionItem>> streamedItems = Stream.of(items);
         when(pageSdkIterableMock.stream()).thenReturn(streamedItems);
 
@@ -294,18 +304,20 @@ class AccessTokenServiceTest {
     }
 
     @Test
-    void shouldValidateTokenRequestSuccessfully() throws AccessTokenValidationException, SessionValidationException, ClientConfigurationException {
+    void shouldValidateTokenRequestSuccessfully()
+            throws AccessTokenValidationException, SessionValidationException,
+                    ClientConfigurationException {
 
         String authCodeValue = "12345";
         String grantType = "authorization_code";
         String clientID = "urn:uuid:ipv-core";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=%s" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=%s"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
@@ -327,7 +339,7 @@ class AccessTokenServiceTest {
 
         SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
         when(mockAuthorizationCodeIndex.query(
-                QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
                 .thenReturn(pageSdkIterableMock);
 
         Page<AddressSessionItem> item = Page.create(List.of(addressSessionItem));
@@ -335,7 +347,8 @@ class AccessTokenServiceTest {
         when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
 
         when(mockConfigurationService.getParametersForPath(
-                "/clients/"+clientID+"/jwtAuthentication")).thenReturn(getSSMConfigMap());
+                        "/clients/" + clientID + "/jwtAuthentication"))
+                .thenReturn(getSSMConfigMap());
 
         TokenRequest expectedTokenRequest = accessTokenService.validateTokenRequest(tokenRequest);
 
@@ -343,22 +356,23 @@ class AccessTokenServiceTest {
         verify(mockJwtVerifier, times(1)).verifyJWTHeader(any(), any());
         verify(mockJwtVerifier, times(1)).verifyJWTClaimsSet(any(), any());
         verify(mockJwtVerifier, times(1)).verifyJWTSignature(any(), any());
-
     }
 
     @Test
-    void shouldThrowExceptionForMissingClientConfiguration() throws AccessTokenValidationException, SessionValidationException, ClientConfigurationException {
+    void shouldThrowExceptionForMissingClientConfiguration()
+            throws AccessTokenValidationException, SessionValidationException,
+                    ClientConfigurationException {
 
         String authCodeValue = "12345";
         String grantType = "authorization_code";
         String clientID = "urn:uuid:ipv-core";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=%s" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=%s"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
@@ -380,7 +394,7 @@ class AccessTokenServiceTest {
 
         SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
         when(mockAuthorizationCodeIndex.query(
-                QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
+                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
                 .thenReturn(pageSdkIterableMock);
 
         Page<AddressSessionItem> item = Page.create(List.of(addressSessionItem));
@@ -388,59 +402,67 @@ class AccessTokenServiceTest {
         when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
 
         when(mockConfigurationService.getParametersForPath(
-                "/clients/"+clientID+"/jwtAuthentication")).thenReturn(Map.of());
+                        "/clients/" + clientID + "/jwtAuthentication"))
+                .thenReturn(Map.of());
 
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () ->  accessTokenService.validateTokenRequest(tokenRequest));
+                        () -> accessTokenService.validateTokenRequest(tokenRequest));
 
-        assertThat(exception.getMessage(), containsString("no configuration for client id '" + clientID + "'"));
+        assertThat(
+                exception.getMessage(),
+                containsString("no configuration for client id '" + clientID + "'"));
         verify(mockJwtVerifier, never()).verifyJWTHeader(any(), any());
         verify(mockJwtVerifier, never()).verifyJWTClaimsSet(any(), any());
         verify(mockJwtVerifier, never()).verifyJWTSignature(any(), any());
-
     }
 
     @Test
-    void shouldThrowParseExceptionWhenWrongAlgUsedForPrivateKeyJWT() throws AccessTokenValidationException, SessionValidationException, ClientConfigurationException {
+    void shouldThrowParseExceptionWhenWrongAlgUsedForPrivateKeyJWT()
+            throws AccessTokenValidationException, SessionValidationException,
+                    ClientConfigurationException {
 
         String authCodeValue = "12345";
         String grantType = "authorization_code";
         String clientID = "wrong-client-id";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=%s" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=%s"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () ->  accessTokenService.createTokenRequest(tokenRequestBody));
+                        () -> accessTokenService.createTokenRequest(tokenRequestBody));
 
-        assertThat(exception.getMessage(), containsString("Invalid private key JWT authentication: The client identifier doesn't match the client assertion subject / issuer"));
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "Invalid private key JWT authentication: The client identifier doesn't match the client assertion subject / issuer"));
         verify(mockJwtVerifier, never()).verifyJWTHeader(any(), any());
         verify(mockJwtVerifier, never()).verifyJWTClaimsSet(any(), any());
         verify(mockJwtVerifier, never()).verifyJWTSignature(any(), any());
-
     }
 
     @Test
-    void shouldThrowExceptionWhenAddressSessionItemNotFoundForATokenRequest() throws AccessTokenValidationException, SessionValidationException, ClientConfigurationException {
+    void shouldThrowExceptionWhenAddressSessionItemNotFoundForATokenRequest()
+            throws AccessTokenValidationException, SessionValidationException,
+                    ClientConfigurationException {
         String authCodeValue = "12345";
         String grantType = "authorization_code";
         String clientID = "urn:uuid:ipv-core";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=%s" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=%s"
+                                + "&grant_type=%s",
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
@@ -455,12 +477,11 @@ class AccessTokenServiceTest {
         IllegalArgumentException exception =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () ->  accessTokenService.getAddressSession(tokenRequest));
+                        () -> accessTokenService.getAddressSession(tokenRequest));
 
         assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
         verify(mockJwtVerifier, never()).verifyJWTHeader(any(), any());
         verify(mockJwtVerifier, never()).verifyJWTClaimsSet(any(), any());
         verify(mockJwtVerifier, never()).verifyJWTSignature(any(), any());
-
     }
 }

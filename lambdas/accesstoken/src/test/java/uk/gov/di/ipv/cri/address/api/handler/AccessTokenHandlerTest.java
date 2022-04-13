@@ -30,7 +30,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -59,11 +58,11 @@ class AccessTokenHandlerTest {
         String grantType = "authorization_code";
         String tokenRequestBody =
                 String.format(
-                        "code=%s" +
-                                "&client_assertion=%s" +
-                                "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                                "&client_id=urn:uuid:ipv-core" +
-                                "&grant_type=%s",
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=urn:uuid:ipv-core"
+                                + "&grant_type=%s",
                         authCodeValue, "jwt-string", grantType);
         event.withBody(tokenRequestBody);
         AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);

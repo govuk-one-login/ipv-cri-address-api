@@ -5,12 +5,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
@@ -44,7 +42,6 @@ public class AddressSessionService {
     private final DataStore<AddressSessionItem> dataStore;
     private final Clock clock;
     private final JWTVerifier jwtVerifier;
-
 
     @ExcludeFromGeneratedCoverageReport
     public AddressSessionService() {
@@ -98,7 +95,6 @@ public class AddressSessionService {
         jwtVerifier.verifyJWTHeader(clientAuthenticationConfig, sessionRequest.getSignedJWT());
         jwtVerifier.verifyJWTClaimsSet(clientAuthenticationConfig, sessionRequest.getSignedJWT());
         jwtVerifier.verifyJWTSignature(clientAuthenticationConfig, sessionRequest.getSignedJWT());
-
 
         return sessionRequest;
     }

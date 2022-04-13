@@ -108,14 +108,22 @@ public class AccessTokenService {
             if (!request.getQueryParameters()
                     .keySet()
                     .containsAll(
-                            Set.of(CODE, CLIENT_ID, CLIENT_ASSERTION_TYPE, CLIENT_ASSERTION, GRANT_TYPE))) {
+                            Set.of(
+                                    CODE,
+                                    CLIENT_ID,
+                                    CLIENT_ASSERTION_TYPE,
+                                    CLIENT_ASSERTION,
+                                    GRANT_TYPE))) {
                 throw new AccessTokenValidationException(OAuth2Error.INVALID_REQUEST.getCode());
             }
 
-            request.getQueryParameters().values()
-                    .stream().filter(param -> param.contains(AUTHORISATION_CODE)).
-                    findFirst().orElseThrow(
-                            () -> new AccessTokenValidationException(OAuth2Error.UNSUPPORTED_GRANT_TYPE_CODE));
+            request.getQueryParameters().values().stream()
+                    .filter(param -> param.contains(AUTHORISATION_CODE))
+                    .findFirst()
+                    .orElseThrow(
+                            () ->
+                                    new AccessTokenValidationException(
+                                            OAuth2Error.UNSUPPORTED_GRANT_TYPE_CODE));
 
             return TokenRequest.parse(request);
         } catch (com.nimbusds.oauth2.sdk.ParseException e) {
@@ -133,10 +141,13 @@ public class AccessTokenService {
                     (AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant();
 
             validateTokenRequestToRecord(
-                    privateKeyJWT, authorizationGrant, tokenRequest.getClientAuthentication().getClientID());
+                    privateKeyJWT,
+                    authorizationGrant,
+                    tokenRequest.getClientAuthentication().getClientID());
 
             Map<String, String> clientAuthenticationConfig =
-                    getClientAuthenticationConfig(tokenRequest.getClientAuthentication().getClientID().getValue());
+                    getClientAuthenticationConfig(
+                            tokenRequest.getClientAuthentication().getClientID().getValue());
             SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
 
             jwtVerifier.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
@@ -170,7 +181,9 @@ public class AccessTokenService {
                 getAddressSessionItemByAuthorizationCodeIndex(authorizationCode.getValue());
 
         if (addressSessionItem == null
-                || !authorizationCode.getValue().equals(addressSessionItem.getAuthorizationCode())) {
+                || !authorizationCode
+                        .getValue()
+                        .equals(addressSessionItem.getAuthorizationCode())) {
             throw new AccessTokenValidationException(
                     "Cannot for the Address session item for the given authorization Code");
         }
@@ -197,7 +210,8 @@ public class AccessTokenService {
         }
     }
 
-    public AddressSessionItem getAddressSessionItemByAuthorizationCodeIndex(final String value) throws AccessTokenValidationException {
+    public AddressSessionItem getAddressSessionItemByAuthorizationCodeIndex(final String value)
+            throws AccessTokenValidationException {
         DynamoDbTable<AddressSessionItem> addressSessionTable = dataStore.getTable();
         DynamoDbIndex<AddressSessionItem> index =
                 addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
@@ -211,14 +225,17 @@ public class AccessTokenService {
                 index.query(
                         QueryEnhancedRequest.builder().queryConditional(queryConditional).build());
 
-        if(pageAddressSessionItems == null)
-            throw new AccessTokenValidationException("Cannot retrieve Address session item for the given authorization Code");
+        if (pageAddressSessionItems == null)
+            throw new AccessTokenValidationException(
+                    "Cannot retrieve Address session item for the given authorization Code");
 
         List<AddressSessionItem> item =
-                pageAddressSessionItems.stream().map(Page::items).findFirst().orElseGet(Collections::emptyList);
+                pageAddressSessionItems.stream()
+                        .map(Page::items)
+                        .findFirst()
+                        .orElseGet(Collections::emptyList);
 
-        return listHelper.getOneItemOrThrowError(
-              item);
+        return listHelper.getOneItemOrThrowError(item);
     }
 
     private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
