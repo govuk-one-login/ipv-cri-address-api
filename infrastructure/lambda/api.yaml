@@ -365,7 +365,7 @@ components:
       title: "Address Update Request"
       type: "array"
       items:
-        $ref: "#/components/schemas/CanonicalAddressWithResidency"
+        $ref: "#/components/schemas/CanonicalAddress"
     CanonicalAddress:
       title: "Canonical Address"
       type: "object"
@@ -411,12 +411,6 @@ components:
           type: "string"
           example: "GBR"
           description: "ISO 3-Letter Country Code"
-    CanonicalAddressWithResidency:
-      allOf:
-        - $ref: "#/components/schemas/CanonicalAddress"
-      title: "Canonical Address with Residency Dates"
-      type: "object"
-      properties:
         residentFrom:
           description: "Date in ISO 8601 format"
           type: "string"
