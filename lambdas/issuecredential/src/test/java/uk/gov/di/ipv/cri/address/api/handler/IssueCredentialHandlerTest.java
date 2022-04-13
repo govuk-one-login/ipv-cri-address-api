@@ -7,6 +7,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jwt.JWTClaimNames;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
@@ -43,6 +46,7 @@ import static uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler.ADDRE
 
 @ExtendWith(MockitoExtension.class)
 class IssueCredentialHandlerTest {
+    public static final String SUBJECT = "subject";
     @Mock private Context context;
     @Mock private VerifiableCredentialService mockVerifiableCredentialService;
     @Mock private EventProbe eventProbe;
@@ -50,18 +54,20 @@ class IssueCredentialHandlerTest {
     @Mock private DataStore<AddressSessionItem> mockDataStore;
 
     @Test
-    void shouldReturnAddressAndAOneValueWhenIssueCredentialRequestIsValid() throws JOSEException {
+    void shouldReturn200OkWhenIssueCredentialRequestIsValid() throws JOSEException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
                 Map.of(
                         IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
-        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        setRequestBodyAsPlainJWT(event);
 
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
         DynamoDbIndex<AddressSessionItem> mockAccessTokenIndex = mock(DynamoDbIndex.class);
 
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        when(mockAddressSessionItem.getSubject()).thenReturn(SUBJECT);
         when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
         when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
                 .thenReturn(mockAccessTokenIndex);
@@ -74,10 +80,43 @@ class IssueCredentialHandlerTest {
 
         verify(mockAddressSessionItem).getAddresses();
         assertEquals(
-                ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
+                ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
 
         assertEquals(HttpStatus.SC_OK, response.getStatusCode());
-        assertEquals("1", response.getBody());
+        verify(eventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenSubjectInJwtIsNotEqualToTheStoredSubject() throws JOSEException {
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
+
+        setRequestBodyAsPlainJWT(event);
+        setupEventProbeErrorBehaviour();
+
+        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
+        DynamoDbIndex<AddressSessionItem> mockAccessTokenIndex = mock(DynamoDbIndex.class);
+
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        when(mockAddressSessionItem.getSubject()).thenReturn("not-equal-to-stored-subject");
+        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
+        when(mockAddressSessionTable.index(AddressSessionItem.ACCESS_TOKEN_INDEX))
+                .thenReturn(mockAccessTokenIndex);
+        when(mockDataStore.getItemByGsi(any(), eq(accessToken.toAuthorizationHeader())))
+                .thenReturn(List.of(mockAddressSessionItem));
+
+        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+
+        verify(mockAddressSessionItem).getAddresses();
+        assertEquals(
+                ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        assertEquals("0", response.getBody());
         verify(eventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
     }
 
@@ -97,7 +136,7 @@ class IssueCredentialHandlerTest {
     }
 
     @Test
-    void shouldThrowInterServerErrorWhenThereIsAnAWSError() throws JsonProcessingException {
+    void shouldThrowInternalServerErrorWhenThereIsAnAWSError() throws JsonProcessingException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -105,6 +144,7 @@ class IssueCredentialHandlerTest {
                         IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
 
+        setRequestBodyAsPlainJWT(event);
         setupEventProbeErrorBehaviour();
 
         DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
@@ -148,5 +188,16 @@ class IssueCredentialHandlerTest {
     private void setupEventProbeErrorBehaviour() {
         when(eventProbe.counterMetric(anyString(), anyDouble())).thenReturn(eventProbe);
         when(eventProbe.log(any(Level.class), any(Exception.class))).thenReturn(eventProbe);
+    }
+
+    private void setRequestBodyAsPlainJWT(APIGatewayProxyRequestEvent event) {
+        String requestJWT =
+                new PlainJWT(
+                                new JWTClaimsSet.Builder()
+                                        .claim(JWTClaimNames.SUBJECT, SUBJECT)
+                                        .build())
+                        .serialize();
+
+        event.setBody(requestJWT);
     }
 }
