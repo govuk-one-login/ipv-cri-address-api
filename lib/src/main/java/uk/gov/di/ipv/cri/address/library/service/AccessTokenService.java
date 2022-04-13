@@ -11,6 +11,7 @@ import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
@@ -27,18 +28,25 @@ public class AccessTokenService {
     public static final String REDIRECT_URI = "redirect_uri";
     public static final String GRANT_TYPE = "grant_type";
     public static final String CLIENT_ID = "client_id";
-    private final DataStore<AddressSessionItem> dataStore;
     private final Long bearAccessTokenTtl;
+    private final ConfigurationService configurationService;
+    private DataStore<AddressSessionItem> dataStore;
 
-    public AccessTokenService(DataStore<AddressSessionItem> dataStore, Long bearerAccessTokenTtl) {
+    public AccessTokenService(
+            DataStore<AddressSessionItem> dataStore, ConfigurationService configurationService) {
         this.dataStore = dataStore;
-        this.bearAccessTokenTtl = bearerAccessTokenTtl;
+        this.bearAccessTokenTtl = configurationService.getBearerAccessTokenTtl();
+        this.configurationService = configurationService;
     }
 
     public AccessTokenService() {
-        var configurationService = new ConfigurationService();
-        dataStore = getDataStore(configurationService);
+        this.configurationService = new ConfigurationService();
         this.bearAccessTokenTtl = configurationService.getBearerAccessTokenTtl();
+        this.dataStore =
+                new DataStore<>(
+                        configurationService.getAddressSessionTableName(),
+                        AddressSessionItem.class,
+                        DataStore.getClient());
     }
 
     public AddressSessionItem getAddressSession(TokenRequest tokenRequest) {
@@ -47,7 +55,10 @@ public class AccessTokenService {
                         .getAuthorizationCode()
                         .getValue();
 
-        return getItemByAuthorizationCode(authorizationCodeFromRequest);
+        return new ListUtil()
+                .getValueOrThrow(
+                        dataStore.getItemByGsi(
+                                getAuthorizationCodeIndex(), authorizationCodeFromRequest));
     }
 
     public TokenRequest createTokenRequest(String requestBody)
@@ -103,7 +114,10 @@ public class AccessTokenService {
                 listHelper.getValueOrThrow(
                         queryParameters.getOrDefault(GRANT_TYPE, Collections.emptyList()));
 
-        var addressSessionItem = getItemByAuthorizationCode(authorizationCode);
+        var listUtil = new ListUtil();
+        var addressSessionItem =
+                listUtil.getValueOrThrow(
+                        dataStore.getItemByGsi(getAuthorizationCodeIndex(), authorizationCode));
 
         if (!grantType.equals(GrantType.AUTHORIZATION_CODE.getValue())) {
             throw new AccessTokenRequestException(OAuth2Error.UNSUPPORTED_GRANT_TYPE);
@@ -123,19 +137,7 @@ public class AccessTokenService {
         }
     }
 
-    private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
-        var addressSessionTable = dataStore.getTable();
-        var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
-        var listHelper = new ListUtil();
-
-        return listHelper.getValueOrThrow(
-                dataStore.getItemByGsi(index, authorizationCodeFromRequest));
-    }
-
-    private DataStore<AddressSessionItem> getDataStore(ConfigurationService configurationService) {
-        return new DataStore<>(
-                configurationService.getAddressSessionTableName(),
-                AddressSessionItem.class,
-                DataStore.getClient());
+    private DynamoDbIndex<AddressSessionItem> getAuthorizationCodeIndex() {
+        return dataStore.getTable().index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
     }
 }

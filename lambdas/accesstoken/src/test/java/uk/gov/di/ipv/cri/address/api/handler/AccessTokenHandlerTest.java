@@ -89,7 +89,7 @@ class AccessTokenHandlerTest {
                 new AccessTokenHandler(
                         new AccessTokenService(
                                 (DataStore<AddressSessionItem>) mock(DataStore.class),
-                                mockConfigurationService.getBearerAccessTokenTtl()),
+                                mockConfigurationService),
                         eventProbe);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 

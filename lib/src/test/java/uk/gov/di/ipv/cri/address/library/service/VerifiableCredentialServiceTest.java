@@ -51,11 +51,14 @@ public class VerifiableCredentialServiceTest {
 
         verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                 "subject", mockCanonicalAddressWithResidencyList);
-        System.out.println(createVerifiableCredentialStructure(mockCanonicalAddressWithResidencyList).toPrettyString());
+        System.out.println(
+                createVerifiableCredentialStructure(mockCanonicalAddressWithResidencyList)
+                        .toPrettyString());
         verify(mockSignedClaimSetJwt).createSignedJwt(any());
     }
 
-    ObjectNode createVerifiableCredentialStructure(List<CanonicalAddressWithResidency> canonicalAddressWithResidency) {
+    ObjectNode createVerifiableCredentialStructure(
+            List<CanonicalAddressWithResidency> canonicalAddressWithResidency) {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode verifiableCredentialStructure = objectMapper.createObjectNode();
         ObjectNode context = objectMapper.createObjectNode();
@@ -64,7 +67,6 @@ public class VerifiableCredentialServiceTest {
         ArrayNode addressStructure = objectMapper.createArrayNode();
         ObjectNode credentials = objectMapper.createObjectNode();
         ObjectNode addresses = objectMapper.createObjectNode();
-
 
         contextValues.add(W3_BASE_CONTEXT).add(DI_CONTEXT);
         types.add(VERIFIABLE_CREDENTIAL_TYPE).add(ADDRESS_CREDENTIAL_TYPE);

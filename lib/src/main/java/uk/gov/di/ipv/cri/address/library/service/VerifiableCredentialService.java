@@ -69,7 +69,9 @@ public class VerifiableCredentialService {
                                                 },
                                         VC_CONTEXT, new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
                                         VC_CREDENTIAL_SUBJECT,
-                                                Map.of(VC_ADDRESS_KEY, canonicalAddressWithResidency)))
+                                                Map.of(
+                                                        VC_ADDRESS_KEY,
+                                                        canonicalAddressWithResidency)))
                         .build();
 
         return signedClaimSetJwt.createSignedJwt(claimsSet);
