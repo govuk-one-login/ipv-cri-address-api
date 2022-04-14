@@ -92,9 +92,7 @@ public class AddressSessionService {
 
         verifyRequestUri(sessionRequest.getRedirectUri(), clientAuthenticationConfig);
 
-        jwtVerifier.verifyJWTHeader(clientAuthenticationConfig, sessionRequest.getSignedJWT());
-        jwtVerifier.verifyJWTClaimsSet(clientAuthenticationConfig, sessionRequest.getSignedJWT());
-        jwtVerifier.verifyJWTSignature(clientAuthenticationConfig, sessionRequest.getSignedJWT());
+        jwtVerifier.verifyJWT(clientAuthenticationConfig, sessionRequest.getSignedJWT());
 
         return sessionRequest;
     }

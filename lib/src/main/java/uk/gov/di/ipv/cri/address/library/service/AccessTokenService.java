@@ -150,9 +150,7 @@ public class AccessTokenService {
                             tokenRequest.getClientAuthentication().getClientID().getValue());
             SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
 
-            jwtVerifier.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-            jwtVerifier.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
-            jwtVerifier.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
+            jwtVerifier.verifyJWT(clientAuthenticationConfig, signedJWT);
             return tokenRequest;
         } catch (SessionValidationException | ClientConfigurationException e) {
             throw new AccessTokenValidationException(e);

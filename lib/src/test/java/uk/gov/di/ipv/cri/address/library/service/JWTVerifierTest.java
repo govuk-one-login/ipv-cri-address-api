@@ -22,6 +22,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,7 +59,7 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWTHeader(clientConfigMap, signedJWT));
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
         assertEquals(
                 "jwt signing algorithm RS512 does not match signing algorithm configured for client: RS256",
                 exception.getMessage());
@@ -66,30 +67,31 @@ class JWTVerifierTest {
 
     @Test
     void shouldThrowValidationExceptionWhenJWTClaimsSetIssuerDoesNotMatchConfig() {
-        Map<String, String> clientConfigMap =
-                Map.of("issuer", "https://dev.core.ipv.account.gov.uk");
+        Map<String, String> clientConfigMap = getSSMClientConfig();
+
         SignedJWT signedJWT =
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
                         new JWTClaimsSet.Builder()
                                 .issuer("incorrect-issuer-url")
                                 .notBeforeTime(Date.from(now))
+                                .audience("https://address.cri.account.gov.uk")
+                                .subject(UUID.randomUUID().toString())
                                 .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
                                 .build());
 
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWTClaimsSet(clientConfigMap, signedJWT));
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
         assertEquals(
                 "JWT iss claim has value incorrect-issuer-url, must be https://dev.core.ipv.account.gov.uk",
                 exception.getMessage());
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenIssuerExpNbfAreNotPresent() {
-        Map<String, String> clientConfigMap =
-                Map.of("issuer", "https://dev.core.ipv.account.gov.uk");
+    void shouldThrowValidationExceptionWhenIssuerExpNbfAudSubAreNotPresent() {
+        Map<String, String> clientConfigMap = getSSMClientConfig();
         SignedJWT signedJWT =
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
@@ -98,19 +100,55 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWTClaimsSet(clientConfigMap, signedJWT));
-        assertEquals("JWT missing required claims: [exp, iss, nbf]", exception.getMessage());
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+        assertEquals(
+                "JWT missing required claims: [aud, exp, iss, nbf, sub]", exception.getMessage());
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenSignedJWTDoesNotMatchPublicKey()
-            throws JOSEException, InvalidKeySpecException, NoSuchAlgorithmException {
-        Map<String, String> clientConfigMap =
-                Map.of("publicCertificateToVerify", wrongPublicCertificate);
+    void shouldThrowValidationExceptionWhenJWTHasNoSubject() {
+        Map<String, String> clientConfigMap = getSSMClientConfig();
         SignedJWT signedJWT =
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
-                        new JWTClaimsSet.Builder().build());
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .notBeforeTime(Date.from(now))
+                                .audience("https://address.cri.account.gov.uk")
+                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
+                                .build());
+
+        SessionValidationException exception =
+                assertThrows(
+                        SessionValidationException.class,
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+        assertEquals("JWT missing required claims: [sub]", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenClientX509CertDoesNotMatchPrivateKey()
+            throws JOSEException, InvalidKeySpecException, NoSuchAlgorithmException {
+        Map<String, String> clientConfigMap =
+                Map.of(
+                        "issuer",
+                        "https://dev.core.ipv.account.gov.uk",
+                        "publicCertificateToVerify",
+                        wrongPublicCertificate,
+                        "authenticationAlg",
+                        "RS256",
+                        "audience",
+                        "https://address.cri.account.gov.uk");
+
+        SignedJWT signedJWT =
+                new SignedJWT(
+                        new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .notBeforeTime(Date.from(now))
+                                .audience("https://address.cri.account.gov.uk")
+                                .subject(UUID.randomUUID().toString())
+                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
+                                .build());
 
         RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
         signedJWT.sign(rsaSigner);
@@ -118,24 +156,118 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWTSignature(clientConfigMap, signedJWT));
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
         assertEquals("JWT signature verification failed", exception.getMessage());
     }
 
     @Test
-    void shouldSuccessfullyValidateSignedJWTWithMatchingPublicKey()
+    void shouldValidateJWTSignedWithRSAKey()
             throws JOSEException, InvalidKeySpecException, NoSuchAlgorithmException {
-        Map<String, String> clientConfigMap =
-                Map.of("publicCertificateToVerify", publicCertificate);
+        Map<String, String> clientConfigMap = getSSMClientConfig();
         SignedJWT signedJWT =
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
-                        new JWTClaimsSet.Builder().build());
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .notBeforeTime(Date.from(now))
+                                .audience("https://address.cri.account.gov.uk")
+                                .subject(UUID.randomUUID().toString())
+                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
+                                .build());
 
         RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
         signedJWT.sign(rsaSigner);
 
-        assertDoesNotThrow(() -> jwtVerifier.verifyJWTSignature(clientConfigMap, signedJWT));
+        assertDoesNotThrow(() -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenJWTIsExpired()
+            throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException {
+        Map<String, String> clientConfigMap = getSSMClientConfig();
+        SignedJWT signedJWT =
+                new SignedJWT(
+                        new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .notBeforeTime(Date.from(now))
+                                .subject(UUID.randomUUID().toString())
+                                .audience("https://address.cri.account.gov.uk")
+                                .expirationTime(Date.from(now.minus(1, ChronoUnit.HOURS)))
+                                .build());
+        RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
+        signedJWT.sign(rsaSigner);
+
+        SessionValidationException exception =
+                assertThrows(
+                        SessionValidationException.class,
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+
+        assertEquals("Expired JWT", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenAudienceDoesNotMatchConfig()
+            throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException {
+        Map<String, String> clientConfigMap = getSSMClientConfig();
+        SignedJWT signedJWT =
+                new SignedJWT(
+                        new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .notBeforeTime(Date.from(now))
+                                .audience("incorrect-audience")
+                                .subject(UUID.randomUUID().toString())
+                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
+                                .build());
+        RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
+        signedJWT.sign(rsaSigner);
+
+        SessionValidationException exception =
+                assertThrows(
+                        SessionValidationException.class,
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+
+        assertEquals(
+                "JWT aud claim has value [incorrect-audience], must be [https://address.cri.account.gov.uk]",
+                exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenJWTNotBeforeTimeIsInThePast()
+            throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException {
+        Map<String, String> clientConfigMap = getSSMClientConfig();
+        SignedJWT signedJWT =
+                new SignedJWT(
+                        new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .notBeforeTime(Date.from(now.plus(6, ChronoUnit.HOURS)))
+                                .subject(UUID.randomUUID().toString())
+                                .audience("https://address.cri.account.gov.uk")
+                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
+                                .build());
+        RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
+        signedJWT.sign(rsaSigner);
+
+        SessionValidationException exception =
+                assertThrows(
+                        SessionValidationException.class,
+                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+
+        assertEquals("JWT before use time", exception.getMessage());
+    }
+
+    private Map<String, String> getSSMClientConfig() {
+        return Map.of(
+                "issuer",
+                "https://dev.core.ipv.account.gov.uk",
+                "publicCertificateToVerify",
+                publicCertificate,
+                "authenticationAlg",
+                "RS256",
+                "audience",
+                "https://address.cri.account.gov.uk");
     }
 
     private RSAPrivateKey getPrivateKey() throws InvalidKeySpecException, NoSuchAlgorithmException {

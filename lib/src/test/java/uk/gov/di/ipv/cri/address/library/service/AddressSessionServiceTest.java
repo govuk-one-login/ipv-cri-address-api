@@ -33,14 +33,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -150,159 +148,6 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenClientX509CertDoesNotMatchPrivateKey() {
-        SignedJWTBuilder signedJWTBuilder =
-                new SignedJWTBuilder().setCertificateFile("wrong-cert.crt.pem");
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate());
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-
-        assertThat(exception.getMessage(), containsString("JWT signature verification failed"));
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenJWTHeaderDoesNotMatchConfig() {
-        SignedJWTBuilder signedJWTBuilder =
-                new SignedJWTBuilder().setSigningAlgorithm(JWSAlgorithm.RS512);
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate(), false);
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-
-        assertThat(
-                exception.getMessage(),
-                containsString(
-                        "jwt signing algorithm RS512 does not match signing algorithm configured for client: RS256"));
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenAudienceDoesNotMatchConfig() {
-        SignedJWTBuilder signedJWTBuilder = new SignedJWTBuilder().setAudience("invalid-audience");
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate());
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-
-        assertThat(exception.getMessage(), containsString("could not parse JWT"));
-        assertEquals(
-                "JWT aud claim has value [invalid-audience], must be [test-audience]",
-                exception.getCause().getMessage());
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenIssuerDoesNotMatchConfig() {
-        SignedJWTBuilder signedJWTBuilder = new SignedJWTBuilder().setIssuer("invalid-issuer");
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate());
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-
-        assertThat(exception.getMessage(), containsString("could not parse JWT"));
-        assertEquals(
-                "JWT iss claim has value invalid-issuer, must be ipv-core",
-                exception.getCause().getMessage());
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenJWTHasNoSubject() {
-        SignedJWTBuilder signedJWTBuilder = new SignedJWTBuilder().setIncludeSubject(false);
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate());
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-
-        assertThat(exception.getMessage(), containsString("could not parse JWT"));
-        assertEquals("JWT missing required claims: [sub]", exception.getCause().getMessage());
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenJWTIsExpired() {
-        SignedJWTBuilder signedJWTBuilder =
-                new SignedJWTBuilder().setNow(Instant.now().minus(1, ChronoUnit.DAYS));
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate());
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-
-        assertThat(exception.getMessage(), containsString("could not parse JWT"));
-        assertEquals("Expired JWT", exception.getCause().getMessage());
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenJWTNotBeforeTimeIsInThePast() {
-        SignedJWTBuilder signedJWTBuilder =
-                new SignedJWTBuilder()
-                        .setNotBeforeTime(Date.from(Instant.now().plus(6, ChronoUnit.HOURS)));
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate());
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-
-        assertThat(exception.getMessage(), containsString("could not parse JWT"));
-        assertEquals("JWT before use time", exception.getCause().getMessage());
-    }
-
-    @Test
-    void shouldValidateJWTSignedWithRSAKey()
-            throws IOException, SessionValidationException, ClientConfigurationException,
-                    java.text.ParseException {
-        SignedJWTBuilder signedJWTBuilder = new SignedJWTBuilder();
-        SignedJWT signedJWT = signedJWTBuilder.build();
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWT);
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate());
-
-        SessionRequest result =
-                addressSessionService.validateSessionRequest(marshallToJSON(rawSessionRequest));
-
-        makeSessionRequestFieldValueAssertions(
-                result, rawSessionRequest, signedJWT.getJWTClaimsSet());
-    }
-
-    @Test
     void shouldValidateJWTSignedWithECKey()
             throws IOException, SessionValidationException, ClientConfigurationException,
                     java.text.ParseException {
@@ -316,7 +161,7 @@ class AddressSessionServiceTest {
 
         Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder.getCertificate());
         configMap.put("authenticationAlg", "ES384");
-        initMockConfigurationService(configMap);
+        initMockConfigurationService(configMap, false);
 
         SessionRequest result =
                 addressSessionService.validateSessionRequest(marshallToJSON(rawSessionRequest));

@@ -260,9 +260,7 @@ class AccessTokenServiceTest {
                         () -> accessTokenService.validateTokenRequest(tokenRequest));
 
         assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
-        verify(mockJwtVerifier, never()).verifyJWTHeader(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTClaimsSet(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTSignature(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
     }
 
     @Test
@@ -353,9 +351,7 @@ class AccessTokenServiceTest {
         TokenRequest expectedTokenRequest = accessTokenService.validateTokenRequest(tokenRequest);
 
         assertEquals(expectedTokenRequest.getClientID(), tokenRequest.getClientID());
-        verify(mockJwtVerifier, times(1)).verifyJWTHeader(any(), any());
-        verify(mockJwtVerifier, times(1)).verifyJWTClaimsSet(any(), any());
-        verify(mockJwtVerifier, times(1)).verifyJWTSignature(any(), any());
+        verify(mockJwtVerifier, times(1)).verifyJWT(any(), any());
     }
 
     @Test
@@ -413,9 +409,7 @@ class AccessTokenServiceTest {
         assertThat(
                 exception.getMessage(),
                 containsString("no configuration for client id '" + clientID + "'"));
-        verify(mockJwtVerifier, never()).verifyJWTHeader(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTClaimsSet(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTSignature(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
     }
 
     @Test
@@ -444,9 +438,7 @@ class AccessTokenServiceTest {
                 exception.getMessage(),
                 containsString(
                         "Invalid private key JWT authentication: The client identifier doesn't match the client assertion subject / issuer"));
-        verify(mockJwtVerifier, never()).verifyJWTHeader(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTClaimsSet(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTSignature(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
     }
 
     @Test
@@ -480,8 +472,6 @@ class AccessTokenServiceTest {
                         () -> accessTokenService.getAddressSession(tokenRequest));
 
         assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
-        verify(mockJwtVerifier, never()).verifyJWTHeader(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTClaimsSet(any(), any());
-        verify(mockJwtVerifier, never()).verifyJWTSignature(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
     }
 }

@@ -1,6 +1,6 @@
 openapi: "3.0.1"
 info:
-  version: "0.1"
+  version: "0.2"
   title: "Address Credential Issuer API"
 
 paths:
@@ -144,12 +144,6 @@ paths:
         type: "aws_proxy"
 
   /token:
-    parameters:
-      - $ref: "#/components/parameters/GrantType"
-      - $ref: "#/components/parameters/Code"
-      - $ref: "#/components/parameters/ClientId"
-      - $ref: "#/components/parameters/ClientAssertionType"
-      - $ref: "#/components/parameters/ClientAssertion"
     post:
       requestBody:
         content:
@@ -237,42 +231,6 @@ paths:
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
 components:
-  parameters:
-    GrantType:
-      name: grant_type
-      in: query
-      required: true
-      description: Required value MUST be set to "authorization_code"
-      schema:
-        type: string
-    Code:
-      name: code
-      in: query
-      required: true
-      description: The authorization code received from IPV Core
-      schema:
-        type: string
-    ClientId:
-      name: client_id
-      in: query
-      required: true
-      description: The client id received from IPV Core
-      schema:
-        type: string
-    ClientAssertionType:
-      name: client_assertion_type
-      in: query
-      required: true
-      description: Required value MUST be set to "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-      schema:
-        type: string
-    ClientAssertion:
-      name: client_assertion
-      in: query
-      required: true
-      description: The JWT string received from IPV Core
-      schema:
-        type: string
   schemas:
     TokenRequest:
       required:
@@ -293,7 +251,7 @@ components:
         client_id:
           type: "string"
           minLength: 1
-          example: "ipv-core"
+          example: "ipv-core-stub"
         client_assertion_type:
           type: "string"
           pattern: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"

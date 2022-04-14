@@ -26,7 +26,15 @@ import java.util.Map;
 
 public class JWTVerifier {
 
-    public void verifyJWTHeader(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+    public void verifyJWT(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+            throws SessionValidationException, ClientConfigurationException {
+        this.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
+        this.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
+        this.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
+    }
+
+    private void verifyJWTHeader(
+            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
         JWSAlgorithm configuredAlgorithm =
                 JWSAlgorithm.parse(clientAuthenticationConfig.get("authenticationAlg"));
@@ -39,7 +47,7 @@ public class JWTVerifier {
         }
     }
 
-    public void verifyJWTSignature(
+    private void verifyJWTSignature(
             Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException, ClientConfigurationException {
         String publicCertificateToVerify =
@@ -57,15 +65,16 @@ public class JWTVerifier {
         }
     }
 
-    public void verifyJWTClaimsSet(
+    private void verifyJWTClaimsSet(
             Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
                         new JWTClaimsSet.Builder()
                                 .issuer(clientAuthenticationConfig.get("issuer"))
+                                .audience(clientAuthenticationConfig.get("audience"))
                                 .build(),
-                        new HashSet<>(Arrays.asList("exp", "nbf")));
+                        new HashSet<>(Arrays.asList("exp", "nbf", "sub")));
 
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);

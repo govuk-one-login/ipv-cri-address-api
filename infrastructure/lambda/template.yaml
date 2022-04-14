@@ -57,6 +57,14 @@ Mappings:
       integration: "RS256"
       production: "RS256"
 
+  IPVCoreStubAudience:
+    Environment:
+      dev: "https://dev.address.cri.account.gov.uk"
+      build: "https://build.address.cri.account.gov.uk"
+      staging: "https://staging.address.cri.account.gov.uk"
+      integration: "https://integration.address.cri.account.gov.uk"
+      production: "https://production.address.cri.account.gov.uk"
+
   IPVCoreStubIssuerMapping:
     Environment:
       dev: "ipv-core-stub"
@@ -386,6 +394,13 @@ Resources:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg"
       Type: String
       Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
+
+  IPVCoreStubAudienceParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/audience"
+      Type: String
+      Value: !FindInMap [ IPVCoreStubAudience, Environment, !Ref 'Environment' ]
 
   IPVCoreStubIssuerParameter:
     Type: AWS::SSM::Parameter
