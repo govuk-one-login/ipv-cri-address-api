@@ -5,7 +5,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
@@ -72,11 +71,9 @@ public class IssueCredentialHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         try {
-            var subject = getSubjectFromBody(input);
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
             var addressSessionItem = getAddressSessionItem(accessToken);
             var addresses = addressSessionItem.getAddresses();
-            validateStoredSubjectIsEqualSubjectInJwt(subject, addressSessionItem);
 
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
@@ -91,23 +88,11 @@ public class IssueCredentialHandler
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, ex.awsErrorDetails().errorMessage());
-        } catch (CredentialRequestException
-                | ParseException
-                | JOSEException
-                | java.text.ParseException e) {
+        } catch (CredentialRequestException | ParseException | JOSEException e) {
             eventProbe.log(INFO, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_BAD_REQUEST, 0);
         }
-    }
-
-    private void validateStoredSubjectIsEqualSubjectInJwt(
-            String subject, AddressSessionItem addressSessionItem)
-            throws CredentialRequestException {
-        if (addressSessionItem.getSubject().equals(subject)) return;
-
-        throw new CredentialRequestException(
-                "The subject in JWT is not the same as the stored subject");
     }
 
     private AccessToken validateInputHeaderBearerToken(Map<String, String> headers)
@@ -142,14 +127,6 @@ public class IssueCredentialHandler
             throw new CredentialRequestException(
                     "Address Session Item not found for the given access token", ie);
         }
-    }
-
-    private String getSubjectFromBody(APIGatewayProxyRequestEvent input)
-            throws java.text.ParseException {
-        if (input.getBody() == null)
-            throw new java.text.ParseException("Subject is missing from Request JWT", 0);
-
-        return PlainJWT.parse(input.getBody()).getJWTClaimsSet().getSubject();
     }
 
     private VerifiableCredentialService getVerifiableCredentialService() {

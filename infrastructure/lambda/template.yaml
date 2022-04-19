@@ -49,6 +49,14 @@ Mappings:
       integration: "172800" # 2 days
       production: "172800" # 2 days
 
+  MaxJwtTtlMapping:
+    Environment:
+      dev: "9600" # 2 hrs
+      build: "2700" # 45 mins
+      staging: "2700"
+      integration: "2700"
+      production: "2700"
+
   IPVCoreStubAuthenticationAlgMapping:
     Environment:
       dev: "RS256"
@@ -97,6 +105,14 @@ Mappings:
       integration: "https://address-cri.account.gov.uk"
       production: "https://address-cri.account.gov.uk"
 
+  VerifiableCredentialKmsSigningKeyMapping:
+    Environment:
+      dev: "5d50acf9-72f4-4039-a480-eaaf6bfdd8c8"
+      build: "build-verify-credential-key-id"
+      staging: "staging-verify-credential-key-id"
+      integration: "integration-verify-credential-key-id"
+      production: "production-verify-credential-key-id"
+
   AddressCriAudienceMapping:
     Environment:
       dev: "address-cri-dev"
@@ -106,6 +122,52 @@ Mappings:
       production: "address-cri"
 
 Resources:
+  AddressCriSignRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  AddressCriVcSigningKey:
+    Type: AWS::KMS::Key
+    DependsOn:
+      - AddressCriSignRole
+    Properties:
+      Description: Asymmetric key used by Address Cri for signing verifiable credentials.
+      Enabled: true
+      KeySpec: ECC_NIST_P256
+      KeyUsage: SIGN_VERIFY
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'Enable Root access'
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - 'kms:*'
+            Resource: '*'
+          - Sid: "Allow use of the key for digital signing"
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt AddressCriSignRole.Arn
+            Action:
+              - "kms:Sign"
+            Resource: '*'
+
+  SigningKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${Environment}/AddressCriVcSigningKey
+      TargetKeyId: !Ref AddressCriVcSigningKey
+
   AddressApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -160,7 +222,6 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
-
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
@@ -269,6 +330,7 @@ Resources:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
       Policies:
+        - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
         - DynamoDBReadPolicy:
             TableName:
@@ -283,6 +345,16 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
+        - Statement:
+            - Sid: kmsSigningKeyPermission
+              Effect: Allow
+              Action:
+                - kms:sign
+              Resource:
+                - !GetAtt AddressCriVcSigningKey.Arn
 
 
   AddressSessionTable:
@@ -372,12 +444,20 @@ Resources:
       Type: String
       Description: address session dynamodb table name
 
+  MaxJwtTtlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
+      Type: String
+      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref 'Environment']
+      Description: default time to live for an JWT in (seconds)
+
   AddressSessionTtlParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/AddressSessionTtl"
       Type: String
-      Value: !FindInMap [AddressSessionTtlMapping, Environment, !Ref 'Environment']
+      Value: !FindInMap [ AddressSessionTtlMapping, Environment, !Ref 'Environment' ]
       Description: default time to live for an address session item (seconds)
 
   IPVCoreStubAuthenticationAlgParameter:
@@ -438,6 +518,14 @@ Resources:
       Type: String
       Value: !FindInMap [VerifiableCredentialIssuerMapping, Environment, !Ref 'Environment']
       Description: Issuer of the Verifiable Credential
+
+  VerifiableCredentialKmsSigningKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
+      Type: String
+      Value: !FindInMap [ VerifiableCredentialKmsSigningKeyMapping, Environment, !Ref 'Environment' ]
+      Description: Verifiable Credential Key Id
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission
