@@ -16,7 +16,7 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.models.AuthorizationResponse;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
@@ -58,10 +58,9 @@ class AddressHandlerTest {
                 .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
 
-        List<CanonicalAddressWithResidency> canonicalAddressWithResidencies = new ArrayList<>();
-        CanonicalAddressWithResidency canonicalAddressWithResidency =
-                new CanonicalAddressWithResidency();
-        canonicalAddressWithResidency.setUprn("12345");
+        List<CanonicalAddress> canonicalAddressWithResidencies = new ArrayList<>();
+        CanonicalAddress canonicalAddressWithResidency = new CanonicalAddress();
+        canonicalAddressWithResidency.setUprn(Long.valueOf("12345"));
         canonicalAddressWithResidencies.add(canonicalAddressWithResidency);
 
         when(addressSessionService.parseAddresses(anyString()))
@@ -87,10 +86,9 @@ class AddressHandlerTest {
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         AddressSessionItem addressSessionItem = new AddressSessionItem();
 
-        List<CanonicalAddressWithResidency> canonicalAddressWithResidencies = new ArrayList<>();
-        CanonicalAddressWithResidency canonicalAddressWithResidency =
-                new CanonicalAddressWithResidency();
-        canonicalAddressWithResidency.setUprn("12345");
+        List<CanonicalAddress> canonicalAddressWithResidencies = new ArrayList<>();
+        CanonicalAddress canonicalAddressWithResidency = new CanonicalAddress();
+        canonicalAddressWithResidency.setUprn(Long.valueOf("12345"));
         canonicalAddressWithResidencies.add(canonicalAddressWithResidency);
         addressSessionItem.setAddresses(canonicalAddressWithResidencies);
         AuthorizationResponse authorizationResponse = new AuthorizationResponse(addressSessionItem);
@@ -117,7 +115,7 @@ class AddressHandlerTest {
                 .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
 
-        List<CanonicalAddressWithResidency> canonicalAddressWithResidencies = new ArrayList<>();
+        List<CanonicalAddress> canonicalAddressWithResidencies = new ArrayList<>();
 
         when(addressSessionService.parseAddresses(anyString()))
                 .thenReturn(canonicalAddressWithResidencies);
