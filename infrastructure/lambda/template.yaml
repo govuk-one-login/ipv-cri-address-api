@@ -49,6 +49,16 @@ Mappings:
       integration: "172800" # 2 days
       production: "172800" # 2 days
 
+
+  MaxJwtTtlMapping:
+    Environment:
+      dev: "9600" # 2 hrs
+      build: "2700" # 45 mins
+      staging: "2700"
+      integration: "2700"
+      production: "2700"
+
+
   IPVCoreStubAuthenticationAlgMapping:
     Environment:
       dev: "RS256"
@@ -96,6 +106,14 @@ Mappings:
       staging: "https://staging-di-ipv-cri-address-front.london.cloudapps.digital"
       integration: "https://address-cri.account.gov.uk"
       production: "https://address-cri.account.gov.uk"
+
+  VerifiableCredentialKmsSigningKeyMapping:
+    Environment:
+      dev: "5d50acf9-72f4-4039-a480-eaaf6bfdd8c8"
+      build: "build-verify-credential-key-id"
+      staging: "staging-verify-credential-key-id"
+      integration: "integration-verify-credential-key-id"
+      production: "production-verify-credential-key-id"
 
   AddressCriAudienceMapping:
     Environment:
@@ -160,7 +178,6 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
-
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
@@ -283,7 +300,16 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
-
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
+        - Statement:
+            - Sid: kmsSigningKeyPermission
+              Effect: Allow
+              Action:
+                - 'kms:sign'
+              Resource:
+                - !ImportValue AddressCriSignRole
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -372,12 +398,20 @@ Resources:
       Type: String
       Description: address session dynamodb table name
 
+  MaxJwtTtlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
+      Type: String
+      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref 'Environment']
+      Description: default time to live for an JWT in (seconds)
+
   AddressSessionTtlParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/AddressSessionTtl"
       Type: String
-      Value: !FindInMap [AddressSessionTtlMapping, Environment, !Ref 'Environment']
+      Value: !FindInMap [ AddressSessionTtlMapping, Environment, !Ref 'Environment' ]
       Description: default time to live for an address session item (seconds)
 
   IPVCoreStubAuthenticationAlgParameter:
@@ -438,6 +472,14 @@ Resources:
       Type: String
       Value: !FindInMap [VerifiableCredentialIssuerMapping, Environment, !Ref 'Environment']
       Description: Issuer of the Verifiable Credential
+
+  VerifiableCredentialKmsSigningKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
+      Type: String
+      Value: !FindInMap [ VerifiableCredentialKmsSigningKeyMapping, Environment, !Ref 'Environment' ]
+      Description: Verifiable Credential Key Id
 
   AccessTokenFunctionPermission:
     Type: AWS::Lambda::Permission

@@ -96,8 +96,8 @@ public class ConfigurationService {
         ORDNANCE_SURVEY_API_URL("OrdnanceSurveyAPIURL"),
         ADDRESS_CRI_AUDIENCE("AddressCriAudience"),
         MAXIMUM_JWT_TTL("MAX_JWT_TTL"),
-        VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID("VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID_PARAM"),
-        VERIFIABLE_CREDENTIAL_ISSUER("VERIFIABLE_CREDENTIAL_ISSUER_PARAM");
+        VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID("verifiableCredentialKmsSigningKeyId"),
+        VERIFIABLE_CREDENTIAL_ISSUER("verifiable-credential/issuer");
 
         public final String parameterName;
 

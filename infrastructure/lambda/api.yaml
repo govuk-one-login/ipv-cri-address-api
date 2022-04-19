@@ -208,9 +208,14 @@ paths:
         '200':
           description: 200 Ok
           content:
-            application/json:
+            application/jwt:
               schema:
-                $ref: "#/components/schemas/Address"
+                type: "object"
+                properties:
+                  type: string
+                  format: application/jwt
+                  pattern: ^([a-zA-Z0-9_=]+)\.([a-zA-Z0-9_=]+)\.([a-zA-Z0-9_\-\+\/=]+)$
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
         '400':
           description: 400 Bad Response
           content:
@@ -416,18 +421,18 @@ components:
         - $ref: "#/components/schemas/CanonicalAddress"
       title: "Canonical Address with Residency Dates"
       type: "object"
-      properties:
-        residentFrom:
-          description: "Date in epoch format"
-          type: "number"
-          example: 1577836800
-        residentTo:
-          description: "Date in epoch format"
-          type: "number"
-          example: 1609372800
-        currentResidency:
-          type: "boolean"
-          example: true
+#      properties:
+#        residentFrom:
+#          description: "Date in epoch format"
+#          type: "number"
+#          example: 1577836800
+#        residentTo:
+#          description: "Date in epoch format"
+#          type: "number"
+#          example: 1609372800
+#        currentResidency:
+#          type: "boolean"
+#          example: true
 
 
 #  securitySchemes:
