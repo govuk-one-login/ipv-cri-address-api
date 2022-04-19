@@ -2,42 +2,56 @@ package uk.gov.di.ipv.cri.address.library.models;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
+import java.util.Date;
 import java.util.Optional;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @DynamoDBDocument
 public class CanonicalAddress {
-    private String uprn;
+    private Long uprn;
     private String organisationName;
     private String departmentName;
     private String subBuildingName;
     private String buildingNumber;
-    private String dependentThoroughfare;
+
+    @JsonAlias("dependentThoroughfare")
+    private String dependentStreetName;
+
     private String doubleDependentLocality;
     private String dependentLocality;
     private String buildingName;
-    private String thoroughfareName;
+
+    @JsonAlias("thoroughfareName")
+    private String streetName;
+
     private String postTown;
     private String postcode;
     private String countryCode;
 
+    @JsonAlias("residentFrom")
+    private Date validFrom;
+
+    @JsonAlias("residentTo")
+    private Date validUntil;
+
     public CanonicalAddress(Result result) {
         var dpa = result.getDpa();
         if (dpa.getUprn() != null && !dpa.getUprn().isEmpty()) {
-            this.uprn = dpa.getUprn();
+            this.uprn = Long.parseLong(dpa.getUprn());
         }
         this.organisationName = dpa.getOrganisationName();
         this.departmentName = dpa.getDepartmentName();
         this.subBuildingName = dpa.getSubBuildingName();
         this.buildingNumber = dpa.getBuildingNumber();
-        this.dependentThoroughfare = dpa.getDependentThoroughfareName();
+        this.dependentStreetName = dpa.getDependentThoroughfareName();
         this.doubleDependentLocality = dpa.getDoubleDependentLocality();
         this.dependentLocality = dpa.getDependentLocality();
         this.buildingName = dpa.getBuildingName();
-        this.thoroughfareName = dpa.getThoroughfareName();
+        this.streetName = dpa.getThoroughfareName();
         this.postTown = dpa.getPostTown();
         this.postcode = dpa.getPostcode();
         this.countryCode =
@@ -49,11 +63,11 @@ public class CanonicalAddress {
     }
 
     @DynamoDBAttribute(attributeName = "UPRN")
-    public Optional<String> getUprn() {
-        return Optional.ofNullable(uprn);
+    public Optional<Long> getUprn() {
+        return Optional.ofNullable(this.uprn);
     }
 
-    public void setUprn(String uprn) {
+    public void setUprn(Long uprn) {
         this.uprn = uprn;
     }
 
@@ -94,12 +108,12 @@ public class CanonicalAddress {
     }
 
     @DynamoDBAttribute(attributeName = "DependentThoroughfare")
-    public String getDependentThoroughfare() {
-        return dependentThoroughfare;
+    public String getDependentStreetName() {
+        return dependentStreetName;
     }
 
-    public void setDependentThoroughfare(String dependentThoroughfare) {
-        this.dependentThoroughfare = dependentThoroughfare;
+    public void setDependentStreetName(String dependentStreetName) {
+        this.dependentStreetName = dependentStreetName;
     }
 
     @DynamoDBAttribute(attributeName = "DoubleDependentLocality")
@@ -130,12 +144,12 @@ public class CanonicalAddress {
     }
 
     @DynamoDBAttribute(attributeName = "ThoroughfareName")
-    public String getThoroughfareName() {
-        return thoroughfareName;
+    public String getStreetName() {
+        return streetName;
     }
 
-    public void setThoroughfareName(String thoroughfareName) {
-        this.thoroughfareName = thoroughfareName;
+    public void setStreetName(String streetName) {
+        this.streetName = streetName;
     }
 
     @DynamoDBAttribute(attributeName = "PostTown")
@@ -163,5 +177,21 @@ public class CanonicalAddress {
 
     public void setCountryCode(String countryCode) {
         this.countryCode = countryCode;
+    }
+
+    public Optional<Date> getValidFrom() {
+        return Optional.ofNullable(validFrom);
+    }
+
+    public void setValidFrom(Date validFrom) {
+        this.validFrom = validFrom;
+    }
+
+    public Optional<Date> getValidUntil() {
+        return Optional.ofNullable(validUntil);
+    }
+
+    public void setValidUntil(Date validUntil) {
+        this.validUntil = validUntil;
     }
 }

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
@@ -28,7 +27,7 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
@@ -255,14 +254,13 @@ public class AddressSessionService {
         }
     }
 
-    public List<CanonicalAddressWithResidency> parseAddresses(String addressBody)
+    public List<CanonicalAddress> parseAddresses(String addressBody)
             throws AddressProcessingException {
-        List<CanonicalAddressWithResidency> addresses;
+        List<CanonicalAddress> addresses;
         try {
             ObjectMapper mapper =
                     new ObjectMapper()
                             .registerModule(new Jdk8Module())
-                            .registerModule(new JavaTimeModule())
                             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
             addresses = mapper.readValue(addressBody, new TypeReference<>() {});
@@ -296,8 +294,7 @@ public class AddressSessionService {
         }
     }
 
-    public AddressSessionItem saveAddresses(
-            String sessionId, List<CanonicalAddressWithResidency> addresses)
+    public AddressSessionItem saveAddresses(String sessionId, List<CanonicalAddress> addresses)
             throws SessionExpiredException, SessionNotFoundException {
         validateSessionId(sessionId);
 
