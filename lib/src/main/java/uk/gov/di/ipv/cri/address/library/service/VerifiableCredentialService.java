@@ -55,7 +55,8 @@ public class VerifiableCredentialService {
                         .claim(NOT_BEFORE, now.getEpochSecond())
                         .claim(
                                 EXPIRATION_TIME,
-                                now.plusSeconds(configurationService.maxJwtTtl()).getEpochSecond())
+                                now.plusSeconds(configurationService.getMaxJwtTtl())
+                                        .getEpochSecond())
                         .claim(
                                 VC_TYPE,
                                 new String[] {VERIFIABLE_CREDENTIAL_TYPE, ADDRESS_CREDENTIAL_TYPE})

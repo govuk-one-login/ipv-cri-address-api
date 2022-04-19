@@ -44,7 +44,7 @@ public class VerifiableCredentialServiceTest {
 
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("address-cri-issue");
-        when(mockConfigurationService.maxJwtTtl()).thenReturn(342L);
+        when(mockConfigurationService.getMaxJwtTtl()).thenReturn(342L);
 
         var mockCanonicalAddressWithResidencyList =
                 List.of(mock(CanonicalAddressWithResidency.class));

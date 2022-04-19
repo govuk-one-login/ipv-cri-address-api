@@ -416,17 +416,14 @@ components:
           type: "string"
           example: "GBR"
           description: "ISO 3-Letter Country Code"
-        residentFrom:
+        validFrom:
           description: "Date in ISO 8601 format"
           type: "string"
           example: "2020-01-01"
-        residentTo:
+        validUntil:
           description: "Date in ISO 8601 format"
           type: "string"
           example: "2020-01-01"
-        currentResidency:
-          type: "boolean"
-          example: true
 
 
 #  securitySchemes:

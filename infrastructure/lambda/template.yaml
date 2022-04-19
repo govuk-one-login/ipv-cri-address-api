@@ -49,7 +49,6 @@ Mappings:
       integration: "172800" # 2 days
       production: "172800" # 2 days
 
-
   MaxJwtTtlMapping:
     Environment:
       dev: "9600" # 2 hrs
@@ -57,7 +56,6 @@ Mappings:
       staging: "2700"
       integration: "2700"
       production: "2700"
-
 
   IPVCoreStubAuthenticationAlgMapping:
     Environment:
@@ -276,6 +274,73 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
+  IssueCredentialFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: DynamoDbPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AddressSessionTableStatement
+                Effect: Allow
+                Action:
+                  - 'dynamodb:List*'
+                  - 'dynamodb:DescribeReservedCapacity*'
+                  - 'dynamodb:DescribeLimits'
+                  - 'dynamodb:DescribeTimeToLive'
+                  - 'dynamodb:BatchGet*'
+                  - 'dynamodb:DescribeStream'
+                  - 'dynamodb:DescribeTable'
+                  - 'dynamodb:Get*'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:BatchWrite*'
+                  - 'dynamodb:CreateTable'
+                  - 'dynamodb:Delete*'
+                  - 'dynamodb:Update*'
+                  - 'dynamodb:PutItem'
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                  - 'Fn::Sub':
+                      - >-
+                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-session-${AWS::StackName}
+                      - tableName:
+                          Ref: AddressSessionTable
+
+                  - 'Fn::Sub':
+                      - >-
+                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-session-${AWS::StackName}/index/*
+                      - tableName:
+                          Ref: AddressSessionTable
+
+        - PolicyName: IssueCredentialFunctionParameterStorePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+
+
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -285,31 +350,40 @@ Resources:
         Variables:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - DynamoDBReadPolicy:
-            TableName:
-              Ref: AddressSessionTable
-        - DynamoDBWritePolicy:
-            TableName:
-              Ref: AddressSessionTable
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
-        - Statement:
-            - Sid: kmsSigningKeyPermission
-              Effect: Allow
-              Action:
-                - 'kms:sign'
-              Resource:
-                - !ImportValue AddressCriSignRole
+      Role: !GetAtt IssueCredentialFunctionRole.Arn
+
+
+  AddressCriVcSigningKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Asymmetric key used by Address Cri for signing verifiable credentials.
+      Enabled: true
+      KeySpec: ECC_NIST_P256
+      KeyUsage: SIGN_VERIFY
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'Enable Root access'
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - 'kms:*'
+            Resource: '*'
+          - Sid: "Allow use of the key for digital signing"
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt IssueCredentialFunctionRole.Arn
+            Action:
+              - "kms:Sign"
+            Resource: '*'
+
+  SigningKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriVcSigningKey
+      TargetKeyId: !Ref AddressCriVcSigningKey
+
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
