@@ -3,6 +3,7 @@ package uk.gov.di.ipv.cri.address.library.models;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
@@ -33,9 +34,11 @@ public class CanonicalAddress {
     private String countryCode;
 
     @JsonAlias("residentFrom")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date validFrom;
 
     @JsonAlias("residentTo")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date validUntil;
 
     public CanonicalAddress(Result result) {

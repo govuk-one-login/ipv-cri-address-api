@@ -12,7 +12,7 @@ public class VerifiableCredentialConstants {
     public static final String CREDENTIAL_SUBJECT_ADDRESS = "address";
     public static final String VC_CREDENTIAL_SUBJECT = "credentialSubject";
     public static final String VC_CLAIM = "vc";
-    public static final String VC_ADDRESS_KEY = "addresss";
+    public static final String VC_ADDRESS_KEY = "address";
 
     private VerifiableCredentialConstants() {}
 }

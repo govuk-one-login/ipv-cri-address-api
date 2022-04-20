@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.helpers.SignClaimSetJwt;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 
 import java.util.List;
 import java.util.Map;
@@ -46,19 +46,16 @@ public class VerifiableCredentialServiceTest {
                 .thenReturn("address-cri-issue");
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(342L);
 
-        var mockCanonicalAddressWithResidencyList =
-                List.of(mock(CanonicalAddressWithResidency.class));
+        var mockCanonicalAddressList = List.of(mock(CanonicalAddress.class));
 
         verifiableCredentialService.generateSignedVerifiableCredentialJwt(
-                "subject", mockCanonicalAddressWithResidencyList);
+                "subject", mockCanonicalAddressList);
         System.out.println(
-                createVerifiableCredentialStructure(mockCanonicalAddressWithResidencyList)
-                        .toPrettyString());
+                createVerifiableCredentialStructure(mockCanonicalAddressList).toPrettyString());
         verify(mockSignedClaimSetJwt).createSignedJwt(any());
     }
 
-    ObjectNode createVerifiableCredentialStructure(
-            List<CanonicalAddressWithResidency> canonicalAddressWithResidency) {
+    ObjectNode createVerifiableCredentialStructure(List<CanonicalAddress> canonicalAddresses) {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode verifiableCredentialStructure = objectMapper.createObjectNode();
         ObjectNode context = objectMapper.createObjectNode();
@@ -71,7 +68,7 @@ public class VerifiableCredentialServiceTest {
         contextValues.add(W3_BASE_CONTEXT).add(DI_CONTEXT);
         types.add(VERIFIABLE_CREDENTIAL_TYPE).add(ADDRESS_CREDENTIAL_TYPE);
         addressStructure.add(VC_CREDENTIAL_SUBJECT);
-        addresses.putPOJO(CREDENTIAL_SUBJECT_ADDRESS, canonicalAddressWithResidency);
+        addresses.putPOJO(CREDENTIAL_SUBJECT_ADDRESS, canonicalAddresses);
 
         credentials.putArray(VC_ADDRESS_KEY);
         return verifiableCredentialStructure

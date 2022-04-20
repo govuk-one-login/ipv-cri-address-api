@@ -5,7 +5,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import uk.gov.di.ipv.cri.address.library.helpers.KMSSigner;
 import uk.gov.di.ipv.cri.address.library.helpers.SignClaimSetJwt;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
 
 import java.time.Instant;
 import java.util.List;
@@ -45,9 +44,11 @@ public class VerifiableCredentialService {
     }
 
     public SignedJWT generateSignedVerifiableCredentialJwt(
-            String subject, List<CanonicalAddressWithResidency> canonicalAddressWithResidency)
+            String subject,
+            List<uk.gov.di.ipv.cri.address.library.models.CanonicalAddress> canonicalAddresses)
             throws JOSEException {
         var now = Instant.now();
+
         var claimsSet =
                 new JWTClaimsSet.Builder()
                         .claim(SUBJECT, subject)
@@ -64,15 +65,13 @@ public class VerifiableCredentialService {
                                 VC_CLAIM,
                                 Map.of(
                                         VC_TYPE,
-                                                new String[] {
-                                                    VERIFIABLE_CREDENTIAL_TYPE,
-                                                    ADDRESS_CREDENTIAL_TYPE
-                                                },
-                                        VC_CONTEXT, new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
+                                        new String[] {
+                                            VERIFIABLE_CREDENTIAL_TYPE, ADDRESS_CREDENTIAL_TYPE
+                                        },
+                                        VC_CONTEXT,
+                                        new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
                                         VC_CREDENTIAL_SUBJECT,
-                                                Map.of(
-                                                        VC_ADDRESS_KEY,
-                                                        canonicalAddressWithResidency)))
+                                        Map.of(VC_ADDRESS_KEY, canonicalAddresses)))
                         .build();
 
         return signedClaimSetJwt.createSignedJwt(claimsSet);
