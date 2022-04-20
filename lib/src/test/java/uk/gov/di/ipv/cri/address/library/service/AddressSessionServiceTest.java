@@ -1,6 +1,10 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -21,7 +25,7 @@ import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddressWithResidency;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
@@ -401,75 +405,92 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void parseAddresses() throws AddressProcessingException {
+    void parseAddresses() throws AddressProcessingException, JsonProcessingException {
         String addresses =
                 "[\n"
                         + "   {\n"
                         + "      \"uprn\": \"72262801\",\n"
                         + "      \"buildingNumber\": \"8\",\n"
-                        + "      \"thoroughfareName\": \"GRANGE FIELDS WAY\",\n"
+                        + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
                         + "      \"postTown\": \"LEEDS\",\n"
                         + "      \"postcode\": \"LS10 4QL\",\n"
                         + "      \"countryCode\": \"GBR\",\n"
-                        + "      \"residentFrom\": 1267142400000,\n"
-                        + "      \"residentTo\": 1610755200000\n"
+                        + "      \"validFrom\": \"2010-02-26\",\n"
+                        + "      \"validUntil\": \"2021-01-16\"\n"
                         + "   },\n"
                         + "   {\n"
                         + "      \"uprn\": \"63094965\",\n"
                         + "      \"buildingNumber\": \"15\",\n"
                         + "      \"dependentLocality\": \"LOFTHOUSE\",\n"
-                        + "      \"thoroughfareName\": \"RIDINGS LANE\",\n"
+                        + "      \"streetName\": \"RIDINGS LANE\",\n"
                         + "      \"postTown\": \"WAKEFIELD\",\n"
                         + "      \"postcode\": \"WF3 3SE\",\n"
                         + "      \"countryCode\": \"GBR\",\n"
-                        + "      \"residentFrom\": 1610755200000,\n"
-                        + "      \"residentTo\": 1627862400000\n"
+                        + "      \"validFrom\": \"2021-01-16\",\n"
+                        + "      \"validUntil\": \"2021-08-02\"\n"
                         + "   },\n"
                         + "   {\n"
                         + "      \"uprn\": \"63042351\",\n"
                         + "      \"buildingNumber\": \"5\",\n"
-                        + "      \"thoroughfareName\": \"GATEWAYS\",\n"
+                        + "      \"streetName\": \"GATEWAYS\",\n"
                         + "      \"postTown\": \"WAKEFIELD\",\n"
                         + "      \"postcode\": \"WF1 2LZ\",\n"
                         + "      \"countryCode\": \"GBR\",\n"
-                        + "      \"residentFrom\": 1627862400000,\n"
-                        + "      \"currentResidency\": true\n"
+                        + "      \"validFrom\": \"2021-08-02\"\n"
                         + "   }\n"
                         + "]";
-        List<CanonicalAddressWithResidency> parsedAddresses =
-                addressSessionService.parseAddresses(addresses);
+        List<CanonicalAddress> parsedAddresses = addressSessionService.parseAddresses(addresses);
         assertThat(parsedAddresses.size(), equalTo(3));
-        assertThat(parsedAddresses.get(0).getUprn().orElse(null), equalTo("72262801"));
+        assertThat(parsedAddresses.get(0).getUprn().orElse(null), equalTo(72262801L));
+        assertThat(
+                parsedAddresses.get(0).getValidFrom().orElse(new Date()),
+                equalTo(Date.from(Instant.parse("2010-02-26T00:00:00.00Z"))));
+
+        assertThat(parsedAddresses.get(2).getValidUntil().isPresent(), equalTo(false));
+
+        ObjectMapper mapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        String serializedJson = mapper.writeValueAsString(parsedAddresses);
+        assertThat(serializedJson, containsString("\"2021-08-02\""));
     }
 
     @Test
     void saveAddressesSetsAuthorizationCode()
             throws SessionExpiredException, SessionNotFoundException {
-        List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
-        CanonicalAddressWithResidency address1 = new CanonicalAddressWithResidency();
-        address1.setUprn("72262801");
+        List<CanonicalAddress> addresses = new ArrayList<>();
+        CanonicalAddress address1 = new CanonicalAddress();
+        address1.setUprn(Long.valueOf("72262801"));
         address1.setBuildingNumber("8");
-        address1.setThoroughfareName("GRANGE FIELDS WAY");
+        address1.setStreetName("GRANGE FIELDS WAY");
         address1.setPostTown("LEEDS");
         address1.setPostcode("LS10 4QL");
         address1.setCountryCode("GBR");
+        address1.setValidFrom(Date.from(Instant.parse("2010-02-26T00:00:00.00Z")));
+        address1.setValidUntil(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
 
-        CanonicalAddressWithResidency address2 = new CanonicalAddressWithResidency();
-        address2.setUprn("63094965");
+        CanonicalAddress address2 = new CanonicalAddress();
+        address2.setUprn(Long.valueOf("63094965"));
         address2.setBuildingNumber("15");
-        address2.setThoroughfareName("RIDINGS LANE");
+        address2.setStreetName("RIDINGS LANE");
         address2.setDependentLocality("LOFTHOUSE");
         address2.setPostTown("WAKEFIELD");
         address2.setPostcode("WF3 3SE");
         address2.setCountryCode("GBR");
+        address2.setValidFrom(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
+        address2.setValidUntil(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
 
-        CanonicalAddressWithResidency address3 = new CanonicalAddressWithResidency();
-        address3.setUprn("63042351");
+        CanonicalAddress address3 = new CanonicalAddress();
+        address3.setUprn(Long.valueOf("63042351"));
         address3.setBuildingNumber("5");
-        address3.setThoroughfareName("GATEWAYS");
+        address3.setStreetName("GATEWAYS");
         address3.setPostTown("WAKEFIELD");
         address3.setPostcode("WF1 2LZ");
         address3.setCountryCode("GBR");
+        address3.setValidFrom(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
 
         addresses.add(address1);
         addresses.add(address2);
@@ -489,7 +510,7 @@ class AddressSessionServiceTest {
 
     @Test
     void saveAddressesThrowsSessionExpired() {
-        List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
+        List<CanonicalAddress> addresses = new ArrayList<>();
 
         AddressSessionItem addressSessionItem = new AddressSessionItem();
 
@@ -504,7 +525,7 @@ class AddressSessionServiceTest {
 
     @Test
     void saveAddressesThrowsSessionNotFound() {
-        List<CanonicalAddressWithResidency> addresses = new ArrayList<>();
+        List<CanonicalAddress> addresses = new ArrayList<>();
         assertThrows(
                 SessionNotFoundException.class,
                 () ->

@@ -122,7 +122,6 @@ Mappings:
       production: "address-cri"
 
 Resources:
-
   AddressApi:
     Type: AWS::Serverless::Api
     Properties:
