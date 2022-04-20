@@ -19,6 +19,8 @@ import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AccessTokenService;
 
+import java.util.UUID;
+
 public class AccessTokenHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
@@ -44,12 +46,14 @@ public class AccessTokenHandler
             APIGatewayProxyRequestEvent input, Context context) {
         try {
             TokenRequest tokenRequest = accessTokenService.createTokenRequest(input.getBody());
-            accessTokenService.validateTokenRequest(tokenRequest);
-
+            UUID sessionId = accessTokenService.getAddressSessionId(tokenRequest);
             AddressSessionItem addressSessionItem =
-                    accessTokenService.getAddressSession(tokenRequest);
+                    accessTokenService.getAddressSessionItem(sessionId);
+
+            accessTokenService.validateTokenRequest(tokenRequest, addressSessionItem);
 
             AccessTokenResponse accessTokenResponse = accessTokenService.createToken(tokenRequest);
+
             accessTokenService.writeToken(accessTokenResponse, addressSessionItem);
 
             eventProbe.counterMetric(METRIC_NAME_ACCESS_TOKEN);

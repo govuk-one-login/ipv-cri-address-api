@@ -240,7 +240,6 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
   AccessTokenFunction:
     Type: AWS::Serverless::Function
@@ -252,10 +251,7 @@ Resources:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-access-token
       Policies:
-        - DynamoDBReadPolicy:
-            TableName:
-              Ref: AddressSessionTable
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName:
               Ref: AddressSessionTable
         - Statement:
@@ -265,6 +261,11 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
   IssueCredentialFunction:
@@ -511,7 +512,7 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-IssueCredentialFunctionApi
   IssueCredentialFunction:
-      Value: !GetAtt IssueCredentialFunction.Arn
+    Value: !GetAtt IssueCredentialFunction.Arn
 
   AddressFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for address update function"

@@ -12,14 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
@@ -28,10 +22,8 @@ import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -107,34 +99,8 @@ class AccessTokenServiceTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenAddressSessionItemDoesNotExistForTheRequestedAuthorizationCode() {
-        String authorizationCode = "12345";
-
-        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-
-        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
-
-        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
-                .thenReturn(mockAuthorizationCodeIndex);
-
-        AccessTokenValidationException exception =
-                assertThrows(
-                        AccessTokenValidationException.class,
-                        () ->
-                                accessTokenService.getAddressSessionItemByAuthorizationCodeIndex(
-                                        authorizationCode));
-
-        assertThat(
-                exception.getMessage(),
-                containsString(
-                        "Cannot retrieve Address session item for the given authorization Code"));
-    }
-
-    @Test
     void shouldThrowExceptionWhenNoMatchingAddressSessionItemForTheRequestedAuthorizationCode()
-            throws AccessTokenValidationException, SessionValidationException,
-                    ClientConfigurationException {
+            throws AccessTokenValidationException {
         String authCodeValue = "12345";
         String grantType = "authorization_code";
         String clientID = "urn:uuid:ipv-core";
@@ -153,31 +119,12 @@ class AccessTokenServiceTest {
         addressSessionItem.setSessionId(UUID.randomUUID());
         addressSessionItem.setAuthorizationCode(authCodeValue);
         addressSessionItem.setClientId("123456789");
-
-        var attVal = AttributeValue.builder().s(authCodeValue).build();
-        var queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
-
-        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-
-        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
-        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
-                .thenReturn(mockAuthorizationCodeIndex);
-
-        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
-        when(mockAuthorizationCodeIndex.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
-                .thenReturn(pageSdkIterableMock);
-
-        Page<AddressSessionItem> item = Page.create(List.of(addressSessionItem));
-        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
-        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
-
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () -> accessTokenService.validateTokenRequest(tokenRequest));
+                        () ->
+                                accessTokenService.validateTokenRequest(
+                                        tokenRequest, addressSessionItem));
 
         assertThat(
                 exception.getMessage(),
@@ -203,64 +150,6 @@ class AccessTokenServiceTest {
                         () -> accessTokenService.createTokenRequest(tokenRequestBody));
 
         assertThat(exception.getMessage(), containsString(OAuth2Error.UNSUPPORTED_GRANT_TYPE_CODE));
-    }
-
-    @Test
-    void
-            shouldThrowExceptionWhenCreateTokenRequestWithAuthorizationFindZeroOrMoreThanOneMatchingAddressSessionItem()
-                    throws AccessTokenValidationException, SessionValidationException,
-                            ClientConfigurationException {
-        String authCodeValue = "12345";
-        String grantType = "authorization_code";
-        String clientID = "urn:uuid:ipv-core";
-        String tokenRequestBody =
-                String.format(
-                        "code=%s"
-                                + "&client_assertion=%s"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-                                + "&client_id=%s"
-                                + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, clientID, grantType);
-
-        TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
-        AddressSessionItem addressSessionItem1 = new AddressSessionItem();
-        addressSessionItem1.setSessionId(UUID.randomUUID());
-        addressSessionItem1.setAuthorizationCode(authCodeValue);
-        addressSessionItem1.setClientId(clientID);
-
-        AddressSessionItem addressSessionItem2 = new AddressSessionItem();
-        addressSessionItem2.setSessionId(UUID.randomUUID());
-        addressSessionItem2.setAuthorizationCode(authCodeValue);
-        addressSessionItem2.setClientId(clientID);
-
-        var attVal = AttributeValue.builder().s(authCodeValue).build();
-        var queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
-
-        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-
-        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
-        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
-                .thenReturn(mockAuthorizationCodeIndex);
-
-        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
-        when(mockAuthorizationCodeIndex.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
-                .thenReturn(pageSdkIterableMock);
-
-        Page<AddressSessionItem> items =
-                Page.create(List.of(addressSessionItem1, addressSessionItem2));
-        Stream<Page<AddressSessionItem>> streamedItems = Stream.of(items);
-        when(pageSdkIterableMock.stream()).thenReturn(streamedItems);
-
-        IllegalArgumentException exception =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> accessTokenService.validateTokenRequest(tokenRequest));
-
-        assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
     }
 
     @Test
@@ -324,31 +213,12 @@ class AccessTokenServiceTest {
         addressSessionItem.setAuthorizationCode(authCodeValue);
         addressSessionItem.setClientId(clientID);
 
-        var attVal = AttributeValue.builder().s(authCodeValue).build();
-        var queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
-
-        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-
-        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
-        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
-                .thenReturn(mockAuthorizationCodeIndex);
-
-        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
-        when(mockAuthorizationCodeIndex.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
-                .thenReturn(pageSdkIterableMock);
-
-        Page<AddressSessionItem> item = Page.create(List.of(addressSessionItem));
-        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
-        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
-
         when(mockConfigurationService.getParametersForPath(
                         "/clients/" + clientID + "/jwtAuthentication"))
                 .thenReturn(getSSMConfigMap());
 
-        TokenRequest expectedTokenRequest = accessTokenService.validateTokenRequest(tokenRequest);
+        TokenRequest expectedTokenRequest =
+                accessTokenService.validateTokenRequest(tokenRequest, addressSessionItem);
 
         assertEquals(expectedTokenRequest.getClientID(), tokenRequest.getClientID());
         verify(mockJwtVerifier, times(1)).verifyJWT(any(), any());
@@ -377,26 +247,6 @@ class AccessTokenServiceTest {
         addressSessionItem.setAuthorizationCode(authCodeValue);
         addressSessionItem.setClientId(clientID);
 
-        var attVal = AttributeValue.builder().s(authCodeValue).build();
-        var queryConditional =
-                QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());
-
-        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-
-        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
-        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
-                .thenReturn(mockAuthorizationCodeIndex);
-
-        SdkIterable<Page<AddressSessionItem>> pageSdkIterableMock = mock(SdkIterable.class);
-        when(mockAuthorizationCodeIndex.query(
-                        QueryEnhancedRequest.builder().queryConditional(queryConditional).build()))
-                .thenReturn(pageSdkIterableMock);
-
-        Page<AddressSessionItem> item = Page.create(List.of(addressSessionItem));
-        Stream<Page<AddressSessionItem>> streamedItem = Stream.of(item);
-        when(pageSdkIterableMock.stream()).thenReturn(streamedItem);
-
         when(mockConfigurationService.getParametersForPath(
                         "/clients/" + clientID + "/jwtAuthentication"))
                 .thenReturn(Map.of());
@@ -404,7 +254,9 @@ class AccessTokenServiceTest {
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () -> accessTokenService.validateTokenRequest(tokenRequest));
+                        () ->
+                                accessTokenService.validateTokenRequest(
+                                        tokenRequest, addressSessionItem));
 
         assertThat(
                 exception.getMessage(),
@@ -414,8 +266,7 @@ class AccessTokenServiceTest {
 
     @Test
     void shouldThrowParseExceptionWhenWrongAlgUsedForPrivateKeyJWT()
-            throws AccessTokenValidationException, SessionValidationException,
-                    ClientConfigurationException {
+            throws SessionValidationException, ClientConfigurationException {
 
         String authCodeValue = "12345";
         String grantType = "authorization_code";
@@ -469,7 +320,7 @@ class AccessTokenServiceTest {
         IllegalArgumentException exception =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> accessTokenService.getAddressSession(tokenRequest));
+                        () -> accessTokenService.getAddressSessionId(tokenRequest));
 
         assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
         verify(mockJwtVerifier, never()).verifyJWT(any(), any());

@@ -28,6 +28,7 @@ import uk.gov.di.ipv.cri.address.library.service.AccessTokenService;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -70,7 +71,8 @@ class AccessTokenHandlerTest {
 
         when(mockAccessTokenService.createTokenRequest(tokenRequestBody)).thenReturn(tokenRequest);
         when(mockAccessTokenService.createToken(tokenRequest)).thenReturn(tokenResponse);
-        when(mockAccessTokenService.getAddressSession(tokenRequest)).thenReturn(addressSessionItem);
+        when(mockAccessTokenService.getAddressSessionId(tokenRequest))
+                .thenReturn(UUID.randomUUID());
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, null);
 
         Map<String, Object> responseBody =
@@ -109,11 +111,17 @@ class AccessTokenHandlerTest {
             throws AccessTokenValidationException, JsonProcessingException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         event.withBody("some body");
-
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        UUID mockUUID = UUID.randomUUID();
         AccessTokenValidationException exception =
                 new AccessTokenValidationException("an error message");
         when(mockAccessTokenService.createTokenRequest("some body")).thenReturn(tokenRequest);
-        when(mockAccessTokenService.validateTokenRequest(tokenRequest)).thenThrow(exception);
+
+        when(mockAccessTokenService.getAddressSessionId(tokenRequest)).thenReturn(mockUUID);
+        when(mockAccessTokenService.getAddressSessionItem(mockUUID))
+                .thenReturn(mockAddressSessionItem);
+        when(mockAccessTokenService.validateTokenRequest(tokenRequest, mockAddressSessionItem))
+                .thenThrow(exception);
         when(eventProbe.log(Level.INFO, exception)).thenReturn(eventProbe);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, null);
