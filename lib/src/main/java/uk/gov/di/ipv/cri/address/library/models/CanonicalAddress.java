@@ -110,7 +110,7 @@ public class CanonicalAddress {
         this.buildingNumber = buildingNumber;
     }
 
-    @DynamoDBAttribute(attributeName = "DependentThoroughfare")
+    @DynamoDBAttribute(attributeName = "DependentStreetName")
     public String getDependentStreetName() {
         return dependentStreetName;
     }
@@ -146,7 +146,7 @@ public class CanonicalAddress {
         this.buildingName = buildingName;
     }
 
-    @DynamoDBAttribute(attributeName = "ThoroughfareName")
+    @DynamoDBAttribute(attributeName = "StreetName")
     public String getStreetName() {
         return streetName;
     }
