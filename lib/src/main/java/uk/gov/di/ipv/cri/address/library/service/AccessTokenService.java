@@ -19,6 +19,7 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
@@ -39,6 +40,7 @@ public class AccessTokenService {
     public static final String CLIENT_ASSERTION_TYPE = "client_assertion_type";
     public static final String CLIENT_ASSERTION = "client_assertion";
     public static final String AUTHORISATION_CODE = "authorization_code";
+    public static final String REDIRECT_URI = "redirect_uri";
     private final DataStore<AddressSessionItem> dataStore;
     private final ConfigurationService configurationService;
     private final JWTVerifier jwtVerifier;
@@ -67,7 +69,6 @@ public class AccessTokenService {
                 ((AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant())
                         .getAuthorizationCode()
                         .getValue();
-
         return getItemByAuthorizationCode(authorizationCodeFromRequest).getSessionId();
     }
 
@@ -106,6 +107,7 @@ public class AccessTokenService {
                                     CLIENT_ID,
                                     CLIENT_ASSERTION_TYPE,
                                     CLIENT_ASSERTION,
+                                    REDIRECT_URI,
                                     GRANT_TYPE))) {
                 throw new AccessTokenValidationException(OAuth2Error.INVALID_REQUEST.getCode());
             }
@@ -144,7 +146,9 @@ public class AccessTokenService {
 
             jwtVerifier.verifyJWT(clientAuthenticationConfig, signedJWT);
             return tokenRequest;
-        } catch (SessionValidationException | ClientConfigurationException e) {
+        } catch (SessionValidationException
+                | ClientConfigurationException
+                | AccessTokenRequestException e) {
             throw new AccessTokenValidationException(e);
         }
     }
@@ -165,16 +169,33 @@ public class AccessTokenService {
             AuthorizationCodeGrant authorizationGrant,
             ClientID clientID,
             AddressSessionItem addressSessionItem)
-            throws AccessTokenValidationException {
+            throws AccessTokenValidationException, AccessTokenRequestException,
+                    SessionValidationException {
 
         AuthorizationCode authorizationCode = authorizationGrant.getAuthorizationCode();
 
         if (!authorizationCode.getValue().equals(addressSessionItem.getAuthorizationCode())) {
-            throw new AccessTokenValidationException(
-                    "Authorisation code does not match with authorization Code for Address Session Item");
+            throw new AccessTokenRequestException(
+                    "Authorisation code does not match with authorization Code for Address Session Item",
+                    OAuth2Error.INVALID_GRANT);
         }
+        Map<String, String> clientAuthenticationConfig =
+                getClientAuthenticationConfig(clientID.getValue());
 
+        verifyRequestUri(addressSessionItem.getRedirectUri(), clientAuthenticationConfig);
         verifyPrivateKeyJWTAttributes(privateKeyJWT, clientID, addressSessionItem);
+    }
+
+    private void verifyRequestUri(URI requestRedirectUri, Map<String, String> clientConfig)
+            throws AccessTokenValidationException {
+        URI configRedirectUri = URI.create(clientConfig.get("redirectUri"));
+        if (requestRedirectUri == null || !requestRedirectUri.equals(configRedirectUri)) {
+            throw new AccessTokenValidationException(
+                    "redirect uri "
+                            + requestRedirectUri
+                            + " does not match configuration uri "
+                            + configRedirectUri);
+        }
     }
 
     private void verifyPrivateKeyJWTAttributes(

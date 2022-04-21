@@ -1,6 +1,10 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -248,7 +252,7 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void parseAddresses() throws AddressProcessingException {
+    void parseAddresses() throws AddressProcessingException, JsonProcessingException {
         String addresses =
                 "[\n"
                         + "   {\n"
@@ -290,6 +294,15 @@ class AddressSessionServiceTest {
                 equalTo(Date.from(Instant.parse("2010-02-26T00:00:00.00Z"))));
 
         assertThat(parsedAddresses.get(2).getValidUntil().isPresent(), equalTo(false));
+
+        ObjectMapper mapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        String serializedJson = mapper.writeValueAsString(parsedAddresses);
+        assertThat(serializedJson, containsString("\"2021-08-02\""));
     }
 
     @Test

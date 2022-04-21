@@ -20,6 +20,7 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -67,6 +68,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=%s"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
@@ -77,7 +79,10 @@ class AccessTokenServiceTest {
         addressSessionItem.setSessionId(UUID.randomUUID());
         addressSessionItem.setAuthorizationCode(authCodeValue);
         addressSessionItem.setClientId(clientID);
-
+        addressSessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
+        when(mockConfigurationService.getParametersForPath(
+                        "/clients/" + clientID + "/jwtAuthentication"))
+                .thenReturn(getSSMConfigMap());
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
@@ -97,6 +102,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=%s"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=ipv-core-stub"
                                 + "&grant_type=%s",
@@ -140,6 +146,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=%s"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
@@ -151,6 +158,10 @@ class AccessTokenServiceTest {
         addressSessionItem.setSessionId(UUID.randomUUID());
         addressSessionItem.setAuthorizationCode(authCodeValue);
         addressSessionItem.setClientId("123456789");
+        addressSessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
+        when(mockConfigurationService.getParametersForPath(
+                        "/clients/" + clientID + "/jwtAuthentication"))
+                .thenReturn(getSSMConfigMap());
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
@@ -170,6 +181,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=some-code"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=ipv-core-stub"
                                 + "&grant_type=%s",
@@ -184,6 +196,47 @@ class AccessTokenServiceTest {
     }
 
     @Test
+    void shouldThrowInValidGrantExceptionWhenRedirectUriDoesNotMatchTheRetrievedItemRedirectUri()
+            throws AccessTokenValidationException {
+        String authCodeValue = "12345";
+        String redirectUri = "http://test.com";
+        String grantType = "authorization_code";
+        String clientID = "ipv-core-stub";
+        String tokenRequestBody =
+                String.format(
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&redirect_uri=%s"
+                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_id=%s"
+                                + "&grant_type=%s",
+                        authCodeValue, SAMPLE_JWT, redirectUri, clientID, grantType);
+
+        TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
+        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+
+        when(mockAddressSessionItem.getAuthorizationCode()).thenReturn(authCodeValue);
+        when(mockAddressSessionItem.getRedirectUri())
+                .thenReturn(URI.create("http://different-redirectUri"));
+
+        when(mockConfigurationService.getParametersForPath(
+                        "/clients/" + clientID + "/jwtAuthentication"))
+                .thenReturn(getSSMConfigMap());
+
+        AccessTokenValidationException exception =
+                assertThrows(
+                        AccessTokenValidationException.class,
+                        () ->
+                                accessTokenService.validateTokenRequest(
+                                        tokenRequest, mockAddressSessionItem));
+
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "redirect uri http://different-redirectUri does not match configuration uri https://www.example/com/callback"));
+    }
+
+    @Test
     void shouldCallWriteTokenAndUpdateDataStore() {
         AccessTokenResponse accessTokenResponse = mock(AccessTokenResponse.class);
         AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);
@@ -195,7 +248,6 @@ class AccessTokenServiceTest {
         when(mockBearerAccessToken.toAuthorizationHeader()).thenReturn("some-authorization-header");
         accessTokenService.writeToken(accessTokenResponse, addressSessionItem);
 
-        verify(mockDataStore).update(addressSessionItem);
         assertThat(accessTokenResponse, notNullValue());
     }
 
@@ -233,6 +285,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=%s"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
@@ -243,6 +296,7 @@ class AccessTokenServiceTest {
         addressSessionItem.setSessionId(UUID.randomUUID());
         addressSessionItem.setAuthorizationCode(authCodeValue);
         addressSessionItem.setClientId(clientID);
+        addressSessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
 
         when(mockConfigurationService.getParametersForPath(
                         "/clients/" + clientID + "/jwtAuthentication"))
@@ -267,6 +321,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=%s"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
@@ -306,6 +361,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=%s"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
@@ -334,6 +390,7 @@ class AccessTokenServiceTest {
                 String.format(
                         "code=%s"
                                 + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
                                 + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",

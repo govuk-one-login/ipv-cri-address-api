@@ -27,6 +27,8 @@ public class SessionHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     protected static final String SESSION_ID = "session_id";
+    protected static final String STATE = "state";
+    protected static final String REDIRECT_URI = "redirect_uri";
     public static final String EVENT_SESSION_CREATED = "session_created";
     private final AddressSessionService addressSessionService;
     private final EventProbe eventProbe;
@@ -60,7 +62,11 @@ public class SessionHandler
             eventProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_CREATED, Map.of(SESSION_ID, sessionId.toString()));
+                    HttpStatus.SC_CREATED,
+                    Map.of(
+                            SESSION_ID, sessionId.toString(),
+                            STATE, sessionRequest.getState(),
+                            REDIRECT_URI, sessionRequest.getRedirectUri().toString()));
 
         } catch (SessionValidationException e) {
 

@@ -13,6 +13,7 @@ public class ConfigurationService {
 
     private static final long DEFAULT_SESSION_ADDRESS_TTL_IN_SECS = 172800L;
     private static final long DEFAULT_BEARER_TOKEN_TTL_IN_SECS = 3600L;
+    private static final long DEFAULT_MAXIMUM_JWT_TTL = 3600L;
     private final SSMProvider ssmProvider;
     private final SecretsProvider secretsProvider;
     private final String parameterPrefix;
@@ -79,7 +80,10 @@ public class ConfigurationService {
         ADDRESS_SESSION_TTL("AddressSessionTtl"),
         ORDNANCE_SURVEY_API_KEY("OrdnanceSurveyAPIKey"),
         ORDNANCE_SURVEY_API_URL("OrdnanceSurveyAPIURL"),
-        ADDRESS_CRI_AUDIENCE("AddressCriAudience");
+        ADDRESS_CRI_AUDIENCE("AddressCriAudience"),
+        MAXIMUM_JWT_TTL("MaxJwtTtl"),
+        VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID("verifiableCredentialKmsSigningKeyId"),
+        VERIFIABLE_CREDENTIAL_ISSUER("verifiable-credential/issuer");
 
         public final String parameterName;
 
@@ -98,5 +102,21 @@ public class ConfigurationService {
 
     public String getAddressCriAudienceIdentifier() {
         return ssmProvider.get(getParameterName(SSMParameterName.ADDRESS_CRI_AUDIENCE));
+    }
+
+    public long getMaxJwtTtl() {
+        return Optional.ofNullable(
+                        ssmProvider.get(getParameterName(SSMParameterName.MAXIMUM_JWT_TTL)))
+                .map(Long::valueOf)
+                .orElse(DEFAULT_MAXIMUM_JWT_TTL);
+    }
+
+    public String getVerifiableCredentialIssuer() {
+        return ssmProvider.get(getParameterName(SSMParameterName.VERIFIABLE_CREDENTIAL_ISSUER));
+    }
+
+    public String getVerifiableCredentialKmsSigningKeyId() {
+        return ssmProvider.get(
+                getParameterName(SSMParameterName.VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID));
     }
 }
