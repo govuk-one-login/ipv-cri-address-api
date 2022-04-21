@@ -10,8 +10,6 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
-import java.util.Map;
-
 public class SignClaimSetJwt {
     private final JWSSigner kmsSigner;
     private static final ObjectMapper mapper =
@@ -21,9 +19,8 @@ public class SignClaimSetJwt {
         this.kmsSigner = kmsSigner;
     }
 
-    public <T> SignedJWT createSignedJwt(T claimInput) throws JOSEException {
+    public <T> SignedJWT createSignedJwt(JWTClaimsSet claimsSet) throws JOSEException {
         JWSHeader jwsHeader = generateHeader();
-        JWTClaimsSet claimsSet = generateClaims(claimInput);
         SignedJWT signedJWT = new SignedJWT(jwsHeader, claimsSet);
         signedJWT.sign(kmsSigner);
         return signedJWT;
@@ -31,14 +28,5 @@ public class SignClaimSetJwt {
 
     private JWSHeader generateHeader() {
         return new JWSHeader.Builder(JWSAlgorithm.ES256).type(JOSEObjectType.JWT).build();
-    }
-
-    private <T> JWTClaimsSet generateClaims(T claimInput) {
-        var claimsBuilder = new JWTClaimsSet.Builder();
-
-        mapper.convertValue(claimInput, Map.class)
-                .forEach((key, value) -> claimsBuilder.claim((String) key, value));
-
-        return claimsBuilder.build();
     }
 }

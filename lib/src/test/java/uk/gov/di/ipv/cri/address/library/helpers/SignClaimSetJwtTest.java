@@ -1,34 +1,37 @@
 package uk.gov.di.ipv.cri.address.library.helpers;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.crypto.ECDSASigner;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.nimbusds.openid.connect.sdk.claims.ClaimsSet;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.library.helpers.fixtures.TestFixtures;
 
-import java.util.Set;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.text.ParseException;
 
-import static com.nimbusds.jose.JWSAlgorithm.ES256;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.is;
 
 @ExtendWith(MockitoExtension.class)
-class SignClaimSetJwtTest {
-    @Mock private KMSSigner kmsSigner;
-    @InjectMocks private SignClaimSetJwt signClaimSetJwt;
+class SignClaimSetJwtTest implements TestFixtures {
+
+    private SignClaimSetJwt signClaimSetJwt;
 
     @Test
-    void shouldCreateASignedJwtSuccessfully() throws JOSEException {
-        ClaimsSet mockClaimSet = mock(ClaimsSet.class);
+    void shouldCreateASignedJwtSuccessfully()
+            throws JOSEException, InvalidKeySpecException, NoSuchAlgorithmException,
+                    ParseException {
+        JWTClaimsSet testClaimsSet = new JWTClaimsSet.Builder().build();
+        signClaimSetJwt = new SignClaimSetJwt(new ECDSASigner(getPrivateKey()));
 
-        when(kmsSigner.supportedJWSAlgorithms()).thenReturn(Set.of(ES256));
-        SignedJWT signedJWT = signClaimSetJwt.createSignedJwt(mockClaimSet);
+        SignedJWT signedJWT = signClaimSetJwt.createSignedJwt(testClaimsSet);
 
-        assertThat(signedJWT, notNullValue());
+        assertThat(signedJWT.verify(new ECDSAVerifier(ECKey.parse(EC_PUBLIC_JWK_1))), is(true));
     }
 }

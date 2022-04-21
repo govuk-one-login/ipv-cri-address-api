@@ -5,10 +5,14 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import uk.gov.di.ipv.cri.address.library.helpers.KMSSigner;
 import uk.gov.di.ipv.cri.address.library.helpers.SignClaimSetJwt;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 
+import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.nimbusds.jwt.JWTClaimNames.EXPIRATION_TIME;
 import static com.nimbusds.jwt.JWTClaimNames.ISSUER;
@@ -44,9 +48,7 @@ public class VerifiableCredentialService {
     }
 
     public SignedJWT generateSignedVerifiableCredentialJwt(
-            String subject,
-            List<uk.gov.di.ipv.cri.address.library.models.CanonicalAddress> canonicalAddresses)
-            throws JOSEException {
+            String subject, List<CanonicalAddress> canonicalAddresses) throws JOSEException {
         var now = Instant.now();
 
         var claimsSet =
@@ -59,9 +61,6 @@ public class VerifiableCredentialService {
                                 now.plusSeconds(configurationService.getMaxJwtTtl())
                                         .getEpochSecond())
                         .claim(
-                                VC_TYPE,
-                                new String[] {VERIFIABLE_CREDENTIAL_TYPE, ADDRESS_CREDENTIAL_TYPE})
-                        .claim(
                                 VC_CLAIM,
                                 Map.of(
                                         VC_TYPE,
@@ -71,9 +70,39 @@ public class VerifiableCredentialService {
                                         VC_CONTEXT,
                                         new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
                                         VC_CREDENTIAL_SUBJECT,
-                                        Map.of(VC_ADDRESS_KEY, canonicalAddresses)))
+                                        Map.of(
+                                                VC_ADDRESS_KEY,
+                                                canonicalAddresses.stream()
+                                                        .map(this::mapToCanonicalReferences)
+                                                        .collect(Collectors.toList()))))
                         .build();
 
         return signedClaimSetJwt.createSignedJwt(claimsSet);
+    }
+
+    private Map mapToCanonicalReferences(CanonicalAddress address) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        // TODO:
+        // https://github.com/alphagov/digital-identity-architecture/blob/main/rfc/0020-address-structure.md#5-mapping-of-fields-to-data-sources-and-reference-standards
+        // Shouldn't have to do this mapping should our canonical model be like the link above
+        HashMap mapper = new HashMap();
+        address.getValidFrom()
+                .ifPresent(anAddress -> mapper.put("validFrom", formatter.format(anAddress)));
+        address.getValidUntil()
+                .ifPresent(anAddress -> mapper.put("validUntil", formatter.format(anAddress)));
+        address.getUprn().ifPresent(uprn -> mapper.put("uprn", uprn));
+        mapper.put("organisationName", address.getOrganisationName());
+        mapper.put("departmentName", address.getDepartmentName());
+        mapper.put("subBuildingName", address.getSubBuildingName());
+        mapper.put("buildingNumber", address.getBuildingNumber());
+        mapper.put("buildingName", address.getSubBuildingName());
+        mapper.put("dependentStreetName", address.getDependentStreetName());
+        mapper.put("streetName", address.getStreetName());
+        mapper.put("doubleDependentAddressLocality", address.getDoubleDependentLocality());
+        mapper.put("dependentAddressLocality", address.getDependentLocality());
+        mapper.put("addressLocality", address.getPostTown());
+        mapper.put("postalCode", address.getPostcode());
+        mapper.put("addressCountry", address.getCountryCode());
+        return mapper;
     }
 }

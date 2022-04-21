@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.service;
+package uk.gov.di.ipv.cri.address.library.helpers;
 
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.model.MessageType;
@@ -8,15 +8,18 @@ import com.amazonaws.services.kms.model.SigningAlgorithmSpec;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.shaded.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.address.library.helpers.KMSSigner;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,7 +27,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,6 +76,26 @@ class KMSSignerTest {
         assertThat(
                 capturedSignRequest.getSigningAlgorithm(),
                 equalTo(SigningAlgorithmSpec.ECDSA_SHA_256.toString()));
+    }
+
+    @Test
+    void shouldSignJWSObject() throws JOSEException {
+        var signResult = mock(SignResult.class);
+        when(mockKmsClient.sign(any(SignRequest.class))).thenReturn(signResult);
+
+        byte[] bytes = new byte[10];
+        when(signResult.getSignature()).thenReturn(ByteBuffer.wrap(bytes));
+
+        JSONObject jsonPayload = new JSONObject(Map.of("test", "test"));
+
+        JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256).build();
+        JWSObject jwsObject = new JWSObject(jwsHeader, new Payload(jsonPayload));
+
+        jwsObject.sign(kmsSigner);
+
+        assertEquals(JWSObject.State.SIGNED, jwsObject.getState());
+        assertEquals(jwsHeader, jwsObject.getHeader());
+        assertEquals(jsonPayload.toJSONString(), jwsObject.getPayload().toString());
     }
 
     @Test
