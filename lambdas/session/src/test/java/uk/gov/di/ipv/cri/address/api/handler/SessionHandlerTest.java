@@ -18,6 +18,7 @@ import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,7 +29,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.di.ipv.cri.address.api.handler.SessionHandler.REDIRECT_URI;
 import static uk.gov.di.ipv.cri.address.api.handler.SessionHandler.SESSION_ID;
+import static uk.gov.di.ipv.cri.address.api.handler.SessionHandler.STATE;
 
 @ExtendWith(MockitoExtension.class)
 class SessionHandlerTest {
@@ -57,6 +60,9 @@ class SessionHandlerTest {
 
         UUID sessionId = UUID.randomUUID();
         when(sessionRequest.getClientId()).thenReturn("ipv-core");
+        when(sessionRequest.getState()).thenReturn("some state");
+        when(sessionRequest.getRedirectUri())
+                .thenReturn(URI.create("https://www.example.com/callback"));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(addressSessionService.validateSessionRequest("some json")).thenReturn(sessionRequest);
         when(addressSessionService.createAndSaveAddressSession(sessionRequest))
@@ -68,6 +74,8 @@ class SessionHandlerTest {
         assertEquals(HttpStatus.SC_CREATED, responseEvent.getStatusCode());
         var responseBody = new ObjectMapper().readValue(responseEvent.getBody(), Map.class);
         assertEquals(sessionId.toString(), responseBody.get(SESSION_ID));
+        assertEquals("some state", responseBody.get(STATE));
+        assertEquals("https://www.example.com/callback", responseBody.get(REDIRECT_URI));
 
         verify(eventProbe).addDimensions(Map.of("issuer", "ipv-core"));
         verify(eventProbe).counterMetric("session_created");
