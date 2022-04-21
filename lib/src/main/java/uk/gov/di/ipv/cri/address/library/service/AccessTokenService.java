@@ -40,18 +40,15 @@ public class AccessTokenService {
     public static final String CLIENT_ASSERTION = "client_assertion";
     public static final String AUTHORISATION_CODE = "authorization_code";
     private final DataStore<AddressSessionItem> dataStore;
-    private final Long bearAccessTokenTtl;
     private final ConfigurationService configurationService;
     private final JWTVerifier jwtVerifier;
     private ListUtil listHelper = new ListUtil();
 
     public AccessTokenService(
             DataStore<AddressSessionItem> dataStore,
-            Long bearerAccessTokenTtl,
             ConfigurationService configurationService,
             JWTVerifier jwtVerifier) {
         this.dataStore = dataStore;
-        this.bearAccessTokenTtl = bearerAccessTokenTtl;
         this.configurationService = configurationService;
         this.jwtVerifier = jwtVerifier;
         this.listHelper = new ListUtil();
@@ -59,9 +56,8 @@ public class AccessTokenService {
 
     @ExcludeFromGeneratedCoverageReport
     public AccessTokenService() {
-        var configurationService = new ConfigurationService();
-        dataStore = getDataStore(configurationService);
-        this.bearAccessTokenTtl = configurationService.getBearerAccessTokenTtl();
+        var configurationServiceLocal = new ConfigurationService();
+        dataStore = getDataStore(configurationServiceLocal);
         this.configurationService = new ConfigurationService();
         this.jwtVerifier = new JWTVerifier();
     }
@@ -81,7 +77,8 @@ public class AccessTokenService {
 
     public AccessTokenResponse createToken(TokenRequest tokenRequest) {
         AccessToken accessToken =
-                new BearerAccessToken(bearAccessTokenTtl, tokenRequest.getScope());
+                new BearerAccessToken(
+                        configurationService.getBearerAccessTokenTtl(), tokenRequest.getScope());
         return new AccessTokenResponse(new Tokens(accessToken, null)).toSuccessResponse();
     }
 
@@ -113,13 +110,10 @@ public class AccessTokenService {
                 throw new AccessTokenValidationException(OAuth2Error.INVALID_REQUEST.getCode());
             }
 
-            request.getQueryParameters().values().stream()
-                    .filter(param -> param.contains(AUTHORISATION_CODE))
-                    .findFirst()
-                    .orElseThrow(
-                            () ->
-                                    new AccessTokenValidationException(
-                                            OAuth2Error.UNSUPPORTED_GRANT_TYPE_CODE));
+            if (request.getQueryParameters().values().stream()
+                    .noneMatch(param -> param.contains(AUTHORISATION_CODE))) {
+                throw new AccessTokenValidationException(OAuth2Error.UNSUPPORTED_GRANT_TYPE_CODE);
+            }
 
             return TokenRequest.parse(request);
         } catch (com.nimbusds.oauth2.sdk.ParseException e) {
@@ -180,26 +174,63 @@ public class AccessTokenService {
                     "Authorisation code does not match with authorization Code for Address Session Item");
         }
 
+        verifyPrivateKeyJWTAttributes(privateKeyJWT, clientID, addressSessionItem);
+    }
+
+    private void verifyPrivateKeyJWTAttributes(
+            PrivateKeyJWT privateKeyJWT, ClientID clientID, AddressSessionItem addressSessionItem)
+            throws AccessTokenValidationException {
+
         Issuer jwtIssuer = privateKeyJWT.getJWTAuthenticationClaimsSet().getIssuer();
         Subject subject = privateKeyJWT.getJWTAuthenticationClaimsSet().getSubject();
         List<Audience> audience = privateKeyJWT.getJWTAuthenticationClaimsSet().getAudience();
         JWTID jwtid = privateKeyJWT.getJWTAuthenticationClaimsSet().getJWTID();
-        boolean isAudiencePresent = !audience.isEmpty();
-        boolean isJWTIdPresent = jwtid != null;
-        boolean issuerMatchesSubject = jwtIssuer.getValue().equals(subject.getValue());
-        boolean issuerMatchesTokenRequestClientID =
-                jwtIssuer.getValue().equals(clientID.getValue());
-        boolean issuerMatchesClientIDOnRecord =
-                jwtIssuer.getValue().equals(addressSessionItem.getClientId());
 
-        if (!(issuerMatchesSubject
-                && issuerMatchesTokenRequestClientID
-                && issuerMatchesClientIDOnRecord
-                && isAudiencePresent
-                && isJWTIdPresent)) {
-            throw new AccessTokenValidationException(
-                    "issuer, sub, audience or jti are missing (or) request client id and saved client id do not match");
+        verifyIfAudiencePresent(audience);
+        verifyIfJWTIdPresent(jwtid);
+        verifyIfIssuerMatchesSubject(jwtIssuer, subject);
+        verifyIfIssuerMatchesTokenRequestClientID(jwtIssuer, clientID);
+        verifyIssuerMatchesClientIDOnRecord(jwtIssuer, addressSessionItem);
+    }
+
+    private void verifyIssuerMatchesClientIDOnRecord(
+            Issuer jwtIssuer, AddressSessionItem addressSessionItem)
+            throws AccessTokenValidationException {
+        if (!jwtIssuer.getValue().equals(addressSessionItem.getClientId())) {
+            throwValidationException("request client id and saved client id do not match");
         }
+    }
+
+    private void verifyIfIssuerMatchesTokenRequestClientID(Issuer jwtIssuer, ClientID clientID)
+            throws AccessTokenValidationException {
+        if (!jwtIssuer.getValue().equals(clientID.getValue())) {
+            throwValidationException("issuer does not match clientID");
+        }
+    }
+
+    private void verifyIfIssuerMatchesSubject(Issuer jwtIssuer, Subject subject)
+            throws AccessTokenValidationException {
+        if (!jwtIssuer.getValue().equals(subject.getValue())) {
+            throwValidationException("issuer does not match subject");
+        }
+    }
+
+    private void verifyIfJWTIdPresent(JWTID jwtid) throws AccessTokenValidationException {
+        if (jwtid == null) {
+            throwValidationException("jti is missing");
+        }
+    }
+
+    private void verifyIfAudiencePresent(List<Audience> audience)
+            throws AccessTokenValidationException {
+        if (audience.isEmpty()) {
+            throwValidationException("audience is missing");
+        }
+    }
+
+    private void throwValidationException(String errorMessage)
+            throws AccessTokenValidationException {
+        throw new AccessTokenValidationException(errorMessage);
     }
 
     private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {

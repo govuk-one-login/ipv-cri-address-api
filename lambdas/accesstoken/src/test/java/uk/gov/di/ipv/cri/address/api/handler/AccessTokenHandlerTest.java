@@ -66,7 +66,6 @@ class AccessTokenHandlerTest {
                                 + "&grant_type=%s",
                         authCodeValue, "jwt-string", grantType);
         event.withBody(tokenRequestBody);
-        AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);
         AccessTokenResponse tokenResponse = createTestTokenResponse();
 
         when(mockAccessTokenService.createTokenRequest(tokenRequestBody)).thenReturn(tokenRequest);

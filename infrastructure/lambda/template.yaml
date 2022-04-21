@@ -251,7 +251,10 @@ Resources:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-access-token
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBReadPolicy:
+            TableName:
+              Ref: AddressSessionTable
+        - DynamoDBWritePolicy:
             TableName:
               Ref: AddressSessionTable
         - Statement:
