@@ -294,32 +294,11 @@ Resources:
               - Sid: AddressSessionTableStatement
                 Effect: Allow
                 Action:
-                  - 'dynamodb:List*'
-                  - 'dynamodb:DescribeReservedCapacity*'
-                  - 'dynamodb:DescribeLimits'
-                  - 'dynamodb:DescribeTimeToLive'
-                  - 'dynamodb:BatchGet*'
-                  - 'dynamodb:DescribeStream'
-                  - 'dynamodb:DescribeTable'
-                  - 'dynamodb:Get*'
                   - 'dynamodb:Query'
-                  - 'dynamodb:Scan'
-                  - 'dynamodb:BatchWrite*'
-                  - 'dynamodb:CreateTable'
-                  - 'dynamodb:Delete*'
-                  - 'dynamodb:Update*'
-                  - 'dynamodb:PutItem'
                 Resource:
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                   - 'Fn::Sub':
                       - >-
-                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-session-${AWS::StackName}
-                      - tableName:
-                          Ref: AddressSessionTable
-
-                  - 'Fn::Sub':
-                      - >-
-                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-session-${AWS::StackName}/index/*
+                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-session-${AWS::StackName}/index/access-token-index
                       - tableName:
                           Ref: AddressSessionTable
 
@@ -340,7 +319,6 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
 
-
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -351,7 +329,6 @@ Resources:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
       Role: !GetAtt IssueCredentialFunctionRole.Arn
-
 
   AddressCriVcSigningKey:
     Type: AWS::KMS::Key
