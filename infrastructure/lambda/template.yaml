@@ -65,6 +65,14 @@ Mappings:
       integration: "RS256"
       production: "RS256"
 
+  IPVCoreStubAudience:
+    Environment:
+      dev: "https://dev.address.cri.account.gov.uk"
+      build: "https://build.address.cri.account.gov.uk"
+      staging: "https://staging.address.cri.account.gov.uk"
+      integration: "https://integration.address.cri.account.gov.uk"
+      production: "https://production.address.cri.account.gov.uk"
+
   IPVCoreStubIssuerMapping:
     Environment:
       dev: "ipv-core-stub"
@@ -247,7 +255,6 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
   AccessTokenFunction:
     Type: AWS::Serverless::Function
@@ -272,6 +279,11 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
   IssueCredentialFunctionRole:
@@ -472,6 +484,13 @@ Resources:
       Type: String
       Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
 
+  IPVCoreStubAudienceParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/audience"
+      Type: String
+      Value: !FindInMap [ IPVCoreStubAudience, Environment, !Ref 'Environment' ]
+
   IPVCoreStubIssuerParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -589,7 +608,7 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-IssueCredentialFunctionApi
   IssueCredentialFunction:
-      Value: !GetAtt IssueCredentialFunction.Arn
+    Value: !GetAtt IssueCredentialFunction.Arn
 
   AddressFunctionApi:
     Description: "API Gateway endpoint URL for Prod stage for address update function"

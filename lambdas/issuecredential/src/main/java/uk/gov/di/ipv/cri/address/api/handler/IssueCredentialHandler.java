@@ -117,7 +117,7 @@ public class IssueCredentialHandler
             throws CredentialRequestException {
         try {
             return new ListUtil()
-                    .getValueOrThrow(
+                    .getOneItemOrThrowError(
                             dataStore.getItemByGsi(
                                     dataStore
                                             .getTable()

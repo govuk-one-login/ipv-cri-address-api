@@ -5,15 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.crypto.ECDSAVerifier;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.nimbusds.jwt.proc.BadJWTException;
-import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
@@ -31,20 +24,10 @@ import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
-import java.io.ByteArrayInputStream;
 import java.net.URI;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -58,6 +41,7 @@ public class AddressSessionService {
     private final ConfigurationService configurationService;
     private final DataStore<AddressSessionItem> dataStore;
     private final Clock clock;
+    private final JWTVerifier jwtVerifier;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressSessionService() {
@@ -68,15 +52,18 @@ public class AddressSessionService {
                         AddressSessionItem.class,
                         DataStore.getClient());
         clock = Clock.systemUTC();
+        jwtVerifier = new JWTVerifier();
     }
 
     public AddressSessionService(
             DataStore<AddressSessionItem> dataStore,
             ConfigurationService configurationService,
-            Clock clock) {
+            Clock clock,
+            JWTVerifier jwtVerifier) {
         this.dataStore = dataStore;
         this.configurationService = configurationService;
         this.clock = clock;
+        this.jwtVerifier = jwtVerifier;
     }
 
     public UUID createAndSaveAddressSession(SessionRequest sessionRequest) {
@@ -105,9 +92,7 @@ public class AddressSessionService {
 
         verifyRequestUri(sessionRequest.getRedirectUri(), clientAuthenticationConfig);
 
-        verifyJWTHeader(clientAuthenticationConfig, sessionRequest.getSignedJWT());
-        verifyJWTClaimsSet(clientAuthenticationConfig, sessionRequest.getSignedJWT());
-        verifyJWTSignature(clientAuthenticationConfig, sessionRequest.getSignedJWT());
+        jwtVerifier.verifyJWT(clientAuthenticationConfig, sessionRequest.getSignedJWT());
 
         return sessionRequest;
     }
@@ -172,88 +157,6 @@ public class AddressSessionService {
         }
     }
 
-    private void verifyJWTHeader(
-            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
-            throws SessionValidationException {
-        JWSAlgorithm configuredAlgorithm =
-                JWSAlgorithm.parse(clientAuthenticationConfig.get("authenticationAlg"));
-        JWSAlgorithm jwtAlgorithm = signedJWT.getHeader().getAlgorithm();
-        if (jwtAlgorithm != configuredAlgorithm) {
-            throw new SessionValidationException(
-                    String.format(
-                            "jwt signing algorithm %s does not match signing algorithm configured for client: %s",
-                            jwtAlgorithm, configuredAlgorithm));
-        }
-    }
-
-    private void verifyJWTSignature(
-            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
-            throws SessionValidationException, ClientConfigurationException {
-        String publicCertificateToVerify =
-                clientAuthenticationConfig.get("publicCertificateToVerify");
-        try {
-            PublicKey pubicKeyFromConfig = getPubicKeyFromConfig(publicCertificateToVerify);
-
-            if (!validSignature(signedJWT, pubicKeyFromConfig)) {
-                throw new SessionValidationException("JWT signature verification failed");
-            }
-        } catch (JOSEException e) {
-            LOGGER.error("Signature verification exception", e);
-            throw new SessionValidationException("JWT signature verification failed", e);
-        } catch (CertificateException e) {
-            LOGGER.error("Certificate error", e);
-            throw new ClientConfigurationException(e);
-        }
-    }
-
-    private void verifyJWTClaimsSet(
-            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
-            throws SessionValidationException {
-
-        String criAudience = configurationService.getAddressCriAudienceIdentifier();
-
-        DefaultJWTClaimsVerifier<?> verifier =
-                new DefaultJWTClaimsVerifier<>(
-                        new JWTClaimsSet.Builder()
-                                .audience(criAudience)
-                                .issuer(clientAuthenticationConfig.get("issuer"))
-                                .build(),
-                        new HashSet<>(
-                                Arrays.asList(
-                                        JWTClaimNames.EXPIRATION_TIME,
-                                        JWTClaimNames.NOT_BEFORE,
-                                        JWTClaimNames.SUBJECT)));
-
-        try {
-            verifier.verify(signedJWT.getJWTClaimsSet(), null);
-        } catch (BadJWTException | ParseException e) {
-            LOGGER.error("Could not verify claims set", e);
-            throw new SessionValidationException("could not parse JWT", e);
-        }
-    }
-
-    private PublicKey getPubicKeyFromConfig(String base64) throws CertificateException {
-        byte[] binaryCertificate = Base64.getDecoder().decode(base64);
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        Certificate certificate =
-                factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
-        return certificate.getPublicKey();
-    }
-
-    private boolean validSignature(SignedJWT signedJWT, PublicKey clientPublicKey)
-            throws JOSEException, ClientConfigurationException {
-        if (clientPublicKey instanceof RSAPublicKey) {
-            RSASSAVerifier rsassaVerifier = new RSASSAVerifier((RSAPublicKey) clientPublicKey);
-            return signedJWT.verify(rsassaVerifier);
-        } else if (clientPublicKey instanceof ECPublicKey) {
-            ECDSAVerifier ecdsaVerifier = new ECDSAVerifier((ECPublicKey) clientPublicKey);
-            return signedJWT.verify(ecdsaVerifier);
-        } else {
-            throw new ClientConfigurationException(
-                    new IllegalStateException("unknown public JWT signing key"));
-        }
-    }
-
     public List<CanonicalAddress> parseAddresses(String addressBody)
             throws AddressProcessingException {
         List<CanonicalAddress> addresses;
@@ -315,6 +218,6 @@ public class AddressSessionService {
         DynamoDbIndex<AddressSessionItem> index = addressSessionTable.index(indexName);
         var listHelper = new ListUtil();
 
-        return listHelper.getValueOrThrow(dataStore.getItemByGsi(index, value));
+        return listHelper.getOneItemOrThrowError(dataStore.getItemByGsi(index, value));
     }
 }

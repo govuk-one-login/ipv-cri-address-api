@@ -1,6 +1,6 @@
 openapi: "3.0.1"
 info:
-  version: "0.1"
+  version: "0.2"
   title: "Address Credential Issuer API"
 
 paths:
@@ -144,11 +144,6 @@ paths:
         type: "aws_proxy"
 
   /token:
-    parameters:
-      - $ref: "#/components/parameters/GrantType"
-      - $ref: "#/components/parameters/Code"
-      - $ref: "#/components/parameters/RedirectUri"
-      - $ref: "#/components/parameters/ClientId"
     post:
       requestBody:
         content:
@@ -241,43 +236,14 @@ paths:
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
 components:
-  parameters:
-    GrantType:
-      name: grant_type
-      in: query
-      required: true
-      description: Required value MUST be set to "authorization_code"
-      schema:
-        type: string
-    Code:
-      name: code
-      in: query
-      required: true
-      description: The authorization code received from the IPV Core
-      schema:
-        type: string
-    ClientId:
-      name: client_id
-      in: query
-      required: true
-      description: Required the value client_id has Maximum of 255 characters.
-      schema:
-        type: string
-    RedirectUri:
-      name: redirect_uri
-      in: query
-      required: true
-      description:  Required, and is the "redirect_uri" parameter was included in the authorization request
-      schema:
-        type: string
-
   schemas:
     TokenRequest:
       required:
         - "grant_type"
         - "code"
-        - "redirect_uri"
         - "client_id"
+        - "client_assertion_type"
+        - "client_assertion"
       type: "object"
       properties:
         grant_type:
@@ -287,14 +253,18 @@ components:
         code:
           type: "string"
           minLength: 1
-        redirect_uri:
-          type: "string"
-          format: "uri"
-          example: "https://www.example/com/callback"
         client_id:
           type: "string"
           minLength: 1
-          example: "ipv-core"
+          example: "ipv-core-stub"
+        client_assertion_type:
+          type: "string"
+          pattern: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+          example: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+        client_assertion:
+          type: "string"
+          pattern: "[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_\\-\\+\\/=]+"
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0dCIsImlhdCI6MTUxNjIzOTAyMn0.SbcN-ywpLObhMbbaMCtW1Un8LYhQzHsEth9LvTk4oQQ"
     TokenResponse:
       title: AccessToken
       required:
