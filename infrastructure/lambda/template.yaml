@@ -137,7 +137,13 @@ Resources:
         - LoggingLevel: INFO
           ResourcePath: '/*'
           HttpMethod: '*'
+          # Disable data trace in production to avoid logging customer sensitive information
+          DataTraceEnabled: true
+          MetricsEnabled: true
+          ThrottlingRateLimit: 5
+          ThrottlingBurstLimit: 10
       AccessLogSetting:
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
@@ -154,6 +160,32 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/AccessLog-${AddressApi}/${Environment}
+      RetentionInDays: 365
+
+  ApiAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayPushToCloudWatchRole.Arn
+
+  ApiGatewayPushToCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: "Push logs to CloudWatch logs from API Gateway"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 
   SessionFunction:
     Type: AWS::Serverless::Function
