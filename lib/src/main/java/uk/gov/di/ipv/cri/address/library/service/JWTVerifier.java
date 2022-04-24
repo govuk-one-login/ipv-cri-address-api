@@ -74,7 +74,7 @@ public class JWTVerifier {
                                 .issuer(clientAuthenticationConfig.get("issuer"))
                                 .audience(clientAuthenticationConfig.get("audience"))
                                 .build(),
-                        new HashSet<>(Arrays.asList("exp", "nbf", "sub")));
+                        new HashSet<>(Arrays.asList("exp", "sub")));
 
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);

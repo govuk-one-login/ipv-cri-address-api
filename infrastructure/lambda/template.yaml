@@ -57,7 +57,7 @@ Mappings:
       integration: "2700"
       production: "2700"
 
-  IPVCoreAuthenticationAlgMapping:
+  IPVCoreStubAuthenticationAlgMapping:
     Environment:
       dev: "RS256"
       build: "RS256"
@@ -65,7 +65,7 @@ Mappings:
       integration: "RS256"
       production: "RS256"
 
-  IPVCoreAudience:
+  IPVCoreStubAudience:
     Environment:
       dev: "https://dev.address.cri.account.gov.uk"
       build: "https://build.address.cri.account.gov.uk"
@@ -73,15 +73,15 @@ Mappings:
       integration: "https://integration.address.cri.account.gov.uk"
       production: "https://production.address.cri.account.gov.uk"
 
-  IPVCoreIssuerMapping:
+  IPVCoreStubIssuerMapping:
     Environment:
-      dev: "ipv-core"
-      build: "ipv-core"
+      dev: "ipv-core-stub"
+      build: "ipv-core-stub"
       staging: "https://staging.core.ipv.account.gov.uk"
       integration: "https://integration.core.ipv.account.gov.uk"
       production: "https://core.ipv.account.gov.uk"
 
-  IPVCorePublicCertificateToVerifyMapping:
+  IPVCoreStubPublicCertificateToVerifyMapping:
     Environment:
       dev: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
       build: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
@@ -89,7 +89,7 @@ Mappings:
       integration: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
       production: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
 
-  IPVCoreRedirectURIMapping:
+  IPVCoreStubRedirectURIMapping:
     Environment:
       dev: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       build: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
@@ -509,47 +509,40 @@ Resources:
       Value: !FindInMap [ AddressSessionTtlMapping, Environment, !Ref 'Environment' ]
       Description: default time to live for an address session item (seconds)
 
-  IPVCoreAuthenticationAlgParameter:
+  IPVCoreStubAuthenticationAlgParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/authenticationAlg"
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg"
       Type: String
-      Value: !FindInMap [IPVCoreAuthenticationAlgMapping, Environment, !Ref 'Environment']
+      Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
 
-  IPVCoreAudienceParameter:
+  IPVCoreStubAudienceParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/audience"
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/audience"
       Type: String
-      Value: !FindInMap [ IPVCoreAudience, Environment, !Ref 'Environment' ]
+      Value: !FindInMap [ IPVCoreStubAudience, Environment, !Ref 'Environment' ]
 
-  IPVCoreTokenAudienceParameter:
+  IPVCoreStubIssuerParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/tokenAudience"
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/issuer"
       Type: String
-      Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/token"
+      Value: !FindInMap [IPVCoreStubIssuerMapping, Environment, !Ref 'Environment']
 
-  IPVCoreIssuerParameter:
+  IPVCoreStubPublicCertificateToVerifyParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/issuer"
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/publicCertificateToVerify"
       Type: String
-      Value: !FindInMap [IPVCoreIssuerMapping, Environment, !Ref 'Environment']
+      Value: !FindInMap [IPVCoreStubPublicCertificateToVerifyMapping, Environment, !Ref 'Environment']
 
-  IPVCorePublicCertificateToVerifyParameter:
+  IPVCoreStubRedirectURIParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/publicCertificateToVerify"
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/redirectUri"
       Type: String
-      Value: !FindInMap [IPVCorePublicCertificateToVerifyMapping, Environment, !Ref 'Environment']
-
-  IPVCoreRedirectURIParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/redirectUri"
-      Type: String
-      Value: !FindInMap [IPVCoreRedirectURIMapping, Environment, !Ref 'Environment']
+      Value: !FindInMap [IPVCoreStubRedirectURIMapping, Environment, !Ref 'Environment']
 
   AddressCriAudienceParameter:
     Type: AWS::SSM::Parameter
