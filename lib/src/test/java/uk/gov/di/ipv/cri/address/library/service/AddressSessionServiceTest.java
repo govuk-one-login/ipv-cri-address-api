@@ -259,8 +259,8 @@ class AddressSessionServiceTest {
                         + "      \"uprn\": \"72262801\",\n"
                         + "      \"buildingNumber\": \"8\",\n"
                         + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
-                        + "      \"postTown\": \"LEEDS\",\n"
-                        + "      \"postcode\": \"LS10 4QL\",\n"
+                        + "      \"addressLocality\": \"LEEDS\",\n"
+                        + "      \"postalCode\": \"LS10 4QL\",\n"
                         + "      \"countryCode\": \"GBR\",\n"
                         + "      \"validFrom\": \"2010-02-26\",\n"
                         + "      \"validUntil\": \"2021-01-16\"\n"
@@ -270,8 +270,8 @@ class AddressSessionServiceTest {
                         + "      \"buildingNumber\": \"15\",\n"
                         + "      \"dependentLocality\": \"LOFTHOUSE\",\n"
                         + "      \"streetName\": \"RIDINGS LANE\",\n"
-                        + "      \"postTown\": \"WAKEFIELD\",\n"
-                        + "      \"postcode\": \"WF3 3SE\",\n"
+                        + "      \"addressLocality\": \"WAKEFIELD\",\n"
+                        + "      \"postalCode\": \"WF3 3SE\",\n"
                         + "      \"countryCode\": \"GBR\",\n"
                         + "      \"validFrom\": \"2021-01-16\",\n"
                         + "      \"validUntil\": \"2021-08-02\"\n"
@@ -280,8 +280,8 @@ class AddressSessionServiceTest {
                         + "      \"uprn\": \"63042351\",\n"
                         + "      \"buildingNumber\": \"5\",\n"
                         + "      \"streetName\": \"GATEWAYS\",\n"
-                        + "      \"postTown\": \"WAKEFIELD\",\n"
-                        + "      \"postcode\": \"WF1 2LZ\",\n"
+                        + "      \"addressLocality\": \"WAKEFIELD\",\n"
+                        + "      \"postalCode\": \"WF1 2LZ\",\n"
                         + "      \"countryCode\": \"GBR\",\n"
                         + "      \"validFrom\": \"2021-08-02\"\n"
                         + "   }\n"
@@ -313,8 +313,8 @@ class AddressSessionServiceTest {
         address1.setUprn(Long.valueOf("72262801"));
         address1.setBuildingNumber("8");
         address1.setStreetName("GRANGE FIELDS WAY");
-        address1.setPostTown("LEEDS");
-        address1.setPostcode("LS10 4QL");
+        address1.setAddressLocality("LEEDS");
+        address1.setPostalCode("LS10 4QL");
         address1.setCountryCode("GBR");
         address1.setValidFrom(Date.from(Instant.parse("2010-02-26T00:00:00.00Z")));
         address1.setValidUntil(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
@@ -323,9 +323,9 @@ class AddressSessionServiceTest {
         address2.setUprn(Long.valueOf("63094965"));
         address2.setBuildingNumber("15");
         address2.setStreetName("RIDINGS LANE");
-        address2.setDependentLocality("LOFTHOUSE");
-        address2.setPostTown("WAKEFIELD");
-        address2.setPostcode("WF3 3SE");
+        address2.setDependentAddressLocality("LOFTHOUSE");
+        address2.setAddressLocality("WAKEFIELD");
+        address2.setPostalCode("WF3 3SE");
         address2.setCountryCode("GBR");
         address2.setValidFrom(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
         address2.setValidUntil(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
@@ -334,8 +334,8 @@ class AddressSessionServiceTest {
         address3.setUprn(Long.valueOf("63042351"));
         address3.setBuildingNumber("5");
         address3.setStreetName("GATEWAYS");
-        address3.setPostTown("WAKEFIELD");
-        address3.setPostcode("WF1 2LZ");
+        address3.setAddressLocality("WAKEFIELD");
+        address3.setPostalCode("WF1 2LZ");
         address3.setCountryCode("GBR");
         address3.setValidFrom(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
 
