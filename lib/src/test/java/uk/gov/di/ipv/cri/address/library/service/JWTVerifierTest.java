@@ -101,8 +101,7 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
-        assertEquals(
-                "JWT missing required claims: [aud, exp, iss, nbf, sub]", exception.getMessage());
+        assertEquals("JWT missing required claims: [aud, exp, iss, sub]", exception.getMessage());
     }
 
     @Test

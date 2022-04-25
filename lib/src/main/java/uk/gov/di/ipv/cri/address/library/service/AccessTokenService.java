@@ -104,7 +104,6 @@ public class AccessTokenService {
                     .containsAll(
                             Set.of(
                                     CODE,
-                                    CLIENT_ID,
                                     CLIENT_ASSERTION_TYPE,
                                     CLIENT_ASSERTION,
                                     REDIRECT_URI,
