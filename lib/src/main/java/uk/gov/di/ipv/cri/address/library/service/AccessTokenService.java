@@ -29,7 +29,6 @@ import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +45,6 @@ public class AccessTokenService {
     private final DataStore<AddressSessionItem> dataStore;
     private final ConfigurationService configurationService;
     private final JWTVerifier jwtVerifier;
-    private ListUtil listHelper = new ListUtil();
 
     public AccessTokenService(
             DataStore<AddressSessionItem> dataStore,
@@ -55,14 +53,12 @@ public class AccessTokenService {
         this.dataStore = dataStore;
         this.configurationService = configurationService;
         this.jwtVerifier = jwtVerifier;
-        this.listHelper = new ListUtil();
     }
 
     @ExcludeFromGeneratedCoverageReport
     public AccessTokenService() {
-        var configurationServiceLocal = new ConfigurationService();
-        dataStore = getDataStore(configurationServiceLocal);
         this.configurationService = new ConfigurationService();
+        dataStore = getDataStore(this.configurationService);
         this.jwtVerifier = new JWTVerifier();
     }
 
@@ -148,7 +144,7 @@ public class AccessTokenService {
             jwtVerifier.verifyJWT(
                     clientAuthenticationConfig,
                     signedJWT,
-                    Arrays.asList(RequiredClaims.EXP.value, RequiredClaims.SUB.value));
+                    List.of(RequiredClaims.EXP.value, RequiredClaims.SUB.value));
             return tokenRequest;
         } catch (SessionValidationException
                 | ClientConfigurationException
@@ -261,6 +257,7 @@ public class AccessTokenService {
     private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
         var addressSessionTable = dataStore.getTable();
         var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        var listHelper = new ListUtil();
         return listHelper.getOneItemOrThrowError(
                 dataStore.getItemByGsi(index, authorizationCodeFromRequest));
     }

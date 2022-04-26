@@ -29,7 +29,6 @@ import java.net.URI;
 import java.text.ParseException;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -97,7 +96,7 @@ public class AddressSessionService {
         jwtVerifier.verifyJWT(
                 clientAuthenticationConfig,
                 sessionRequest.getSignedJWT(),
-                Arrays.asList(
+                List.of(
                         RequiredClaims.EXP.value,
                         RequiredClaims.SUB.value,
                         RequiredClaims.NBF.value));

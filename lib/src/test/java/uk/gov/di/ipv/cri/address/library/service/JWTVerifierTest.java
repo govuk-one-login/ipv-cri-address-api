@@ -20,7 +20,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -300,7 +299,7 @@ class JWTVerifierTest {
                                 jwtVerifier.verifyJWT(
                                         clientConfigMap,
                                         signedJWT,
-                                        Arrays.asList(
+                                        List.of(
                                                 RequiredClaims.EXP.value,
                                                 RequiredClaims.SUB.value,
                                                 RequiredClaims.NBF.value)));
@@ -328,6 +327,6 @@ class JWTVerifierTest {
     }
 
     private List<String> getRequiredClaims() {
-        return Arrays.asList(RequiredClaims.EXP.value, RequiredClaims.SUB.value);
+        return List.of(RequiredClaims.EXP.value, RequiredClaims.SUB.value);
     }
 }
