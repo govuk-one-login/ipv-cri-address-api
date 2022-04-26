@@ -19,6 +19,7 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.constants.RequiredClaims;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
@@ -28,6 +29,7 @@ import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -143,7 +145,10 @@ public class AccessTokenService {
                             tokenRequest.getClientAuthentication().getClientID().getValue());
             SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
 
-            jwtVerifier.verifyJWT(clientAuthenticationConfig, signedJWT);
+            jwtVerifier.verifyJWT(
+                    clientAuthenticationConfig,
+                    signedJWT,
+                    Arrays.asList(RequiredClaims.EXP.name, RequiredClaims.SUB.name));
             return tokenRequest;
         } catch (SessionValidationException
                 | ClientConfigurationException

@@ -91,7 +91,7 @@ class AccessTokenServiceTest {
                                         tokenRequest, addressSessionItem));
 
         assertThat(exception.getMessage(), containsString("jti is missing"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
     }
 
     @Test
@@ -306,7 +306,7 @@ class AccessTokenServiceTest {
                 accessTokenService.validateTokenRequest(tokenRequest, addressSessionItem);
 
         assertEquals(expectedTokenRequest.getClientID(), tokenRequest.getClientID());
-        verify(mockJwtVerifier, times(1)).verifyJWT(any(), any());
+        verify(mockJwtVerifier, times(1)).verifyJWT(any(), any(), any());
     }
 
     @Test
@@ -347,7 +347,7 @@ class AccessTokenServiceTest {
         assertThat(
                 exception.getMessage(),
                 containsString("no configuration for client id '" + clientID + "'"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
     }
 
     @Test
@@ -376,7 +376,7 @@ class AccessTokenServiceTest {
                 exception.getMessage(),
                 containsString(
                         "Invalid private key JWT authentication: The client identifier doesn't match the client assertion subject / issuer"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
     }
 
     @Test
@@ -411,6 +411,6 @@ class AccessTokenServiceTest {
                         () -> accessTokenService.getAddressSessionId(tokenRequest));
 
         assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any());
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
     }
 }

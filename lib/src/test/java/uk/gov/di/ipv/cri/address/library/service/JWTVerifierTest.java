@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.library.constants.RequiredClaims;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 
 import java.security.KeyFactory;
@@ -19,8 +20,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,7 +62,9 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
         assertEquals(
                 "jwt signing algorithm RS512 does not match signing algorithm configured for client: RS256",
                 exception.getMessage());
@@ -83,7 +88,9 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
         assertEquals(
                 "JWT iss claim has value incorrect-issuer-url, must be https://dev.core.ipv.account.gov.uk",
                 exception.getMessage());
@@ -100,7 +107,9 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
         assertEquals("JWT missing required claims: [aud, exp, iss, sub]", exception.getMessage());
     }
 
@@ -120,7 +129,9 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
         assertEquals("JWT missing required claims: [sub]", exception.getMessage());
     }
 
@@ -155,7 +166,9 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
         assertEquals("JWT signature verification failed", exception.getMessage());
     }
 
@@ -177,7 +190,8 @@ class JWTVerifierTest {
         RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
         signedJWT.sign(rsaSigner);
 
-        assertDoesNotThrow(() -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+        assertDoesNotThrow(
+                () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT, getRequiredClaims()));
     }
 
     @Test
@@ -200,7 +214,9 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
 
         assertEquals("Expired JWT", exception.getMessage());
     }
@@ -225,7 +241,9 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
 
         assertEquals(
                 "JWT aud claim has value [incorrect-audience], must be [https://address.cri.account.gov.uk]",
@@ -252,9 +270,42 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT));
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap, signedJWT, getRequiredClaims()));
 
         assertEquals("JWT before use time", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenMissingNBF()
+            throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException {
+        Map<String, String> clientConfigMap = getSSMClientConfig();
+        SignedJWT signedJWT =
+                new SignedJWT(
+                        new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .subject(UUID.randomUUID().toString())
+                                .audience("https://address.cri.account.gov.uk")
+                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
+                                .build());
+        RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
+        signedJWT.sign(rsaSigner);
+
+        SessionValidationException exception =
+                assertThrows(
+                        SessionValidationException.class,
+                        () ->
+                                jwtVerifier.verifyJWT(
+                                        clientConfigMap,
+                                        signedJWT,
+                                        Arrays.asList(
+                                                RequiredClaims.EXP.name,
+                                                RequiredClaims.SUB.name,
+                                                RequiredClaims.NBF.name)));
+
+        assertEquals("JWT missing required claims: [nbf]", exception.getMessage());
     }
 
     private Map<String, String> getSSMClientConfig() {
@@ -274,5 +325,9 @@ class JWTVerifierTest {
                 KeyFactory.getInstance("RSA")
                         .generatePrivate(
                                 new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKey)));
+    }
+
+    private List<String> getRequiredClaims() {
+        return Arrays.asList(RequiredClaims.EXP.name, RequiredClaims.SUB.name);
     }
 }

@@ -19,17 +19,20 @@ import java.security.cert.CertificateFactory;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class JWTVerifier {
 
-    public void verifyJWT(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+    public void verifyJWT(
+            Map<String, String> clientAuthenticationConfig,
+            SignedJWT signedJWT,
+            List<String> requiredClaims)
             throws SessionValidationException, ClientConfigurationException {
         this.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-        this.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
+        this.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT, requiredClaims);
         this.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
     }
 
@@ -66,7 +69,9 @@ public class JWTVerifier {
     }
 
     private void verifyJWTClaimsSet(
-            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+            Map<String, String> clientAuthenticationConfig,
+            SignedJWT signedJWT,
+            List<String> requiredClaims)
             throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
@@ -74,7 +79,7 @@ public class JWTVerifier {
                                 .issuer(clientAuthenticationConfig.get("issuer"))
                                 .audience(clientAuthenticationConfig.get("audience"))
                                 .build(),
-                        new HashSet<>(Arrays.asList("exp", "sub")));
+                        new HashSet<>(requiredClaims));
 
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);
