@@ -10,6 +10,7 @@ import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.nimbusds.jwt.JWTClaimNames.EXPIRATION_TIME;
 import static com.nimbusds.jwt.JWTClaimNames.ISSUER;
@@ -67,7 +68,11 @@ public class VerifiableCredentialService {
                                         VC_CONTEXT,
                                         new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
                                         VC_CREDENTIAL_SUBJECT,
-                                        Map.of(VC_ADDRESS_KEY, canonicalAddresses)))
+                                        Map.of(
+                                                VC_ADDRESS_KEY,
+                                                canonicalAddresses.stream()
+                                                        .map(CanonicalAddress::toJSONObject)
+                                                        .collect(Collectors.toList()))))
                         .build();
 
         return signedClaimSetJwt.createSignedJwt(claimsSet);

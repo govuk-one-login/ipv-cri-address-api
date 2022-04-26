@@ -76,7 +76,7 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
         verify(mockSignedClaimSetJwt).createSignedJwt(any());
     }
 
-    // @Test
+    @Test
     void shouldCreateValidSignedJWT()
             throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException, ParseException,
                     JsonProcessingException {
