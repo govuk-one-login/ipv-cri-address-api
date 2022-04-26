@@ -148,7 +148,7 @@ public class AccessTokenService {
             jwtVerifier.verifyJWT(
                     clientAuthenticationConfig,
                     signedJWT,
-                    Arrays.asList(RequiredClaims.EXP.name, RequiredClaims.SUB.name));
+                    Arrays.asList(RequiredClaims.EXP.value, RequiredClaims.SUB.value));
             return tokenRequest;
         } catch (SessionValidationException
                 | ClientConfigurationException

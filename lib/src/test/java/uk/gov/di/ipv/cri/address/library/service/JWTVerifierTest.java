@@ -301,9 +301,9 @@ class JWTVerifierTest {
                                         clientConfigMap,
                                         signedJWT,
                                         Arrays.asList(
-                                                RequiredClaims.EXP.name,
-                                                RequiredClaims.SUB.name,
-                                                RequiredClaims.NBF.name)));
+                                                RequiredClaims.EXP.value,
+                                                RequiredClaims.SUB.value,
+                                                RequiredClaims.NBF.value)));
 
         assertEquals("JWT missing required claims: [nbf]", exception.getMessage());
     }
@@ -328,6 +328,6 @@ class JWTVerifierTest {
     }
 
     private List<String> getRequiredClaims() {
-        return Arrays.asList(RequiredClaims.EXP.name, RequiredClaims.SUB.name);
+        return Arrays.asList(RequiredClaims.EXP.value, RequiredClaims.SUB.value);
     }
 }

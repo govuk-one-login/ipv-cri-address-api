@@ -98,7 +98,9 @@ public class AddressSessionService {
                 clientAuthenticationConfig,
                 sessionRequest.getSignedJWT(),
                 Arrays.asList(
-                        RequiredClaims.EXP.name, RequiredClaims.SUB.name, RequiredClaims.NBF.name));
+                        RequiredClaims.EXP.value,
+                        RequiredClaims.SUB.value,
+                        RequiredClaims.NBF.value));
 
         return sessionRequest;
     }

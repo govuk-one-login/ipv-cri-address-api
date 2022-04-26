@@ -5,9 +5,9 @@ public enum RequiredClaims {
     EXP("exp"),
     SUB("sub");
 
-    public final String name;
+    public final String value;
 
-    RequiredClaims(String name) {
-        this.name = name;
+    RequiredClaims(String value) {
+        this.value = value;
     }
 }
