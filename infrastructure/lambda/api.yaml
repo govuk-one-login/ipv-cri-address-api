@@ -355,10 +355,10 @@ components:
         dependentStreetName:
           type: "string"
           example: "Some Street"
-        doubleDependentLocality:
+        doubleDependentAddressLocality:
           type: "string"
           example: "Some Town"
-        dependentLocality:
+        dependentAddressLocality:
           type: "string"
           example: "Some Area"
         buildingName:
@@ -367,13 +367,13 @@ components:
         streetName:
           type: "string"
           example: "Some Street"
-        postTown:
+        addressLocality:
           type: "string"
           example: "Some Town"
-        postcode:
+        postalCode:
           type: "string"
           example: "SW1A 1AA"
-        countryCode:
+        addressCountry:
           type: "string"
           example: "GBR"
           description: "ISO 3-Letter Country Code"

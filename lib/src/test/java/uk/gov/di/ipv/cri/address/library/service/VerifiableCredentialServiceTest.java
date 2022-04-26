@@ -43,8 +43,9 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
     public static final String UPRN = "72262801";
     public static final String BUILDING_NUMBER = "8";
     public static final String STREET_NAME = "GRANGE FIELDS WAY";
-    public static final String POST_TOWN = "LEEDS";
-    public static final String POSTCODE = "LS10 4QL";
+
+    public static final String ADDRESS_LOCALITY = "LEEDS";
+    public static final String POSTAL_CODE = "LS10 4QL";
     public static final String COUNTRY_CODE = "GBR";
     public static final Instant VALID_FROM = Instant.parse("2010-02-26T00:00:00.00Z");
     public static final Instant VALID_UNTIL = Instant.parse("2021-01-16T00:00:00.00Z");
@@ -86,9 +87,9 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
         address.setUprn(Long.valueOf(UPRN));
         address.setBuildingNumber(BUILDING_NUMBER);
         address.setStreetName(STREET_NAME);
-        address.setPostTown(POST_TOWN);
-        address.setPostcode(POSTCODE);
-        address.setCountryCode(COUNTRY_CODE);
+        address.setAddressLocality(ADDRESS_LOCALITY);
+        address.setPostalCode(POSTAL_CODE);
+        address.setAddressCountry(COUNTRY_CODE);
         address.setValidFrom(Date.from(VALID_FROM));
         address.setValidUntil(Date.from(VALID_UNTIL));
         List<CanonicalAddress> canonicalAddresses = List.of(address);
@@ -136,7 +137,7 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
                                     .get("streetName")
                                     .asText());
                     assertEquals(
-                            address.getPostTown(),
+                            address.getAddressLocality(),
                             claims.get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
@@ -144,7 +145,7 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
                                     .get("addressLocality")
                                     .asText());
                     assertEquals(
-                            address.getPostcode(),
+                            address.getPostalCode(),
                             claims.get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
@@ -152,7 +153,7 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
                                     .get("postalCode")
                                     .asText());
                     assertEquals(
-                            address.getCountryCode(),
+                            address.getAddressCountry(),
                             claims.get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)

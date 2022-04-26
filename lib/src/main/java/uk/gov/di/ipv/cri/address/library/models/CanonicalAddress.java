@@ -18,20 +18,28 @@ public class CanonicalAddress {
     private String departmentName;
     private String subBuildingName;
     private String buildingNumber;
+    private String buildingName;
 
     @JsonAlias("dependentThoroughfare")
     private String dependentStreetName;
 
-    private String doubleDependentLocality;
-    private String dependentLocality;
-    private String buildingName;
-
     @JsonAlias("thoroughfareName")
     private String streetName;
 
-    private String postTown;
-    private String postcode;
-    private String countryCode;
+    @JsonAlias("doubleDependentLocality")
+    private String doubleDependentAddressLocality;
+
+    @JsonAlias("dependentLocality")
+    private String dependentAddressLocality;
+
+    @JsonAlias("postTown")
+    private String addressLocality;
+
+    @JsonAlias("postcode")
+    private String postalCode;
+
+    @JsonAlias("countryCode")
+    private String addressCountry;
 
     @JsonAlias("residentFrom")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
@@ -51,13 +59,13 @@ public class CanonicalAddress {
         this.subBuildingName = dpa.getSubBuildingName();
         this.buildingNumber = dpa.getBuildingNumber();
         this.dependentStreetName = dpa.getDependentThoroughfareName();
-        this.doubleDependentLocality = dpa.getDoubleDependentLocality();
-        this.dependentLocality = dpa.getDependentLocality();
+        this.doubleDependentAddressLocality = dpa.getDoubleDependentLocality();
+        this.dependentAddressLocality = dpa.getDependentLocality();
         this.buildingName = dpa.getBuildingName();
         this.streetName = dpa.getThoroughfareName();
-        this.postTown = dpa.getPostTown();
-        this.postcode = dpa.getPostcode();
-        this.countryCode =
+        this.addressLocality = dpa.getPostTown();
+        this.postalCode = dpa.getPostcode();
+        this.addressCountry =
                 "GBR"; // All addresses returned by this service MUST be within the United Kingdom
     }
 
@@ -119,22 +127,22 @@ public class CanonicalAddress {
         this.dependentStreetName = dependentStreetName;
     }
 
-    @DynamoDBAttribute(attributeName = "DoubleDependentLocality")
-    public String getDoubleDependentLocality() {
-        return doubleDependentLocality;
+    @DynamoDBAttribute(attributeName = "DoubleDependentAddressLocality")
+    public String getDoubleDependentAddressLocality() {
+        return doubleDependentAddressLocality;
     }
 
-    public void setDoubleDependentLocality(String doubleDependentLocality) {
-        this.doubleDependentLocality = doubleDependentLocality;
+    public void setDoubleDependentAddressLocality(String doubleDependentAddressLocality) {
+        this.doubleDependentAddressLocality = doubleDependentAddressLocality;
     }
 
-    @DynamoDBAttribute(attributeName = "DependentLocality")
-    public String getDependentLocality() {
-        return dependentLocality;
+    @DynamoDBAttribute(attributeName = "DependentAddressLocality")
+    public String getDependentAddressLocality() {
+        return dependentAddressLocality;
     }
 
-    public void setDependentLocality(String dependentLocality) {
-        this.dependentLocality = dependentLocality;
+    public void setDependentAddressLocality(String dependentAddressLocality) {
+        this.dependentAddressLocality = dependentAddressLocality;
     }
 
     @DynamoDBAttribute(attributeName = "BuildingName")
@@ -155,31 +163,31 @@ public class CanonicalAddress {
         this.streetName = streetName;
     }
 
-    @DynamoDBAttribute(attributeName = "PostTown")
-    public String getPostTown() {
-        return postTown;
+    @DynamoDBAttribute(attributeName = "AddressLocality")
+    public String getAddressLocality() {
+        return addressLocality;
     }
 
-    public void setPostTown(String postTown) {
-        this.postTown = postTown;
+    public void setAddressLocality(String addressLocality) {
+        this.addressLocality = addressLocality;
     }
 
-    @DynamoDBAttribute(attributeName = "Postcode")
-    public String getPostcode() {
-        return postcode;
+    @DynamoDBAttribute(attributeName = "PostalCode")
+    public String getPostalCode() {
+        return postalCode;
     }
 
-    public void setPostcode(String postcode) {
-        this.postcode = postcode;
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
     }
 
-    @DynamoDBAttribute(attributeName = "CountryCode")
-    public String getCountryCode() {
-        return countryCode;
+    @DynamoDBAttribute(attributeName = "AddressCountry")
+    public String getAddressCountry() {
+        return addressCountry;
     }
 
-    public void setCountryCode(String countryCode) {
-        this.countryCode = countryCode;
+    public void setAddressCountry(String addressCountry) {
+        this.addressCountry = addressCountry;
     }
 
     public Optional<Date> getValidFrom() {
