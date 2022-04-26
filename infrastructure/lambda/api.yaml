@@ -373,7 +373,7 @@ components:
         postalCode:
           type: "string"
           example: "SW1A 1AA"
-        countryCode:
+        addressCountry:
           type: "string"
           example: "GBR"
           description: "ISO 3-Letter Country Code"

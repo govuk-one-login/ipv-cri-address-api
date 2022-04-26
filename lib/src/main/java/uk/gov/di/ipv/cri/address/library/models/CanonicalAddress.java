@@ -38,7 +38,8 @@ public class CanonicalAddress {
     @JsonAlias("postcode")
     private String postalCode;
 
-    private String countryCode;
+    @JsonAlias("countryCode")
+    private String addressCountry;
 
     @JsonAlias("residentFrom")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
@@ -64,7 +65,7 @@ public class CanonicalAddress {
         this.streetName = dpa.getThoroughfareName();
         this.addressLocality = dpa.getPostTown();
         this.postalCode = dpa.getPostcode();
-        this.countryCode =
+        this.addressCountry =
                 "GBR"; // All addresses returned by this service MUST be within the United Kingdom
     }
 
@@ -180,13 +181,13 @@ public class CanonicalAddress {
         this.postalCode = postalCode;
     }
 
-    @DynamoDBAttribute(attributeName = "CountryCode")
-    public String getCountryCode() {
-        return countryCode;
+    @DynamoDBAttribute(attributeName = "AddressCountry")
+    public String getAddressCountry() {
+        return addressCountry;
     }
 
-    public void setCountryCode(String countryCode) {
-        this.countryCode = countryCode;
+    public void setAddressCountry(String addressCountry) {
+        this.addressCountry = addressCountry;
     }
 
     public Optional<Date> getValidFrom() {

@@ -89,7 +89,7 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
         address.setStreetName(STREET_NAME);
         address.setAddressLocality(ADDRESS_LOCALITY);
         address.setPostalCode(POSTAL_CODE);
-        address.setCountryCode(COUNTRY_CODE);
+        address.setAddressCountry(COUNTRY_CODE);
         address.setValidFrom(Date.from(VALID_FROM));
         address.setValidUntil(Date.from(VALID_UNTIL));
         List<CanonicalAddress> canonicalAddresses = List.of(address);
@@ -153,7 +153,7 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
                                     .get("postalCode")
                                     .asText());
                     assertEquals(
-                            address.getCountryCode(),
+                            address.getAddressCountry(),
                             claims.get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)

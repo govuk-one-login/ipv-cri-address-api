@@ -261,7 +261,7 @@ class AddressSessionServiceTest {
                         + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
                         + "      \"addressLocality\": \"LEEDS\",\n"
                         + "      \"postalCode\": \"LS10 4QL\",\n"
-                        + "      \"countryCode\": \"GBR\",\n"
+                        + "      \"addressCountry\": \"GBR\",\n"
                         + "      \"validFrom\": \"2010-02-26\",\n"
                         + "      \"validUntil\": \"2021-01-16\"\n"
                         + "   },\n"
@@ -272,7 +272,7 @@ class AddressSessionServiceTest {
                         + "      \"streetName\": \"RIDINGS LANE\",\n"
                         + "      \"addressLocality\": \"WAKEFIELD\",\n"
                         + "      \"postalCode\": \"WF3 3SE\",\n"
-                        + "      \"countryCode\": \"GBR\",\n"
+                        + "      \"addressCountry\": \"GBR\",\n"
                         + "      \"validFrom\": \"2021-01-16\",\n"
                         + "      \"validUntil\": \"2021-08-02\"\n"
                         + "   },\n"
@@ -282,7 +282,7 @@ class AddressSessionServiceTest {
                         + "      \"streetName\": \"GATEWAYS\",\n"
                         + "      \"addressLocality\": \"WAKEFIELD\",\n"
                         + "      \"postalCode\": \"WF1 2LZ\",\n"
-                        + "      \"countryCode\": \"GBR\",\n"
+                        + "      \"addressCountry\": \"GBR\",\n"
                         + "      \"validFrom\": \"2021-08-02\"\n"
                         + "   }\n"
                         + "]";
@@ -315,7 +315,7 @@ class AddressSessionServiceTest {
         address1.setStreetName("GRANGE FIELDS WAY");
         address1.setAddressLocality("LEEDS");
         address1.setPostalCode("LS10 4QL");
-        address1.setCountryCode("GBR");
+        address1.setAddressCountry("GBR");
         address1.setValidFrom(Date.from(Instant.parse("2010-02-26T00:00:00.00Z")));
         address1.setValidUntil(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
 
@@ -326,7 +326,7 @@ class AddressSessionServiceTest {
         address2.setDependentAddressLocality("LOFTHOUSE");
         address2.setAddressLocality("WAKEFIELD");
         address2.setPostalCode("WF3 3SE");
-        address2.setCountryCode("GBR");
+        address2.setAddressCountry("GBR");
         address2.setValidFrom(Date.from(Instant.parse("2021-01-16T00:00:00.00Z")));
         address2.setValidUntil(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
 
@@ -336,7 +336,7 @@ class AddressSessionServiceTest {
         address3.setStreetName("GATEWAYS");
         address3.setAddressLocality("WAKEFIELD");
         address3.setPostalCode("WF1 2LZ");
-        address3.setCountryCode("GBR");
+        address3.setAddressCountry("GBR");
         address3.setValidFrom(Date.from(Instant.parse("2021-08-02T00:00:00.00Z")));
 
         addresses.add(address1);
