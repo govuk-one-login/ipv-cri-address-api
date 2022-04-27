@@ -7,7 +7,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Optional;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @DynamoDBDocument
