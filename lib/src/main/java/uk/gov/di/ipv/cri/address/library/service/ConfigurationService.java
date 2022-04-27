@@ -83,7 +83,8 @@ public class ConfigurationService {
         ADDRESS_CRI_AUDIENCE("AddressCriAudience"),
         MAXIMUM_JWT_TTL("MaxJwtTtl"),
         VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID("verifiableCredentialKmsSigningKeyId"),
-        VERIFIABLE_CREDENTIAL_ISSUER("verifiable-credential/issuer");
+        VERIFIABLE_CREDENTIAL_ISSUER("verifiable-credential/issuer"),
+        AUTH_REQUEST_KMS_ENCRYPTION_KEY_ID("AuthRequestKmsEncryptionKeyId");
 
         public final String parameterName;
 
@@ -118,5 +119,10 @@ public class ConfigurationService {
     public String getVerifiableCredentialKmsSigningKeyId() {
         return ssmProvider.get(
                 getParameterName(SSMParameterName.VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID));
+    }
+
+    public String getKmsEncryptionKeyId() {
+        return ssmProvider.get(
+                getParameterName(SSMParameterName.AUTH_REQUEST_KMS_ENCRYPTION_KEY_ID));
     }
 }

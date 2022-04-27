@@ -1,10 +1,11 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,7 @@ import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class AddressSessionService {
@@ -41,8 +43,11 @@ public class AddressSessionService {
 
     private final ConfigurationService configurationService;
     private final DataStore<AddressSessionItem> dataStore;
+    private final JWTDecrypter jwtDecrypter;
     private final Clock clock;
     private final JWTVerifier jwtVerifier;
+    private final ObjectMapper objectMapper;
+    private ObjectReader addressReader;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressSessionService() {
@@ -52,19 +57,26 @@ public class AddressSessionService {
                         configurationService.getAddressSessionTableName(),
                         AddressSessionItem.class,
                         DataStore.getClient());
-        clock = Clock.systemUTC();
+        this.clock = Clock.systemUTC();
         jwtVerifier = new JWTVerifier();
+        String encryptionKeyId = configurationService.getKmsEncryptionKeyId();
+        this.jwtDecrypter = new JWTDecrypter(new KMSRSADecrypter(encryptionKeyId));
+        this.objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
     }
 
     public AddressSessionService(
             DataStore<AddressSessionItem> dataStore,
             ConfigurationService configurationService,
             Clock clock,
-            JWTVerifier jwtVerifier) {
+            JWTVerifier jwtVerifier,
+            JWTDecrypter jwtDecrypter,
+            ObjectMapper objectMapper) {
         this.dataStore = dataStore;
         this.configurationService = configurationService;
         this.clock = clock;
         this.jwtVerifier = jwtVerifier;
+        this.jwtDecrypter = jwtDecrypter;
+        this.objectMapper = objectMapper;
     }
 
     public UUID createAndSaveAddressSession(SessionRequest sessionRequest) {
@@ -108,8 +120,13 @@ public class AddressSessionService {
             throws SessionValidationException {
         try {
             RawSessionRequest rawSessionRequest =
-                    new ObjectMapper().readValue(requestBody, RawSessionRequest.class);
-            SignedJWT requestJWT = parseRequestJWT(rawSessionRequest.getRequestJWT());
+                    this.objectMapper.readValue(requestBody, RawSessionRequest.class);
+            SignedJWT requestJWT = decryptSessionRequest(rawSessionRequest.getRequestJWT());
+
+            if (Objects.isNull(requestJWT)) {
+                throw new SessionValidationException("could not parse request body to signed JWT");
+            }
+
             JWTClaimsSet jwtClaims = requestJWT.getJWTClaimsSet();
 
             SessionRequest sessionRequest = new SessionRequest();
@@ -132,12 +149,14 @@ public class AddressSessionService {
         }
     }
 
-    private SignedJWT parseRequestJWT(String jwt) throws SessionValidationException {
+    private SignedJWT decryptSessionRequest(String serialisedJWE)
+            throws SessionValidationException {
         try {
-            return SignedJWT.parse(jwt);
+            return jwtDecrypter.decrypt(serialisedJWE);
         } catch (ParseException e) {
-            LOGGER.error("Failed to parse JWT", e);
-            throw new SessionValidationException("Could not parse request JWT", e);
+            throw new SessionValidationException("Failed to parse request body", e);
+        } catch (JOSEException e) {
+            throw new SessionValidationException("Decryption failed", e);
         }
     }
 
@@ -168,13 +187,7 @@ public class AddressSessionService {
             throws AddressProcessingException {
         List<CanonicalAddress> addresses;
         try {
-            ObjectMapper mapper =
-                    new ObjectMapper()
-                            .registerModule(new Jdk8Module())
-                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-            addresses = mapper.readValue(addressBody, new TypeReference<>() {});
-
+            addresses = getAddressReader().readValue(addressBody);
         } catch (JsonProcessingException e) {
             throw new AddressProcessingException(
                     "could not parse addresses..." + e.getMessage(), e);
@@ -226,5 +239,15 @@ public class AddressSessionService {
         var listHelper = new ListUtil();
 
         return listHelper.getOneItemOrThrowError(dataStore.getItemByGsi(index, value));
+    }
+
+    private ObjectReader getAddressReader() {
+        if (Objects.isNull(this.addressReader)) {
+            this.addressReader =
+                    this.objectMapper
+                            .readerForListOf(CanonicalAddress.class)
+                            .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        }
+        return this.addressReader;
     }
 }

@@ -4,4 +4,8 @@ public class ClientConfigurationException extends Exception {
     public ClientConfigurationException(Exception e) {
         super(e);
     }
+
+    public ClientConfigurationException(String message, Exception e) {
+        super(message, e);
+    }
 }
