@@ -5,10 +5,13 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.nimbusds.jose.shaded.json.JSONObject;
 import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
+import java.util.TimeZone;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @DynamoDBDocument
@@ -204,5 +207,30 @@ public class CanonicalAddress {
 
     public void setValidUntil(Date validUntil) {
         this.validUntil = validUntil;
+    }
+
+    public JSONObject toJSONObject() {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("uprn", this.getUprn().orElse(null));
+        jsonObject.put("organisationName", this.getOrganisationName());
+        jsonObject.put("departmentName", this.getDepartmentName());
+        jsonObject.put("subBuldingName", this.getSubBuildingName());
+        jsonObject.put("buildingNumber", this.getBuildingNumber());
+        jsonObject.put("buildingName", this.getBuildingName());
+        jsonObject.put("dependentStreetName", this.getDependentStreetName());
+        jsonObject.put("doubleDependentAddressLocality", this.getDoubleDependentAddressLocality());
+        jsonObject.put("dependentAddressLocality", this.getDependentAddressLocality());
+        jsonObject.put("streetName", this.getStreetName());
+        jsonObject.put("addressLocality", this.getAddressLocality());
+        jsonObject.put("postalCode", this.getPostalCode());
+        jsonObject.put("addressCountry", this.getAddressCountry());
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        jsonObject.put("validFrom", this.getValidFrom().map(simpleDateFormat::format).orElse(null));
+        jsonObject.put(
+                "validUntil", this.getValidUntil().map(simpleDateFormat::format).orElse(null));
+
+        return jsonObject;
     }
 }

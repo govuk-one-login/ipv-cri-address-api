@@ -38,7 +38,7 @@ import static uk.gov.di.ipv.cri.address.library.domain.verifiablecredential.Veri
 import static uk.gov.di.ipv.cri.address.library.domain.verifiablecredential.VerifiableCredentialConstants.VC_CREDENTIAL_SUBJECT;
 
 @ExtendWith(MockitoExtension.class)
-public class VerifiableCredentialServiceTest implements TestFixtures {
+class VerifiableCredentialServiceTest implements TestFixtures {
     public static final String SUBJECT = "subject";
     public static final String UPRN = "72262801";
     public static final String BUILDING_NUMBER = "8";
@@ -76,7 +76,7 @@ public class VerifiableCredentialServiceTest implements TestFixtures {
         verify(mockSignedClaimSetJwt).createSignedJwt(any());
     }
 
-    // @Test
+    @Test
     void shouldCreateValidSignedJWT()
             throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException, ParseException,
                     JsonProcessingException {
