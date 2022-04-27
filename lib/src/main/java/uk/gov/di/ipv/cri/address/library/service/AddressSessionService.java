@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.constants.RequiredClaims;
 import uk.gov.di.ipv.cri.address.library.domain.RawSessionRequest;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
@@ -92,7 +93,13 @@ public class AddressSessionService {
 
         verifyRequestUri(sessionRequest.getRedirectUri(), clientAuthenticationConfig);
 
-        jwtVerifier.verifyJWT(clientAuthenticationConfig, sessionRequest.getSignedJWT());
+        jwtVerifier.verifyJWT(
+                clientAuthenticationConfig,
+                sessionRequest.getSignedJWT(),
+                List.of(
+                        RequiredClaims.EXP.value,
+                        RequiredClaims.SUB.value,
+                        RequiredClaims.NBF.value));
 
         return sessionRequest;
     }
