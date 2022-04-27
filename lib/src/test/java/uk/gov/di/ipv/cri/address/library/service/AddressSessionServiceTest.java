@@ -1,10 +1,10 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.text.ParseException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,8 +61,28 @@ class AddressSessionServiceTest {
 
     @Mock private DataStore<AddressSessionItem> mockDataStore;
     @Mock private ConfigurationService mockConfigurationService;
-    @Mock private JWTVerifier jwtVerifier;
+    @Mock private JWTDecrypter mockJWTDecrypter;
+    @Mock private JWTVerifier mockJwtVerifier;
+    @Mock private ObjectMapper mockObjectMapper;
     @Captor private ArgumentCaptor<AddressSessionItem> mockAddressSessionItem;
+
+    @BeforeAll
+    static void beforeAll() {
+        fixedInstant = Instant.now();
+    }
+
+    @BeforeEach
+    void setUp() {
+        Clock nowClock = Clock.fixed(fixedInstant, ZoneId.systemDefault());
+        addressSessionService =
+                new AddressSessionService(
+                        mockDataStore,
+                        mockConfigurationService,
+                        nowClock,
+                        mockJwtVerifier,
+                        mockJWTDecrypter,
+                        mockObjectMapper);
+    }
 
     @Test
     void shouldCallCreateOnAddressSessionDataStore() {
@@ -87,51 +109,58 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenSessionRequestIsInvalid() {
+    void shouldThrowValidationExceptionWhenSessionRequestIsInvalid() throws IOException {
+        String requestBody = marshallToJSON(Map.of("not", "a-session-request"));
+        when(mockObjectMapper.readValue(requestBody, RawSessionRequest.class))
+                .thenThrow(Mockito.mock(JsonProcessingException.class));
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(Map.of("not", "a-session-request"))));
+                        () -> addressSessionService.validateSessionRequest(requestBody));
         assertThat(exception.getMessage(), containsString("could not parse request body"));
         verifyNoInteractions(mockConfigurationService);
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenRequestClientIdIsInvalid() {
+    void shouldThrowValidationExceptionWhenRequestClientIdIsInvalid()
+            throws ParseException, JOSEException, JsonProcessingException {
         String invalidClientId = "invalid-client-id";
+        String testRequestBody = "test-request-body";
         String configParameterPath = "/clients/" + invalidClientId + "/jwtAuthentication";
         SignedJWTBuilder signedJWTBuilder = new SignedJWTBuilder().setClientId(invalidClientId);
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
+        SignedJWT signedJWT = signedJWTBuilder.build();
+        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWT);
         rawSessionRequest.setClientId(invalidClientId);
-
+        when(mockObjectMapper.readValue(testRequestBody, RawSessionRequest.class))
+                .thenReturn(rawSessionRequest);
+        when(mockJWTDecrypter.decrypt(rawSessionRequest.getRequestJWT())).thenReturn(signedJWT);
         when(mockConfigurationService.getParametersForPath(configParameterPath))
                 .thenReturn(Map.of());
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
+                        () -> addressSessionService.validateSessionRequest(testRequestBody));
         assertThat(exception.getMessage(), containsString("no configuration for client id"));
         verify(mockConfigurationService).getParametersForPath(configParameterPath);
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenRedirectUriIsInvalid() {
+    void shouldThrowValidationExceptionWhenRedirectUriIsInvalid()
+            throws ParseException, JOSEException, JsonProcessingException {
         SignedJWTBuilder signedJWTBuilder =
                 new SignedJWTBuilder().setRedirectUri("https://www.example.com/not-valid-callback");
+        SignedJWT signedJWT = signedJWTBuilder.build();
         RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
+        String requestBody = "test request body";
+        when(mockObjectMapper.readValue(requestBody, RawSessionRequest.class))
+                .thenReturn(rawSessionRequest);
+        when(mockJWTDecrypter.decrypt(rawSessionRequest.getRequestJWT())).thenReturn(signedJWT);
         initMockConfigurationService(signedJWTBuilder.getCertificate(), false);
 
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
+                        () -> addressSessionService.validateSessionRequest(requestBody));
         assertThat(
                 exception.getMessage(),
                 containsString(
@@ -139,22 +168,29 @@ class AddressSessionServiceTest {
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenJWTIsInvalid() {
-        RawSessionRequest sessionRequest = createRawSessionRequest("not a jwt");
+    void shouldThrowValidationExceptionWhenJWTIsInvalid()
+            throws JsonProcessingException, ParseException, JOSEException {
+        RawSessionRequest rawSessionRequest = createRawSessionRequest("not a jwt");
+
+        String requestBody = "test request body";
+        when(mockObjectMapper.readValue(requestBody, RawSessionRequest.class))
+                .thenReturn(rawSessionRequest);
+        when(mockJWTDecrypter.decrypt(rawSessionRequest.getRequestJWT())).thenReturn(null);
 
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(sessionRequest)));
-        assertThat(exception.getMessage(), containsString("Could not parse request JWT"));
+                        () -> addressSessionService.validateSessionRequest(requestBody));
+        assertThat(
+                exception.getMessage(),
+                containsString("could not parse request body to signed JWT"));
     }
 
     @Test
     void shouldValidateJWTSignedWithECKey()
             throws IOException, SessionValidationException, ClientConfigurationException,
-                    java.text.ParseException {
+                    java.text.ParseException, JOSEException {
+        String requestBody = "test request body";
         SignedJWTBuilder signedJWTBuilder =
                 new SignedJWTBuilder()
                         .setPrivateKeyFile("signing_ec.pk8")
@@ -162,13 +198,15 @@ class AddressSessionServiceTest {
                         .setSigningAlgorithm(JWSAlgorithm.ES384);
         SignedJWT signedJWT = signedJWTBuilder.build();
         RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWT);
+        when(mockObjectMapper.readValue(requestBody, RawSessionRequest.class))
+                .thenReturn(rawSessionRequest);
 
+        when(mockJWTDecrypter.decrypt(rawSessionRequest.getRequestJWT())).thenReturn(signedJWT);
         Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder.getCertificate());
         configMap.put("authenticationAlg", "ES384");
         initMockConfigurationService(configMap, false);
 
-        SessionRequest result =
-                addressSessionService.validateSessionRequest(marshallToJSON(rawSessionRequest));
+        SessionRequest result = addressSessionService.validateSessionRequest(requestBody);
 
         makeSessionRequestFieldValueAssertions(
                 result, rawSessionRequest, signedJWT.getJWTClaimsSet());
@@ -238,21 +276,8 @@ class AddressSessionServiceTest {
         assertThat(item.getAccessToken(), equalTo(addressSessionItem.getAccessToken()));
     }
 
-    @BeforeAll
-    static void beforeAll() {
-        fixedInstant = Instant.now();
-    }
-
-    @BeforeEach
-    void setUp() {
-        Clock nowClock = Clock.fixed(fixedInstant, ZoneId.systemDefault());
-        addressSessionService =
-                new AddressSessionService(
-                        mockDataStore, mockConfigurationService, nowClock, jwtVerifier);
-    }
-
     @Test
-    void parseAddresses() throws AddressProcessingException, JsonProcessingException {
+    void shouldParseAddresses() throws AddressProcessingException, JsonProcessingException {
         String addresses =
                 "[\n"
                         + "   {\n"
@@ -286,23 +311,20 @@ class AddressSessionServiceTest {
                         + "      \"validFrom\": \"2021-08-02\"\n"
                         + "   }\n"
                         + "]";
+
+        List<CanonicalAddress> readValueResult = List.of(new CanonicalAddress());
+        ObjectReader mockObjectReader = Mockito.mock(ObjectReader.class);
+        when(mockObjectReader.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES))
+                .thenReturn(mockObjectReader);
+        when(mockObjectMapper.readerForListOf(CanonicalAddress.class)).thenReturn(mockObjectReader);
+        when(mockObjectReader.readValue(addresses)).thenReturn(readValueResult);
+
         List<CanonicalAddress> parsedAddresses = addressSessionService.parseAddresses(addresses);
-        assertThat(parsedAddresses.size(), equalTo(3));
-        assertThat(parsedAddresses.get(0).getUprn().orElse(null), equalTo(72262801L));
-        assertThat(
-                parsedAddresses.get(0).getValidFrom().orElse(new Date()),
-                equalTo(Date.from(Instant.parse("2010-02-26T00:00:00.00Z"))));
 
-        assertThat(parsedAddresses.get(2).getValidUntil().isPresent(), equalTo(false));
-
-        ObjectMapper mapper =
-                new ObjectMapper()
-                        .registerModule(new Jdk8Module())
-                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        String serializedJson = mapper.writeValueAsString(parsedAddresses);
-        assertThat(serializedJson, containsString("\"2021-08-02\""));
+        assertThat(parsedAddresses.size(), equalTo(readValueResult.size()));
+        verify(mockObjectMapper).readerForListOf(CanonicalAddress.class);
+        verify(mockObjectReader).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        verify(mockObjectReader).readValue(addresses);
     }
 
     @Test
