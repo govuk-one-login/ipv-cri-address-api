@@ -1,5 +1,7 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -10,7 +12,6 @@ import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.nimbusds.jwt.JWTClaimNames.EXPIRATION_TIME;
 import static com.nimbusds.jwt.JWTClaimNames.ISSUER;
@@ -48,6 +49,12 @@ public class VerifiableCredentialService {
     public SignedJWT generateSignedVerifiableCredentialJwt(
             String subject, List<CanonicalAddress> canonicalAddresses) throws JOSEException {
         var now = Instant.now();
+        ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
+
+        var addresses = new Object[canonicalAddresses.size()];
+        for (int i = 0; i < canonicalAddresses.size(); i++) {
+            addresses[i] = mapper.convertValue(canonicalAddresses.get(i), Map.class);
+        }
 
         var claimsSet =
                 new JWTClaimsSet.Builder()
@@ -68,11 +75,7 @@ public class VerifiableCredentialService {
                                         VC_CONTEXT,
                                         new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
                                         VC_CREDENTIAL_SUBJECT,
-                                        Map.of(
-                                                VC_ADDRESS_KEY,
-                                                canonicalAddresses.stream()
-                                                        .map(CanonicalAddress::toJSONObject)
-                                                        .collect(Collectors.toList()))))
+                                        Map.of(VC_ADDRESS_KEY, addresses)))
                         .build();
 
         return signedClaimSetJwt.createSignedJwt(claimsSet);
