@@ -60,11 +60,11 @@ Mappings:
 
   IPVCoreStubAuthenticationAlgMapping:
     Environment:
-      dev: "RS256"
-      build: "RS256"
-      staging: "RS256"
-      integration: "RS256"
-      production: "RS256"
+      dev: "ES256"
+      build: "ES256"
+      staging: "ES256"
+      integration: "ES256"
+      production: "ES256"
 
   IPVCoreStubAudience:
     Environment:
@@ -89,6 +89,14 @@ Mappings:
       staging: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
       integration: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
       production: "MIIDJDCCAgwCCQD3oEU83RePojANBgkqhkiG9w0BAQsFADBUMQswCQYDVQQGEwJHQjEXMBUGA1UECgwOQ2FiaW5ldCBPZmZpY2UxDDAKBgNVBAsMA0dEUzEeMBwGA1UEAwwVSVBWIENvcmUgU3R1YiBTaWduaW5nMB4XDTIyMDIwNDE3NDg1NFoXDTMyMDIwMjE3NDg1NFowVDELMAkGA1UEBhMCR0IxFzAVBgNVBAoMDkNhYmluZXQgT2ZmaWNlMQwwCgYDVQQLDANHRFMxHjAcBgNVBAMMFUlQViBDb3JlIFN0dWIgU2lnbmluZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMT9tGIIujF53SfiHsc+BDra/5qb/PObr8BfutWq4/9kp32eHKOBqTYberXeKJhIS80OB9AC/55QO3V2HdajJJXZbj37shvNy5HcGNxVYRFWt/qyh3+SRTbgfCnfs4QQ6uSLQkJof347qGi26kJU7RuM47grfGCahMvdEOnQgeIHLKw1yqmu8yniy0Lf48jnGlyR6r6QG7UMI2Dk5hdGOEw2WZCoSGLsXII94xS3JKB4sbjEfyuMg87o3pBjoks1LP8KXRcbkBIlc2q8DtEh2YtP57VJfdNhR/gxtHjZhL2E6q+MM158/1xwyXIGcllf+MIserihKEnmsk6wKaJcalcCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAmiAOKd9ZQSjZmIB0GBD1lJaiI1xWwHbwhhuwFsO3YzrIOmB/pDYh0e2FFdsYZ/I48VZn4WQM8mexF/3B2mnG3gXbqHtY8tRPLa0nZq53cOWczKF8RUM2xeWwitYZvfMtx6rRliCUv91IbmKHeGRGiOifOoGxvj8qp30lB2mRBuxP2N4VUAdkqWUjnTdPJr+5eHQeFTbgFg44FxJ59Mz+gGbv4/dQo8ZtFFA/Cqwvz4pevFSken4e9wRF6JGA+AuYdW3tiVutDo/UF+aFir/pDfcrCtyes9xiUv3Iu9x7zKEUG7hwMj0gG83Cvx5SuWJyPb4eKrrdRlRRmLD7PsucUw=="
+
+  IPVCoreStubPublicSigningJwkBase64Mapping:
+    Environment:
+      dev: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
+      build: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
+      staging: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
+      integration: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
+      production: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
 
   IPVCoreStubRedirectURIMapping:
     Environment:
@@ -129,14 +137,6 @@ Mappings:
       staging: "address-cri-staging"
       integration: "address-cri-integration"
       production: "address-cri"
-
-  AuthRequestKmsEncryptionKeyIdMapping:
-    Environment:
-      dev: "610ae2fc-75a1-44d7-b54c-6ee85de10871qq"
-      build: "TBA"
-      staging: "TBA"
-      integration: "TBA"
-      production: "TBA"
 
 Resources:
   AddressApi:
@@ -185,7 +185,7 @@ Resources:
             TableName:
               Ref: AddressSessionTable
         - KMSDecryptPolicy:
-            KeyId: "610ae2fc-75a1-44d7-b54c-6ee85de10871"
+            KeyId: !Ref AddressCriAuthJarDecryptionKey
         - Statement:
             - Effect: Allow
               Action:
@@ -230,6 +230,7 @@ Resources:
                 - ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIURL"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
         - Statement:
             - Effect: Allow
               Action:
@@ -266,6 +267,7 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
         - Statement:
             - Effect: Allow
               Action:
@@ -296,6 +298,7 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
         - Statement:
             - Effect: Allow
               Action:
@@ -344,6 +347,7 @@ Resources:
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
@@ -390,6 +394,29 @@ Resources:
       AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriVcSigningKey
       TargetKeyId: !Ref AddressCriVcSigningKey
 
+  AddressCriAuthJarDecryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Asymmetric key used by Address CRI to decrypt the Authorization JAR JWE
+      Enabled: true
+      KeySpec: RSA_2048
+      KeyUsage: ENCRYPT_DECRYPT
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'Enable Root access'
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - 'kms:*'
+            Resource: '*'
+
+  DecryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriAuthJarDecryptionKey
+      TargetKeyId: !Ref AddressCriAuthJarDecryptionKey
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -522,6 +549,13 @@ Resources:
       Type: String
       Value: !FindInMap [IPVCoreStubPublicCertificateToVerifyMapping, Environment, !Ref 'Environment']
 
+  IPVCoreStubPublicSigningJwkBase64Parameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/publicSigningJwkBase64"
+      Type: String
+      Value: !FindInMap [IPVCoreStubPublicSigningJwkBase64Mapping, Environment, !Ref 'Environment']
+
   IPVCoreStubRedirectURIParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -542,7 +576,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
       Type: String
-      Value: !FindInMap [AuthRequestKmsEncryptionKeyIdMapping, Environment, !Ref 'Environment']
+      Value: !Ref AddressCriAuthJarDecryptionKey
       Description: The (KMS) encryption key identifier for decrypting authorisation requests
 
   OrdnanceSurveyAPIURLParameter:
