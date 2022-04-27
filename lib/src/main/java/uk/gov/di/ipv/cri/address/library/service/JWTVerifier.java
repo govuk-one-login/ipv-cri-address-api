@@ -4,6 +4,7 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
@@ -19,17 +20,20 @@ import java.security.cert.CertificateFactory;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
-public class JWTVerifier {
+class JWTVerifier {
 
-    public void verifyJWT(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+    void verifyJWT(
+            Map<String, String> clientAuthenticationConfig,
+            SignedJWT signedJWT,
+            List<String> requiredClaims)
             throws SessionValidationException, ClientConfigurationException {
         this.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-        this.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT);
+        this.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT, requiredClaims);
         this.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
     }
 
@@ -53,20 +57,23 @@ public class JWTVerifier {
         String publicCertificateToVerify =
                 clientAuthenticationConfig.get("publicCertificateToVerify");
         try {
-            PublicKey pubicKeyFromConfig = getPublicKeyFromConfig(publicCertificateToVerify);
-
-            if (!validSignature(signedJWT, pubicKeyFromConfig)) {
+            JWSAlgorithm signingAlgorithm = signedJWT.getHeader().getAlgorithm();
+            PublicKey pubicKeyFromConfig =
+                    getPublicKeyFromConfig(publicCertificateToVerify, signingAlgorithm);
+            if (!verifySignature(signedJWT, pubicKeyFromConfig)) {
                 throw new SessionValidationException("JWT signature verification failed");
             }
-        } catch (JOSEException e) {
+        } catch (JOSEException | ParseException e) {
             throw new SessionValidationException("JWT signature verification failed", e);
         } catch (CertificateException e) {
-            throw new ClientConfigurationException(e);
+            throw new ClientConfigurationException("Certificate problem encountered", e);
         }
     }
 
     private void verifyJWTClaimsSet(
-            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+            Map<String, String> clientAuthenticationConfig,
+            SignedJWT signedJWT,
+            List<String> requiredClaims)
             throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
@@ -74,24 +81,33 @@ public class JWTVerifier {
                                 .issuer(clientAuthenticationConfig.get("issuer"))
                                 .audience(clientAuthenticationConfig.get("audience"))
                                 .build(),
-                        new HashSet<>(Arrays.asList("exp", "sub")));
+                        new HashSet<>(requiredClaims));
 
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);
         } catch (BadJWTException | ParseException e) {
-            throw new SessionValidationException(e.getMessage());
+            throw new SessionValidationException(e.getMessage(), e);
         }
     }
 
-    private PublicKey getPublicKeyFromConfig(String base64) throws CertificateException {
-        byte[] binaryCertificate = Base64.getDecoder().decode(base64);
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        Certificate certificate =
-                factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
-        return certificate.getPublicKey();
+    private PublicKey getPublicKeyFromConfig(
+            String serialisedPublicKey, JWSAlgorithm signingAlgorithm)
+            throws CertificateException, ParseException, JOSEException {
+        if (JWSAlgorithm.Family.RSA.contains(signingAlgorithm)) {
+            byte[] binaryCertificate = Base64.getDecoder().decode(serialisedPublicKey);
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            Certificate certificate =
+                    factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
+            return certificate.getPublicKey();
+        } else if (JWSAlgorithm.Family.EC.contains(signingAlgorithm)) {
+            return new ECKey.Builder(ECKey.parse(serialisedPublicKey)).build().toECPublicKey();
+        } else {
+            throw new IllegalArgumentException(
+                    "Unexpected signing algorithm encountered: " + signingAlgorithm.getName());
+        }
     }
 
-    private boolean validSignature(SignedJWT signedJWT, PublicKey clientPublicKey)
+    private boolean verifySignature(SignedJWT signedJWT, PublicKey clientPublicKey)
             throws JOSEException, ClientConfigurationException {
         if (clientPublicKey instanceof RSAPublicKey) {
             RSASSAVerifier rsassaVerifier = new RSASSAVerifier((RSAPublicKey) clientPublicKey);
@@ -101,7 +117,8 @@ public class JWTVerifier {
             return signedJWT.verify(ecdsaVerifier);
         } else {
             throw new ClientConfigurationException(
-                    new IllegalStateException("unknown public JWT signing key"));
+                    new IllegalStateException(
+                            "unknown public signing key: " + clientPublicKey.getAlgorithm()));
         }
     }
 }

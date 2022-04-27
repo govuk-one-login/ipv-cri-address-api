@@ -117,18 +117,26 @@ Mappings:
   VerifiableCredentialKmsSigningKeyMapping:
     Environment:
       dev: "5d50acf9-72f4-4039-a480-eaaf6bfdd8c8"
-      build: "build-verify-credential-key-id"
-      staging: "staging-verify-credential-key-id"
+      build: "4ff6d892-dc96-448b-8f14-1cf15b95c4ef"
+      staging: "1100ce97-a772-4a0c-a978-1933e36971f4"
       integration: "integration-verify-credential-key-id"
       production: "production-verify-credential-key-id"
 
   AddressCriAudienceMapping:
     Environment:
-      dev: "address-cri-dev"
+      dev: "https://dev.address.cri.account.gov.uk"
       build: "address-cri-build"
       staging: "address-cri-staging"
       integration: "address-cri-integration"
       production: "address-cri"
+
+  AuthRequestKmsEncryptionKeyIdMapping:
+    Environment:
+      dev: "610ae2fc-75a1-44d7-b54c-6ee85de10871qq"
+      build: "TBA"
+      staging: "TBA"
+      integration: "TBA"
+      production: "TBA"
 
 Resources:
   AddressApi:
@@ -176,6 +184,8 @@ Resources:
         - DynamoDBWritePolicy:
             TableName:
               Ref: AddressSessionTable
+        - KMSDecryptPolicy:
+            KeyId: "610ae2fc-75a1-44d7-b54c-6ee85de10871"
         - Statement:
             - Effect: Allow
               Action:
@@ -184,6 +194,7 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressCriAudience"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
         - Statement:
             - Effect: Allow
               Action:
@@ -525,6 +536,14 @@ Resources:
       Type: String
       Value: !FindInMap [AddressCriAudienceMapping, Environment, !Ref 'Environment']
       Description: The address credential issuer (audience) identifier
+
+  AuthRequestKmsEncryptionKeyIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
+      Type: String
+      Value: !FindInMap [AuthRequestKmsEncryptionKeyIdMapping, Environment, !Ref 'Environment']
+      Description: The (KMS) encryption key identifier for decrypting authorisation requests
 
   OrdnanceSurveyAPIURLParameter:
     Type: AWS::SSM::Parameter

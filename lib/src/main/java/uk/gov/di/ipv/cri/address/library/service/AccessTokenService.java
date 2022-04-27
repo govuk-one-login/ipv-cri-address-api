@@ -19,6 +19,7 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.constants.RequiredClaims;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
@@ -44,7 +45,6 @@ public class AccessTokenService {
     private final DataStore<AddressSessionItem> dataStore;
     private final ConfigurationService configurationService;
     private final JWTVerifier jwtVerifier;
-    private ListUtil listHelper = new ListUtil();
 
     public AccessTokenService(
             DataStore<AddressSessionItem> dataStore,
@@ -53,14 +53,12 @@ public class AccessTokenService {
         this.dataStore = dataStore;
         this.configurationService = configurationService;
         this.jwtVerifier = jwtVerifier;
-        this.listHelper = new ListUtil();
     }
 
     @ExcludeFromGeneratedCoverageReport
     public AccessTokenService() {
-        var configurationServiceLocal = new ConfigurationService();
-        dataStore = getDataStore(configurationServiceLocal);
         this.configurationService = new ConfigurationService();
+        dataStore = getDataStore(this.configurationService);
         this.jwtVerifier = new JWTVerifier();
     }
 
@@ -143,7 +141,10 @@ public class AccessTokenService {
                             tokenRequest.getClientAuthentication().getClientID().getValue());
             SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
 
-            jwtVerifier.verifyJWT(clientAuthenticationConfig, signedJWT);
+            jwtVerifier.verifyJWT(
+                    clientAuthenticationConfig,
+                    signedJWT,
+                    List.of(RequiredClaims.EXP.value, RequiredClaims.SUB.value));
             return tokenRequest;
         } catch (SessionValidationException
                 | ClientConfigurationException
@@ -256,6 +257,7 @@ public class AccessTokenService {
     private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
         var addressSessionTable = dataStore.getTable();
         var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
+        var listHelper = new ListUtil();
         return listHelper.getOneItemOrThrowError(
                 dataStore.getItemByGsi(index, authorizationCodeFromRequest));
     }
