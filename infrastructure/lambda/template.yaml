@@ -117,8 +117,8 @@ Mappings:
   VerifiableCredentialKmsSigningKeyMapping:
     Environment:
       dev: "5d50acf9-72f4-4039-a480-eaaf6bfdd8c8"
-      build: "build-verify-credential-key-id"
-      staging: "staging-verify-credential-key-id"
+      build: "4ff6d892-dc96-448b-8f14-1cf15b95c4ef"
+      staging: "1100ce97-a772-4a0c-a978-1933e36971f4"
       integration: "integration-verify-credential-key-id"
       production: "production-verify-credential-key-id"
 
