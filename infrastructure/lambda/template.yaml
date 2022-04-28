@@ -185,7 +185,7 @@ Resources:
             TableName:
               Ref: AddressSessionTable
         - KMSDecryptPolicy:
-            KeyId: !Ref AddressCriAuthJarDecryptionKey
+            KeyId: !Ref AddressCriDecryptionKey
         - Statement:
             - Effect: Allow
               Action:
@@ -394,7 +394,7 @@ Resources:
       AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriVcSigningKey
       TargetKeyId: !Ref AddressCriVcSigningKey
 
-  AddressCriAuthJarDecryptionKey:
+  AddressCriDecryptionKey:
     Type: AWS::KMS::Key
     Properties:
       Description: Asymmetric key used by Address CRI to decrypt the Authorization JAR JWE
@@ -415,8 +415,8 @@ Resources:
   DecryptionKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriAuthJarDecryptionKey
-      TargetKeyId: !Ref AddressCriAuthJarDecryptionKey
+      AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriDecryptionKey
+      TargetKeyId: !Ref AddressCriDecryptionKey
 
   AddressSessionTable:
     Type: "AWS::DynamoDB::Table"
@@ -576,7 +576,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
       Type: String
-      Value: !Ref AddressCriAuthJarDecryptionKey
+      Value: !Ref AddressCriDecryptionKey
       Description: The (KMS) encryption key identifier for decrypting authorisation requests
 
   OrdnanceSurveyAPIURLParameter:
