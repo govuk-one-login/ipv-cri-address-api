@@ -54,8 +54,7 @@ class JWTVerifier {
     private void verifyJWTSignature(
             Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException, ClientConfigurationException {
-        String publicCertificateToVerify =
-                clientAuthenticationConfig.get("publicCertificateToVerify");
+        String publicCertificateToVerify = clientAuthenticationConfig.get("publicSigningJwkBase64");
         try {
             JWSAlgorithm signingAlgorithm = signedJWT.getHeader().getAlgorithm();
             PublicKey pubicKeyFromConfig =
@@ -100,7 +99,8 @@ class JWTVerifier {
                     factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
             return certificate.getPublicKey();
         } else if (JWSAlgorithm.Family.EC.contains(signingAlgorithm)) {
-            return new ECKey.Builder(ECKey.parse(serialisedPublicKey)).build().toECPublicKey();
+            return ECKey.parse(new String(Base64.getDecoder().decode(serialisedPublicKey)))
+                    .toECPublicKey();
         } else {
             throw new IllegalArgumentException(
                     "Unexpected signing algorithm encountered: " + signingAlgorithm.getName());
