@@ -101,7 +101,7 @@ class SessionHandlerTest {
                 ErrorResponse.SESSION_VALIDATION_ERROR.getMessage(), responseBody.get("message"));
 
         verify(eventProbe).counterMetric("session_created", 0d);
-        verify(eventProbe).log(Level.ERROR, sessionValidationException);
+        verify(eventProbe).log(Level.INFO, sessionValidationException);
         verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 

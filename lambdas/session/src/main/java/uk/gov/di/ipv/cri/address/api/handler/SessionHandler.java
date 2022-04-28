@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.apache.logging.log4j.Level.ERROR;
+import static org.apache.logging.log4j.Level.INFO;
 
 public class SessionHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -69,7 +70,7 @@ public class SessionHandler
 
         } catch (SessionValidationException e) {
 
-            eventProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
+            eventProbe.log(INFO, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, ErrorResponse.SESSION_VALIDATION_ERROR);

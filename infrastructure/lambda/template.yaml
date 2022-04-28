@@ -124,19 +124,11 @@ Mappings:
 
   AddressCriAudienceMapping:
     Environment:
-      dev: "https://dev.address.cri.account.gov.uk"
+      dev: "address-cri-dev"
       build: "address-cri-build"
       staging: "address-cri-staging"
       integration: "address-cri-integration"
       production: "address-cri"
-
-  AuthRequestKmsEncryptionKeyIdMapping:
-    Environment:
-      dev: "610ae2fc-75a1-44d7-b54c-6ee85de10871qq"
-      build: "TBA"
-      staging: "TBA"
-      integration: "TBA"
-      production: "TBA"
 
 Resources:
   AddressApi:
@@ -184,8 +176,6 @@ Resources:
         - DynamoDBWritePolicy:
             TableName:
               Ref: AddressSessionTable
-        - KMSDecryptPolicy:
-            KeyId: "610ae2fc-75a1-44d7-b54c-6ee85de10871"
         - Statement:
             - Effect: Allow
               Action:
@@ -194,7 +184,6 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressCriAudience"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
         - Statement:
             - Effect: Allow
               Action:
@@ -536,14 +525,6 @@ Resources:
       Type: String
       Value: !FindInMap [AddressCriAudienceMapping, Environment, !Ref 'Environment']
       Description: The address credential issuer (audience) identifier
-
-  AuthRequestKmsEncryptionKeyIdParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
-      Type: String
-      Value: !FindInMap [AuthRequestKmsEncryptionKeyIdMapping, Environment, !Ref 'Environment']
-      Description: The (KMS) encryption key identifier for decrypting authorisation requests
 
   OrdnanceSurveyAPIURLParameter:
     Type: AWS::SSM::Parameter
