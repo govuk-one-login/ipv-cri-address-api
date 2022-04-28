@@ -8,6 +8,7 @@ import org.apache.http.HttpStatus;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import uk.gov.di.ipv.cri.address.api.service.SessionRequestService;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
@@ -30,16 +31,20 @@ public class SessionHandler
     protected static final String REDIRECT_URI = "redirect_uri";
     public static final String EVENT_SESSION_CREATED = "session_created";
     private final AddressSessionService addressSessionService;
+    private final SessionRequestService sesssionRequestService;
     private final EventProbe eventProbe;
 
     @ExcludeFromGeneratedCoverageReport
     public SessionHandler() {
-        addressSessionService = new AddressSessionService();
-        eventProbe = new EventProbe();
+        this(new AddressSessionService(), new SessionRequestService(), new EventProbe());
     }
 
-    public SessionHandler(AddressSessionService addressSessionService, EventProbe eventProbe) {
+    public SessionHandler(
+            AddressSessionService addressSessionService,
+            SessionRequestService sessionRequestService,
+            EventProbe eventProbe) {
         this.addressSessionService = addressSessionService;
+        this.sesssionRequestService = sessionRequestService;
         this.eventProbe = eventProbe;
     }
 
@@ -50,9 +55,8 @@ public class SessionHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         try {
-
             SessionRequest sessionRequest =
-                    addressSessionService.validateSessionRequest(input.getBody());
+                    sesssionRequestService.validateSessionRequest(input.getBody());
 
             eventProbe.addDimensions(Map.of("issuer", sessionRequest.getClientId()));
 

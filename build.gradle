@@ -46,6 +46,7 @@ subprojects {
 		dynamodb
 		jackson
 		lambda
+		kms
 		lambda_tests
 		lettuce
 		nimbus
@@ -68,6 +69,8 @@ subprojects {
 				"com.amazonaws:aws-lambda-java-events:${dependencyVersions.aws_lambda_events_version}",
 				"software.amazon.lambda:powertools-parameters:${dependencyVersions.aws_powertools_version}",
 				"org.apache.httpcomponents:httpclient:4.5.13"
+
+		kms "com.amazonaws:aws-java-sdk-kms:${dependencyVersions.aws_sdk_version}"
 
 		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
 

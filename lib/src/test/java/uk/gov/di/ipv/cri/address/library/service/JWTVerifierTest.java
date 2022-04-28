@@ -6,13 +6,13 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.address.library.constants.RequiredClaims;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 
 import java.security.KeyFactory;
@@ -331,9 +331,9 @@ class JWTVerifierTest {
                                         clientConfigMap,
                                         signedJWT,
                                         List.of(
-                                                RequiredClaims.EXP.value,
-                                                RequiredClaims.SUB.value,
-                                                RequiredClaims.NBF.value)));
+                                                JWTClaimNames.EXPIRATION_TIME,
+                                                JWTClaimNames.SUBJECT,
+                                                JWTClaimNames.NOT_BEFORE)));
 
         assertEquals("JWT missing required claims: [nbf]", exception.getMessage());
     }
@@ -374,6 +374,6 @@ class JWTVerifierTest {
     }
 
     private List<String> getRequiredClaims() {
-        return List.of(RequiredClaims.EXP.value, RequiredClaims.SUB.value);
+        return List.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT);
     }
 }

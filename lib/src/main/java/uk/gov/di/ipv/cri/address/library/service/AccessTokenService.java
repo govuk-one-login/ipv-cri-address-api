@@ -1,6 +1,7 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.nimbusds.common.contenttype.ContentType;
+import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
@@ -19,7 +20,6 @@ import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
-import uk.gov.di.ipv.cri.address.library.constants.RequiredClaims;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
@@ -37,7 +37,6 @@ import java.util.UUID;
 public class AccessTokenService {
     public static final String CODE = "code";
     public static final String GRANT_TYPE = "grant_type";
-    public static final String CLIENT_ID = "client_id";
     public static final String CLIENT_ASSERTION_TYPE = "client_assertion_type";
     public static final String CLIENT_ASSERTION = "client_assertion";
     public static final String AUTHORISATION_CODE = "authorization_code";
@@ -144,7 +143,7 @@ public class AccessTokenService {
             jwtVerifier.verifyJWT(
                     clientAuthenticationConfig,
                     signedJWT,
-                    List.of(RequiredClaims.EXP.value, RequiredClaims.SUB.value));
+                    List.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT));
             return tokenRequest;
         } catch (SessionValidationException
                 | ClientConfigurationException
