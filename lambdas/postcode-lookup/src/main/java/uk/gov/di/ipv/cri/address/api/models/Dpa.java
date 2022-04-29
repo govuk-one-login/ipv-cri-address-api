@@ -1,6 +1,7 @@
-package uk.gov.di.ipv.cri.address.library.models.ordnancesurvey;
+package uk.gov.di.ipv.cri.address.api.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 
 public class Dpa {
 
@@ -431,5 +432,28 @@ public class Dpa {
 
     public void setDependentLocality(String dependentLocality) {
         this.dependentLocality = dependentLocality;
+    }
+
+    public CanonicalAddress toCanonicalAddress() {
+        CanonicalAddress canonicalAddress = new CanonicalAddress();
+
+        if (this.getUprn() != null && !this.getUprn().isEmpty()) {
+            canonicalAddress.setUprn(Long.parseLong(this.getUprn()));
+        }
+        canonicalAddress.setOrganisationName(this.getOrganisationName());
+        canonicalAddress.setDepartmentName(this.getDepartmentName());
+        canonicalAddress.setSubBuildingName(this.getSubBuildingName());
+        canonicalAddress.setBuildingNumber(this.getBuildingNumber());
+        canonicalAddress.setDependentStreetName(this.getDependentThoroughfareName());
+        canonicalAddress.setDoubleDependentAddressLocality(this.getDoubleDependentLocality());
+        canonicalAddress.setDependentAddressLocality(this.getDependentLocality());
+        canonicalAddress.setBuildingName(this.getBuildingName());
+        canonicalAddress.setStreetName(this.getThoroughfareName());
+        canonicalAddress.setAddressLocality(this.getPostTown());
+        canonicalAddress.setPostalCode(this.getPostcode());
+        // All addresses returned by this service can only possibly
+        // exist within tbe within the United Kingdom, so set to GBR
+        canonicalAddress.setAddressCountry("GBR");
+        return canonicalAddress;
     }
 }

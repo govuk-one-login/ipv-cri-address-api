@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.exception;
+package uk.gov.di.ipv.cri.address.api.exceptions;
 
 public class PostcodeLookupProcessingException extends RuntimeException {
     public PostcodeLookupProcessingException() {

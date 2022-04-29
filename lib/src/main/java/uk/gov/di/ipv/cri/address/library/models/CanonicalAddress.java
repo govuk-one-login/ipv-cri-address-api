@@ -5,7 +5,6 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.Result;
 
 import java.util.Date;
 import java.util.Optional;
@@ -48,26 +47,6 @@ public class CanonicalAddress {
     @JsonAlias("residentTo")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date validUntil;
-
-    public CanonicalAddress(Result result) {
-        var dpa = result.getDpa();
-        if (dpa.getUprn() != null && !dpa.getUprn().isEmpty()) {
-            this.uprn = Long.parseLong(dpa.getUprn());
-        }
-        this.organisationName = dpa.getOrganisationName();
-        this.departmentName = dpa.getDepartmentName();
-        this.subBuildingName = dpa.getSubBuildingName();
-        this.buildingNumber = dpa.getBuildingNumber();
-        this.dependentStreetName = dpa.getDependentThoroughfareName();
-        this.doubleDependentAddressLocality = dpa.getDoubleDependentLocality();
-        this.dependentAddressLocality = dpa.getDependentLocality();
-        this.buildingName = dpa.getBuildingName();
-        this.streetName = dpa.getThoroughfareName();
-        this.addressLocality = dpa.getPostTown();
-        this.postalCode = dpa.getPostcode();
-        this.addressCountry =
-                "GBR"; // All addresses returned by this service MUST be within the United Kingdom
-    }
 
     public CanonicalAddress() {
         // Default constructor

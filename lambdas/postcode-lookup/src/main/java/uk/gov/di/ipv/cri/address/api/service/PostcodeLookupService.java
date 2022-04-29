@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.service;
+package uk.gov.di.ipv.cri.address.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,11 +6,12 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
-import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
+import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
-import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.OrdnanceSurveyPostcodeError;
-import uk.gov.di.ipv.cri.address.library.models.ordnancesurvey.OrdnanceSurveyPostcodeResponse;
+import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static uk.gov.di.ipv.cri.address.library.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
+import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
 
 public class PostcodeLookupService {
 
@@ -150,7 +151,8 @@ public class PostcodeLookupService {
 
         // Map the postcode response to our model
         return postcodeResponse.getResults().stream()
-                .map(CanonicalAddress::new)
+                .filter(result -> result.getDpa() != null)
+                .map(result -> result.getDpa().toCanonicalAddress())
                 .collect(Collectors.toList());
     }
 }

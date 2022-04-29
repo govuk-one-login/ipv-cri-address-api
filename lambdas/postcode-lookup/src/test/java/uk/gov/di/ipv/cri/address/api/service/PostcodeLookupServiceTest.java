@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.service;
+package uk.gov.di.ipv.cri.address.api.service;
 
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.Logger;
@@ -8,8 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
-import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
