@@ -39,12 +39,10 @@ public class JWTVerifier {
 
     public void verifyJWT(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException, ClientConfigurationException {
-        this.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-        this.verifyJWTClaimsSet(
+        verifyJWT(
                 clientAuthenticationConfig,
                 signedJWT,
                 Set.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT));
-        this.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
     }
 
     private void verifyJWTHeader(
