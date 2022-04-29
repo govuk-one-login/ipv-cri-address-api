@@ -15,9 +15,9 @@ import uk.gov.di.ipv.cri.address.library.service.JWTVerifier;
 
 import java.net.URI;
 import java.text.ParseException;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class SessionRequestService {
     private static final String REDIRECT_URI = "redirect_uri";
@@ -59,7 +59,7 @@ public class SessionRequestService {
         jwtVerifier.verifyJWT(
                 clientAuthenticationConfig,
                 sessionRequest.getSignedJWT(),
-                List.of(
+                Set.of(
                         JWTClaimNames.EXPIRATION_TIME,
                         JWTClaimNames.SUBJECT,
                         JWTClaimNames.NOT_BEFORE));

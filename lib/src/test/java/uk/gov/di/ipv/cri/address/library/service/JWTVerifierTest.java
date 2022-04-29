@@ -25,8 +25,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -330,7 +330,7 @@ class JWTVerifierTest {
                                 jwtVerifier.verifyJWT(
                                         clientConfigMap,
                                         signedJWT,
-                                        List.of(
+                                        Set.of(
                                                 JWTClaimNames.EXPIRATION_TIME,
                                                 JWTClaimNames.SUBJECT,
                                                 JWTClaimNames.NOT_BEFORE)));
@@ -373,7 +373,7 @@ class JWTVerifierTest {
         return ECKey.parse(new String(Base64.getDecoder().decode(privateSigningJwkBase64)));
     }
 
-    private List<String> getRequiredClaims() {
-        return List.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT);
+    private Set<String> getRequiredClaims() {
+        return Set.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT);
     }
 }

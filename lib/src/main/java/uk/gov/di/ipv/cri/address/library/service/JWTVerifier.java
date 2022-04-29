@@ -5,6 +5,7 @@ import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
@@ -21,20 +22,27 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.Base64;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class JWTVerifier {
 
     public void verifyJWT(
             Map<String, String> clientAuthenticationConfig,
             SignedJWT signedJWT,
-            List<String> requiredClaims)
+            Set<String> requiredClaims)
             throws SessionValidationException, ClientConfigurationException {
         this.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
         this.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT, requiredClaims);
         this.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
+    }
+
+    public void verifyJWT(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+            throws SessionValidationException, ClientConfigurationException {
+        verifyJWT(
+                clientAuthenticationConfig,
+                signedJWT,
+                Set.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT));
     }
 
     private void verifyJWTHeader(
@@ -72,7 +80,7 @@ public class JWTVerifier {
     private void verifyJWTClaimsSet(
             Map<String, String> clientAuthenticationConfig,
             SignedJWT signedJWT,
-            List<String> requiredClaims)
+            Set<String> requiredClaims)
             throws SessionValidationException {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
@@ -80,12 +88,12 @@ public class JWTVerifier {
                                 .issuer(clientAuthenticationConfig.get("issuer"))
                                 .audience(clientAuthenticationConfig.get("audience"))
                                 .build(),
-                        new HashSet<>(requiredClaims));
+                        requiredClaims);
 
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);
         } catch (BadJWTException | ParseException e) {
-            throw new SessionValidationException(e.getMessage(), e);
+            throw new SessionValidationException(e.getMessage());
         }
     }
 
