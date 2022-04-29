@@ -92,9 +92,9 @@ Mappings:
 
   IPVCore1IssuerMapping:
     Environment:
-      staging: "ipv-core"
-      integration: "ipv-core"
-      production: "ipv-core"
+      staging: "https://staging-di-ipv-core-front.london.cloudapps.digital"
+      integration: "https://integration-di-ipv-core-front.london.cloudapps.digital"
+      production: "https://di-ipv-core-front.london.cloudapps.digital"
 
   IPVCoreStubPublicSigningJwkBase64Mapping:
     Environment:
