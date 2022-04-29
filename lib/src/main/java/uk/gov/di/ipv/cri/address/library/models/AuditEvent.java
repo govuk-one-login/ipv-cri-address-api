@@ -12,13 +12,13 @@ public class AuditEvent {
     private AuditEventTypes event;
 
     @JsonProperty("event_id")
-    private String event_id;
+    private String eventId;
 
     @JsonProperty("client_id")
-    private String client_id;
+    private String clientId;
 
     @JsonProperty("timestamp_formatted")
-    private String timestamp_formatted;
+    private String timestampFormatted;
 
     public int getTimestamp() {
         return timestamp;
@@ -36,27 +36,27 @@ public class AuditEvent {
         this.event = event;
     }
 
-    public String getEvent_id() {
-        return event_id;
+    public String getEventId() {
+        return eventId;
     }
 
-    public void setEvent_id(String event_id) {
-        this.event_id = event_id;
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
     }
 
-    public String getClient_id() {
-        return client_id;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setClient_id(String client_id) {
-        this.client_id = client_id;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
-    public String getTimestamp_formatted() {
-        return timestamp_formatted;
+    public String getTimestampFormatted() {
+        return timestampFormatted;
     }
 
-    public void setTimestamp_formatted(String timestamp_formatted) {
-        this.timestamp_formatted = timestamp_formatted;
+    public void setTimestampFormatted(String timestampFormatted) {
+        this.timestampFormatted = timestampFormatted;
     }
 }

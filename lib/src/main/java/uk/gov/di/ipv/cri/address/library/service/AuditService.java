@@ -27,11 +27,6 @@ public class AuditService {
                     new SendMessageRequest()
                             .withQueueUrl(queueUrl)
                             .withMessageBody(generateMessageBody(eventType, sessionId, clientId));
-            System.out.println(
-                    "MESSAGE BODY ===== >>>> "
-                            + sendMessageRequest.getMessageBody()
-                            + " on URL===>"
-                            + sendMessageRequest.getQueueUrl());
             sqs.sendMessage(sendMessageRequest);
         } catch (JsonProcessingException e) {
             throw new SqsException(e);
@@ -41,13 +36,13 @@ public class AuditService {
     private String generateMessageBody(AuditEventTypes eventType, UUID sessionId, String clientId)
             throws JsonProcessingException {
         AuditEvent auditEvent = new AuditEvent();
-        Instant NOW = Instant.now();
-        int instant = (int) NOW.getEpochSecond();
+        Instant now = Instant.now();
+        int instant = (int) now.getEpochSecond();
         auditEvent.setTimestamp(instant);
         auditEvent.setEvent(eventType);
-        auditEvent.setClient_id(clientId);
-        auditEvent.setEvent_id(sessionId.toString());
-        auditEvent.setTimestamp_formatted(NOW.toString());
+        auditEvent.setClientId(clientId);
+        auditEvent.setEventId(sessionId.toString());
+        auditEvent.setTimestampFormatted(now.toString());
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.writeValueAsString(auditEvent);
     }
