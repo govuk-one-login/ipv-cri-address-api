@@ -119,4 +119,8 @@ public class ConfigurationService {
         return ssmProvider.get(
                 getParameterName(SSMParameterName.VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID));
     }
+
+    public String getSqsAuditEventQueueUrl() {
+        return System.getenv("SQS_AUDIT_EVENT_QUEUE_URL");
+    }
 }

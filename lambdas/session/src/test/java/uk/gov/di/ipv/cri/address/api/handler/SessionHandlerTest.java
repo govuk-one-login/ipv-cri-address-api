@@ -11,12 +11,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.library.constants.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.service.AuditService;
 
 import java.net.URI;
 import java.util.Map;
@@ -44,17 +47,19 @@ class SessionHandlerTest {
 
     @Mock private EventProbe eventProbe;
 
+    @Mock private AuditService auditService;
+
     private SessionHandler sessionHandler;
 
     @BeforeEach
     void setUp() {
-        sessionHandler = new SessionHandler(addressSessionService, eventProbe);
+        sessionHandler = new SessionHandler(addressSessionService, eventProbe, auditService);
     }
 
     @Test
     void shouldCreateAndSaveAddressSession()
             throws SessionValidationException, ClientConfigurationException,
-                    JsonProcessingException {
+                    JsonProcessingException, SqsException {
 
         when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
 
@@ -79,12 +84,13 @@ class SessionHandlerTest {
 
         verify(eventProbe).addDimensions(Map.of("issuer", "ipv-core"));
         verify(eventProbe).counterMetric("session_created");
+        verify(auditService).sendAuditEvent(AuditEventTypes.SESSION_CREATED, sessionId, "ipv-core");
     }
 
     @Test
     void shouldCatchValidationExceptionAndReturn400Response()
             throws SessionValidationException, ClientConfigurationException,
-                    JsonProcessingException {
+                    JsonProcessingException, SqsException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         SessionValidationException sessionValidationException = new SessionValidationException("");
@@ -103,12 +109,13 @@ class SessionHandlerTest {
         verify(eventProbe).counterMetric("session_created", 0d);
         verify(eventProbe).log(Level.INFO, sessionValidationException);
         verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
+        verify(auditService, never()).sendAuditEvent(any(), any(), any());
     }
 
     @Test
     void shouldCatchServerExceptionAndReturn500Response()
             throws SessionValidationException, ClientConfigurationException,
-                    JsonProcessingException {
+                    JsonProcessingException, SqsException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(addressSessionService.validateSessionRequest("some json"))
@@ -124,6 +131,7 @@ class SessionHandlerTest {
 
         verify(eventProbe).counterMetric("session_created", 0d);
         verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
+        verify(auditService, never()).sendAuditEvent(any(), any(), any());
     }
 
     private void setupEventProbeErrorBehaviour() {

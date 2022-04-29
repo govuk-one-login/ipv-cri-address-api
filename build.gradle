@@ -10,6 +10,7 @@ ext {
 	dependencyVersions = [
 		jackson_version          : "2.13.1",
 		aws_sdk_version          : "1.12.167",
+		aws_sdk_sqs_version	     : "1.12.197",
 		aws_lambda_core_version  : "1.2.1",
 		aws_lambda_events_version: "3.11.0",
 		aws_powertools_version   : "1.9.0",
@@ -46,6 +47,7 @@ subprojects {
 		dynamodb
 		jackson
 		lambda
+		sqs
 		lambda_tests
 		lettuce
 		nimbus
@@ -68,6 +70,8 @@ subprojects {
 				"com.amazonaws:aws-lambda-java-events:${dependencyVersions.aws_lambda_events_version}",
 				"software.amazon.lambda:powertools-parameters:${dependencyVersions.aws_powertools_version}",
 				"org.apache.httpcomponents:httpclient:4.5.13"
+
+		sqs "com.amazonaws:aws-java-sdk-sqs:${dependencyVersions.aws_sdk_sqs_version}"
 
 		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
 

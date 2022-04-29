@@ -4,18 +4,23 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.http.HttpStatus;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.constants.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.service.AuditService;
+import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 
 import java.util.Map;
 import java.util.UUID;
@@ -32,15 +37,23 @@ public class SessionHandler
     public static final String EVENT_SESSION_CREATED = "session_created";
     private final AddressSessionService addressSessionService;
     private final EventProbe eventProbe;
+    private final AuditService auditService;
 
     @ExcludeFromGeneratedCoverageReport
     public SessionHandler() {
         addressSessionService = new AddressSessionService();
+        auditService =
+                new AuditService(
+                        AmazonSQSClientBuilder.defaultClient(), new ConfigurationService());
         eventProbe = new EventProbe();
     }
 
-    public SessionHandler(AddressSessionService addressSessionService, EventProbe eventProbe) {
+    public SessionHandler(
+            AddressSessionService addressSessionService,
+            EventProbe eventProbe,
+            AuditService auditService) {
         this.addressSessionService = addressSessionService;
+        this.auditService = auditService;
         this.eventProbe = eventProbe;
     }
 
@@ -51,7 +64,6 @@ public class SessionHandler
             APIGatewayProxyRequestEvent input, Context context) {
 
         try {
-
             SessionRequest sessionRequest =
                     addressSessionService.validateSessionRequest(input.getBody());
 
@@ -61,6 +73,8 @@ public class SessionHandler
 
             eventProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 
+            auditService.sendAuditEvent(
+                    AuditEventTypes.SESSION_CREATED, sessionId, sessionRequest.getClientId());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_CREATED,
                     Map.of(
@@ -78,6 +92,10 @@ public class SessionHandler
 
             eventProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_CONFIG_ERROR);
+        } catch (SqsException e) {
+            eventProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_CONFIG_ERROR);
         }
