@@ -9,14 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupProcessingException;
-import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
-import uk.gov.di.ipv.cri.address.library.service.PostcodeLookupService;
 
 import java.time.Instant;
 import java.util.ArrayList;

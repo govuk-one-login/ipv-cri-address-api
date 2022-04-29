@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.models.ordnancesurvey;
+package uk.gov.di.ipv.cri.address.api.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

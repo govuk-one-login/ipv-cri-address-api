@@ -9,16 +9,16 @@ import org.apache.logging.log4j.Level;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
-import uk.gov.di.ipv.cri.address.library.exception.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
-import uk.gov.di.ipv.cri.address.library.service.PostcodeLookupService;
 
 import java.util.List;
 

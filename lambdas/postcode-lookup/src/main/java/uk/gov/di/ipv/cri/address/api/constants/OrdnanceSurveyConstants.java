@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.constants;
+package uk.gov.di.ipv.cri.address.api.constants;
 
 public class OrdnanceSurveyConstants {
 
