@@ -1,10 +1,13 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
+import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCodeGrant;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.auth.PrivateKeyJWT;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,7 @@ import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
 import java.net.URI;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -276,7 +280,7 @@ class AccessTokenServiceTest {
     @Test
     void shouldValidateTokenRequestSuccessfully()
             throws AccessTokenValidationException, SessionValidationException,
-                    ClientConfigurationException {
+                    ClientConfigurationException, ParseException {
 
         String authCodeValue = "12345";
         String grantType = "authorization_code";
@@ -292,6 +296,10 @@ class AccessTokenServiceTest {
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
+
+        ClientAuthentication clientAuthentication = tokenRequest.getClientAuthentication();
+        PrivateKeyJWT privateKeyJWT = (PrivateKeyJWT) clientAuthentication;
+        SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
         AddressSessionItem addressSessionItem = new AddressSessionItem();
         addressSessionItem.setSessionId(UUID.randomUUID());
         addressSessionItem.setAuthorizationCode(authCodeValue);
@@ -306,7 +314,7 @@ class AccessTokenServiceTest {
                 accessTokenService.validateTokenRequest(tokenRequest, addressSessionItem);
 
         assertEquals(expectedTokenRequest.getClientID(), tokenRequest.getClientID());
-        verify(mockJwtVerifier, times(1)).verifyJWT(any(), any(), any());
+        verify(mockJwtVerifier, times(1)).verifyJWT(getSSMConfigMap(), signedJWT);
     }
 
     @Test
