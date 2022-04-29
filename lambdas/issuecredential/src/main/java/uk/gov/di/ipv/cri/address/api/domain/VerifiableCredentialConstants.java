@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.domain.verifiablecredential;
+package uk.gov.di.ipv.cri.address.api.domain;
 
 public class VerifiableCredentialConstants {
     public static final String VC_CONTEXT = "@context";
@@ -8,8 +8,6 @@ public class VerifiableCredentialConstants {
     public static final String VC_TYPE = "type";
     public static final String VERIFIABLE_CREDENTIAL_TYPE = "VerifiableCredential";
     public static final String ADDRESS_CREDENTIAL_TYPE = "AddressCredential";
-    public static final String CREDENTIAL_SUBJECT_NAME = "name";
-    public static final String CREDENTIAL_SUBJECT_ADDRESS = "address";
     public static final String VC_CREDENTIAL_SUBJECT = "credentialSubject";
     public static final String VC_CLAIM = "vc";
     public static final String VC_ADDRESS_KEY = "address";
