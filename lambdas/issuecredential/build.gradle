@@ -8,7 +8,8 @@ dependencies {
 	implementation project(":lib"),
 			configurations.lambda,
 			configurations.nimbus,
-			configurations.dynamodb
+			configurations.dynamodb,
+			configurations.jackson
 
 	aspect configurations.powertools
 

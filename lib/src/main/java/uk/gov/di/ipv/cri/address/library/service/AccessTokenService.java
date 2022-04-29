@@ -1,7 +1,6 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
 import com.nimbusds.common.contenttype.ContentType;
-import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.AccessTokenResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
@@ -140,10 +139,7 @@ public class AccessTokenService {
                             tokenRequest.getClientAuthentication().getClientID().getValue());
             SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
 
-            jwtVerifier.verifyJWT(
-                    clientAuthenticationConfig,
-                    signedJWT,
-                    List.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT));
+            jwtVerifier.verifyJWT(clientAuthenticationConfig, signedJWT);
             return tokenRequest;
         } catch (SessionValidationException
                 | ClientConfigurationException

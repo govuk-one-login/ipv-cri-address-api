@@ -14,15 +14,15 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
+import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
-import uk.gov.di.ipv.cri.address.library.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
 import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
-import uk.gov.di.ipv.cri.address.library.service.VerifiableCredentialService;
 
 import java.util.Map;
 import java.util.Optional;

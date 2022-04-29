@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.helpers.fixtures;
+package uk.gov.di.ipv.cri.address.api.helpers.fixtures;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
