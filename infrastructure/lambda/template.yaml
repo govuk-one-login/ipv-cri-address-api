@@ -74,12 +74,12 @@ Mappings:
       integration: "ES256"
       production: "ES256"
 
-  IPVCoreStubAudience:
+  IPVCoreStubAudienceMapping:
     Environment:
       dev: "https://dev.address.cri.account.gov.uk"
       build: "https://build.address.cri.account.gov.uk"
 
-  IPVCore1Audience:
+  IPVCore1AudienceMapping:
     Environment:
       staging: "https://staging-di-ipv-cri-address-stub.london.cloudapps.digital"
       integration: "https://integration-di-ipv-cri-address-stub.london.cloudapps.digital"
@@ -111,9 +111,8 @@ Mappings:
     Environment:
       dev: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       build: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
-      production: "https://di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
 
-  IPVCoreClient1RedirectURIMapping:
+  IPVCore1RedirectURIMapping:
     Environment:
       staging: "https://staging-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
       integration: "https://integration-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
@@ -553,7 +552,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/audience"
       Type: String
-      Value: !FindInMap [ IPVCoreStubAudience, Environment, !Ref 'Environment' ]
+      Value: !FindInMap [ IPVCoreStubAudienceMapping, Environment, !Ref 'Environment' ]
 
   IPVCore1AudienceParameter:
     Condition: IsProdLikeEnvironment
@@ -561,7 +560,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/audience"
       Type: String
-      Value: !FindInMap [ IPVCore1Audience, Environment, !Ref 'Environment' ]
+      Value: !FindInMap [ IPVCore1AudienceMapping, Environment, !Ref 'Environment' ]
 
   IPVCoreStubIssuerParameter:
     Condition: IsStubEnvironment
