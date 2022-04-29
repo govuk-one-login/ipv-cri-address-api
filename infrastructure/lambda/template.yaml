@@ -194,12 +194,6 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
         - Statement:
-#            - Sid: kmsSigningKeyPermission
-#              Effect: Allow
-#              Action:
-#                - 'kms:sign'
-#              Resource:
-#                - !Ref AddressCriVcSigningKey
             - Sid: auditEventQueueKmsEncryptionKeyPermission
               Effect: Allow
               Action:
