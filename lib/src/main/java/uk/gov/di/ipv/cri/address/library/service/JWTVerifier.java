@@ -25,9 +25,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-class JWTVerifier {
+public class JWTVerifier {
 
-    void verifyJWT(
+    public void verifyJWT(
             Map<String, String> clientAuthenticationConfig,
             SignedJWT signedJWT,
             List<String> requiredClaims)

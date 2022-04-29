@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.api.service.SessionRequestService;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
@@ -38,6 +39,8 @@ class SessionHandlerTest {
 
     @Mock private AddressSessionService addressSessionService;
 
+    @Mock private SessionRequestService sessionRequestService;
+
     @Mock private APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent;
 
     @Mock private SessionRequest sessionRequest;
@@ -48,7 +51,8 @@ class SessionHandlerTest {
 
     @BeforeEach
     void setUp() {
-        sessionHandler = new SessionHandler(addressSessionService, eventProbe);
+        sessionHandler =
+                new SessionHandler(addressSessionService, sessionRequestService, eventProbe);
     }
 
     @Test
@@ -64,7 +68,7 @@ class SessionHandlerTest {
         when(sessionRequest.getRedirectUri())
                 .thenReturn(URI.create("https://www.example.com/callback"));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
-        when(addressSessionService.validateSessionRequest("some json")).thenReturn(sessionRequest);
+        when(sessionRequestService.validateSessionRequest("some json")).thenReturn(sessionRequest);
         when(addressSessionService.createAndSaveAddressSession(sessionRequest))
                 .thenReturn(sessionId);
 
@@ -88,7 +92,7 @@ class SessionHandlerTest {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         SessionValidationException sessionValidationException = new SessionValidationException("");
-        when(addressSessionService.validateSessionRequest("some json"))
+        when(sessionRequestService.validateSessionRequest("some json"))
                 .thenThrow(sessionValidationException);
         setupEventProbeErrorBehaviour();
 
@@ -111,7 +115,7 @@ class SessionHandlerTest {
                     JsonProcessingException {
 
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
-        when(addressSessionService.validateSessionRequest("some json"))
+        when(sessionRequestService.validateSessionRequest("some json"))
                 .thenThrow(new ClientConfigurationException(new NullPointerException()));
         setupEventProbeErrorBehaviour();
 

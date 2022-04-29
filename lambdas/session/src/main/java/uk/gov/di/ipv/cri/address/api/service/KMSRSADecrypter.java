@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.service;
+package uk.gov.di.ipv.cri.address.api.service;
 
 import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.AWSKMSClientBuilder;

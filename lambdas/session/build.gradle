@@ -7,7 +7,9 @@ plugins {
 dependencies {
 	implementation project(":lib"),
 			configurations.lambda,
-			configurations.gson
+			configurations.gson,
+			configurations.nimbus,
+			configurations.kms
 
 	aspect configurations.powertools
 

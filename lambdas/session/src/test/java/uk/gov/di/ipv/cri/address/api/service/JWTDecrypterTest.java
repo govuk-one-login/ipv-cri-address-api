@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.service;
+package uk.gov.di.ipv.cri.address.api.service;
 
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
