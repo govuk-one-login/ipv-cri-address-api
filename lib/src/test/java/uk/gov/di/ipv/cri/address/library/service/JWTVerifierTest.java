@@ -3,14 +3,16 @@ package uk.gov.di.ipv.cri.address.library.service;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.address.library.constants.RequiredClaims;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 
 import java.security.KeyFactory;
@@ -18,6 +20,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -44,6 +47,12 @@ class JWTVerifierTest {
 
     private final String publicCertificate =
             "MIIFVjCCAz4CCQDGbJ/u6uFT6DANBgkqhkiG9w0BAQsFADBtMQswCQYDVQQGEwJHQjENMAsGA1UECAwEVGVzdDENMAsGA1UEBwwEVGVzdDENMAsGA1UECgwEVEVzdDENMAsGA1UECwwEVEVzdDENMAsGA1UEAwwEVEVzdDETMBEGCSqGSIb3DQEJARYEVGVzdDAeFw0yMjAxMDcxNTM0NTlaFw0yMzAxMDcxNTM0NTlaMG0xCzAJBgNVBAYTAkdCMQ0wCwYDVQQIDARUZXN0MQ0wCwYDVQQHDARUZXN0MQ0wCwYDVQQKDARURXN0MQ0wCwYDVQQLDARURXN0MQ0wCwYDVQQDDARURXN0MRMwEQYJKoZIhvcNAQkBFgRUZXN0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAy1cVZ1KfFmgFlDQyf/R3LF/Js6jAS2Zzbs8WGSS0ys6Z+XR4x5DTIznZp5cHuuQmqOFylXSw5oGBwMXd2L6NimG9rJnJ4w8Gy5A6ImGsiDZC+3AXRBb5hq/IdDTBjbUqRxAKokSVwotWZt554BdSRPTmlYDujzxnClNKA06Xb/X3rTsgCUmZhUnSVtOzKytP3Bdv88VI5gq5tlZOtKXCB0PnJOqRbBmuL1RNkeTny4ZJW3I2ywSATwDDyDm4pJ8XGGNFKaYYTwr6uNTQ2VHb1FVC33oWbg+Zu9D4p5l7ONicCCF3V+GbvmyeCmHGnXznz0nYX1LFqaKtruEh3/GXyLy5X03Jzq6HhTf1SNFBmzziuCovhbR4v5aFDqAYNPWz+ajOdTUfP1I18c5jR1xGUxEiiLKBZWU1J5mhqCa+0CdI0mi3HwFmluudh47I2Xw++JiqZQpxRqNGcKJOPnWDgKOKXQ/ag37aJkxqoYWk9pQ/pXOdIKm//+B//8nWGo8BA/bfdmMHyzhWWxqtydjie2EZ5ODSdQ+yu1xU5cwP59BEQoU7FKVEGiJa4kzrsI2cgloUPlsPfLENMa5i09exDo//eDB/zNy9ACgGCriov1ex3uv4vHp3WtpZYe+akGEJeP0N5dejs0hkBuX+LUcM30TnQ424tEzcuaJ1F7r4FP0CAwEAATANBgkqhkiG9w0BAQsFAAOCAgEAUh5gZx8S/XoZZoQai2uTyW/lyr1LpXMQyfvdWRr5+/OtFuASG3fAPXOTiUfuqH6Uma8BaXPRbSGWxBOFg0EbyvUY4UczZXZgVqyzkGjD2bVcnGra1OHz2AkcJm7OvzjMUvmXdDiQ8WcKIH16BZVsJFveTffJbM/KxL9UUdSLT0fNw1OvZWN1LxRj+X16B26ZnmaXPdmEC8MfwNcEU63qSlIbAvLg9Dp03weqO1qWR1vI/n1jwqidCUVwT0XF88/pJrds8/8guKlawhp9Yv+jMVYaawBiALR+5PFN56DivtmSVI5uv3oFh5tqJXXn9PhsPcIq0YKGQvvcdZl7vCikS65VzmswXBVFJNsYeeZ5NmiH2ANQd4+BLetgLAoXZxaOJ4nK+3Ml+gMwpZRRAbtixKJQDtVy+Ahuh1TEwTS1CERDYq43LhVYbMcgxdOLpZLvMew2tvJc3HfSWQKuF+NjGn/RwG54GyhjpdbfNZMB/EJXNJMt1j9RSVbPLsWjaENUkZoXE0otSou9tJOR0fwoqBJGUi5GCp98+iBdIQMAvXW5JkoDS6CM1FOfSv9ZXLvfXHOuBfKTDeVNy7u3QvyJ+BdkSc0iH4gj1F2zLHNIaZbDzwRzcDf2s3D1wTtoJ/WxfRSLGBMuUsXSduh9Md1S862N3Ce6wpri1IsgySCP84Y=";
+
+    private final String publicSigningJwkBase64 =
+            "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9";
+
+    private final String privateSigningJwkBase64 =
+            "ewogICAgImt0eSI6ICJFQyIsCiAgICAiZCI6ICI1MzRnaFRadVN0UkE4SFQwY0Y0NFprWl84YTkwWTJiY3R5akdKekpoVG8wIiwKICAgICJ1c2UiOiAic2lnIiwKICAgICJjcnYiOiAiUC0yNTYiLAogICAgImtpZCI6ICJpcHYtY29yZS1zdHViLTEtZnJvbS1ta2p3ay5vcmciLAogICAgIngiOiAiSWZSMVB6OU91Y0kyWXdiV0pUYS1PeHQwMnpfemdORHlGa2hwZnc4UVdyMCIsCiAgICAieSI6ICJYajZqUnpLQTBRZVNMQy1lMTVtWDdTaG5wb3FnRzh3UXdlZzA2WElhMERzIiwKICAgICJhbGciOiAiRVMyNTYiCn0=";
 
     @BeforeEach
     void setup() {
@@ -141,7 +150,7 @@ class JWTVerifierTest {
                 Map.of(
                         "issuer",
                         "https://dev.core.ipv.account.gov.uk",
-                        "publicCertificateToVerify",
+                        "publicSigningJwkBase64",
                         wrongPublicCertificate,
                         "authenticationAlg",
                         "RS256",
@@ -188,6 +197,28 @@ class JWTVerifierTest {
 
         RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
         signedJWT.sign(rsaSigner);
+
+        assertDoesNotThrow(
+                () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT, getRequiredClaims()));
+    }
+
+    @Test
+    void shouldValidateJWTSignedWithECKey() throws JOSEException, ParseException {
+        Map<String, String> clientConfigMap = getECSSMClientConfig();
+        SignedJWT signedJWT =
+                new SignedJWT(
+                        new JWSHeader.Builder(JWSAlgorithm.ES256).build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .notBeforeTime(Date.from(now))
+                                .audience("https://address.cri.account.gov.uk")
+                                .subject(UUID.randomUUID().toString())
+                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
+                                .build());
+
+        ECDSASigner ecdsaSigner = new ECDSASigner(getECPrivateKey());
+
+        signedJWT.sign(ecdsaSigner);
 
         assertDoesNotThrow(
                 () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT, getRequiredClaims()));
@@ -300,9 +331,9 @@ class JWTVerifierTest {
                                         clientConfigMap,
                                         signedJWT,
                                         List.of(
-                                                RequiredClaims.EXP.value,
-                                                RequiredClaims.SUB.value,
-                                                RequiredClaims.NBF.value)));
+                                                JWTClaimNames.EXPIRATION_TIME,
+                                                JWTClaimNames.SUBJECT,
+                                                JWTClaimNames.NOT_BEFORE)));
 
         assertEquals("JWT missing required claims: [nbf]", exception.getMessage());
     }
@@ -311,10 +342,22 @@ class JWTVerifierTest {
         return Map.of(
                 "issuer",
                 "https://dev.core.ipv.account.gov.uk",
-                "publicCertificateToVerify",
+                "publicSigningJwkBase64",
                 publicCertificate,
                 "authenticationAlg",
                 "RS256",
+                "audience",
+                "https://address.cri.account.gov.uk");
+    }
+
+    private Map<String, String> getECSSMClientConfig() {
+        return Map.of(
+                "issuer",
+                "https://dev.core.ipv.account.gov.uk",
+                "publicSigningJwkBase64",
+                publicSigningJwkBase64,
+                "authenticationAlg",
+                "ES256",
                 "audience",
                 "https://address.cri.account.gov.uk");
     }
@@ -326,7 +369,11 @@ class JWTVerifierTest {
                                 new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKey)));
     }
 
+    private ECKey getECPrivateKey() throws ParseException {
+        return ECKey.parse(new String(Base64.getDecoder().decode(privateSigningJwkBase64)));
+    }
+
     private List<String> getRequiredClaims() {
-        return List.of(RequiredClaims.EXP.value, RequiredClaims.SUB.value);
+        return List.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT);
     }
 }

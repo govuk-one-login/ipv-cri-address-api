@@ -4,6 +4,7 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
@@ -53,18 +54,18 @@ public class JWTVerifier {
     private void verifyJWTSignature(
             Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException, ClientConfigurationException {
-        String publicCertificateToVerify =
-                clientAuthenticationConfig.get("publicCertificateToVerify");
+        String publicCertificateToVerify = clientAuthenticationConfig.get("publicSigningJwkBase64");
         try {
-            PublicKey pubicKeyFromConfig = getPublicKeyFromConfig(publicCertificateToVerify);
-
-            if (!validSignature(signedJWT, pubicKeyFromConfig)) {
+            JWSAlgorithm signingAlgorithm = signedJWT.getHeader().getAlgorithm();
+            PublicKey pubicKeyFromConfig =
+                    getPublicKeyFromConfig(publicCertificateToVerify, signingAlgorithm);
+            if (!verifySignature(signedJWT, pubicKeyFromConfig)) {
                 throw new SessionValidationException("JWT signature verification failed");
             }
-        } catch (JOSEException e) {
+        } catch (JOSEException | ParseException e) {
             throw new SessionValidationException("JWT signature verification failed", e);
         } catch (CertificateException e) {
-            throw new ClientConfigurationException(e);
+            throw new ClientConfigurationException("Certificate problem encountered", e);
         }
     }
 
@@ -84,19 +85,29 @@ public class JWTVerifier {
         try {
             verifier.verify(signedJWT.getJWTClaimsSet(), null);
         } catch (BadJWTException | ParseException e) {
-            throw new SessionValidationException(e.getMessage());
+            throw new SessionValidationException(e.getMessage(), e);
         }
     }
 
-    private PublicKey getPublicKeyFromConfig(String base64) throws CertificateException {
-        byte[] binaryCertificate = Base64.getDecoder().decode(base64);
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        Certificate certificate =
-                factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
-        return certificate.getPublicKey();
+    private PublicKey getPublicKeyFromConfig(
+            String serialisedPublicKey, JWSAlgorithm signingAlgorithm)
+            throws CertificateException, ParseException, JOSEException {
+        if (JWSAlgorithm.Family.RSA.contains(signingAlgorithm)) {
+            byte[] binaryCertificate = Base64.getDecoder().decode(serialisedPublicKey);
+            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+            Certificate certificate =
+                    factory.generateCertificate(new ByteArrayInputStream(binaryCertificate));
+            return certificate.getPublicKey();
+        } else if (JWSAlgorithm.Family.EC.contains(signingAlgorithm)) {
+            return ECKey.parse(new String(Base64.getDecoder().decode(serialisedPublicKey)))
+                    .toECPublicKey();
+        } else {
+            throw new IllegalArgumentException(
+                    "Unexpected signing algorithm encountered: " + signingAlgorithm.getName());
+        }
     }
 
-    private boolean validSignature(SignedJWT signedJWT, PublicKey clientPublicKey)
+    private boolean verifySignature(SignedJWT signedJWT, PublicKey clientPublicKey)
             throws JOSEException, ClientConfigurationException {
         if (clientPublicKey instanceof RSAPublicKey) {
             RSASSAVerifier rsassaVerifier = new RSASSAVerifier((RSAPublicKey) clientPublicKey);
@@ -106,7 +117,8 @@ public class JWTVerifier {
             return signedJWT.verify(ecdsaVerifier);
         } else {
             throw new ClientConfigurationException(
-                    new IllegalStateException("unknown public JWT signing key"));
+                    new IllegalStateException(
+                            "unknown public signing key: " + clientPublicKey.getAlgorithm()));
         }
     }
 }

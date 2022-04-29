@@ -48,6 +48,7 @@ subprojects {
 		jackson
 		lambda
 		sqs
+		kms
 		lambda_tests
 		lettuce
 		nimbus
@@ -72,6 +73,8 @@ subprojects {
 				"org.apache.httpcomponents:httpclient:4.5.13"
 
 		sqs "com.amazonaws:aws-java-sdk-sqs:${dependencyVersions.aws_sdk_sqs_version}"
+
+		kms "com.amazonaws:aws-java-sdk-kms:${dependencyVersions.aws_sdk_version}"
 
 		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
 

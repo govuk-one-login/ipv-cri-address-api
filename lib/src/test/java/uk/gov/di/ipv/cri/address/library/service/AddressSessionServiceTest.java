@@ -1,13 +1,9 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,24 +11,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import uk.gov.di.ipv.cri.address.library.domain.RawSessionRequest;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
-import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
 
-import java.io.IOException;
 import java.net.URI;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,7 +31,6 @@ import java.time.ZoneId;
 import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,8 +48,21 @@ class AddressSessionServiceTest {
 
     @Mock private DataStore<AddressSessionItem> mockDataStore;
     @Mock private ConfigurationService mockConfigurationService;
-    @Mock private JWTVerifier jwtVerifier;
+    @Mock private ObjectMapper mockObjectMapper;
     @Captor private ArgumentCaptor<AddressSessionItem> mockAddressSessionItem;
+
+    @BeforeAll
+    static void beforeAll() {
+        fixedInstant = Instant.now();
+    }
+
+    @BeforeEach
+    void setUp() {
+        Clock nowClock = Clock.fixed(fixedInstant, ZoneId.systemDefault());
+        addressSessionService =
+                new AddressSessionService(
+                        mockDataStore, mockConfigurationService, nowClock, mockObjectMapper);
+    }
 
     @Test
     void shouldCallCreateOnAddressSessionDataStore() {
@@ -84,114 +86,6 @@ class AddressSessionServiceTest {
         assertThat(
                 capturedValue.getRedirectUri(),
                 equalTo(URI.create("https://www.example.com/callback")));
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenSessionRequestIsInvalid() {
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(Map.of("not", "a-session-request"))));
-        assertThat(exception.getMessage(), containsString("could not parse request body"));
-        verifyNoInteractions(mockConfigurationService);
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenRequestClientIdIsInvalid() {
-        String invalidClientId = "invalid-client-id";
-        String configParameterPath = "/clients/" + invalidClientId + "/jwtAuthentication";
-        SignedJWTBuilder signedJWTBuilder = new SignedJWTBuilder().setClientId(invalidClientId);
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-        rawSessionRequest.setClientId(invalidClientId);
-
-        when(mockConfigurationService.getParametersForPath(configParameterPath))
-                .thenReturn(Map.of());
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-        assertThat(exception.getMessage(), containsString("no configuration for client id"));
-        verify(mockConfigurationService).getParametersForPath(configParameterPath);
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenRedirectUriIsInvalid() {
-        SignedJWTBuilder signedJWTBuilder =
-                new SignedJWTBuilder().setRedirectUri("https://www.example.com/not-valid-callback");
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWTBuilder.build());
-
-        initMockConfigurationService(signedJWTBuilder.getCertificate(), false);
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(rawSessionRequest)));
-        assertThat(
-                exception.getMessage(),
-                containsString(
-                        "redirect uri https://www.example.com/not-valid-callback does not match configuration uri https://www.example/com/callback"));
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenJWTIsInvalid() {
-        RawSessionRequest sessionRequest = createRawSessionRequest("not a jwt");
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                addressSessionService.validateSessionRequest(
-                                        marshallToJSON(sessionRequest)));
-        assertThat(exception.getMessage(), containsString("Could not parse request JWT"));
-    }
-
-    @Test
-    void shouldValidateJWTSignedWithECKey()
-            throws IOException, SessionValidationException, ClientConfigurationException,
-                    java.text.ParseException {
-        SignedJWTBuilder signedJWTBuilder =
-                new SignedJWTBuilder()
-                        .setPrivateKeyFile("signing_ec.pk8")
-                        .setCertificateFile("signing_ec.crt.pem")
-                        .setSigningAlgorithm(JWSAlgorithm.ES384);
-        SignedJWT signedJWT = signedJWTBuilder.build();
-        RawSessionRequest rawSessionRequest = createRawSessionRequest(signedJWT);
-
-        Map<String, String> configMap = standardSSMConfigMap(signedJWTBuilder.getCertificate());
-        configMap.put("authenticationAlg", "ES384");
-        initMockConfigurationService(configMap, false);
-
-        SessionRequest result =
-                addressSessionService.validateSessionRequest(marshallToJSON(rawSessionRequest));
-
-        makeSessionRequestFieldValueAssertions(
-                result, rawSessionRequest, signedJWT.getJWTClaimsSet());
-    }
-
-    private void makeSessionRequestFieldValueAssertions(
-            SessionRequest sessionRequest,
-            RawSessionRequest rawSessionRequest,
-            JWTClaimsSet jwtClaims)
-            throws java.text.ParseException {
-        assertThat(sessionRequest.getAudience(), equalTo(jwtClaims.getAudience().get(0)));
-        assertThat(sessionRequest.getIssuer(), equalTo(jwtClaims.getIssuer()));
-        assertThat(sessionRequest.getSubject(), equalTo(jwtClaims.getSubject()));
-
-        assertThat(sessionRequest.getState(), equalTo(jwtClaims.getStringClaim("state")));
-        assertThat(sessionRequest.getClientId(), equalTo(rawSessionRequest.getClientId()));
-        assertThat(sessionRequest.getClientId(), equalTo(jwtClaims.getStringClaim("client_id")));
-        assertThat(
-                sessionRequest.getRedirectUri(),
-                equalTo(URI.create(jwtClaims.getStringClaim("redirect_uri"))));
-        assertThat(
-                sessionRequest.getResponseType(),
-                equalTo(jwtClaims.getStringClaim("response_type")));
     }
 
     @Test
@@ -238,21 +132,8 @@ class AddressSessionServiceTest {
         assertThat(item.getAccessToken(), equalTo(addressSessionItem.getAccessToken()));
     }
 
-    @BeforeAll
-    static void beforeAll() {
-        fixedInstant = Instant.now();
-    }
-
-    @BeforeEach
-    void setUp() {
-        Clock nowClock = Clock.fixed(fixedInstant, ZoneId.systemDefault());
-        addressSessionService =
-                new AddressSessionService(
-                        mockDataStore, mockConfigurationService, nowClock, jwtVerifier);
-    }
-
     @Test
-    void parseAddresses() throws AddressProcessingException, JsonProcessingException {
+    void shouldParseAddresses() throws AddressProcessingException, JsonProcessingException {
         String addresses =
                 "[\n"
                         + "   {\n"
@@ -286,23 +167,20 @@ class AddressSessionServiceTest {
                         + "      \"validFrom\": \"2021-08-02\"\n"
                         + "   }\n"
                         + "]";
+
+        List<CanonicalAddress> readValueResult = List.of(new CanonicalAddress());
+        ObjectReader mockObjectReader = Mockito.mock(ObjectReader.class);
+        when(mockObjectReader.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES))
+                .thenReturn(mockObjectReader);
+        when(mockObjectMapper.readerForListOf(CanonicalAddress.class)).thenReturn(mockObjectReader);
+        when(mockObjectReader.readValue(addresses)).thenReturn(readValueResult);
+
         List<CanonicalAddress> parsedAddresses = addressSessionService.parseAddresses(addresses);
-        assertThat(parsedAddresses.size(), equalTo(3));
-        assertThat(parsedAddresses.get(0).getUprn().orElse(null), equalTo(72262801L));
-        assertThat(
-                parsedAddresses.get(0).getValidFrom().orElse(new Date()),
-                equalTo(Date.from(Instant.parse("2010-02-26T00:00:00.00Z"))));
 
-        assertThat(parsedAddresses.get(2).getValidUntil().isPresent(), equalTo(false));
-
-        ObjectMapper mapper =
-                new ObjectMapper()
-                        .registerModule(new Jdk8Module())
-                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        String serializedJson = mapper.writeValueAsString(parsedAddresses);
-        assertThat(serializedJson, containsString("\"2021-08-02\""));
+        assertThat(parsedAddresses.size(), equalTo(readValueResult.size()));
+        verify(mockObjectMapper).readerForListOf(CanonicalAddress.class);
+        verify(mockObjectReader).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        verify(mockObjectReader).readValue(addresses);
     }
 
     @Test
@@ -378,59 +256,5 @@ class AddressSessionServiceTest {
                 () ->
                         addressSessionService.saveAddresses(
                                 String.valueOf(UUID.randomUUID()), addresses));
-    }
-
-    private Map<String, String> standardSSMConfigMap(Certificate certificate) {
-        try {
-            HashMap<String, String> map = new HashMap<>();
-            map.put("redirectUri", "https://www.example/com/callback");
-            map.put("authenticationAlg", "RS256");
-            map.put("issuer", "ipv-core");
-            map.put(
-                    "publicCertificateToVerify",
-                    Base64.getEncoder().encodeToString(certificate.getEncoded()));
-            return map;
-        } catch (CertificateEncodingException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private String marshallToJSON(Object sessionRequest) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.writeValueAsString(sessionRequest);
-    }
-
-    private RawSessionRequest createRawSessionRequest(SignedJWT signedJWT) {
-        return createRawSessionRequest(signedJWT.serialize());
-    }
-
-    private RawSessionRequest createRawSessionRequest(String serialisedJWT) {
-        RawSessionRequest rawSessionRequest = new RawSessionRequest();
-        rawSessionRequest.setClientId("ipv-core");
-        rawSessionRequest.setRequestJWT(serialisedJWT);
-        return rawSessionRequest;
-    }
-
-    private void initMockConfigurationService(Certificate certificate) {
-        initMockConfigurationService(standardSSMConfigMap(certificate));
-    }
-
-    private void initMockConfigurationService(
-            Certificate certificate, boolean stubGetAudienceMethod) {
-        initMockConfigurationService(standardSSMConfigMap(certificate), stubGetAudienceMethod);
-    }
-
-    private void initMockConfigurationService(Map<String, String> parameters) {
-        initMockConfigurationService(parameters, true);
-    }
-
-    private void initMockConfigurationService(
-            Map<String, String> parameters, boolean stubGetAudienceMethod) {
-        when(mockConfigurationService.getParametersForPath("/clients/ipv-core/jwtAuthentication"))
-                .thenReturn(parameters);
-        if (stubGetAudienceMethod) {
-            when(mockConfigurationService.getAddressCriAudienceIdentifier())
-                    .thenReturn("test-audience");
-        }
     }
 }

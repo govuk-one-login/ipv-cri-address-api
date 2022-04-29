@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.domain;
+package uk.gov.di.ipv.cri.address.api.domain;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 
