@@ -164,6 +164,7 @@ Resources:
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
       AccessLogSetting:
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
@@ -180,6 +181,12 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/AccessLog-${AddressApi}/${Environment}
+      RetentionInDays: 365
 
   SessionFunction:
     Type: AWS::Serverless::Function
