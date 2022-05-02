@@ -1,0 +1,30 @@
+plugins {
+	id "java"
+	id 'io.freefair.aspectj.post-compile-weaving' version '6.3.0'
+}
+
+dependencies {
+	implementation configurations.lambda,
+			configurations.nimbus,
+			configurations.kms,
+			configurations.bouncycastle
+
+	aspect configurations.powertools
+
+	testImplementation configurations.tests
+
+	testRuntimeOnly configurations.test_runtime
+}
+
+task buildZip(type: Zip) {
+	from compileJava
+	from processResources
+	into('lib') {
+		from configurations.runtimeClasspath
+	}
+}
+
+build.finalizedBy(buildZip)
+test {
+	useJUnitPlatform()
+}

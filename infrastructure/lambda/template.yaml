@@ -378,6 +378,32 @@ Resources:
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
       Role: !GetAtt IssueCredentialFunctionRole.Arn
 
+  JWKSetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: uk.gov.di.ipv.cri.address.api.handler.JWKSetHandler::handleRequest
+      CodeUri: ../../lambdas/jwkset/build/distributions/jwkset.zip
+      Environment:
+        Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-jwkset
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:GetPublicKey
+              Resource:
+                - !GetAtt AddressCriVcSigningKey.Arn
+                - !GetAtt AddressCriDecryptionKey.Arn
+            - Effect: Allow
+              Action:
+                - kms:ListKeys
+                - kms:ListResourceTags
+                - kms:DescribeKey
+              Resource: "*"
+
   AddressCriVcSigningKey:
     Type: AWS::KMS::Key
     Properties:
@@ -402,6 +428,9 @@ Resources:
             Action:
               - "kms:Sign"
             Resource: '*'
+      Tags:
+        - Key: "jwkset"
+          Value: "true"
 
   SigningKeyAlias:
     Type: AWS::KMS::Alias
@@ -426,6 +455,9 @@ Resources:
             Action:
               - 'kms:*'
             Resource: '*'
+      Tags:
+        - Key: "jwkset"
+          Value: "true"
 
   DecryptionKeyAlias:
     Type: AWS::KMS::Alias
@@ -692,6 +724,12 @@ Resources:
       FunctionName: !GetAtt AddressFunction.Arn
       Principal: apigateway.amazonaws.com
 
+  JWKSetFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt JWKSetFunction.Arn
+      Principal: apigateway.amazonaws.com
 
 Outputs:
   AddressApiBaseUrl:
@@ -749,3 +787,7 @@ Outputs:
   IssueCredentialFunctionIamRole:
     Description: "IAM role for the IssueCredential function"
     Value: !GetAtt IssueCredentialFunctionRole.Arn
+
+  JWKSetFunctionApi:
+    Description: "API Gateway endpoint URL for JKWSet"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json"
