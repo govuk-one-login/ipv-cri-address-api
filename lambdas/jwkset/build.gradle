@@ -6,8 +6,7 @@ plugins {
 dependencies {
 	implementation configurations.lambda,
 			configurations.nimbus,
-			configurations.kms,
-			configurations.bouncycastle
+			configurations.kms
 
 	aspect configurations.powertools
 
