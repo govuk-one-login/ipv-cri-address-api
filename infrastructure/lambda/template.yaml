@@ -18,6 +18,10 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
+  PermissionsBoundary:
+    Description: "The ARN of the permissions boundary to apply when creating IAM roles"
+    Type: String
+    Default: "none"
 
 Conditions:
   CreateDevResources: !Equals
@@ -28,9 +32,17 @@ Conditions:
     - !Equals [ !Ref Environment, build ]
   IsProdLikeEnvironment:
     !Not [Condition: IsStubEnvironment]
-
+  UsePermissionsBoundary:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref PermissionsBoundary
+          - "none"
 Globals:
   Function:
+    PermissionsBoundary: !If
+      - UsePermissionsBoundary
+      - !Ref PermissionsBoundary
+      - !Ref AWS::NoValue
     CodeSigningConfigArn: !If
       - CreateDevResources
       - !Ref AWS::NoValue
@@ -325,6 +337,10 @@ Resources:
   IssueCredentialFunctionRole:
     Type: AWS::IAM::Role
     Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
