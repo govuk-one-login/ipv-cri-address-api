@@ -14,7 +14,6 @@ import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 import uk.gov.di.ipv.cri.address.library.models.AuditEvent;
 
-
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
