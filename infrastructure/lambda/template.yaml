@@ -74,12 +74,12 @@ Mappings:
       integration: "ES256"
       production: "ES256"
 
-  IPVCoreStubAudience:
+  IPVCoreStubAudienceMapping:
     Environment:
       dev: "https://dev.address.cri.account.gov.uk"
       build: "https://build.address.cri.account.gov.uk"
 
-  IPVCore1Audience:
+  IPVCore1AudienceMapping:
     Environment:
       staging: "https://staging-di-ipv-cri-address-stub.london.cloudapps.digital"
       integration: "https://integration-di-ipv-cri-address-stub.london.cloudapps.digital"
@@ -111,9 +111,8 @@ Mappings:
     Environment:
       dev: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       build: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
-      production: "https://di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
 
-  IPVCoreClient1RedirectURIMapping:
+  IPVCore1RedirectURIMapping:
     Environment:
       staging: "https://staging-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
       integration: "https://integration-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
@@ -165,6 +164,7 @@ Resources:
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
       AccessLogSetting:
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
         Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
@@ -181,6 +181,12 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/AccessLog-${AddressApi}/${Environment}
+      RetentionInDays: 365
 
   SessionFunction:
     Type: AWS::Serverless::Function
@@ -383,6 +389,32 @@ Resources:
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
       Role: !GetAtt IssueCredentialFunctionRole.Arn
 
+  JWKSetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: uk.gov.di.ipv.cri.address.api.handler.JWKSetHandler::handleRequest
+      CodeUri: ../../lambdas/jwkset/build/distributions/jwkset.zip
+      Environment:
+        Variables:
+          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-jwkset
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:GetPublicKey
+              Resource:
+                - !GetAtt AddressCriVcSigningKey.Arn
+                - !GetAtt AddressCriDecryptionKey.Arn
+            - Effect: Allow
+              Action:
+                - kms:ListKeys
+                - kms:ListResourceTags
+                - kms:DescribeKey
+              Resource: "*"
+
   AddressCriVcSigningKey:
     Type: AWS::KMS::Key
     Properties:
@@ -407,6 +439,9 @@ Resources:
             Action:
               - "kms:Sign"
             Resource: '*'
+      Tags:
+        - Key: "jwkset"
+          Value: "true"
 
   SigningKeyAlias:
     Type: AWS::KMS::Alias
@@ -431,6 +466,9 @@ Resources:
             Action:
               - 'kms:*'
             Resource: '*'
+      Tags:
+        - Key: "jwkset"
+          Value: "true"
 
   DecryptionKeyAlias:
     Type: AWS::KMS::Alias
@@ -564,7 +602,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/audience"
       Type: String
-      Value: !FindInMap [ IPVCoreStubAudience, Environment, !Ref 'Environment' ]
+      Value: !FindInMap [ IPVCoreStubAudienceMapping, Environment, !Ref 'Environment' ]
 
   IPVCore1AudienceParameter:
     Condition: IsProdLikeEnvironment
@@ -572,7 +610,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/audience"
       Type: String
-      Value: !FindInMap [ IPVCore1Audience, Environment, !Ref 'Environment' ]
+      Value: !FindInMap [ IPVCore1AudienceMapping, Environment, !Ref 'Environment' ]
 
   IPVCoreStubIssuerParameter:
     Condition: IsStubEnvironment
@@ -697,6 +735,12 @@ Resources:
       FunctionName: !GetAtt AddressFunction.Arn
       Principal: apigateway.amazonaws.com
 
+  JWKSetFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt JWKSetFunction.Arn
+      Principal: apigateway.amazonaws.com
 
 Outputs:
   AddressApiBaseUrl:
@@ -754,3 +798,7 @@ Outputs:
   IssueCredentialFunctionIamRole:
     Description: "IAM role for the IssueCredential function"
     Value: !GetAtt IssueCredentialFunctionRole.Arn
+
+  JWKSetFunctionApi:
+    Description: "API Gateway endpoint URL for JKWSet"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json"

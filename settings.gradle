@@ -1,9 +1,10 @@
 rootProject.name = "di-ipv-cri-address-api"
 
-include "lib", "session", "postcode-lookup", "accesstoken", "address", "issuecredential"
+include "lib", "session", "postcode-lookup", "accesstoken", "address", "issuecredential", "jwkset"
 
 project(':session').projectDir = new File('./lambdas/session')
 project(':postcode-lookup').projectDir = new File('./lambdas/postcode-lookup')
 project(":accesstoken").projectDir = new File('./lambdas/accesstoken')
 project(':address').projectDir = new File('./lambdas/address')
 project(':issuecredential').projectDir = new File('./lambdas/issuecredential')
+project(':jwkset').projectDir = new File('./lambdas/jwkset')
