@@ -15,8 +15,8 @@ import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ class PostcodeLookupHanderTest {
     private static Instant fixedInstant;
 
     @Mock private PostcodeLookupService postcodeLookupService;
-    @Mock private AddressSessionService addressSessionService;
+    @Mock private SessionService sessionService;
 
     @Mock private APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent;
 
@@ -48,7 +48,7 @@ class PostcodeLookupHanderTest {
     void setUp() {
 
         postcodeLookupHandler =
-                new PostcodeLookupHandler(postcodeLookupService, addressSessionService, eventProbe);
+                new PostcodeLookupHandler(postcodeLookupService, sessionService, eventProbe);
         fixedInstant = Instant.now();
     }
 
@@ -87,7 +87,7 @@ class PostcodeLookupHanderTest {
         when(apiGatewayProxyRequestEvent.getHeaders())
                 .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
         when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(Map.of("postcode", ""));
-        willThrow(exception).given(addressSessionService).validateSessionId(anyString());
+        willThrow(exception).given(sessionService).validateSessionId(anyString());
 
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
@@ -108,7 +108,7 @@ class PostcodeLookupHanderTest {
         when(apiGatewayProxyRequestEvent.getHeaders())
                 .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
         when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(Map.of("postcode", ""));
-        willThrow(exception).given(addressSessionService).validateSessionId(anyString());
+        willThrow(exception).given(sessionService).validateSessionId(anyString());
 
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);

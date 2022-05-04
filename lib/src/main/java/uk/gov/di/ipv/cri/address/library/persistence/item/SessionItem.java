@@ -1,20 +1,14 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
-import uk.gov.di.ipv.cri.address.library.helpers.ListOfMapConverter;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @DynamoDbBean
-public class AddressSessionItem {
+public class SessionItem {
     public static final String AUTHORIZATION_CODE_INDEX = "authorizationCode-index";
     public static final String ACCESS_TOKEN_INDEX = "access-token-index";
     private UUID sessionId;
@@ -22,14 +16,11 @@ public class AddressSessionItem {
     private String clientId;
     private String state;
     private URI redirectUri;
-    private List<CanonicalAddress> addresses = new ArrayList<>();
     private String authorizationCode;
-
     private String accessToken;
     private String subject;
 
-    public AddressSessionItem() {
-
+    public SessionItem() {
         sessionId = UUID.randomUUID();
     }
 
@@ -90,15 +81,6 @@ public class AddressSessionItem {
     @DynamoDbSecondaryPartitionKey(indexNames = ACCESS_TOKEN_INDEX)
     public String getAccessToken() {
         return accessToken;
-    }
-
-    @DynamoDbConvertedBy(ListOfMapConverter.class)
-    public List<CanonicalAddress> getAddresses() {
-        return addresses;
-    }
-
-    public void setAddresses(List<CanonicalAddress> addresses) {
-        this.addresses = Objects.requireNonNullElseGet(addresses, ArrayList::new);
     }
 
     public void setSubject(String subject) {

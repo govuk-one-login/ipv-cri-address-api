@@ -14,9 +14,9 @@ import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
 import java.util.Map;
 import java.util.UUID;
@@ -30,20 +30,20 @@ public class SessionHandler
     protected static final String STATE = "state";
     protected static final String REDIRECT_URI = "redirect_uri";
     public static final String EVENT_SESSION_CREATED = "session_created";
-    private final AddressSessionService addressSessionService;
+    private final SessionService sessionService;
     private final SessionRequestService sesssionRequestService;
     private final EventProbe eventProbe;
 
     @ExcludeFromGeneratedCoverageReport
     public SessionHandler() {
-        this(new AddressSessionService(), new SessionRequestService(), new EventProbe());
+        this(new SessionService(), new SessionRequestService(), new EventProbe());
     }
 
     public SessionHandler(
-            AddressSessionService addressSessionService,
+            SessionService sessionService,
             SessionRequestService sessionRequestService,
             EventProbe eventProbe) {
-        this.addressSessionService = addressSessionService;
+        this.sessionService = sessionService;
         this.sesssionRequestService = sessionRequestService;
         this.eventProbe = eventProbe;
     }
@@ -60,7 +60,7 @@ public class SessionHandler
 
             eventProbe.addDimensions(Map.of("issuer", sessionRequest.getClientId()));
 
-            UUID sessionId = addressSessionService.createAndSaveAddressSession(sessionRequest);
+            UUID sessionId = sessionService.createAndSaveAddressSession(sessionRequest);
 
             eventProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 

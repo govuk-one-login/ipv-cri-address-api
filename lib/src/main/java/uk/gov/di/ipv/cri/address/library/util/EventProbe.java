@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.helpers;
+package uk.gov.di.ipv.cri.address.library.util;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;

@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.models;
+package uk.gov.di.ipv.cri.address.library.domain;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBDocument;

@@ -14,11 +14,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.address.api.helpers.fixtures.TestFixtures;
-import uk.gov.di.ipv.cri.address.library.helpers.SignClaimSetJwt;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
+import uk.gov.di.ipv.cri.address.api.service.fixtures.TestFixtures;
+import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.address.library.util.SignedJWTFactory;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -61,7 +60,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
 
     @Test
     void shouldReturnAVerifiedCredentialWhenGivenCanonicalAddresses() throws JOSEException {
-        SignClaimSetJwt mockSignedClaimSetJwt = mock(SignClaimSetJwt.class);
+        SignedJWTFactory mockSignedClaimSetJwt = mock(SignedJWTFactory.class);
         var verifiableCredentialService =
                 new VerifiableCredentialService(mockSignedClaimSetJwt, mockConfigurationService);
 
@@ -82,8 +81,6 @@ class VerifiableCredentialServiceTest implements TestFixtures {
             throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException, ParseException,
                     JsonProcessingException {
 
-        AddressSessionItem addressSessionItem = new AddressSessionItem();
-        addressSessionItem.setSubject(SUBJECT);
         CanonicalAddress address = new CanonicalAddress();
         address.setUprn(Long.valueOf(UPRN));
         address.setBuildingNumber(BUILDING_NUMBER);
@@ -94,11 +91,10 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         address.setValidFrom(Date.from(VALID_FROM));
         address.setValidUntil(Date.from(VALID_UNTIL));
         List<CanonicalAddress> canonicalAddresses = List.of(address);
-        addressSessionItem.setAddresses(canonicalAddresses);
 
-        SignClaimSetJwt signClaimSetJwt = new SignClaimSetJwt(new ECDSASigner(getPrivateKey()));
+        SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
         var verifiableCredentialService =
-                new VerifiableCredentialService(signClaimSetJwt, mockConfigurationService);
+                new VerifiableCredentialService(signedJwtFactory, mockConfigurationService);
 
         SignedJWT signedJWT =
                 verifiableCredentialService.generateSignedVerifiableCredentialJwt(
@@ -110,12 +106,12 @@ class VerifiableCredentialServiceTest implements TestFixtures {
 
         assertEquals(5, claimsSet.size());
 
-        JsonNode claims = claimsSet;
         assertAll(
                 () -> {
                     assertEquals(
                             address.getUprn().get().toString(),
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)
@@ -123,7 +119,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                                     .asText());
                     assertEquals(
                             address.getBuildingNumber(),
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)
@@ -131,7 +128,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                                     .asText());
                     assertEquals(
                             address.getStreetName(),
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)
@@ -139,7 +137,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                                     .asText());
                     assertEquals(
                             address.getAddressLocality(),
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)
@@ -147,7 +146,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                                     .asText());
                     assertEquals(
                             address.getPostalCode(),
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)
@@ -155,7 +155,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                                     .asText());
                     assertEquals(
                             address.getAddressCountry(),
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)
@@ -163,7 +164,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                                     .asText());
                     assertEquals(
                             "2010-02-26",
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)
@@ -171,7 +173,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                                     .asText());
                     assertEquals(
                             "2021-01-16",
-                            claims.get(VC_CLAIM)
+                            claimsSet
+                                    .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
                                     .get(VC_ADDRESS_KEY)
                                     .get(0)

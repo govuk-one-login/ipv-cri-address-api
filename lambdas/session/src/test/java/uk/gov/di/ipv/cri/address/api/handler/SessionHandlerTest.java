@@ -16,8 +16,8 @@ import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
 import java.net.URI;
 import java.util.Map;
@@ -37,7 +37,7 @@ import static uk.gov.di.ipv.cri.address.api.handler.SessionHandler.STATE;
 @ExtendWith(MockitoExtension.class)
 class SessionHandlerTest {
 
-    @Mock private AddressSessionService addressSessionService;
+    @Mock private SessionService sessionService;
 
     @Mock private SessionRequestService sessionRequestService;
 
@@ -51,8 +51,7 @@ class SessionHandlerTest {
 
     @BeforeEach
     void setUp() {
-        sessionHandler =
-                new SessionHandler(addressSessionService, sessionRequestService, eventProbe);
+        sessionHandler = new SessionHandler(sessionService, sessionRequestService, eventProbe);
     }
 
     @Test
@@ -69,8 +68,7 @@ class SessionHandlerTest {
                 .thenReturn(URI.create("https://www.example.com/callback"));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
         when(sessionRequestService.validateSessionRequest("some json")).thenReturn(sessionRequest);
-        when(addressSessionService.createAndSaveAddressSession(sessionRequest))
-                .thenReturn(sessionId);
+        when(sessionService.createAndSaveAddressSession(sessionRequest)).thenReturn(sessionId);
 
         APIGatewayProxyResponseEvent responseEvent =
                 sessionHandler.handleRequest(apiGatewayProxyRequestEvent, null);
@@ -106,7 +104,7 @@ class SessionHandlerTest {
 
         verify(eventProbe).counterMetric("session_created", 0d);
         verify(eventProbe).log(Level.ERROR, sessionValidationException);
-        verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
+        verify(sessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 
     @Test
@@ -127,7 +125,7 @@ class SessionHandlerTest {
         assertEquals(ErrorResponse.SERVER_CONFIG_ERROR.getMessage(), responseBody.get("message"));
 
         verify(eventProbe).counterMetric("session_created", 0d);
-        verify(addressSessionService, never()).createAndSaveAddressSession(sessionRequest);
+        verify(sessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 
     private void setupEventProbeErrorBehaviour() {
