@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.helpers;
+package uk.gov.di.ipv.cri.address.library.util;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
@@ -8,10 +8,10 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
-public class SignClaimSetJwt {
+public class SignedJWTFactory {
     private final JWSSigner kmsSigner;
 
-    public SignClaimSetJwt(JWSSigner kmsSigner) {
+    public SignedJWTFactory(JWSSigner kmsSigner) {
         this.kmsSigner = kmsSigner;
     }
 

@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.helpers;
+package uk.gov.di.ipv.cri.address.library.util;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;

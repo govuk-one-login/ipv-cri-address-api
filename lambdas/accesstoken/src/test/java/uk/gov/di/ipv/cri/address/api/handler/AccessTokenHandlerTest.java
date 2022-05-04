@@ -21,9 +21,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
+import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AccessTokenService;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -43,13 +44,14 @@ class AccessTokenHandlerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Mock private EventProbe eventProbe;
     @Mock private AccessTokenService mockAccessTokenService;
+    @Mock private SessionService mockSessionService;
     @Mock private TokenRequest tokenRequest;
 
     private AccessTokenHandler handler;
 
     @BeforeEach
     void setUp() {
-        handler = new AccessTokenHandler(mockAccessTokenService, eventProbe);
+        handler = new AccessTokenHandler(mockAccessTokenService, mockSessionService, eventProbe);
     }
 
     @Test
@@ -67,11 +69,14 @@ class AccessTokenHandlerTest {
                         authCodeValue, "jwt-string", grantType);
         event.withBody(tokenRequestBody);
         AccessTokenResponse tokenResponse = createTestTokenResponse();
+        SessionItem mockSessionItem = mock(SessionItem.class);
 
         when(mockAccessTokenService.createTokenRequest(tokenRequestBody)).thenReturn(tokenRequest);
+        when(mockAccessTokenService.getAuthorizationCode(tokenRequest)).thenReturn(authCodeValue);
         when(mockAccessTokenService.createToken(tokenRequest)).thenReturn(tokenResponse);
-        when(mockAccessTokenService.getAddressSessionId(tokenRequest))
-                .thenReturn(UUID.randomUUID());
+        when(mockSessionService.getSessionByAuthorisationCode(authCodeValue))
+                .thenReturn(mockSessionItem);
+
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, null);
 
         Map<String, Object> responseBody =
@@ -95,12 +100,12 @@ class AccessTokenHandlerTest {
         AccessTokenValidationException exception =
                 new AccessTokenValidationException("an error message");
         when(mockAccessTokenService.createTokenRequest("some body")).thenThrow(exception);
-        when(eventProbe.log(Level.INFO, exception)).thenReturn(eventProbe);
+        when(eventProbe.log(Level.ERROR, exception)).thenReturn(eventProbe);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, null);
 
         assertErrorResponse(response, ErrorResponse.TOKEN_VALIDATION_ERROR);
-        verify(eventProbe).log(Level.INFO, exception);
+        verify(eventProbe).log(Level.ERROR, exception);
         verify(eventProbe).counterMetric(METRIC_NAME_ACCESS_TOKEN, 0d);
         verifyNoMoreInteractions(mockAccessTokenService);
     }
@@ -110,23 +115,22 @@ class AccessTokenHandlerTest {
             throws AccessTokenValidationException, JsonProcessingException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         event.withBody("some body");
-        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
-        UUID mockUUID = UUID.randomUUID();
+        SessionItem mockSessionItem = mock(SessionItem.class);
+        String authCode = String.valueOf(UUID.randomUUID());
         AccessTokenValidationException exception =
                 new AccessTokenValidationException("an error message");
         when(mockAccessTokenService.createTokenRequest("some body")).thenReturn(tokenRequest);
-
-        when(mockAccessTokenService.getAddressSessionId(tokenRequest)).thenReturn(mockUUID);
-        when(mockAccessTokenService.getAddressSessionItem(mockUUID))
-                .thenReturn(mockAddressSessionItem);
-        when(mockAccessTokenService.validateTokenRequest(tokenRequest, mockAddressSessionItem))
+        when(mockAccessTokenService.getAuthorizationCode(tokenRequest)).thenReturn(authCode);
+        when(mockSessionService.getSessionByAuthorisationCode(authCode))
+                .thenReturn(mockSessionItem);
+        when(mockAccessTokenService.validateTokenRequest(tokenRequest, mockSessionItem))
                 .thenThrow(exception);
-        when(eventProbe.log(Level.INFO, exception)).thenReturn(eventProbe);
+        when(eventProbe.log(Level.ERROR, exception)).thenReturn(eventProbe);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, null);
 
         assertErrorResponse(response, ErrorResponse.TOKEN_VALIDATION_ERROR);
-        verify(eventProbe).log(Level.INFO, exception);
+        verify(eventProbe).log(Level.ERROR, exception);
         verify(eventProbe).counterMetric(METRIC_NAME_ACCESS_TOKEN, 0d);
         verifyNoMoreInteractions(mockAccessTokenService);
     }

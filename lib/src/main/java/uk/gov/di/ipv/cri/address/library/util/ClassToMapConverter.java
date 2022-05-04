@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.helpers;
+package uk.gov.di.ipv.cri.address.library.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 
 public class ClassToMapConverter<T> implements AttributeConverter<T> {
-    final ObjectMapper mapper;
-    final Class<T> persistentClass;
+    private final ObjectMapper mapper;
+    private final Class<T> persistentClass;
 
     public ClassToMapConverter() {
         this(null);

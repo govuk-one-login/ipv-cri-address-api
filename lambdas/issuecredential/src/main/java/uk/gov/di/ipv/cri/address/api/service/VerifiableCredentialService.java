@@ -5,10 +5,10 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import uk.gov.di.ipv.cri.address.library.helpers.KMSSigner;
-import uk.gov.di.ipv.cri.address.library.helpers.SignClaimSetJwt;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
+import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.address.library.util.KMSSigner;
+import uk.gov.di.ipv.cri.address.library.util.SignedJWTFactory;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,20 +30,20 @@ import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants
 
 public class VerifiableCredentialService {
 
-    private final SignClaimSetJwt signedClaimSetJwt;
+    private final SignedJWTFactory signedJwtFactory;
     private final ConfigurationService configurationService;
 
     public VerifiableCredentialService() {
         this.configurationService = new ConfigurationService();
-        this.signedClaimSetJwt =
-                new SignClaimSetJwt(
+        this.signedJwtFactory =
+                new SignedJWTFactory(
                         new KMSSigner(
                                 configurationService.getVerifiableCredentialKmsSigningKeyId()));
     }
 
     public VerifiableCredentialService(
-            SignClaimSetJwt signedClaimSetJwt, ConfigurationService configurationService) {
-        this.signedClaimSetJwt = signedClaimSetJwt;
+            SignedJWTFactory signedClaimSetJwt, ConfigurationService configurationService) {
+        this.signedJwtFactory = signedClaimSetJwt;
         this.configurationService = configurationService;
     }
 
@@ -79,6 +79,6 @@ public class VerifiableCredentialService {
                                         Map.of(VC_ADDRESS_KEY, addresses)))
                         .build();
 
-        return signedClaimSetJwt.createSignedJwt(claimsSet);
+        return signedJwtFactory.createSignedJwt(claimsSet);
     }
 }

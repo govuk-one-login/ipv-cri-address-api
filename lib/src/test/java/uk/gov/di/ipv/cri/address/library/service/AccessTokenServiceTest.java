@@ -15,16 +15,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
+import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
 
 import java.net.URI;
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -43,7 +39,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccessTokenServiceTest {
-    @Mock private DataStore<AddressSessionItem> mockDataStore;
     @Mock private ConfigurationService mockConfigurationService;
     @Mock private JWTVerifier mockJwtVerifier;
     private AccessTokenService accessTokenService;
@@ -56,8 +51,7 @@ class AccessTokenServiceTest {
 
     @BeforeEach
     void setUp() {
-        accessTokenService =
-                new AccessTokenService(mockDataStore, mockConfigurationService, mockJwtVerifier);
+        accessTokenService = new AccessTokenService(mockConfigurationService, mockJwtVerifier);
     }
 
     @Test
@@ -79,20 +73,18 @@ class AccessTokenServiceTest {
                         authCodeValue, JWT_MISSING_JTI, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
-        AddressSessionItem addressSessionItem = new AddressSessionItem();
-        addressSessionItem.setSessionId(UUID.randomUUID());
-        addressSessionItem.setAuthorizationCode(authCodeValue);
-        addressSessionItem.setClientId(clientID);
-        addressSessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(UUID.randomUUID());
+        sessionItem.setAuthorizationCode(authCodeValue);
+        sessionItem.setClientId(clientID);
+        sessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
         when(mockConfigurationService.getParametersForPath(
                         "/clients/" + clientID + "/jwtAuthentication"))
                 .thenReturn(getSSMConfigMap());
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () ->
-                                accessTokenService.validateTokenRequest(
-                                        tokenRequest, addressSessionItem));
+                        () -> accessTokenService.validateTokenRequest(tokenRequest, sessionItem));
 
         assertThat(exception.getMessage(), containsString("jti is missing"));
         verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
@@ -158,20 +150,18 @@ class AccessTokenServiceTest {
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
 
-        AddressSessionItem addressSessionItem = new AddressSessionItem();
-        addressSessionItem.setSessionId(UUID.randomUUID());
-        addressSessionItem.setAuthorizationCode(authCodeValue);
-        addressSessionItem.setClientId("123456789");
-        addressSessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(UUID.randomUUID());
+        sessionItem.setAuthorizationCode(authCodeValue);
+        sessionItem.setClientId("123456789");
+        sessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
         when(mockConfigurationService.getParametersForPath(
                         "/clients/" + clientID + "/jwtAuthentication"))
                 .thenReturn(getSSMConfigMap());
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () ->
-                                accessTokenService.validateTokenRequest(
-                                        tokenRequest, addressSessionItem));
+                        () -> accessTokenService.validateTokenRequest(tokenRequest, sessionItem));
 
         assertThat(
                 exception.getMessage(),
@@ -217,10 +207,10 @@ class AccessTokenServiceTest {
                         authCodeValue, SAMPLE_JWT, redirectUri, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
-        AddressSessionItem mockAddressSessionItem = mock(AddressSessionItem.class);
+        SessionItem mockSessionItem = mock(SessionItem.class);
 
-        when(mockAddressSessionItem.getAuthorizationCode()).thenReturn(authCodeValue);
-        when(mockAddressSessionItem.getRedirectUri())
+        when(mockSessionItem.getAuthorizationCode()).thenReturn(authCodeValue);
+        when(mockSessionItem.getRedirectUri())
                 .thenReturn(URI.create("http://different-redirectUri"));
 
         when(mockConfigurationService.getParametersForPath(
@@ -232,7 +222,7 @@ class AccessTokenServiceTest {
                         AccessTokenValidationException.class,
                         () ->
                                 accessTokenService.validateTokenRequest(
-                                        tokenRequest, mockAddressSessionItem));
+                                        tokenRequest, mockSessionItem));
 
         assertThat(
                 exception.getMessage(),
@@ -243,15 +233,22 @@ class AccessTokenServiceTest {
     @Test
     void shouldCallWriteTokenAndUpdateDataStore() {
         AccessTokenResponse accessTokenResponse = mock(AccessTokenResponse.class);
-        AddressSessionItem addressSessionItem = mock(AddressSessionItem.class);
+        SessionItem sessionItem = new SessionItem();
 
         Tokens mockTokens = mock(Tokens.class);
         when(accessTokenResponse.getTokens()).thenReturn(mockTokens);
         BearerAccessToken mockBearerAccessToken = mock(BearerAccessToken.class);
         when(mockTokens.getBearerAccessToken()).thenReturn(mockBearerAccessToken);
         when(mockBearerAccessToken.toAuthorizationHeader()).thenReturn("some-authorization-header");
-        accessTokenService.writeToken(accessTokenResponse, addressSessionItem);
+        accessTokenService.updateSessionAccessToken(sessionItem, accessTokenResponse);
 
+        assertThat(
+                sessionItem.getAccessToken(),
+                equalTo(
+                        accessTokenResponse
+                                .getTokens()
+                                .getBearerAccessToken()
+                                .toAuthorizationHeader()));
         assertThat(accessTokenResponse, notNullValue());
     }
 
@@ -280,7 +277,7 @@ class AccessTokenServiceTest {
     @Test
     void shouldValidateTokenRequestSuccessfully()
             throws AccessTokenValidationException, SessionValidationException,
-                    ClientConfigurationException, ParseException {
+                    ClientConfigurationException {
 
         String authCodeValue = "12345";
         String grantType = "authorization_code";
@@ -300,18 +297,18 @@ class AccessTokenServiceTest {
         ClientAuthentication clientAuthentication = tokenRequest.getClientAuthentication();
         PrivateKeyJWT privateKeyJWT = (PrivateKeyJWT) clientAuthentication;
         SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
-        AddressSessionItem addressSessionItem = new AddressSessionItem();
-        addressSessionItem.setSessionId(UUID.randomUUID());
-        addressSessionItem.setAuthorizationCode(authCodeValue);
-        addressSessionItem.setClientId(clientID);
-        addressSessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(UUID.randomUUID());
+        sessionItem.setAuthorizationCode(authCodeValue);
+        sessionItem.setClientId(clientID);
+        sessionItem.setRedirectUri(URI.create("https://www.example/com/callback"));
 
         when(mockConfigurationService.getParametersForPath(
                         "/clients/" + clientID + "/jwtAuthentication"))
                 .thenReturn(getSSMConfigMap());
 
         TokenRequest expectedTokenRequest =
-                accessTokenService.validateTokenRequest(tokenRequest, addressSessionItem);
+                accessTokenService.validateTokenRequest(tokenRequest, sessionItem);
 
         assertEquals(expectedTokenRequest.getClientID(), tokenRequest.getClientID());
         verify(mockJwtVerifier, times(1)).verifyJWT(getSSMConfigMap(), signedJWT);
@@ -336,10 +333,10 @@ class AccessTokenServiceTest {
                         authCodeValue, SAMPLE_JWT, clientID, grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
-        AddressSessionItem addressSessionItem = new AddressSessionItem();
-        addressSessionItem.setSessionId(UUID.randomUUID());
-        addressSessionItem.setAuthorizationCode(authCodeValue);
-        addressSessionItem.setClientId(clientID);
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(UUID.randomUUID());
+        sessionItem.setAuthorizationCode(authCodeValue);
+        sessionItem.setClientId(clientID);
 
         when(mockConfigurationService.getParametersForPath(
                         "/clients/" + clientID + "/jwtAuthentication"))
@@ -348,9 +345,7 @@ class AccessTokenServiceTest {
         AccessTokenValidationException exception =
                 assertThrows(
                         AccessTokenValidationException.class,
-                        () ->
-                                accessTokenService.validateTokenRequest(
-                                        tokenRequest, addressSessionItem));
+                        () -> accessTokenService.validateTokenRequest(tokenRequest, sessionItem));
 
         assertThat(
                 exception.getMessage(),
@@ -384,41 +379,6 @@ class AccessTokenServiceTest {
                 exception.getMessage(),
                 containsString(
                         "Invalid private key JWT authentication: The client identifier doesn't match the client assertion subject / issuer"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenAddressSessionItemNotFoundForATokenRequest()
-            throws AccessTokenValidationException, SessionValidationException,
-                    ClientConfigurationException {
-        String authCodeValue = "12345";
-        String grantType = "authorization_code";
-        String clientID = "ipv-core-stub";
-        String tokenRequestBody =
-                String.format(
-                        "code=%s"
-                                + "&client_assertion=%s"
-                                + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-                                + "&client_id=%s"
-                                + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, clientID, grantType);
-
-        TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
-
-        DynamoDbTable<AddressSessionItem> mockAddressSessionTable = mock(DynamoDbTable.class);
-        DynamoDbIndex<AddressSessionItem> mockAuthorizationCodeIndex = mock(DynamoDbIndex.class);
-
-        when(mockDataStore.getTable()).thenReturn(mockAddressSessionTable);
-        when(mockAddressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX))
-                .thenReturn(mockAuthorizationCodeIndex);
-
-        IllegalArgumentException exception =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> accessTokenService.getAddressSessionId(tokenRequest));
-
-        assertThat(exception.getMessage(), containsString("Parameter must have exactly one value"));
         verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
     }
 }

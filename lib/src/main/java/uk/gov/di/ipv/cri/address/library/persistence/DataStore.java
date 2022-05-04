@@ -75,7 +75,8 @@ public class DataStore<T> {
                 .collect(Collectors.toList());
     }
 
-    public List<T> getItemByGsi(DynamoDbIndex<T> index, String value) throws DynamoDbException {
+    public List<T> getItemByIndex(String indexName, String value) throws DynamoDbException {
+        DynamoDbIndex<T> index = getTable().index(indexName);
         var attVal = AttributeValue.builder().s(value).build();
         var queryConditional =
                 QueryConditional.keyEqualTo(Key.builder().partitionValue(attVal).build());

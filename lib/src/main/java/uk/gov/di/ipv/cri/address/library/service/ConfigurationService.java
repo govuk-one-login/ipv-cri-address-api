@@ -33,13 +33,16 @@ public class ConfigurationService {
                         System.getenv("AWS_STACK_NAME"), "env var AWS_STACK_NAME required");
     }
 
-    public String getAddressSessionTableName() {
-        return ssmProvider.get(getParameterName(SSMParameterName.ADDRESS_SESSION_TABLE_NAME));
+    public String getSessionTableName() {
+        return ssmProvider.get(getParameterName(SSMParameterName.SESSION_TABLE_NAME));
     }
 
-    public long getAddressSessionTtl() {
-        return Optional.ofNullable(
-                        ssmProvider.get(getParameterName(SSMParameterName.ADDRESS_SESSION_TTL)))
+    public String getAddressTableName() {
+        return ssmProvider.get(getParameterName(SSMParameterName.ADDRESS_TABLE_NAME));
+    }
+
+    public long getSessionTtl() {
+        return Optional.ofNullable(ssmProvider.get(getParameterName(SSMParameterName.SESSION_TTL)))
                 .map(Long::valueOf)
                 .orElse(DEFAULT_SESSION_ADDRESS_TTL_IN_SECS);
     }
@@ -76,15 +79,16 @@ public class ConfigurationService {
     }
 
     public enum SSMParameterName {
-        ADDRESS_SESSION_TABLE_NAME("AddressSessionTableName"),
-        ADDRESS_SESSION_TTL("AddressSessionTtl"),
+        SESSION_TABLE_NAME("SessionTableName"),
+        SESSION_TTL("SessionTtl"),
         ORDNANCE_SURVEY_API_KEY("OrdnanceSurveyAPIKey"),
         ORDNANCE_SURVEY_API_URL("OrdnanceSurveyAPIURL"),
         ADDRESS_CRI_AUDIENCE("AddressCriAudience"),
         MAXIMUM_JWT_TTL("MaxJwtTtl"),
         VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID("verifiableCredentialKmsSigningKeyId"),
         VERIFIABLE_CREDENTIAL_ISSUER("verifiable-credential/issuer"),
-        AUTH_REQUEST_KMS_ENCRYPTION_KEY_ID("AuthRequestKmsEncryptionKeyId");
+        AUTH_REQUEST_KMS_ENCRYPTION_KEY_ID("AuthRequestKmsEncryptionKeyId"),
+        ADDRESS_TABLE_NAME("AddressTableName");
 
         public final String parameterName;
 

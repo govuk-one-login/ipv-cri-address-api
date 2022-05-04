@@ -9,17 +9,19 @@ import org.apache.logging.log4j.Level;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import uk.gov.di.ipv.cri.address.library.domain.AuthorizationResponse;
+import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.models.AuthorizationResponse;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
+import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 public class AddressHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -27,17 +29,18 @@ public class AddressHandler
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "address";
 
-    private final AddressSessionService sessionService;
-
-    private EventProbe eventProbe;
+    private final AddressService addressService;
+    private final SessionService sessionService;
+    private final EventProbe eventProbe;
 
     public AddressHandler() {
-        sessionService = new AddressSessionService();
-        eventProbe = new EventProbe();
+        this(new SessionService(), new AddressService(), new EventProbe());
     }
 
-    public AddressHandler(AddressSessionService sessionService, EventProbe eventProbe) {
+    public AddressHandler(
+            SessionService sessionService, AddressService addressService, EventProbe eventProbe) {
         this.sessionService = sessionService;
+        this.addressService = addressService;
         this.eventProbe = eventProbe;
     }
 
@@ -49,11 +52,19 @@ public class AddressHandler
 
         String sessionId = input.getHeaders().get(SESSION_ID);
         try {
-            List<CanonicalAddress> addresses = sessionService.parseAddresses(input.getBody());
+            List<CanonicalAddress> addresses = addressService.parseAddresses(input.getBody());
 
             // If we have at least one address, we can return a 201 with the authorization code
             if (!addresses.isEmpty()) {
-                AddressSessionItem session = sessionService.saveAddresses(sessionId, addresses);
+                SessionItem session = sessionService.validateSessionId(sessionId);
+
+                // Save our addresses to the address table
+                addressService.saveAddresses(UUID.fromString(sessionId), addresses);
+
+                // Now we've saved our address, we need to create an authorization code for the
+                // session
+                sessionService.createAuthorizationCode(session);
+
                 eventProbe.counterMetric(LAMBDA_NAME);
                 return ApiGatewayResponseGenerator.proxyJsonResponse(
                         HttpStatus.SC_CREATED, new AuthorizationResponse(session));
