@@ -528,20 +528,9 @@ Resources:
       AttributeDefinitions:
         - AttributeName: "sessionId"
           AttributeType: "S"
-        - AttributeName: "accessToken"
-          AttributeType: "S"
       KeySchema:
         - AttributeName: "sessionId"
           KeyType: "HASH"
-      GlobalSecondaryIndexes:
-        - IndexName: "access-token-index"
-          KeySchema:
-            - AttributeName: "accessToken"
-              KeyType: "HASH"
-          Projection:
-            NonKeyAttributes:
-              - "sessionId"
-            ProjectionType: "INCLUDE"
       TimeToLiveSpecification:
         AttributeName: expiry-date
         Enabled: true
@@ -594,7 +583,7 @@ Resources:
       Value: !Sub session-${AWS::StackName}
       Type: String
       Description: session dynamodb table name
-      
+
   ParameterAddressItemTableName:
     Type: AWS::SSM::Parameter
     Properties:
