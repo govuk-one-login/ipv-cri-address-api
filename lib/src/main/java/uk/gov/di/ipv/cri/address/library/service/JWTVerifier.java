@@ -4,7 +4,9 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.crypto.impl.ECDSA;
 import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -24,6 +26,8 @@ import java.text.ParseException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Set;
+
+import static com.nimbusds.jose.JWSAlgorithm.ES256;
 
 public class JWTVerifier {
 
@@ -64,10 +68,17 @@ public class JWTVerifier {
             throws SessionValidationException, ClientConfigurationException {
         String publicCertificateToVerify = clientAuthenticationConfig.get("publicSigningJwkBase64");
         try {
+
+            SignedJWT concatSignatureJwt;
+            if (signatureIsDerFormat(signedJWT)) {
+                concatSignatureJwt = transcodeSignature(signedJWT);
+            } else {
+                concatSignatureJwt = signedJWT;
+            }
             JWSAlgorithm signingAlgorithm = signedJWT.getHeader().getAlgorithm();
             PublicKey pubicKeyFromConfig =
                     getPublicKeyFromConfig(publicCertificateToVerify, signingAlgorithm);
-            if (!verifySignature(signedJWT, pubicKeyFromConfig)) {
+            if (!verifySignature(concatSignatureJwt, pubicKeyFromConfig)) {
                 throw new SessionValidationException("JWT signature verification failed");
             }
         } catch (JOSEException | ParseException e) {
@@ -75,6 +86,21 @@ public class JWTVerifier {
         } catch (CertificateException e) {
             throw new ClientConfigurationException("Certificate problem encountered", e);
         }
+    }
+
+    private boolean signatureIsDerFormat(SignedJWT signedJWT) throws JOSEException {
+        return signedJWT.getSignature().decode().length != ECDSA.getSignatureByteArrayLength(ES256);
+    }
+
+    private SignedJWT transcodeSignature(SignedJWT signedJWT) throws JOSEException, ParseException {
+        Base64URL transcodedSignatureBase64 =
+                Base64URL.encode(
+                        ECDSA.transcodeSignatureToConcat(
+                                signedJWT.getSignature().decode(),
+                                ECDSA.getSignatureByteArrayLength(ES256)));
+        String[] jwtParts = signedJWT.serialize().split("\\.");
+        return SignedJWT.parse(
+                String.format("%s.%s.%s", jwtParts[0], jwtParts[1], transcodedSignatureBase64));
     }
 
     private void verifyJWTClaimsSet(
