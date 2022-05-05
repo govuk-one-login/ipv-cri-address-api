@@ -209,12 +209,15 @@ Resources:
         Variables:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-session
+          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
         - DynamoDBWritePolicy:
             TableName:
               Ref: SessionTable
+        - SQSSendMessagePolicy:
+            QueueName: !ImportValue AuditEventQueueName
         - KMSDecryptPolicy:
             KeyId: !Ref AddressCriDecryptionKey
         - Statement:
@@ -232,6 +235,14 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - 'kms:Decrypt'
+                - 'kms:GenerateDataKey'
+              Resource:
+                - !ImportValue AuditEventQueueEncryptionKeyArn
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
@@ -517,12 +528,24 @@ Resources:
       AttributeDefinitions:
         - AttributeName: "sessionId"
           AttributeType: "S"
+        - AttributeName: "authorizationCode"
+          AttributeType: "S"
         - AttributeName: "accessToken"
           AttributeType: "S"
       KeySchema:
         - AttributeName: "sessionId"
           KeyType: "HASH"
       GlobalSecondaryIndexes:
+        - IndexName: "authorizationCode-index"
+          KeySchema:
+            - AttributeName: "authorizationCode"
+              KeyType: "HASH"
+          Projection:
+            NonKeyAttributes:
+              - "sessionId"
+              - "redirectUri"
+              - "clientId"
+            ProjectionType: "INCLUDE"
         - IndexName: "access-token-index"
           KeySchema:
             - AttributeName: "accessToken"
