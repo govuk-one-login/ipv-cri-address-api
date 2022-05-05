@@ -126,9 +126,9 @@ Mappings:
 
   IPVCore1RedirectURIMapping:
     Environment:
-      staging: "https://staging-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
-      integration: "https://integration-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
-      production: "https://di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback"
+      staging: "https://staging-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=debugAddress"
+      integration: "https://integration-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=address"
+      production: "https://di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=address"
 
   OrdnanceSurveyAPIURLMapping:
     Environment:
