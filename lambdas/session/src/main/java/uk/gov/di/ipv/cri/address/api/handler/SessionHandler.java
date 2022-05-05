@@ -4,16 +4,21 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.http.HttpStatus;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.service.SessionRequestService;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.domain.SessionRequest;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.address.library.exception.SqsException;
+import uk.gov.di.ipv.cri.address.library.service.AuditService;
+import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.address.library.service.SessionService;
 import uk.gov.di.ipv.cri.address.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.util.EventProbe;
@@ -33,19 +38,27 @@ public class SessionHandler
     private final SessionService sessionService;
     private final SessionRequestService sesssionRequestService;
     private final EventProbe eventProbe;
+    private final AuditService auditService;
 
     @ExcludeFromGeneratedCoverageReport
     public SessionHandler() {
-        this(new SessionService(), new SessionRequestService(), new EventProbe());
+        this(
+                new SessionService(),
+                new SessionRequestService(),
+                new EventProbe(),
+                new AuditService(
+                        AmazonSQSClientBuilder.defaultClient(), new ConfigurationService()));
     }
 
     public SessionHandler(
             SessionService sessionService,
             SessionRequestService sessionRequestService,
-            EventProbe eventProbe) {
+            EventProbe eventProbe,
+            AuditService auditService) {
         this.sessionService = sessionService;
         this.sesssionRequestService = sessionRequestService;
         this.eventProbe = eventProbe;
+        this.auditService = auditService;
     }
 
     @Override
@@ -64,6 +77,8 @@ public class SessionHandler
 
             eventProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 
+            auditService.sendAuditEvent(
+                    AuditEventTypes.SESSION_CREATED, sessionId, sessionRequest.getClientId());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_CREATED,
                     Map.of(
@@ -77,7 +92,7 @@ public class SessionHandler
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, ErrorResponse.SESSION_VALIDATION_ERROR);
-        } catch (ClientConfigurationException e) {
+        } catch (ClientConfigurationException | SqsException e) {
 
             eventProbe.log(ERROR, e).counterMetric(EVENT_SESSION_CREATED, 0d);
 

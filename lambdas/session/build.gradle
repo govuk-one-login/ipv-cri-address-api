@@ -8,6 +8,7 @@ dependencies {
 	implementation project(":lib"),
 			configurations.lambda,
 			configurations.gson,
+			configurations.sqs,
 			configurations.nimbus,
 			configurations.kms
 
