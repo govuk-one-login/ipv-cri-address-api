@@ -6,6 +6,7 @@ plugins {
 dependencies {
 
 	implementation configurations.lambda,
+			configurations.sqs,
 			configurations.jackson,
 			configurations.dynamodb,
 			configurations.gson,
