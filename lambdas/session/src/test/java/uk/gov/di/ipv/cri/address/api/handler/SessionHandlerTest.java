@@ -6,9 +6,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.Level;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.api.service.SessionRequestService;
@@ -52,14 +52,7 @@ class SessionHandlerTest {
 
     @Mock private AuditService auditService;
 
-    private SessionHandler sessionHandler;
-
-    @BeforeEach
-    void setUp() {
-        sessionHandler =
-                new SessionHandler(
-                        addressSessionService, sessionRequestService, eventProbe, auditService);
-    }
+    @InjectMocks private SessionHandler sessionHandler;
 
     @Test
     void shouldCreateAndSaveAddressSession()

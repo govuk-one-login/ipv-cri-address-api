@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuditServiceTest {
+    public String SQS_QUEUE_URL = "https://example-queue-url";
     @Mock AmazonSQS mockSqs;
     @Mock ConfigurationService mockConfigurationService;
 
@@ -31,9 +32,7 @@ class AuditServiceTest {
 
     @BeforeEach
     void setup() {
-        when(mockConfigurationService.getSqsAuditEventQueueUrl())
-                .thenReturn("https://example-queue-url");
-
+        when(mockConfigurationService.getSqsAuditEventQueueUrl()).thenReturn(SQS_QUEUE_URL);
         auditService = new AuditService(mockSqs, mockConfigurationService);
     }
 
@@ -47,8 +46,7 @@ class AuditServiceTest {
                 ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(mockSqs).sendMessage(sqsSendMessageRequestCaptor.capture());
 
-        assertEquals(
-                "https://example-queue-url", sqsSendMessageRequestCaptor.getValue().getQueueUrl());
+        assertEquals(SQS_QUEUE_URL, sqsSendMessageRequestCaptor.getValue().getQueueUrl());
 
         AuditEvent messageBody =
                 objectMapper.readValue(
