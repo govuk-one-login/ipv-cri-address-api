@@ -459,6 +459,8 @@ Resources:
       Tags:
         - Key: "jwkset"
           Value: "true"
+        - Key: "awsStackName"
+          Value: !Sub "${AWS::StackName}"
 
   SigningKeyAlias:
     Type: AWS::KMS::Alias
@@ -486,6 +488,8 @@ Resources:
       Tags:
         - Key: "jwkset"
           Value: "true"
+        - Key: "awsStackName"
+          Value: !Sub "${AWS::StackName}"
 
   DecryptionKeyAlias:
     Type: AWS::KMS::Alias

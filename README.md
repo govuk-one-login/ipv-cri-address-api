@@ -70,4 +70,30 @@ For Dev the following equivalent GitHub secrets:
 | DEV_GH_ACTIONS_ROLE_ARN         | Assumed role IAM ARN |
 | DEV_SIGNING_PROFILE_NAME        | Signing profile name |
 
+## Publishing KMS Public keys
 
+The Address API uses an AWS KMS EC private key to sign verifiable credentials, 
+and an AWS KMS RSA private key to decrypt the Authorization JAR.
+
+The public keys need to be published so that clients:
+* can verify the signature of the verifiable credential, 
+* encrypt the Authorization JAR before sending to this CRI.
+
+The `JWKSetHandler` lambda function publishes these public keys as a JWKSet to `https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json`.
+
+KMS keys must be marked for publishing by setting the following AWS tags on the KMS resources in the SAM template:
+````
+Tags:
+- Key: "jwkset"
+  Value: "true"
+- Key: "awsStackName"
+  Value: !Sub "${AWS::StackName}"
+````
+
+The `JWKSetHandler` lambda function must be supplied the stack name it is published to the `AWS_STACK_NAME` environment variable:
+
+````
+Environment:
+      Variables:
+        AWS_STACK_NAME: !Sub ${AWS::StackName}
+````
