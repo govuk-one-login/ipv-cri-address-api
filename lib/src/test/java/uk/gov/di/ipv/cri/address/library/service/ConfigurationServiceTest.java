@@ -27,20 +27,19 @@ class ConfigurationServiceTest {
     void shouldGetAccessTokenTableName() {
         when(ssmProvider.get(
                         "/stack-name/"
-                                + ConfigurationService.SSMParameterName.ADDRESS_SESSION_TABLE_NAME
+                                + ConfigurationService.SSMParameterName.SESSION_TABLE_NAME
                                         .parameterName))
                 .thenReturn("the table name");
-        assertEquals("the table name", configurationService.getAddressSessionTableName());
+        assertEquals("the table name", configurationService.getSessionTableName());
     }
 
     @Test
     void shouldGetBearerAccessTokenTtl() {
         when(ssmProvider.get(
                         "/stack-name/"
-                                + ConfigurationService.SSMParameterName.ADDRESS_SESSION_TTL
-                                        .parameterName))
+                                + ConfigurationService.SSMParameterName.SESSION_TTL.parameterName))
                 .thenReturn("10");
-        assertEquals(10, configurationService.getAddressSessionTtl());
+        assertEquals(10, configurationService.getSessionTtl());
     }
 
     @Test

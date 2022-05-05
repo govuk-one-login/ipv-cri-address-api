@@ -1,7 +1,6 @@
-package uk.gov.di.ipv.cri.address.library.models;
+package uk.gov.di.ipv.cri.address.library.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 
 public class AuditEvent {
 

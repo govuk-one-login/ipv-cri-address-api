@@ -8,6 +8,8 @@ import com.amazonaws.services.kms.model.GetPublicKeyRequest;
 import com.amazonaws.services.kms.model.GetPublicKeyResult;
 import com.amazonaws.services.kms.model.KeyListEntry;
 import com.amazonaws.services.kms.model.KeyMetadata;
+import com.amazonaws.services.kms.model.ListKeysRequest;
+import com.amazonaws.services.kms.model.ListKeysResult;
 import com.amazonaws.services.kms.model.ListResourceTagsRequest;
 import com.amazonaws.services.kms.model.ListResourceTagsResult;
 import com.amazonaws.services.kms.model.Tag;
@@ -26,7 +28,11 @@ import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class KMSService {
 
@@ -40,29 +46,33 @@ public class KMSService {
         this.kmsClient = kmsClient;
     }
 
-    public List<KeyListEntry> getKeys() {
-        return kmsClient.listKeys().getKeys();
+    public List<String> getKeyIds() {
+        ListKeysRequest listKeysRequest = new ListKeysRequest();
+        ListKeysResult result = kmsClient.listKeys(listKeysRequest);
+        List<KeyListEntry> keyListEntries = new ArrayList<>(result.getKeys());
+        while (result.isTruncated()) {
+            listKeysRequest = new ListKeysRequest().withMarker(result.getNextMarker());
+            result = kmsClient.listKeys(listKeysRequest);
+            keyListEntries.addAll(result.getKeys());
+        }
+        return keyListEntries.stream().map(KeyListEntry::getKeyId).collect(Collectors.toList());
     }
 
-    public List<Tag> getTags(String keyId) {
-        ListResourceTagsRequest listResourceTagsRequest = new ListResourceTagsRequest();
-        listResourceTagsRequest.setKeyId(keyId);
+    public Set<Tag> getTags(String keyId) {
         ListResourceTagsResult listResourceTagsResult =
-                kmsClient.listResourceTags(listResourceTagsRequest);
-        return listResourceTagsResult.getTags();
+                kmsClient.listResourceTags(new ListResourceTagsRequest().withKeyId(keyId));
+        return new HashSet<>(listResourceTagsResult.getTags());
     }
 
     public KeyMetadata getMetadata(String keyId) {
-        DescribeKeyRequest describeKeyRequest = new DescribeKeyRequest();
-        describeKeyRequest.setKeyId(keyId);
-        DescribeKeyResult describeKeyResult = kmsClient.describeKey(describeKeyRequest);
+        DescribeKeyResult describeKeyResult =
+                kmsClient.describeKey(new DescribeKeyRequest().withKeyId(keyId));
         return describeKeyResult.getKeyMetadata();
     }
 
     public JWK getJWK(String keyId) {
-        GetPublicKeyRequest publicKeyRequest = new GetPublicKeyRequest();
-        publicKeyRequest.setKeyId(keyId);
-        GetPublicKeyResult publicKeyResult = kmsClient.getPublicKey(publicKeyRequest);
+        GetPublicKeyResult publicKeyResult =
+                kmsClient.getPublicKey(new GetPublicKeyRequest().withKeyId(keyId));
         EncodedKeySpec publicKeySpec =
                 new X509EncodedKeySpec(publicKeyResult.getPublicKey().array());
 

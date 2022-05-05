@@ -17,50 +17,41 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
-import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
-import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.apache.logging.log4j.Level.ERROR;
-import static org.apache.logging.log4j.Level.INFO;
 
 public class IssueCredentialHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     public static final String AUTHORIZATION_HEADER_KEY = "Authorization";
     public static final String ADDRESS_CREDENTIAL_ISSUER = "address_credential_issuer";
     private final VerifiableCredentialService verifiableCredentialService;
-    private final ConfigurationService configurationService;
-    private final DataStore<AddressSessionItem> dataStore;
+    private final AddressService addressService;
+    private final SessionService sessionService;
     private EventProbe eventProbe;
 
     public IssueCredentialHandler(
             VerifiableCredentialService verifiableCredentialService,
-            ConfigurationService configurationService,
-            DataStore<AddressSessionItem> dataStore,
+            AddressService addressService,
+            SessionService sessionService,
             EventProbe eventProbe) {
-        this.configurationService = configurationService;
         this.verifiableCredentialService = verifiableCredentialService;
-        this.dataStore = dataStore;
-
+        this.addressService = addressService;
+        this.sessionService = sessionService;
         this.eventProbe = eventProbe;
     }
 
     public IssueCredentialHandler() {
-        this.configurationService = new ConfigurationService();
         this.verifiableCredentialService = getVerifiableCredentialService();
-        this.dataStore =
-                new DataStore<>(
-                        configurationService.getAddressSessionTableName(),
-                        AddressSessionItem.class,
-                        DataStore.getClient());
-
+        this.addressService = new AddressService();
+        this.sessionService = new SessionService();
         this.eventProbe = new EventProbe();
     }
 
@@ -72,12 +63,12 @@ public class IssueCredentialHandler
 
         try {
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
-            var addressSessionItem = getAddressSessionItem(accessToken);
-            var addresses = addressSessionItem.getAddresses();
+            var sessionItem = this.sessionService.getSessionByAccessToken(accessToken);
+            var addressItem = addressService.getAddresses(sessionItem.getSessionId());
 
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
-                            addressSessionItem.getSubject(), addresses);
+                            sessionItem.getSubject(), addressItem.getAddresses());
 
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
@@ -89,7 +80,7 @@ public class IssueCredentialHandler
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_INTERNAL_SERVER_ERROR, ex.awsErrorDetails().errorMessage());
         } catch (CredentialRequestException | ParseException | JOSEException e) {
-            eventProbe.log(INFO, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_BAD_REQUEST, 0);
         }
@@ -111,22 +102,6 @@ public class IssueCredentialHandler
                                                 ErrorResponse.MISSING_AUTHORIZATION_HEADER));
 
         return AccessToken.parse(token, AccessTokenType.BEARER);
-    }
-
-    private AddressSessionItem getAddressSessionItem(AccessToken accessToken)
-            throws CredentialRequestException {
-        try {
-            return new ListUtil()
-                    .getOneItemOrThrowError(
-                            dataStore.getItemByGsi(
-                                    dataStore
-                                            .getTable()
-                                            .index(AddressSessionItem.ACCESS_TOKEN_INDEX),
-                                    accessToken.toAuthorizationHeader()));
-        } catch (IllegalArgumentException ie) {
-            throw new CredentialRequestException(
-                    "Address Session Item not found for the given access token", ie);
-        }
     }
 
     private VerifiableCredentialService getVerifiableCredentialService() {

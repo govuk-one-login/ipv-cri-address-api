@@ -10,15 +10,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.library.domain.AuthorizationResponse;
+import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.models.AuthorizationResponse;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
-import uk.gov.di.ipv.cri.address.library.service.AddressSessionService;
+import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
+import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
+import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +32,9 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AddressHandlerTest {
-
-    @Mock private AddressSessionService addressSessionService;
+    private static final String SESSION_ID = UUID.randomUUID().toString();
+    @Mock private SessionService mockSessionService;
+    @Mock private AddressService mockAddressService;
 
     @Mock private APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent;
 
@@ -42,8 +44,7 @@ class AddressHandlerTest {
 
     @BeforeEach
     void setUp() {
-
-        addressHandler = new AddressHandler(addressSessionService, eventProbe);
+        addressHandler = new AddressHandler(mockSessionService, mockAddressService, eventProbe);
     }
 
     @Test
@@ -53,9 +54,7 @@ class AddressHandlerTest {
         setupEventProbeErrorBehaviour();
 
         SessionNotFoundException exception = new SessionNotFoundException("Session not found");
-
-        when(apiGatewayProxyRequestEvent.getHeaders())
-                .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
+        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", SESSION_ID));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
 
         List<CanonicalAddress> canonicalAddresses = new ArrayList<>();
@@ -63,8 +62,8 @@ class AddressHandlerTest {
         canonicalAddress.setUprn(Long.valueOf("12345"));
         canonicalAddresses.add(canonicalAddress);
 
-        when(addressSessionService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
-        when(addressSessionService.saveAddresses(notNull(), anyList())).thenThrow(exception);
+        when(mockAddressService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
+        when(mockSessionService.validateSessionId(SESSION_ID)).thenThrow(exception);
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
@@ -76,25 +75,25 @@ class AddressHandlerTest {
     @Test
     void ValidSaveReturnsAuthorizationCode()
             throws JsonProcessingException, AddressProcessingException, SessionExpiredException,
-                    SessionValidationException, SessionNotFoundException {
+                    SessionNotFoundException {
 
         when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
-
-        when(apiGatewayProxyRequestEvent.getHeaders())
-                .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
+        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", SESSION_ID));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
-        AddressSessionItem addressSessionItem = new AddressSessionItem();
+        SessionItem sessionItem = new SessionItem();
 
         List<CanonicalAddress> canonicalAddresses = new ArrayList<>();
         CanonicalAddress canonicalAddress = new CanonicalAddress();
         canonicalAddress.setUprn(Long.valueOf("12345"));
         canonicalAddresses.add(canonicalAddress);
-        addressSessionItem.setAddresses(canonicalAddresses);
-        AuthorizationResponse authorizationResponse = new AuthorizationResponse(addressSessionItem);
+        AuthorizationResponse authorizationResponse = new AuthorizationResponse(sessionItem);
 
-        when(addressSessionService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
-        when(addressSessionService.saveAddresses(notNull(), anyList()))
-                .thenReturn(addressSessionItem);
+        AddressItem addressItem = new AddressItem();
+        addressItem.setAddresses(canonicalAddresses);
+
+        when(mockSessionService.validateSessionId(SESSION_ID)).thenReturn(sessionItem);
+        when(mockAddressService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
+        when(mockAddressService.saveAddresses(notNull(), anyList())).thenReturn(addressItem);
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
@@ -103,19 +102,20 @@ class AddressHandlerTest {
         assertEquals(
                 responseEvent.getBody(),
                 new ObjectMapper().writeValueAsString(authorizationResponse));
+
+        verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(eventProbe).counterMetric("address");
     }
 
     @Test
     void EmptyAddressesReturns200() throws AddressProcessingException {
 
-        when(apiGatewayProxyRequestEvent.getHeaders())
-                .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
+        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", SESSION_ID));
         when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
 
         List<CanonicalAddress> canonicalAddresses = new ArrayList<>();
 
-        when(addressSessionService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
+        when(mockAddressService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);

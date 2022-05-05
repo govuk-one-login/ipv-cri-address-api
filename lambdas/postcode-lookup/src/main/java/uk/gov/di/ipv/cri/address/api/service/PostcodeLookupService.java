@@ -10,7 +10,7 @@ import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingExceptio
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
-import uk.gov.di.ipv.cri.address.library.models.CanonicalAddress;
+import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 
 import java.io.IOException;

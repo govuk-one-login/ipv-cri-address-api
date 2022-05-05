@@ -23,15 +23,12 @@ import uk.gov.di.ipv.cri.address.library.exception.AccessTokenRequestException;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.ListUtil;
-import uk.gov.di.ipv.cri.address.library.persistence.DataStore;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
+import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 public class AccessTokenService {
     public static final String CODE = "code";
@@ -40,36 +37,23 @@ public class AccessTokenService {
     public static final String CLIENT_ASSERTION = "client_assertion";
     public static final String AUTHORISATION_CODE = "authorization_code";
     public static final String REDIRECT_URI = "redirect_uri";
-    private final DataStore<AddressSessionItem> dataStore;
     private final ConfigurationService configurationService;
     private final JWTVerifier jwtVerifier;
 
-    public AccessTokenService(
-            DataStore<AddressSessionItem> dataStore,
-            ConfigurationService configurationService,
-            JWTVerifier jwtVerifier) {
-        this.dataStore = dataStore;
+    public AccessTokenService(ConfigurationService configurationService, JWTVerifier jwtVerifier) {
         this.configurationService = configurationService;
         this.jwtVerifier = jwtVerifier;
     }
 
     @ExcludeFromGeneratedCoverageReport
     public AccessTokenService() {
-        this.configurationService = new ConfigurationService();
-        dataStore = getDataStore(this.configurationService);
-        this.jwtVerifier = new JWTVerifier();
+        this(new ConfigurationService(), new JWTVerifier());
     }
 
-    public UUID getAddressSessionId(TokenRequest tokenRequest) {
-        String authorizationCodeFromRequest =
-                ((AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant())
-                        .getAuthorizationCode()
-                        .getValue();
-        return getItemByAuthorizationCode(authorizationCodeFromRequest).getSessionId();
-    }
-
-    public AddressSessionItem getAddressSessionItem(UUID sessionId) {
-        return dataStore.getItem(sessionId.toString());
+    public String getAuthorizationCode(TokenRequest tokenRequest) {
+        return ((AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant())
+                .getAuthorizationCode()
+                .getValue();
     }
 
     public AccessTokenResponse createToken(TokenRequest tokenRequest) {
@@ -79,12 +63,11 @@ public class AccessTokenService {
         return new AccessTokenResponse(new Tokens(accessToken, null)).toSuccessResponse();
     }
 
-    public void writeToken(
-            AccessTokenResponse tokenResponse, AddressSessionItem addressSessionItem) {
-        addressSessionItem.setAccessToken(
+    public SessionItem updateSessionAccessToken(
+            SessionItem sessionItem, AccessTokenResponse tokenResponse) {
+        sessionItem.setAccessToken(
                 tokenResponse.getTokens().getBearerAccessToken().toAuthorizationHeader());
-
-        dataStore.update(addressSessionItem);
+        return sessionItem;
     }
 
     public TokenRequest createTokenRequest(String requestBody)
@@ -118,8 +101,7 @@ public class AccessTokenService {
         }
     }
 
-    public TokenRequest validateTokenRequest(
-            TokenRequest tokenRequest, AddressSessionItem addressSessionItem)
+    public TokenRequest validateTokenRequest(TokenRequest tokenRequest, SessionItem sessionItem)
             throws AccessTokenValidationException {
         try {
 
@@ -132,7 +114,7 @@ public class AccessTokenService {
                     privateKeyJWT,
                     authorizationGrant,
                     tokenRequest.getClientAuthentication().getClientID(),
-                    addressSessionItem);
+                    sessionItem);
 
             Map<String, String> clientAuthenticationConfig =
                     getClientAuthenticationConfig(
@@ -163,13 +145,13 @@ public class AccessTokenService {
             PrivateKeyJWT privateKeyJWT,
             AuthorizationCodeGrant authorizationGrant,
             ClientID clientID,
-            AddressSessionItem addressSessionItem)
+            SessionItem sessionItem)
             throws AccessTokenValidationException, AccessTokenRequestException,
                     SessionValidationException {
 
         AuthorizationCode authorizationCode = authorizationGrant.getAuthorizationCode();
 
-        if (!authorizationCode.getValue().equals(addressSessionItem.getAuthorizationCode())) {
+        if (!authorizationCode.getValue().equals(sessionItem.getAuthorizationCode())) {
             throw new AccessTokenRequestException(
                     "Authorisation code does not match with authorization Code for Address Session Item",
                     OAuth2Error.INVALID_GRANT);
@@ -177,8 +159,8 @@ public class AccessTokenService {
         Map<String, String> clientAuthenticationConfig =
                 getClientAuthenticationConfig(clientID.getValue());
 
-        verifyRequestUri(addressSessionItem.getRedirectUri(), clientAuthenticationConfig);
-        verifyPrivateKeyJWTAttributes(privateKeyJWT, clientID, addressSessionItem);
+        verifyRequestUri(sessionItem.getRedirectUri(), clientAuthenticationConfig);
+        verifyPrivateKeyJWTAttributes(privateKeyJWT, clientID, sessionItem);
     }
 
     private void verifyRequestUri(URI requestRedirectUri, Map<String, String> clientConfig)
@@ -194,7 +176,7 @@ public class AccessTokenService {
     }
 
     private void verifyPrivateKeyJWTAttributes(
-            PrivateKeyJWT privateKeyJWT, ClientID clientID, AddressSessionItem addressSessionItem)
+            PrivateKeyJWT privateKeyJWT, ClientID clientID, SessionItem sessionItem)
             throws AccessTokenValidationException {
 
         Issuer jwtIssuer = privateKeyJWT.getJWTAuthenticationClaimsSet().getIssuer();
@@ -206,13 +188,12 @@ public class AccessTokenService {
         verifyIfJWTIdPresent(jwtid);
         verifyIfIssuerMatchesSubject(jwtIssuer, subject);
         verifyIfIssuerMatchesTokenRequestClientID(jwtIssuer, clientID);
-        verifyIssuerMatchesClientIDOnRecord(jwtIssuer, addressSessionItem);
+        verifyIssuerMatchesClientIDOnRecord(jwtIssuer, sessionItem);
     }
 
-    private void verifyIssuerMatchesClientIDOnRecord(
-            Issuer jwtIssuer, AddressSessionItem addressSessionItem)
+    private void verifyIssuerMatchesClientIDOnRecord(Issuer jwtIssuer, SessionItem sessionItem)
             throws AccessTokenValidationException {
-        if (!jwtIssuer.getValue().equals(addressSessionItem.getClientId())) {
+        if (!jwtIssuer.getValue().equals(sessionItem.getClientId())) {
             throwValidationException("request client id and saved client id do not match");
         }
     }
@@ -247,20 +228,5 @@ public class AccessTokenService {
     private void throwValidationException(String errorMessage)
             throws AccessTokenValidationException {
         throw new AccessTokenValidationException(errorMessage);
-    }
-
-    private AddressSessionItem getItemByAuthorizationCode(String authorizationCodeFromRequest) {
-        var addressSessionTable = dataStore.getTable();
-        var index = addressSessionTable.index(AddressSessionItem.AUTHORIZATION_CODE_INDEX);
-        var listHelper = new ListUtil();
-        return listHelper.getOneItemOrThrowError(
-                dataStore.getItemByGsi(index, authorizationCodeFromRequest));
-    }
-
-    private DataStore<AddressSessionItem> getDataStore(ConfigurationService configurationService) {
-        return new DataStore<>(
-                configurationService.getAddressSessionTableName(),
-                AddressSessionItem.class,
-                DataStore.getClient());
     }
 }

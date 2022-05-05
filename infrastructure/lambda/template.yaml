@@ -18,6 +18,10 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
+  PermissionsBoundary:
+    Description: "The ARN of the permissions boundary to apply when creating IAM roles"
+    Type: String
+    Default: "none"
 
 Conditions:
   CreateDevResources: !Equals
@@ -28,9 +32,17 @@ Conditions:
     - !Equals [ !Ref Environment, build ]
   IsProdLikeEnvironment:
     !Not [Condition: IsStubEnvironment]
-
+  UsePermissionsBoundary:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref PermissionsBoundary
+          - "none"
 Globals:
   Function:
+    PermissionsBoundary: !If
+      - UsePermissionsBoundary
+      - !Ref PermissionsBoundary
+      - !Ref AWS::NoValue
     CodeSigningConfigArn: !If
       - CreateDevResources
       - !Ref AWS::NoValue
@@ -47,7 +59,7 @@ Globals:
         POWERTOOLS_LOG_LEVEL: INFO
 
 Mappings:
-  AddressSessionTtlMapping:
+  SessionTtlMapping:
     Environment:
       dev: "172800" # 2 days
       build: "172800" # 2 days
@@ -203,7 +215,7 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - DynamoDBWritePolicy:
             TableName:
-              Ref: AddressSessionTable
+              Ref: SessionTable
         - SQSSendMessagePolicy:
             QueueName: !ImportValue AuditEventQueueName
         - KMSDecryptPolicy:
@@ -213,8 +225,8 @@ Resources:
               Action:
                 - ssm:GetParameter
               Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressCriAudience"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
         - Statement:
@@ -246,7 +258,7 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - DynamoDBReadPolicy:
             TableName:
-              Ref: AddressSessionTable
+              Ref: SessionTable
         - Statement:
             - Sid: ReadSecretsPolicy
               Effect: Allow
@@ -265,8 +277,8 @@ Resources:
               Action:
                 - ssm:GetParameter
               Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
         - Statement:
             - Effect: Allow
               Action:
@@ -288,14 +300,18 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - DynamoDBCrudPolicy:
             TableName:
-              Ref: AddressSessionTable
+              Ref: SessionTable
+        - DynamoDBCrudPolicy:
+            TableName:
+              Ref: AddressTable
         - Statement:
             - Effect: Allow
               Action:
                 - ssm:GetParameter
               Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
         - Statement:
             - Effect: Allow
               Action:
@@ -313,19 +329,16 @@ Resources:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-access-token
       Policies:
-        - DynamoDBReadPolicy:
+        - DynamoDBCrudPolicy:
             TableName:
-              Ref: AddressSessionTable
-        - DynamoDBWritePolicy:
-            TableName:
-              Ref: AddressSessionTable
+              Ref: SessionTable
         - Statement:
             - Effect: Allow
               Action:
                 - ssm:GetParameter
               Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
         - Statement:
             - Effect: Allow
               Action:
@@ -336,6 +349,10 @@ Resources:
   IssueCredentialFunctionRole:
     Type: AWS::IAM::Role
     Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -350,16 +367,26 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: AddressSessionTableStatement
+              - Sid: SessionTableStatement
                 Effect: Allow
                 Action:
                   - 'dynamodb:Query'
                 Resource:
                   - 'Fn::Sub':
                       - >-
-                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-session-${AWS::StackName}/index/access-token-index
+                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/session-${AWS::StackName}/index/access-token-index
                       - tableName:
-                          Ref: AddressSessionTable
+                          Ref: SessionTable
+              - Sid: AddressTableStatement
+                Effect: Allow
+                Action:
+                  - 'dynamodb:GetItem'
+                Resource:
+                  - 'Fn::Sub':
+                      - >-
+                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-${AWS::StackName}
+                      - tableName:
+                          Ref: AddressTable
 
         - PolicyName: IssueCredentialFunctionParameterStorePolicy
           PolicyDocument:
@@ -369,8 +396,9 @@ Resources:
                 Action:
                   - ssm:GetParameter
                 Resource:
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTableName"
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressSessionTtl"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
@@ -442,6 +470,8 @@ Resources:
       Tags:
         - Key: "jwkset"
           Value: "true"
+        - Key: "awsStackName"
+          Value: !Sub "${AWS::StackName}"
 
   SigningKeyAlias:
     Type: AWS::KMS::Alias
@@ -469,6 +499,8 @@ Resources:
       Tags:
         - Key: "jwkset"
           Value: "true"
+        - Key: "awsStackName"
+          Value: !Sub "${AWS::StackName}"
 
   DecryptionKeyAlias:
     Type: AWS::KMS::Alias
@@ -476,10 +508,22 @@ Resources:
       AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriDecryptionKey
       TargetKeyId: !Ref AddressCriDecryptionKey
 
-  AddressSessionTable:
+  AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
-      TableName: !Sub "address-session-${AWS::StackName}"
+      TableName: !Sub "address-${AWS::StackName}"
+      BillingMode: "PAY_PER_REQUEST"
+      AttributeDefinitions:
+        - AttributeName: "sessionId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "sessionId"
+          KeyType: "HASH"
+
+  SessionTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub "session-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
       AttributeDefinitions:
         - AttributeName: "sessionId"
@@ -508,7 +552,6 @@ Resources:
           Projection:
             NonKeyAttributes:
               - "sessionId"
-              - "addresses"
             ProjectionType: "INCLUDE"
       TimeToLiveSpecification:
         AttributeName: expiry-date
@@ -555,13 +598,21 @@ Resources:
       KeyType: API_KEY
       UsagePlanId: !Ref ApiUsagePlan
 
-  ParameterAddressSessionTableName:
+  ParameterSessionTableName:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/AddressSessionTableName"
-      Value: !Sub address-session-${AWS::StackName}
+      Name: !Sub "/${AWS::StackName}/SessionTableName"
+      Value: !Sub session-${AWS::StackName}
       Type: String
-      Description: address session dynamodb table name
+      Description: session dynamodb table name
+      
+  ParameterAddressItemTableName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/AddressTableName"
+      Value: !Sub address-${AWS::StackName}
+      Type: String
+      Description: address item dynamodb table name
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
@@ -571,12 +622,12 @@ Resources:
       Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref 'Environment']
       Description: default time to live for an JWT in (seconds)
 
-  AddressSessionTtlParameter:
+  SessionTtlParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/AddressSessionTtl"
+      Name: !Sub "/${AWS::StackName}/SessionTtl"
       Type: String
-      Value: !FindInMap [ AddressSessionTtlMapping, Environment, !Ref 'Environment' ]
+      Value: !FindInMap [ SessionTtlMapping, Environment, !Ref 'Environment' ]
       Description: default time to live for an address session item (seconds)
 
   IPVCoreStubAuthenticationAlgParameter:

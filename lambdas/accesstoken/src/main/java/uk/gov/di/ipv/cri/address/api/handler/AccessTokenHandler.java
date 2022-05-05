@@ -14,29 +14,32 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
-import uk.gov.di.ipv.cri.address.library.helpers.ApiGatewayResponseGenerator;
-import uk.gov.di.ipv.cri.address.library.helpers.EventProbe;
-import uk.gov.di.ipv.cri.address.library.persistence.item.AddressSessionItem;
+import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AccessTokenService;
-
-import java.util.UUID;
+import uk.gov.di.ipv.cri.address.library.service.SessionService;
+import uk.gov.di.ipv.cri.address.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
 public class AccessTokenHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private EventProbe eventProbe;
+    private final EventProbe eventProbe;
     private final AccessTokenService accessTokenService;
+    private final SessionService sessionService;
     static final String METRIC_NAME_ACCESS_TOKEN = "accesstoken";
 
-    public AccessTokenHandler(AccessTokenService accessTokenService, EventProbe eventProbe) {
+    public AccessTokenHandler(
+            AccessTokenService accessTokenService,
+            SessionService sessionService,
+            EventProbe eventProbe) {
         this.accessTokenService = accessTokenService;
+        this.sessionService = sessionService;
         this.eventProbe = eventProbe;
     }
 
     @ExcludeFromGeneratedCoverageReport
     public AccessTokenHandler() {
-        this.accessTokenService = new AccessTokenService();
-        this.eventProbe = new EventProbe();
+        this(new AccessTokenService(), new SessionService(), new EventProbe());
     }
 
     @Override
@@ -46,23 +49,19 @@ public class AccessTokenHandler
             APIGatewayProxyRequestEvent input, Context context) {
         try {
             TokenRequest tokenRequest = accessTokenService.createTokenRequest(input.getBody());
-            UUID sessionId = accessTokenService.getAddressSessionId(tokenRequest);
-            AddressSessionItem addressSessionItem =
-                    accessTokenService.getAddressSessionItem(sessionId);
-
-            accessTokenService.validateTokenRequest(tokenRequest, addressSessionItem);
-
+            String authCode = accessTokenService.getAuthorizationCode(tokenRequest);
+            SessionItem sessionItem = sessionService.getSessionByAuthorisationCode(authCode);
+            accessTokenService.validateTokenRequest(tokenRequest, sessionItem);
             AccessTokenResponse accessTokenResponse = accessTokenService.createToken(tokenRequest);
-
-            accessTokenService.writeToken(accessTokenResponse, addressSessionItem);
+            accessTokenService.updateSessionAccessToken(sessionItem, accessTokenResponse);
+            sessionService.updateSession(sessionItem);
 
             eventProbe.counterMetric(METRIC_NAME_ACCESS_TOKEN);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_OK, accessTokenResponse.toJSONObject());
-
         } catch (AccessTokenValidationException e) {
-            eventProbe.log(Level.INFO, e).counterMetric(METRIC_NAME_ACCESS_TOKEN, 0d);
+            eventProbe.log(Level.ERROR, e).counterMetric(METRIC_NAME_ACCESS_TOKEN, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_BAD_REQUEST, ErrorResponse.TOKEN_VALIDATION_ERROR);
         }

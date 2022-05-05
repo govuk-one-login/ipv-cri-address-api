@@ -1,4 +1,4 @@
-package uk.gov.di.ipv.cri.address.library.helpers;
+package uk.gov.di.ipv.cri.address.library.util;
 
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
