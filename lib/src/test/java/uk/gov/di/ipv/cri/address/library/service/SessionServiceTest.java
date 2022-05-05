@@ -91,6 +91,7 @@ class SessionServiceTest {
         when(mockListUtil.getOneItemOrThrowError(items)).thenReturn(item);
         when(mockDataStore.getItemByIndex(SessionItem.AUTHORIZATION_CODE_INDEX, authCodeValue))
                 .thenReturn(items);
+        when(mockDataStore.getItem(item.getSessionId().toString())).thenReturn(item);
 
         SessionItem sessionItem = sessionService.getSessionByAuthorisationCode(authCodeValue);
         assertThat(item.getSessionId(), equalTo(sessionItem.getSessionId()));

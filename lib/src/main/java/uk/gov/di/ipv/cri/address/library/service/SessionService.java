@@ -94,7 +94,9 @@ public class SessionService {
     }
 
     public SessionItem getSessionByAuthorisationCode(String authCode) {
-        return listUtil.getOneItemOrThrowError(
-                dataStore.getItemByIndex(SessionItem.AUTHORIZATION_CODE_INDEX, authCode));
+        SessionItem sessionItem =
+                listUtil.getOneItemOrThrowError(
+                        dataStore.getItemByIndex(SessionItem.AUTHORIZATION_CODE_INDEX, authCode));
+        return getSession(sessionItem.getSessionId().toString());
     }
 }
