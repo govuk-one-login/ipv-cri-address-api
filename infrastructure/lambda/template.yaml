@@ -524,24 +524,6 @@ Resources:
       KeySchema:
         - AttributeName: "sessionId"
           KeyType: "HASH"
-      GlobalSecondaryIndexes:
-        - IndexName: "authorizationCode-index"
-          KeySchema:
-            - AttributeName: "authorizationCode"
-              KeyType: "HASH"
-          Projection:
-            NonKeyAttributes:
-              - "sessionId"
-              - "redirectUri"
-            ProjectionType: "INCLUDE"
-        - IndexName: "access-token-index"
-          KeySchema:
-            - AttributeName: "accessToken"
-              KeyType: "HASH"
-          Projection:
-            NonKeyAttributes:
-              - "sessionId"
-            ProjectionType: "INCLUDE"
       TimeToLiveSpecification:
         AttributeName: expiry-date
         Enabled: true
