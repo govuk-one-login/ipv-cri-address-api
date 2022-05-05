@@ -576,7 +576,7 @@ Resources:
       Value: !Sub session-${AWS::StackName}
       Type: String
       Description: session dynamodb table name
-      
+
   ParameterAddressItemTableName:
     Type: AWS::SSM::Parameter
     Properties:
