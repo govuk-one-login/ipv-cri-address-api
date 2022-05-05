@@ -93,9 +93,9 @@ Mappings:
 
   IPVCore1AudienceMapping:
     Environment:
-      staging: "https://staging-di-ipv-cri-address-stub.london.cloudapps.digital"
-      integration: "https://integration-di-ipv-cri-address-stub.london.cloudapps.digital"
-      production: "https://di-ipv-cri-address-stub.london.cloudapps.digital"
+      staging: "https://staging-di-ipv-cri-address-front.london.cloudapps.digital"
+      integration: "https://integration-di-ipv-cri-address-front.london.cloudapps.digital"
+      production: "https://di-ipv-cri-address-front.london.cloudapps.digital"
 
   IPVCoreStubIssuerMapping:
     Environment:
