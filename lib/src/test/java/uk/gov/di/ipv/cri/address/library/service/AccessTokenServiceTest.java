@@ -7,12 +7,13 @@ import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.TokenRequest;
 import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.auth.JWTAuthentication;
 import com.nimbusds.oauth2.sdk.auth.PrivateKeyJWT;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.AccessTokenValidationException;
@@ -41,18 +42,13 @@ import static org.mockito.Mockito.when;
 class AccessTokenServiceTest {
     @Mock private ConfigurationService mockConfigurationService;
     @Mock private JWTVerifier mockJwtVerifier;
-    private AccessTokenService accessTokenService;
+    @InjectMocks private AccessTokenService accessTokenService;
 
     private final String SAMPLE_JWT =
             "eyJraWQiOiJpcHYtY29yZS1zdHViIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJpcHYtY29yZS1zdHViIiwiYXVkIjoiaHR0cHM6XC9cL2Rldi5hZGRyZXNzLmNyaS5hY2NvdW50Lmdvdi51ayIsIm5iZiI6MTY1MDU0MTg0MCwic2hhcmVkX2NsYWltcyI6eyJhZGRyZXNzZXMiOlt7InN0cmVldDEiOiI4Iiwic3RyZWV0MiI6IkhBRExFWSBST0FEIiwidG93bkNpdHkiOiJCQVRIIiwiY3VycmVudEFkZHJlc3MiOnRydWUsInBvc3RDb2RlIjoiQkEyIDVBQSJ9XSwibmFtZSI6W3sibmFtZVBhcnRzIjpbeyJ2YWx1ZSI6IktFTk5FVEgiLCJ0eXBlIjoiR2l2ZW5OYW1lIn0seyJ2YWx1ZSI6IkRFQ0VSUVVFSVJBIiwidHlwZSI6IkZhbWlseU5hbWUifV19XSwiYmlydGhEYXRlIjpbeyJ2YWx1ZSI6IjE5NjQtMDktMTkifV0sIkBjb250ZXh0IjpbImh0dHBzOlwvXC93d3cudzMub3JnXC8yMDE4XC9jcmVkZW50aWFsc1wvdjEiLCJodHRwczpcL1wvdm9jYWIubG9uZG9uLmNsb3VkYXBwcy5kaWdpdGFsXC9jb250ZXh0c1wvaWRlbnRpdHktdjEuanNvbmxkIl19LCJpc3MiOiJpcHYtY29yZS1zdHViIiwicmVkaXJlY3RfdXJpIjoiaHR0cHM6XC9cL2RpLWlwdi1jb3JlLXN0dWIubG9uZG9uLmNsb3VkYXBwcy5kaWdpdGFsXC9jYWxsYmFjayIsImV4cCI6MTY1MDU0NTQ0MCwiaWF0IjoxNjUwNTQxODQwLCJqdGkiOiJmNzM0ZTZjZi0xODVhLTQ3N2YtYjQxMi02YWU5ZTc0ODk5NzUifQ.lhizSFXqbQaBXwpnuanI4Ze69B4MSSoqfZLiDDVA7EEwuJSMx9ooB8zFUJORo7SWX-L-qGtM6vjGNhM7GGOLKxZhOZbES7UQu3D7ES5CpNiyZOAUVXnGDEISINF1bYJupS3ujbPfIkOMMoWdWxBpcVzh1TELpzqiYGAeMlSZUmZnIf5i8juysJi8C_DUKklnlF-iGUsCKjXfdNkDz4sx5VYnQu1rDckPUSsK0XKVcxu9lU7cqx39iNuqmkLgsgK1RvG6f1xIOJPUGm2HBfjzM8ZeV3zYlYU5Xa1umlfVptVPrcxMZEm6Iy-cH7d_1XqO1yXFTEzUdDlGL6UlKK7B1T2nAjBCP9YPhh59JQOohu2RnC6gz-kVHisJEPzYp3mAthLJ2KzeYk1BEDRbZo7jWQzYaVXoNgG_gCfDtep5aTKudDtkPtIWFJ3ENEvC2sItXNEFcKQrKkBBcvSmRy8DJE9A3mpPOTp6GaaNrONwbfRvjgcDSDew0i4_mw6Rg-GA0k10nQ874KRjpowzouTJvNCI1CYALIghUD-xNkC7N4TA0zHNiq2eeSI089LdVIsSz_tsGg4YZOKk7HVqmnm81lkeXBfIsUGkH3weI6f4kXZOFQr6YCu5bDqDXgzmSf0ocxprwf1b-OhzWGRmKluSJRMs2hU2Q8-AIVtG5NxrCGE";
 
     private final String JWT_MISSING_JTI =
             "eyJraWQiOiJpcHYtY29yZS1zdHViIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJpcHYtY29yZS1zdHViIiwiYXVkIjoiaHR0cHM6XC9cL2Rldi5hZGRyZXNzLmNyaS5hY2NvdW50Lmdvdi51ayIsIm5iZiI6MTY1MDU0MDkyNSwic2hhcmVkX2NsYWltcyI6eyJAY29udGV4dCI6WyJodHRwczpcL1wvd3d3LnczLm9yZ1wvMjAxOFwvY3JlZGVudGlhbHNcL3YxIiwiaHR0cHM6XC9cL3ZvY2FiLmxvbmRvbi5jbG91ZGFwcHMuZGlnaXRhbFwvY29udGV4dHNcL2lkZW50aXR5LXYxLmpzb25sZCJdLCJhZGRyZXNzZXMiOlt7InN0cmVldDEiOiI4Iiwic3RyZWV0MiI6IkhBRExFWSBST0FEIiwidG93bkNpdHkiOiJCQVRIIiwiY3VycmVudEFkZHJlc3MiOnRydWUsInBvc3RDb2RlIjoiQkEyIDVBQSJ9XSwibmFtZSI6W3sibmFtZVBhcnRzIjpbeyJ2YWx1ZSI6IktFTk5FVEgiLCJ0eXBlIjoiR2l2ZW5OYW1lIn0seyJ2YWx1ZSI6IkRFQ0VSUVVFSVJBIiwidHlwZSI6IkZhbWlseU5hbWUifV19XSwiYmlydGhEYXRlIjpbeyJ2YWx1ZSI6IjE5NjQtMDktMTkifV19LCJpc3MiOiJpcHYtY29yZS1zdHViIiwicmVkaXJlY3RfdXJpIjoiaHR0cHM6XC9cL2RpLWlwdi1jb3JlLXN0dWIubG9uZG9uLmNsb3VkYXBwcy5kaWdpdGFsXC9jYWxsYmFjayIsImV4cCI6MTY1MDU0NDUyNSwiaWF0IjoxNjUwNTQwOTI1fQ.qbT49i9CPImPMXj7_U_W5IKmqlyAMidXWcVajMxEsFmPvQCbfkGDJYUun2dnKeyUpkTNXdxBRgTjrl0ZyODxnaIrW4ZZD3dzm-9EoMoFFHKtttmYiucyVM65ZnCaDDu3IUVQulZ-5ADX8bn-pghIqd95NDE_oM8HDlGExcdtZuwOK-fPI4txABGPbgGV6it3HoXaeZr1JyLzJHunTM6mnYOvi50GULh0VPGDsOgNC5Mf61JPkzBvHJbnS9WcKzFIpl7zyfbyDJ9WWl5G88fBdErSjFdI5R0-gc3Cy3m3QYm76dwDfFZax7inbKnK1yyC8cBb8mvr3f5M9s6Mmckd9KFBymYid8M0acTbQi5XPBxOmIr0zeJZ85YQxtyvKswpASoWT6ap-VmglfBQ6MQ0Ql6VydLyYOuo4ZFLNX3uOD4TDEf-TCVKLO2sL3-GEQ4gZP59lHXQr4LD8aGnp_ikWLXBDk2toGcfXcUfA6Ph-67rKWjtDYYqanh4fqM-3dUmUVBkbq0341dHl_Y5igdvkxu7Gbj9X64sdurHE_ALnBTUHyMnjWLfbu_WmYM3qq4CHVrjNw-TgpQZxHHxhHJkUPmVn_gsoaVyb2TPAvecQ0iDbXhzXVR3Jw0tlhZgDtfz-8zEZyae5g6DRMsd6mWMhCx8LFWcsJtbm4_OCQ_Y6zU";
-
-    @BeforeEach
-    void setUp() {
-        accessTokenService = new AccessTokenService(mockConfigurationService, mockJwtVerifier);
-    }
 
     @Test
     void shouldThrowExceptionForMissingJTI()
@@ -67,10 +63,14 @@ class AccessTokenServiceTest {
                         "code=%s"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
-                        authCodeValue, JWT_MISSING_JTI, clientID, grantType);
+                        authCodeValue,
+                        JWT_MISSING_JTI,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        clientID,
+                        grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
         SessionItem sessionItem = new SessionItem();
@@ -99,10 +99,13 @@ class AccessTokenServiceTest {
                         "code=%s"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=ipv-core-stub"
                                 + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, grantType);
+                        authCodeValue,
+                        SAMPLE_JWT,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
         AuthorizationCodeGrant authorizationCodeGrant =
@@ -143,10 +146,14 @@ class AccessTokenServiceTest {
                         "code=%s"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, clientID, grantType);
+                        authCodeValue,
+                        SAMPLE_JWT,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        clientID,
+                        grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
 
@@ -176,10 +183,10 @@ class AccessTokenServiceTest {
                         "code=some-code"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=ipv-core-stub"
                                 + "&grant_type=%s",
-                        SAMPLE_JWT, grantType);
+                        SAMPLE_JWT, JWTAuthentication.CLIENT_ASSERTION_TYPE, grantType);
 
         AccessTokenValidationException exception =
                 assertThrows(
@@ -201,10 +208,15 @@ class AccessTokenServiceTest {
                         "code=%s"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=%s"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, redirectUri, clientID, grantType);
+                        authCodeValue,
+                        SAMPLE_JWT,
+                        redirectUri,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        clientID,
+                        grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
         SessionItem mockSessionItem = mock(SessionItem.class);
@@ -287,10 +299,14 @@ class AccessTokenServiceTest {
                         "code=%s"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, clientID, grantType);
+                        authCodeValue,
+                        SAMPLE_JWT,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        clientID,
+                        grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
 
@@ -327,10 +343,14 @@ class AccessTokenServiceTest {
                         "code=%s"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, clientID, grantType);
+                        authCodeValue,
+                        SAMPLE_JWT,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        clientID,
+                        grantType);
 
         TokenRequest tokenRequest = accessTokenService.createTokenRequest(tokenRequestBody);
         SessionItem sessionItem = new SessionItem();
@@ -365,10 +385,14 @@ class AccessTokenServiceTest {
                         "code=%s"
                                 + "&client_assertion=%s"
                                 + "&redirect_uri=https://www.example/com/callback"
-                                + "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+                                + "&client_assertion_type=%s"
                                 + "&client_id=%s"
                                 + "&grant_type=%s",
-                        authCodeValue, SAMPLE_JWT, clientID, grantType);
+                        authCodeValue,
+                        SAMPLE_JWT,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        clientID,
+                        grantType);
 
         AccessTokenValidationException exception =
                 assertThrows(
@@ -379,6 +403,65 @@ class AccessTokenServiceTest {
                 exception.getMessage(),
                 containsString(
                         "Invalid private key JWT authentication: The client identifier doesn't match the client assertion subject / issuer"));
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenClientAssertionTypeIsTheWrongValue()
+            throws SessionValidationException, ClientConfigurationException {
+        String authCodeValue = "12345";
+        String grantType = "authorization_code";
+        String wrongClientAssertionType = "urn:ietf:params:oauth:wrong:jwt-bearer";
+        String tokenRequestBody =
+                String.format(
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
+                                + "&client_assertion_type=%s"
+                                + "&client_id=ipv-core-stub"
+                                + "&grant_type=%s",
+                        authCodeValue, SAMPLE_JWT, wrongClientAssertionType, grantType);
+
+        AccessTokenValidationException exception =
+                assertThrows(
+                        AccessTokenValidationException.class,
+                        () -> accessTokenService.createTokenRequest(tokenRequestBody));
+
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "Invalid client_assertion_type parameter, must be urn:ietf:params:oauth:client-assertion-type:jwt-bearer"));
+        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenExpectedJwtIsMalformed()
+            throws SessionValidationException, ClientConfigurationException {
+        String authCodeValue = "12345";
+        String grantType = "authorization_code";
+        String malformedJWT = "a-jwt-doesnt-look-like-this";
+        String tokenRequestBody =
+                String.format(
+                        "code=%s"
+                                + "&client_assertion=%s"
+                                + "&redirect_uri=https://www.example/com/callback"
+                                + "&client_assertion_type=%s"
+                                + "&client_id=ipv-core-stub"
+                                + "&grant_type=%s",
+                        authCodeValue,
+                        malformedJWT,
+                        JWTAuthentication.CLIENT_ASSERTION_TYPE,
+                        grantType);
+
+        AccessTokenValidationException exception =
+                assertThrows(
+                        AccessTokenValidationException.class,
+                        () -> accessTokenService.createTokenRequest(tokenRequestBody));
+
+        assertThat(
+                exception.getMessage(),
+                containsString(
+                        "Invalid client_assertion JWT: Invalid serialized unsecured/JWS/JWE object: Missing part delimiters"));
         verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
     }
 }
