@@ -64,7 +64,7 @@ public class IssueCredentialHandler
         try {
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
             var sessionItem = this.sessionService.getSessionByAccessToken(accessToken);
-            var addressItem = addressService.getAddresses(sessionItem.getSessionId());
+            var addressItem = addressService.getAddress(sessionItem.getSessionId());
 
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
@@ -82,7 +82,8 @@ public class IssueCredentialHandler
         } catch (CredentialRequestException | ParseException | JOSEException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
-            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_BAD_REQUEST, 0);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatus.SC_BAD_REQUEST, ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR);
         }
     }
 

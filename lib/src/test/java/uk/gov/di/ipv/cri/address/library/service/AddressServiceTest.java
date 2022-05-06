@@ -143,7 +143,7 @@ class AddressServiceTest {
 
     @Test
     void shouldGetAddresses() {
-        addressService.getAddresses(SESSION_ID);
+        addressService.getAddress(SESSION_ID);
         verify(mockDataStore).getItem(String.valueOf(SESSION_ID));
     }
 }
