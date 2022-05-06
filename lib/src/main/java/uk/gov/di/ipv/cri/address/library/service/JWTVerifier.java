@@ -111,7 +111,8 @@ public class JWTVerifier {
         DefaultJWTClaimsVerifier<?> verifier =
                 new DefaultJWTClaimsVerifier<>(
                         new JWTClaimsSet.Builder()
-                                .issuer(clientAuthenticationConfig.get("issuer"))
+                                //
+                                // .issuer(clientAuthenticationConfig.get("issuer"))
                                 .audience(clientAuthenticationConfig.get("audience"))
                                 .build(),
                         requiredClaims);
