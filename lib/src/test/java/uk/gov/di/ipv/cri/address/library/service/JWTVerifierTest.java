@@ -181,28 +181,6 @@ class JWTVerifierTest {
     }
 
     @Test
-    void shouldValidateJWTSignedWithRSAKey()
-            throws JOSEException, InvalidKeySpecException, NoSuchAlgorithmException {
-        Map<String, String> clientConfigMap = getSSMClientConfig();
-        SignedJWT signedJWT =
-                new SignedJWT(
-                        new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
-                        new JWTClaimsSet.Builder()
-                                .issuer("https://dev.core.ipv.account.gov.uk")
-                                .notBeforeTime(Date.from(now))
-                                .audience("https://address.cri.account.gov.uk")
-                                .subject(UUID.randomUUID().toString())
-                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
-                                .build());
-
-        RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
-        signedJWT.sign(rsaSigner);
-
-        assertDoesNotThrow(
-                () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT, getRequiredClaims()));
-    }
-
-    @Test
     void shouldValidateJWTSignedWithECKey() throws JOSEException, ParseException {
         Map<String, String> clientConfigMap = getECSSMClientConfig();
         SignedJWT signedJWT =
