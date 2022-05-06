@@ -64,7 +64,7 @@ public class AddressService {
         return addressItem;
     }
 
-    public AddressItem getAddress(UUID sessionId) {
+    public AddressItem getAddressItem(UUID sessionId) {
         return dataStore.getItem(String.valueOf(sessionId));
     }
 

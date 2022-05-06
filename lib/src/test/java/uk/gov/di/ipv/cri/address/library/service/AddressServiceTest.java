@@ -142,8 +142,8 @@ class AddressServiceTest {
     }
 
     @Test
-    void shouldGetAddresses() {
-        addressService.getAddress(SESSION_ID);
+    void shouldGetAddressItem() {
+        addressService.getAddressItem(SESSION_ID);
         verify(mockDataStore).getItem(String.valueOf(SESSION_ID));
     }
 }

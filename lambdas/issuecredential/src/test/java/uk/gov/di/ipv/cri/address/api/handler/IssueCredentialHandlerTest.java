@@ -52,6 +52,7 @@ class IssueCredentialHandlerTest {
     @Mock private Context context;
     @Mock private VerifiableCredentialService mockVerifiableCredentialService;
     @Mock private SessionService mockSessionService;
+
     @Mock private AddressService mockAddressService;
     @Mock private EventProbe mockEventProbe;
     @InjectMocks private IssueCredentialHandler handler;
@@ -68,28 +69,29 @@ class IssueCredentialHandlerTest {
 
         final UUID sessionId = UUID.randomUUID();
         SessionItem mockSessionItem = mock(SessionItem.class);
-        when(mockSessionItem.getSubject()).thenReturn(SUBJECT);
-        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
         CanonicalAddress address = new CanonicalAddress();
         address.setBuildingNumber("114");
         address.setStreetName("Wellington Street");
         address.setPostalCode("LS1 1BA");
         AddressItem addressItem = mock(AddressItem.class);
-        when(addressItem.getAddresses()).thenReturn(List.of(address));
+        List<CanonicalAddress> canonicalAddresses = List.of(address);
 
+        when(mockSessionItem.getSubject()).thenReturn(SUBJECT);
+        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
+        when(addressItem.getAddresses()).thenReturn(canonicalAddresses);
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(mockSessionItem);
-        when(mockAddressService.getAddress(sessionId)).thenReturn(addressItem);
-
-        when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(any(), any()))
+        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
+                        SUBJECT, canonicalAddresses))
                 .thenReturn(mock(SignedJWT.class));
+
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
-        verify(mockSessionItem).getSessionId();
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
-
         assertEquals(HttpStatus.SC_OK, response.getStatusCode());
-        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
     }
 
     @Test
@@ -104,15 +106,26 @@ class IssueCredentialHandlerTest {
         setRequestBodyAsPlainJWT(event);
         setupEventProbeErrorBehaviour();
 
+        final UUID sessionId = UUID.randomUUID();
         SessionItem mockSessionItem = mock(SessionItem.class);
-        UUID sessionId = UUID.randomUUID();
-        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
+        CanonicalAddress address = new CanonicalAddress();
+        address.setBuildingNumber("114");
+        address.setStreetName("Wellington Street");
+        address.setPostalCode("LS1 1BA");
         AddressItem addressItem = mock(AddressItem.class);
+        JOSEException unExpectedJOSEException =
+                new JOSEException("Unexpected JOSE object type: JWSObject");
 
-        when(mockSessionService.getSessionByAccessToken(any())).thenReturn(mockSessionItem);
-        when(mockAddressService.getAddress(sessionId)).thenReturn(addressItem);
-        when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(any(), any()))
-                .thenThrow(JOSEException.class);
+        List<CanonicalAddress> canonicalAddresses = List.of(address);
+
+        when(mockSessionItem.getSubject()).thenReturn(SUBJECT);
+        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
+        when(addressItem.getAddresses()).thenReturn(canonicalAddresses);
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(mockSessionItem);
+        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
+                        SUBJECT, canonicalAddresses))
+                .thenThrow(unExpectedJOSEException);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
@@ -123,7 +136,7 @@ class IssueCredentialHandlerTest {
                 ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR.getMessage(),
                 responseBody.get("message"));
 
-        verify(mockEventProbe).log(any(), any(JOSEException.class));
+        verify(mockEventProbe).log(Level.ERROR, unExpectedJOSEException);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verifyNoMoreInteractions(mockVerifiableCredentialService);
     }
@@ -202,10 +215,11 @@ class IssueCredentialHandlerTest {
                         .errorMessage("AWS DynamoDbException Occurred")
                         .build();
 
+        final UUID sessionId = UUID.randomUUID();
         SessionItem mockSessionItem = mock(SessionItem.class);
-        when(mockSessionItem.getSessionId()).thenReturn(UUID.randomUUID());
+        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(mockSessionItem);
-        when(mockAddressService.getAddress(any()))
+        when(mockAddressService.getAddressItem(sessionId))
                 .thenThrow(
                         AwsServiceException.builder()
                                 .statusCode(500)

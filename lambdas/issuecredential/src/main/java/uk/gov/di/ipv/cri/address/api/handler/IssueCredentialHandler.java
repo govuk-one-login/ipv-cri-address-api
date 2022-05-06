@@ -64,7 +64,7 @@ public class IssueCredentialHandler
         try {
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
             var sessionItem = this.sessionService.getSessionByAccessToken(accessToken);
-            var addressItem = addressService.getAddress(sessionItem.getSessionId());
+            var addressItem = addressService.getAddressItem(sessionItem.getSessionId());
 
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(

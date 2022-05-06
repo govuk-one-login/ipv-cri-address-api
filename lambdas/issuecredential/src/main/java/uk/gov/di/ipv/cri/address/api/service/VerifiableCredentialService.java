@@ -52,8 +52,9 @@ public class VerifiableCredentialService {
         var now = Instant.now();
         ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
 
-        var addresses = new Object[canonicalAddresses.size()];
-        for (int i = 0; i < canonicalAddresses.size(); i++) {
+        int size = canonicalAddresses.size();
+        var addresses = new Object[size];
+        for (int i = 0; i < size; i++) {
             addresses[i] = mapper.convertValue(canonicalAddresses.get(i), Map.class);
         }
 
