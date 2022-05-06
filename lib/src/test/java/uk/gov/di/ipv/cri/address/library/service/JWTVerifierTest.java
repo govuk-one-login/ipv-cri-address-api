@@ -78,7 +78,7 @@ class JWTVerifierTest {
                 exception.getMessage());
     }
 
-    //@Test
+    // @Test
     void shouldThrowValidationExceptionWhenJWTClaimsSetIssuerDoesNotMatchConfig() {
         Map<String, String> clientConfigMap = getSSMClientConfig();
 
