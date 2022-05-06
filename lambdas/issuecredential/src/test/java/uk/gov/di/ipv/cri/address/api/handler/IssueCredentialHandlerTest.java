@@ -68,18 +68,19 @@ class IssueCredentialHandlerTest {
         setRequestBodyAsPlainJWT(event);
 
         final UUID sessionId = UUID.randomUUID();
-        SessionItem mockSessionItem = mock(SessionItem.class);
         CanonicalAddress address = new CanonicalAddress();
         address.setBuildingNumber("114");
         address.setStreetName("Wellington Street");
         address.setPostalCode("LS1 1BA");
-        AddressItem addressItem = mock(AddressItem.class);
+        AddressItem addressItem = new AddressItem();
         List<CanonicalAddress> canonicalAddresses = List.of(address);
 
-        when(mockSessionItem.getSubject()).thenReturn(SUBJECT);
-        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
-        when(addressItem.getAddresses()).thenReturn(canonicalAddresses);
-        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(mockSessionItem);
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSubject(SUBJECT);
+        sessionItem.setSessionId(sessionId);
+        addressItem.setAddresses(canonicalAddresses);
+
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
         when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses))
@@ -87,6 +88,10 @@ class IssueCredentialHandlerTest {
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockVerifiableCredentialService)
+                .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
         assertEquals(
@@ -105,23 +110,22 @@ class IssueCredentialHandlerTest {
                         accessToken.toAuthorizationHeader()));
         setRequestBodyAsPlainJWT(event);
         setupEventProbeErrorBehaviour();
+        var unExpectedJOSEException = new JOSEException("Unexpected JOSE object type: JWSObject");
 
         final UUID sessionId = UUID.randomUUID();
-        SessionItem mockSessionItem = mock(SessionItem.class);
         CanonicalAddress address = new CanonicalAddress();
         address.setBuildingNumber("114");
         address.setStreetName("Wellington Street");
         address.setPostalCode("LS1 1BA");
-        AddressItem addressItem = mock(AddressItem.class);
-        JOSEException unExpectedJOSEException =
-                new JOSEException("Unexpected JOSE object type: JWSObject");
-
+        AddressItem addressItem = new AddressItem();
         List<CanonicalAddress> canonicalAddresses = List.of(address);
 
-        when(mockSessionItem.getSubject()).thenReturn(SUBJECT);
-        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
-        when(addressItem.getAddresses()).thenReturn(canonicalAddresses);
-        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(mockSessionItem);
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSubject(SUBJECT);
+        sessionItem.setSessionId(sessionId);
+        addressItem.setAddresses(canonicalAddresses);
+
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
         when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses))
@@ -129,16 +133,20 @@ class IssueCredentialHandlerTest {
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockVerifiableCredentialService)
+                .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
+        verify(mockEventProbe).log(Level.ERROR, unExpectedJOSEException);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+        verifyNoMoreInteractions(mockVerifiableCredentialService);
+
         Map responseBody = new ObjectMapper().readValue(response.getBody(), Map.class);
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
         assertEquals(ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR.getCode(), responseBody.get("code"));
         assertEquals(
                 ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR.getMessage(),
                 responseBody.get("message"));
-
-        verify(mockEventProbe).log(Level.ERROR, unExpectedJOSEException);
-        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
-        verifyNoMoreInteractions(mockVerifiableCredentialService);
     }
 
     @Test
@@ -147,12 +155,11 @@ class IssueCredentialHandlerTest {
         setupEventProbeErrorBehaviour();
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
         assertEquals(
                 ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
-
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
-        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
     }
 
     @Test
@@ -184,12 +191,15 @@ class IssueCredentialHandlerTest {
                                 .statusCode(500)
                                 .awsErrorDetails(awsErrorDetails)
                                 .build());
+
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
         String responseBody = new ObjectMapper().readValue(response.getBody(), String.class);
         assertEquals(awsErrorDetails.sdkHttpResponse().statusCode(), response.getStatusCode());
         assertEquals(awsErrorDetails.errorMessage(), responseBody);
-        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
     }
 
     @Test
@@ -228,10 +238,13 @@ class IssueCredentialHandlerTest {
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+
         String responseBody = new ObjectMapper().readValue(response.getBody(), String.class);
         assertEquals(awsErrorDetails.sdkHttpResponse().statusCode(), response.getStatusCode());
         assertEquals(awsErrorDetails.errorMessage(), responseBody);
-        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
     }
 
     private void setupEventProbeErrorBehaviour() {
