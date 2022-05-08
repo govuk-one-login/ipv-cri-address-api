@@ -12,6 +12,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.BadJWTException;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
+import com.nimbusds.oauth2.sdk.id.ClientID;
 import uk.gov.di.ipv.cri.address.library.exception.ClientConfigurationException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
 
@@ -31,22 +32,50 @@ import static com.nimbusds.jose.JWSAlgorithm.ES256;
 
 public class JWTVerifier {
 
-    public void verifyJWT(
-            Map<String, String> clientAuthenticationConfig,
-            SignedJWT signedJWT,
-            Set<String> requiredClaims)
-            throws SessionValidationException, ClientConfigurationException {
-        this.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
-        this.verifyJWTClaimsSet(clientAuthenticationConfig, signedJWT, requiredClaims);
-        this.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
-    }
-
-    public void verifyJWT(Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
+    public void verifyAuthorizationJWT(
+            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT)
             throws SessionValidationException, ClientConfigurationException {
         verifyJWT(
                 clientAuthenticationConfig,
                 signedJWT,
-                Set.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT));
+                Set.of(
+                        JWTClaimNames.EXPIRATION_TIME,
+                        JWTClaimNames.SUBJECT,
+                        JWTClaimNames.NOT_BEFORE),
+                new JWTClaimsSet.Builder()
+                        .issuer(clientAuthenticationConfig.get("issuer"))
+                        .audience(clientAuthenticationConfig.get("audience"))
+                        .build());
+    }
+
+    public void verifyAccessTokenJWT(
+            Map<String, String> clientAuthenticationConfig, SignedJWT signedJWT, ClientID clientID)
+            throws SessionValidationException, ClientConfigurationException {
+        Set<String> requiredClaims =
+                Set.of(
+                        JWTClaimNames.EXPIRATION_TIME,
+                        JWTClaimNames.SUBJECT,
+                        JWTClaimNames.ISSUER,
+                        JWTClaimNames.AUDIENCE,
+                        JWTClaimNames.JWT_ID);
+        JWTClaimsSet expectedClaimValues =
+                new JWTClaimsSet.Builder()
+                        .issuer(clientID.getValue())
+                        .subject(clientID.getValue())
+                        .audience(clientAuthenticationConfig.get("audience"))
+                        .build();
+        verifyJWT(clientAuthenticationConfig, signedJWT, requiredClaims, expectedClaimValues);
+    }
+
+    private void verifyJWT(
+            Map<String, String> clientAuthenticationConfig,
+            SignedJWT signedJWT,
+            Set<String> requiredClaims,
+            JWTClaimsSet expectedClaimValues)
+            throws SessionValidationException, ClientConfigurationException {
+        this.verifyJWTHeader(clientAuthenticationConfig, signedJWT);
+        this.verifyJWTClaimsSet(signedJWT, requiredClaims, expectedClaimValues);
+        this.verifyJWTSignature(clientAuthenticationConfig, signedJWT);
     }
 
     private void verifyJWTHeader(
@@ -104,21 +133,12 @@ public class JWTVerifier {
     }
 
     private void verifyJWTClaimsSet(
-            Map<String, String> clientAuthenticationConfig,
-            SignedJWT signedJWT,
-            Set<String> requiredClaims)
+            SignedJWT signedJWT, Set<String> requiredClaims, JWTClaimsSet expectedClaimValues)
             throws SessionValidationException {
-        DefaultJWTClaimsVerifier<?> verifier =
-                new DefaultJWTClaimsVerifier<>(
-                        new JWTClaimsSet.Builder()
-                                //
-                                // .issuer(clientAuthenticationConfig.get("issuer"))
-                                .audience(clientAuthenticationConfig.get("audience"))
-                                .build(),
-                        requiredClaims);
 
         try {
-            verifier.verify(signedJWT.getJWTClaimsSet(), null);
+            new DefaultJWTClaimsVerifier<>(expectedClaimValues, requiredClaims)
+                    .verify(signedJWT.getJWTClaimsSet(), null);
         } catch (BadJWTException | ParseException e) {
             throw new SessionValidationException(e.getMessage());
         }

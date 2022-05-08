@@ -3,7 +3,6 @@ package uk.gov.di.ipv.cri.address.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import uk.gov.di.ipv.cri.address.api.domain.RawSessionRequest;
@@ -17,7 +16,6 @@ import java.net.URI;
 import java.text.ParseException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class SessionRequestService {
     private static final String REDIRECT_URI = "redirect_uri";
@@ -56,14 +54,8 @@ public class SessionRequestService {
 
         verifyRequestUri(sessionRequest.getRedirectUri(), clientAuthenticationConfig);
 
-        jwtVerifier.verifyJWT(
-                clientAuthenticationConfig,
-                sessionRequest.getSignedJWT(),
-                Set.of(
-                        JWTClaimNames.EXPIRATION_TIME,
-                        JWTClaimNames.SUBJECT,
-                        JWTClaimNames.NOT_BEFORE));
-
+        jwtVerifier.verifyAuthorizationJWT(
+                clientAuthenticationConfig, sessionRequest.getSignedJWT());
         return sessionRequest;
     }
 

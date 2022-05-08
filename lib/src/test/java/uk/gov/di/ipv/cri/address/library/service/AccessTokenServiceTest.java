@@ -9,6 +9,7 @@ import com.nimbusds.oauth2.sdk.TokenResponse;
 import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
 import com.nimbusds.oauth2.sdk.auth.JWTAuthentication;
 import com.nimbusds.oauth2.sdk.auth.PrivateKeyJWT;
+import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.Tokens;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,7 @@ class AccessTokenServiceTest {
                         () -> accessTokenService.validateTokenRequest(tokenRequest, sessionItem));
 
         assertThat(exception.getMessage(), containsString("jti is missing"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
+        verify(mockJwtVerifier, never()).verifyAccessTokenJWT(any(), any(), any());
     }
 
     @Test
@@ -327,7 +328,8 @@ class AccessTokenServiceTest {
                 accessTokenService.validateTokenRequest(tokenRequest, sessionItem);
 
         assertEquals(expectedTokenRequest.getClientID(), tokenRequest.getClientID());
-        verify(mockJwtVerifier, times(1)).verifyJWT(getSSMConfigMap(), signedJWT);
+        verify(mockJwtVerifier, times(1))
+                .verifyAccessTokenJWT(getSSMConfigMap(), signedJWT, new ClientID(clientID));
     }
 
     @Test
@@ -370,7 +372,7 @@ class AccessTokenServiceTest {
         assertThat(
                 exception.getMessage(),
                 containsString("no configuration for client id '" + clientID + "'"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
+        verify(mockJwtVerifier, never()).verifyAccessTokenJWT(any(), any(), any());
     }
 
     @Test
@@ -403,7 +405,7 @@ class AccessTokenServiceTest {
                 exception.getMessage(),
                 containsString(
                         "Invalid private key JWT authentication: The client identifier doesn't match the client assertion subject / issuer"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
+        verify(mockJwtVerifier, never()).verifyAccessTokenJWT(any(), any(), any());
     }
 
     @Test
@@ -431,7 +433,7 @@ class AccessTokenServiceTest {
                 exception.getMessage(),
                 containsString(
                         "Invalid client_assertion_type parameter, must be urn:ietf:params:oauth:client-assertion-type:jwt-bearer"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
+        verify(mockJwtVerifier, never()).verifyAccessTokenJWT(any(), any(), any());
     }
 
     @Test
@@ -462,6 +464,6 @@ class AccessTokenServiceTest {
                 exception.getMessage(),
                 containsString(
                         "Invalid client_assertion JWT: Invalid serialized unsecured/JWS/JWE object: Missing part delimiters"));
-        verify(mockJwtVerifier, never()).verifyJWT(any(), any(), any());
+        verify(mockJwtVerifier, never()).verifyAccessTokenJWT(any(), any(), any());
     }
 }
