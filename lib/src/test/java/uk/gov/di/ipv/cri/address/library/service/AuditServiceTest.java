@@ -40,7 +40,7 @@ class AuditServiceTest {
     void shouldSendMessageToSqsQueue() throws JsonProcessingException, SqsException {
         UUID sessionId = UUID.randomUUID();
         String clientId = "client-id";
-        auditService.sendAuditEvent(AuditEventTypes.SESSION_CREATED, sessionId, clientId);
+        auditService.sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_START);
 
         ArgumentCaptor<SendMessageRequest> sqsSendMessageRequestCaptor =
                 ArgumentCaptor.forClass(SendMessageRequest.class);
@@ -51,8 +51,6 @@ class AuditServiceTest {
         AuditEvent messageBody =
                 objectMapper.readValue(
                         sqsSendMessageRequestCaptor.getValue().getMessageBody(), AuditEvent.class);
-        assertEquals(AuditEventTypes.SESSION_CREATED, messageBody.getEvent());
-        assertEquals(clientId, messageBody.getClientId());
-        assertEquals(sessionId.toString(), messageBody.getEventId());
+        assertEquals(AuditEventTypes.IPV_ADDRESS_CRI_START, messageBody.getEvent());
     }
 }

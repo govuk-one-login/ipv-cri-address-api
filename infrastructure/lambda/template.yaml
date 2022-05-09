@@ -295,6 +295,7 @@ Resources:
         Variables:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-address
+          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -304,6 +305,8 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:
               Ref: AddressTable
+        - SQSSendMessagePolicy:
+            QueueName: !ImportValue AuditEventQueueName
         - Statement:
             - Effect: Allow
               Action:
@@ -318,6 +321,14 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - 'kms:Decrypt'
+                - 'kms:GenerateDataKey'
+              Resource:
+                - !ImportValue AuditEventQueueEncryptionKeyArn
 
   AccessTokenFunction:
     Type: AWS::Serverless::Function
@@ -402,6 +413,20 @@ Resources:
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
                   - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
+
+        - PolicyName: IssueCredentialFunctionSQSPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:SendMessage*'
+                Resource:
+                  - 'Fn::Sub':
+                      - >-
+                        arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:${queueName}
+                      - queueName: !ImportValue AuditEventQueueName
+
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
@@ -415,6 +440,7 @@ Resources:
         Variables:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
+          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
       Role: !GetAtt IssueCredentialFunctionRole.Arn
 
   JWKSetFunction:

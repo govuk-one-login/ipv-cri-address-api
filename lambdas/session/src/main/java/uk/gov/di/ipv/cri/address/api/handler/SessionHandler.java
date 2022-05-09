@@ -70,6 +70,7 @@ public class SessionHandler
         try {
             SessionRequest sessionRequest =
                     sesssionRequestService.validateSessionRequest(input.getBody());
+            auditService.sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_START);
 
             eventProbe.addDimensions(Map.of("issuer", sessionRequest.getClientId()));
 
@@ -77,8 +78,6 @@ public class SessionHandler
 
             eventProbe.counterMetric(EVENT_SESSION_CREATED).auditEvent(sessionRequest);
 
-            auditService.sendAuditEvent(
-                    AuditEventTypes.SESSION_CREATED, sessionId, sessionRequest.getClientId());
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatus.SC_CREATED,
                     Map.of(

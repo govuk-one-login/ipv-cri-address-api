@@ -10,12 +10,6 @@ public class AuditEvent {
     @JsonProperty("event_name")
     private AuditEventTypes event;
 
-    @JsonProperty("event_id")
-    private String eventId;
-
-    @JsonProperty("client_id")
-    private String clientId;
-
     @JsonProperty("timestamp_formatted")
     private String timestampFormatted;
 
@@ -33,22 +27,6 @@ public class AuditEvent {
 
     public void setEvent(AuditEventTypes event) {
         this.event = event;
-    }
-
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
     }
 
     public String getTimestampFormatted() {

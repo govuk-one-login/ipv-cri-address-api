@@ -9,7 +9,6 @@ import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public class AuditService {
     private final AmazonSQS sqs;
@@ -20,28 +19,24 @@ public class AuditService {
         this.queueUrl = configurationService.getSqsAuditEventQueueUrl();
     }
 
-    public void sendAuditEvent(AuditEventTypes eventType, UUID sessionId, String clientId)
-            throws SqsException {
+    public void sendAuditEvent(AuditEventTypes eventType) throws SqsException {
         try {
             SendMessageRequest sendMessageRequest =
                     new SendMessageRequest()
                             .withQueueUrl(queueUrl)
-                            .withMessageBody(generateMessageBody(eventType, sessionId, clientId));
+                            .withMessageBody(generateMessageBody(eventType));
             sqs.sendMessage(sendMessageRequest);
         } catch (JsonProcessingException e) {
             throw new SqsException(e);
         }
     }
 
-    private String generateMessageBody(AuditEventTypes eventType, UUID sessionId, String clientId)
-            throws JsonProcessingException {
+    private String generateMessageBody(AuditEventTypes eventType) throws JsonProcessingException {
         AuditEvent auditEvent = new AuditEvent();
         Instant now = Instant.now();
         int instant = (int) now.getEpochSecond();
         auditEvent.setTimestamp(instant);
         auditEvent.setEvent(eventType);
-        auditEvent.setClientId(clientId);
-        auditEvent.setEventId(sessionId.toString());
         auditEvent.setTimestampFormatted(now.toString());
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.writeValueAsString(auditEvent);

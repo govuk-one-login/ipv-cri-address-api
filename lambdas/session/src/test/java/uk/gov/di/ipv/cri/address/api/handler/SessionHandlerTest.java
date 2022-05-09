@@ -81,7 +81,7 @@ class SessionHandlerTest {
 
         verify(eventProbe).addDimensions(Map.of("issuer", "ipv-core"));
         verify(eventProbe).counterMetric("session_created");
-        verify(auditService).sendAuditEvent(AuditEventTypes.SESSION_CREATED, sessionId, "ipv-core");
+        verify(auditService).sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_START);
     }
 
     @Test
@@ -106,7 +106,7 @@ class SessionHandlerTest {
         verify(eventProbe).counterMetric("session_created", 0d);
         verify(eventProbe).log(Level.ERROR, sessionValidationException);
 
-        verify(auditService, never()).sendAuditEvent(any(), any(), any());
+        verify(auditService, never()).sendAuditEvent(any());
         verify(sessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 
@@ -129,7 +129,7 @@ class SessionHandlerTest {
 
         verify(eventProbe).counterMetric("session_created", 0d);
 
-        verify(auditService, never()).sendAuditEvent(any(), any(), any());
+        verify(auditService, never()).sendAuditEvent(any());
         verify(sessionService, never()).createAndSaveAddressSession(sessionRequest);
     }
 

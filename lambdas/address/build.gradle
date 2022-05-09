@@ -6,6 +6,7 @@ plugins {
 dependencies {
 	implementation project(":lib")
 	implementation configurations.lambda,
+			configurations.sqs,
 			configurations.nimbus,
 			configurations.jackson,
 			configurations.dynamodb

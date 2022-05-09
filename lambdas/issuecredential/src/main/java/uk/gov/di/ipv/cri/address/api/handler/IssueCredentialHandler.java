@@ -4,20 +4,27 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
 import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.Level;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
+import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
+import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.address.library.service.AuditService;
+import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.address.library.service.SessionService;
 import uk.gov.di.ipv.cri.address.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.address.library.util.EventProbe;
@@ -36,23 +43,30 @@ public class IssueCredentialHandler
     private final AddressService addressService;
     private final SessionService sessionService;
     private EventProbe eventProbe;
+    private final AuditService auditService;
 
     public IssueCredentialHandler(
             VerifiableCredentialService verifiableCredentialService,
             AddressService addressService,
             SessionService sessionService,
-            EventProbe eventProbe) {
+            EventProbe eventProbe,
+            AuditService auditService) {
         this.verifiableCredentialService = verifiableCredentialService;
         this.addressService = addressService;
         this.sessionService = sessionService;
         this.eventProbe = eventProbe;
+        this.auditService = auditService;
     }
 
+    @ExcludeFromGeneratedCoverageReport
     public IssueCredentialHandler() {
         this.verifiableCredentialService = getVerifiableCredentialService();
         this.addressService = new AddressService();
         this.sessionService = new SessionService();
         this.eventProbe = new EventProbe();
+        this.auditService =
+                new AuditService(
+                        AmazonSQSClientBuilder.defaultClient(), new ConfigurationService());
     }
 
     @Override
@@ -70,6 +84,7 @@ public class IssueCredentialHandler
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                             sessionItem.getSubject(), addressItem.getAddresses());
 
+            auditService.sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_VC_ISSUED);
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJwtResponse(
@@ -83,6 +98,10 @@ public class IssueCredentialHandler
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_BAD_REQUEST, 0);
+        } catch (SqsException e) {
+            eventProbe.log(Level.ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 

@@ -11,7 +11,6 @@ import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
-import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.http.HttpStatus;
@@ -24,10 +23,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
+import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
+import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.address.library.service.AuditService;
 import uk.gov.di.ipv.cri.address.library.service.SessionService;
 import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
@@ -52,11 +54,11 @@ class IssueCredentialHandlerTest {
     @Mock private SessionService mockSessionService;
     @Mock private AddressService mockAddressService;
     @Mock private EventProbe mockEventProbe;
+    @Mock private AuditService auditService;
     @InjectMocks private IssueCredentialHandler handler;
 
     @Test
-    void shouldReturn200OkWhenIssueCredentialRequestIsValid()
-            throws JOSEException, ParseException, JsonProcessingException {
+    void shouldReturn200OkWhenIssueCredentialRequestIsValid() throws JOSEException, SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -89,6 +91,7 @@ class IssueCredentialHandlerTest {
 
         assertEquals(HttpStatus.SC_OK, response.getStatusCode());
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+        verify(auditService).sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_VC_ISSUED);
     }
 
     // @Test
@@ -160,7 +163,8 @@ class IssueCredentialHandlerTest {
                         mockVerifiableCredentialService,
                         mockAddressService,
                         mockSessionService,
-                        mockEventProbe);
+                        mockEventProbe,
+                        auditService);
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         String responseBody = new ObjectMapper().readValue(response.getBody(), String.class);
