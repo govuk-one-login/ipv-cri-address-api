@@ -4,11 +4,13 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import uk.gov.di.ipv.cri.address.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 
-import java.time.Instant;
+import java.util.Date;
 
 public class AuditService {
     private final AmazonSQS sqs;
@@ -33,12 +35,12 @@ public class AuditService {
 
     private String generateMessageBody(AuditEventTypes eventType) throws JsonProcessingException {
         AuditEvent auditEvent = new AuditEvent();
-        Instant now = Instant.now();
-        int instant = (int) now.getEpochSecond();
-        auditEvent.setTimestamp(instant);
+        auditEvent.setTimestamp(new Date());
         auditEvent.setEvent(eventType);
-        auditEvent.setTimestampFormatted(now.toString());
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .registerModule(new JavaTimeModule());
         return objectMapper.writeValueAsString(auditEvent);
     }
 }

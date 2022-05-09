@@ -2,22 +2,17 @@ package uk.gov.di.ipv.cri.address.library.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Date;
+
 public class AuditEvent {
 
     @JsonProperty("timestamp")
-    private int timestamp;
+    private Date timestamp;
 
     @JsonProperty("event_name")
     private AuditEventTypes event;
 
-    @JsonProperty("timestamp_formatted")
-    private String timestampFormatted;
-
-    public int getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -27,13 +22,5 @@ public class AuditEvent {
 
     public void setEvent(AuditEventTypes event) {
         this.event = event;
-    }
-
-    public String getTimestampFormatted() {
-        return timestampFormatted;
-    }
-
-    public void setTimestampFormatted(String timestampFormatted) {
-        this.timestampFormatted = timestampFormatted;
     }
 }

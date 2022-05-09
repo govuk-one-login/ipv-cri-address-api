@@ -14,8 +14,6 @@ import uk.gov.di.ipv.cri.address.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 
-import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,8 +36,6 @@ class AuditServiceTest {
 
     @Test
     void shouldSendMessageToSqsQueue() throws JsonProcessingException, SqsException {
-        UUID sessionId = UUID.randomUUID();
-        String clientId = "client-id";
         auditService.sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_START);
 
         ArgumentCaptor<SendMessageRequest> sqsSendMessageRequestCaptor =
