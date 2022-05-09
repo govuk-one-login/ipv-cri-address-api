@@ -751,6 +751,43 @@ Resources:
       Principal: apigateway.amazonaws.com
 
 Outputs:
+
+  SessionApiUrl:
+    Description: "URL for the Address API /session resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session"
+    Export:
+      Name: !Sub ${AWS::StackName}-SessionApiUrl
+
+  PostcodeLookupApiUrl:
+    Description: "URL for the Address API /postcode-lookup resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup"
+    Export:
+      Name: !Sub ${AWS::StackName}-PostcodeLookupApiUrl
+
+  AddressApiUrl:
+    Description: "URL for the Address API /address resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressApiUrl
+
+  TokenApiUrl:
+    Description: "URL for the Address API /token resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/token"
+    Export:
+      Name: !Sub ${AWS::StackName}-TokenApiUrl
+
+  CredentialIssueApiUrl:
+    Description: "URL for the Address API /credential/issue resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/credential/issue"
+    Export:
+      Name: !Sub ${AWS::StackName}-CredentialIssueApiUrl
+
+  JWKSetApiUrl:
+    Description: "URL for the Address API /.well-known/jwks.json resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json"
+    Export:
+      Name: !Sub ${AWS::StackName}-JWKSetApiUrl
+
   AddressApiBaseUrl:
     Description: "Base url of the Address CRI API"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
