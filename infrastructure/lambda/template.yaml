@@ -338,66 +338,6 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-  IssueCredentialFunctionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Policies:
-        - PolicyName: DynamoDbPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: SessionTableStatement
-                Effect: Allow
-                Action:
-                  - 'dynamodb:Query'
-                Resource:
-                  - 'Fn::Sub':
-                      - >-
-                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/session-${AWS::StackName}/index/access-token-index
-                      - tableName:
-                          Ref: SessionTable
-              - Sid: AddressTableStatement
-                Effect: Allow
-                Action:
-                  - 'dynamodb:GetItem'
-                Resource:
-                  - 'Fn::Sub':
-                      - >-
-                        arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/address-${AWS::StackName}
-                      - tableName:
-                          Ref: AddressTable
-
-        - PolicyName: IssueCredentialFunctionParameterStorePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ssm:GetParameter
-                Resource:
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
-
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -407,7 +347,29 @@ Resources:
         Variables:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
-      Role: !GetAtt IssueCredentialFunctionRole.Arn
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName: !Ref SessionTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AddressTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - "kms:Sign"
+            Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${AddressCriVcSigningKey}"
+        - SQSSendMessagePolicy:
+            QueueName: !ImportValue AuditEventQueueName
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub "${AWS::StackName}/*"
+        - Statement:
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource:
+              - !ImportValue AuditEventQueueEncryptionKeyArn
 
   JWKSetFunction:
     Type: AWS::Serverless::Function
@@ -451,13 +413,6 @@ Resources:
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action:
               - 'kms:*'
-            Resource: '*'
-          - Sid: "Allow use of the key for digital signing"
-            Effect: Allow
-            Principal:
-              AWS: !GetAtt IssueCredentialFunctionRole.Arn
-            Action:
-              - "kms:Sign"
             Resource: '*'
       Tags:
         - Key: "jwkset"
@@ -729,13 +684,6 @@ Resources:
       Value: !FindInMap [OrdnanceSurveyAPIURLMapping, Environment, !Ref 'Environment']
       Description: Ordnance Survey Postcode Lookup API URL
 
-  IssueCredentialFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt IssueCredentialFunction.Arn
-      Principal: apigateway.amazonaws.com
-
   VerifiableCredentialIssuerParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -780,6 +728,13 @@ Resources:
       FunctionName: !GetAtt AddressFunction.Arn
       Principal: apigateway.amazonaws.com
 
+  IssueCredentialFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt IssueCredentialFunction.Arn
+      Principal: apigateway.amazonaws.com
+
   JWKSetFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -788,62 +743,45 @@ Resources:
       Principal: apigateway.amazonaws.com
 
 Outputs:
+
+  SessionApiUrl:
+    Description: "URL for the Address API /session resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session"
+    Export:
+      Name: !Sub ${AWS::StackName}-SessionApiUrl
+
+  PostcodeLookupApiUrl:
+    Description: "URL for the Address API /postcode-lookup resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup"
+    Export:
+      Name: !Sub ${AWS::StackName}-PostcodeLookupApiUrl
+
+  AddressApiUrl:
+    Description: "URL for the Address API /address resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressApiUrl
+
+  TokenApiUrl:
+    Description: "URL for the Address API /token resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/token"
+    Export:
+      Name: !Sub ${AWS::StackName}-TokenApiUrl
+
+  CredentialIssueApiUrl:
+    Description: "URL for the Address API /credential/issue resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/credential/issue"
+    Export:
+      Name: !Sub ${AWS::StackName}-CredentialIssueApiUrl
+
+  JWKSetApiUrl:
+    Description: "URL for the Address API /.well-known/jwks.json resource"
+    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json"
+    Export:
+      Name: !Sub ${AWS::StackName}-JWKSetApiUrl
+
   AddressApiBaseUrl:
+    Description: "Base url of the Address CRI API"
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
-
-  SessionFunctionApi:
-    Description: "API Gateway endpoint URL for Prod stage for session function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session/"
-    Export:
-      Name: !Sub ${AWS::StackName}-SessionFunctionApi
-  SessionFunction:
-    Value: !GetAtt SessionFunction.Arn
-
-  PostcodeLookupFunctionApi:
-    Description: "API Gateway endpoint URL for Prod stage for postcode lookup function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup/"
-    Export:
-      Name: !Sub ${AWS::StackName}-PostcodeLookupFunctionApi
-  PostcodeLookupFunction:
-    Value: !GetAtt PostcodeLookupFunction.Arn
-
-  IssueCredentialFunctionApi:
-    Description: "API Gateway endpoint URL for Prod stage for address update function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/IssueCredentialFunction/"
-    Export:
-      Name: !Sub ${AWS::StackName}-IssueCredentialFunctionApi
-  IssueCredentialFunction:
-    Value: !GetAtt IssueCredentialFunction.Arn
-
-  AddressFunctionApi:
-    Description: "API Gateway endpoint URL for Prod stage for address update function"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address/"
-    Export:
-      Name: !Sub ${AWS::StackName}-AddressFunctionApi
-  AddressFunction:
-    Value: !GetAtt AddressFunction.Arn
-
-  PostcodeLookupFunctionIamRole:
-    Description: "IAM role for the postcode lookup function"
-    Value: !GetAtt PostcodeLookupFunctionRole.Arn
-
-  SessionFunctionIamRole:
-    Description: "IAM role for the session function"
-    Value: !GetAtt SessionFunctionRole.Arn
-
-  AccessTokenFunction:
-    Value: !GetAtt AccessTokenFunction.Arn
-
-  AddressFunctionIamRole:
-    Description: "IAM role for the address function"
-    Value: !GetAtt AddressFunctionRole.Arn
-
-  IssueCredentialFunctionIamRole:
-    Description: "IAM role for the IssueCredential function"
-    Value: !GetAtt IssueCredentialFunctionRole.Arn
-
-  JWKSetFunctionApi:
-    Description: "API Gateway endpoint URL for JKWSet"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json"
