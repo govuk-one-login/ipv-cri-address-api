@@ -6,9 +6,9 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.oauth2.sdk.id.ClientID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -36,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ExtendWith(MockitoExtension.class)
 class JWTVerifierTest {
 
+    public static final ClientID CLIENT_ID = new ClientID("ipv-core-stub");
     private JWTVerifier jwtVerifier;
     private Instant now = Instant.now();
 
@@ -71,25 +71,26 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
+                                jwtVerifier.verifyAccessTokenJWT(
+                                        clientConfigMap, signedJWT, CLIENT_ID));
         assertEquals(
                 "jwt signing algorithm RS512 does not match signing algorithm configured for client: RS256",
                 exception.getMessage());
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenJWTClaimsSetIssuerDoesNotMatchConfig() {
+    void shouldThrowValidationExceptionWhenJWTClaimsSetIssuerDoesNotMatchClientId() {
         Map<String, String> clientConfigMap = getSSMClientConfig();
 
         SignedJWT signedJWT =
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
                         new JWTClaimsSet.Builder()
+                                .jwtID(UUID.randomUUID().toString())
                                 .issuer("incorrect-issuer-url")
                                 .notBeforeTime(Date.from(now))
                                 .audience("https://address.cri.account.gov.uk")
-                                .subject(UUID.randomUUID().toString())
+                                .subject(CLIENT_ID.getValue())
                                 .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
                                 .build());
 
@@ -97,10 +98,10 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
+                                jwtVerifier.verifyAccessTokenJWT(
+                                        clientConfigMap, signedJWT, CLIENT_ID));
         assertEquals(
-                "JWT iss claim has value incorrect-issuer-url, must be https://dev.core.ipv.account.gov.uk",
+                "JWT iss claim has value incorrect-issuer-url, must be ipv-core-stub",
                 exception.getMessage());
     }
 
@@ -116,31 +117,10 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
-        assertEquals("JWT missing required claims: [aud, exp, iss, sub]", exception.getMessage());
-    }
-
-    @Test
-    void shouldThrowValidationExceptionWhenJWTHasNoSubject() {
-        Map<String, String> clientConfigMap = getSSMClientConfig();
-        SignedJWT signedJWT =
-                new SignedJWT(
-                        new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
-                        new JWTClaimsSet.Builder()
-                                .issuer("https://dev.core.ipv.account.gov.uk")
-                                .notBeforeTime(Date.from(now))
-                                .audience("https://address.cri.account.gov.uk")
-                                .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
-                                .build());
-
-        SessionValidationException exception =
-                assertThrows(
-                        SessionValidationException.class,
-                        () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
-        assertEquals("JWT missing required claims: [sub]", exception.getMessage());
+                                jwtVerifier.verifyAccessTokenJWT(
+                                        clientConfigMap, signedJWT, CLIENT_ID));
+        assertEquals(
+                "JWT missing required claims: [aud, exp, iss, jti, sub]", exception.getMessage());
     }
 
     @Test
@@ -161,10 +141,11 @@ class JWTVerifierTest {
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
                         new JWTClaimsSet.Builder()
-                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .jwtID(UUID.randomUUID().toString())
+                                .issuer(CLIENT_ID.getValue())
                                 .notBeforeTime(Date.from(now))
                                 .audience("https://address.cri.account.gov.uk")
-                                .subject(UUID.randomUUID().toString())
+                                .subject(CLIENT_ID.getValue())
                                 .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
                                 .build());
 
@@ -175,8 +156,8 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
+                                jwtVerifier.verifyAccessTokenJWT(
+                                        clientConfigMap, signedJWT, CLIENT_ID));
         assertEquals("JWT signature verification failed", exception.getMessage());
     }
 
@@ -187,10 +168,11 @@ class JWTVerifierTest {
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.ES256).build(),
                         new JWTClaimsSet.Builder()
-                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .jwtID(UUID.randomUUID().toString())
+                                .issuer(CLIENT_ID.getValue())
                                 .notBeforeTime(Date.from(now))
                                 .audience("https://address.cri.account.gov.uk")
-                                .subject(UUID.randomUUID().toString())
+                                .subject(CLIENT_ID.getValue())
                                 .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
                                 .build());
 
@@ -199,7 +181,7 @@ class JWTVerifierTest {
         signedJWT.sign(ecdsaSigner);
 
         assertDoesNotThrow(
-                () -> jwtVerifier.verifyJWT(clientConfigMap, signedJWT, getRequiredClaims()));
+                () -> jwtVerifier.verifyAccessTokenJWT(clientConfigMap, signedJWT, CLIENT_ID));
     }
 
     @Test
@@ -210,9 +192,10 @@ class JWTVerifierTest {
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
                         new JWTClaimsSet.Builder()
-                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .jwtID(UUID.randomUUID().toString())
+                                .issuer(CLIENT_ID.getValue())
                                 .notBeforeTime(Date.from(now))
-                                .subject(UUID.randomUUID().toString())
+                                .subject(CLIENT_ID.getValue())
                                 .audience("https://address.cri.account.gov.uk")
                                 .expirationTime(Date.from(now.minus(1, ChronoUnit.HOURS)))
                                 .build());
@@ -223,8 +206,8 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
+                                jwtVerifier.verifyAccessTokenJWT(
+                                        clientConfigMap, signedJWT, CLIENT_ID));
 
         assertEquals("Expired JWT", exception.getMessage());
     }
@@ -237,10 +220,11 @@ class JWTVerifierTest {
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
                         new JWTClaimsSet.Builder()
-                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .jwtID(UUID.randomUUID().toString())
+                                .issuer(CLIENT_ID.getValue())
                                 .notBeforeTime(Date.from(now))
                                 .audience("incorrect-audience")
-                                .subject(UUID.randomUUID().toString())
+                                .subject(CLIENT_ID.getValue())
                                 .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
                                 .build());
         RSASSASigner rsaSigner = new RSASSASigner(getPrivateKey());
@@ -250,8 +234,8 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
+                                jwtVerifier.verifyAccessTokenJWT(
+                                        clientConfigMap, signedJWT, CLIENT_ID));
 
         assertEquals(
                 "JWT aud claim has value [incorrect-audience], must be [https://address.cri.account.gov.uk]",
@@ -266,9 +250,10 @@ class JWTVerifierTest {
                 new SignedJWT(
                         new JWSHeader.Builder(JWSAlgorithm.RS256).build(),
                         new JWTClaimsSet.Builder()
-                                .issuer("https://dev.core.ipv.account.gov.uk")
+                                .jwtID(UUID.randomUUID().toString())
+                                .issuer(CLIENT_ID.getValue())
                                 .notBeforeTime(Date.from(now.plus(6, ChronoUnit.HOURS)))
-                                .subject(UUID.randomUUID().toString())
+                                .subject(CLIENT_ID.getValue())
                                 .audience("https://address.cri.account.gov.uk")
                                 .expirationTime(Date.from(now.plus(1, ChronoUnit.HOURS)))
                                 .build());
@@ -279,8 +264,8 @@ class JWTVerifierTest {
                 assertThrows(
                         SessionValidationException.class,
                         () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap, signedJWT, getRequiredClaims()));
+                                jwtVerifier.verifyAccessTokenJWT(
+                                        clientConfigMap, signedJWT, CLIENT_ID));
 
         assertEquals("JWT before use time", exception.getMessage());
     }
@@ -304,14 +289,7 @@ class JWTVerifierTest {
         SessionValidationException exception =
                 assertThrows(
                         SessionValidationException.class,
-                        () ->
-                                jwtVerifier.verifyJWT(
-                                        clientConfigMap,
-                                        signedJWT,
-                                        Set.of(
-                                                JWTClaimNames.EXPIRATION_TIME,
-                                                JWTClaimNames.SUBJECT,
-                                                JWTClaimNames.NOT_BEFORE)));
+                        () -> jwtVerifier.verifyAuthorizationJWT(clientConfigMap, signedJWT));
 
         assertEquals("JWT missing required claims: [nbf]", exception.getMessage());
     }
@@ -349,9 +327,5 @@ class JWTVerifierTest {
 
     private ECKey getECPrivateKey() throws ParseException {
         return ECKey.parse(new String(Base64.getDecoder().decode(privateSigningJwkBase64)));
-    }
-
-    private Set<String> getRequiredClaims() {
-        return Set.of(JWTClaimNames.EXPIRATION_TIME, JWTClaimNames.SUBJECT);
     }
 }

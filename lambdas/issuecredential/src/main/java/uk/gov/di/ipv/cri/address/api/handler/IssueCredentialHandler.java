@@ -11,14 +11,12 @@ import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
 import org.apache.http.HttpStatus;
-import org.apache.logging.log4j.Level;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
-import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.address.library.exception.SqsException;
@@ -58,7 +56,6 @@ public class IssueCredentialHandler
         this.auditService = auditService;
     }
 
-    @ExcludeFromGeneratedCoverageReport
     public IssueCredentialHandler() {
         this.verifiableCredentialService = getVerifiableCredentialService();
         this.addressService = new AddressService();
@@ -78,12 +75,11 @@ public class IssueCredentialHandler
         try {
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
             var sessionItem = this.sessionService.getSessionByAccessToken(accessToken);
-            var addressItem = addressService.getAddresses(sessionItem.getSessionId());
+            var addressItem = addressService.getAddressItem(sessionItem.getSessionId());
 
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                             sessionItem.getSubject(), addressItem.getAddresses());
-
             auditService.sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_VC_ISSUED);
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
@@ -97,11 +93,11 @@ public class IssueCredentialHandler
         } catch (CredentialRequestException | ParseException | JOSEException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
-            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_BAD_REQUEST, 0);
-        } catch (SqsException e) {
-            eventProbe.log(Level.ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                    HttpStatus.SC_BAD_REQUEST, ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR);
+        } catch (SqsException sqsException) {
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR, sqsException.getMessage());
         }
     }
 

@@ -110,18 +110,14 @@ public class AccessTokenService {
             AuthorizationCodeGrant authorizationGrant =
                     (AuthorizationCodeGrant) tokenRequest.getAuthorizationGrant();
 
-            validateTokenRequestToRecord(
-                    privateKeyJWT,
-                    authorizationGrant,
-                    tokenRequest.getClientAuthentication().getClientID(),
-                    sessionItem);
+            ClientID clientID = tokenRequest.getClientAuthentication().getClientID();
+            validateTokenRequestToRecord(privateKeyJWT, authorizationGrant, clientID, sessionItem);
 
             Map<String, String> clientAuthenticationConfig =
-                    getClientAuthenticationConfig(
-                            tokenRequest.getClientAuthentication().getClientID().getValue());
+                    getClientAuthenticationConfig(clientID.getValue());
             SignedJWT signedJWT = privateKeyJWT.getClientAssertion();
 
-            jwtVerifier.verifyJWT(clientAuthenticationConfig, signedJWT);
+            jwtVerifier.verifyAccessTokenJWT(clientAuthenticationConfig, signedJWT, clientID);
             return tokenRequest;
         } catch (SessionValidationException
                 | ClientConfigurationException

@@ -218,7 +218,7 @@ paths:
         description: 'A valid access_token (e.g.: authorization: Bearer access-token-value).'
         schema:
           type: string
-    get:
+    post:
       summary: GET request using a valid access token
       responses:
         '200':
