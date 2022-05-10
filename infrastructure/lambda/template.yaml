@@ -195,7 +195,7 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../lambdas/session/build/distributions/session.zip
+      CodeUri: ../../common-lambdas/session/build/distributions/session.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.SessionHandler::handleRequest
       Environment:
         Variables:
@@ -314,7 +314,7 @@ Resources:
   AccessTokenFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../lambdas/accesstoken/build/distributions/accesstoken.zip
+      CodeUri: ../../common-lambdas/accesstoken/build/distributions/accesstoken.zip
       Handler: uk.gov.di.ipv.cri.address.api.handler.AccessTokenHandler::handleRequest
       Environment:
         Variables:
@@ -375,7 +375,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: uk.gov.di.ipv.cri.address.api.handler.JWKSetHandler::handleRequest
-      CodeUri: ../../lambdas/jwkset/build/distributions/jwkset.zip
+      CodeUri: ../../common-lambdas/jwkset/build/distributions/jwkset.zip
       Environment:
         Variables:
           POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
