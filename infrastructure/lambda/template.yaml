@@ -88,8 +88,8 @@ Mappings:
 
   IPVCoreStubAudienceMapping:
     Environment:
-      dev: "https://dev.address.cri.account.gov.uk"
-      build: "https://build.address.cri.account.gov.uk"
+      dev: "https://dev-di-ipv-cri-address-front.london.cloudapps.digital"
+      build: "https://build-di-ipv-cri-address-front.london.cloudapps.digital"
 
   IPVCore1AudienceMapping:
     Environment:
@@ -99,8 +99,8 @@ Mappings:
 
   IPVCoreStubIssuerMapping:
     Environment:
-      dev: "https://dev-di-ipv-core-stub.london.cloudapps.digital"
-      build: "https://build-di-ipv-core-stub.london.cloudapps.digital"
+      dev: "https://di-ipv-core-stub.london.cloudapps.digital"
+      build: "https://di-ipv-core-stub.london.cloudapps.digital"
 
   IPVCore1IssuerMapping:
     Environment:
