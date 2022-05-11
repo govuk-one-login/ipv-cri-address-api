@@ -1,6 +1,24 @@
 # di-ipv-cri-address-api
 Address Collector Credential Issuer API
 
+## Check out submodules (First Time)
+> The first time you check out or clone the repository, you will need to run the following commands:
+ 
+`git submodule update --init --recursive`
+
+## Update submodules (Subsequent times)
+> Subsequent times you will need to run the following commands:
+
+`git submodule update --recursive`
+
+## Updating submodules to the latest "main" branch
+> You can also update the submodules to the latest "main" branch, but this is not done automatically 
+> in case there have been changes made to the shared libraries you do not yet want to track
+
+cd into each submodule (folders are `/lib` and `/common-lambdas`) and run the following commands:
+
+`git checkout main && git pull`
+
 ## Build
 
 > Ensure that you are using the java version specified in `.sdkmanrc`.
