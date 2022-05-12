@@ -1,6 +1,7 @@
 package uk.gov.di.ipv.cri.address.library.domain;
 
 import com.nimbusds.jwt.SignedJWT;
+import uk.gov.di.ipv.cri.address.library.persistence.item.PersonIdentity;
 
 import java.net.URI;
 import java.util.Date;
@@ -17,6 +18,7 @@ public class SessionRequest {
     private URI redirectUri;
     private String state;
     private SignedJWT signedJWT;
+    private PersonIdentity identity;
 
     public String getIssuer() {
         return issuer;
@@ -104,5 +106,13 @@ public class SessionRequest {
 
     public void setJwtClientId(String jwtClientId) {
         this.jwtClientId = jwtClientId;
+    }
+
+    public PersonIdentity getPersonIdentity() {
+        return identity;
+    }
+
+    public void setPersonIdentity(PersonIdentity identity) {
+        this.identity = identity;
     }
 }

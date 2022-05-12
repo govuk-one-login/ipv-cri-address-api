@@ -43,6 +43,7 @@ class SessionRequestServiceTest {
     @Mock private JWTDecrypter mockJwtDecrypter;
     @Mock private JWTVerifier mockJwtVerifier;
     @Mock private ObjectMapper mockObjectMapper;
+    @Mock private SharedClaimsMapper mockSharedClaimsMapper;
     private SessionRequestService sessionRequestService;
 
     @BeforeEach
@@ -52,7 +53,8 @@ class SessionRequestServiceTest {
                         mockObjectMapper,
                         mockJwtVerifier,
                         mockConfigurationService,
-                        mockJwtDecrypter);
+                        mockJwtDecrypter,
+                        mockSharedClaimsMapper);
     }
 
     @Test

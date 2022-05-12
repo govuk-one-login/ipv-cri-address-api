@@ -1,8 +1,10 @@
 package uk.gov.di.ipv.cri.address.library.persistence.item;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
+import uk.gov.di.ipv.cri.address.library.util.ClassToMapConverter;
 
 import java.net.URI;
 import java.util.UUID;
@@ -19,6 +21,7 @@ public class SessionItem {
     private String authorizationCode;
     private String accessToken;
     private String subject;
+    private PersonIdentity personIdentity;
 
     public SessionItem() {
         sessionId = UUID.randomUUID();
@@ -89,6 +92,15 @@ public class SessionItem {
 
     public String getSubject() {
         return subject;
+    }
+
+    @DynamoDbConvertedBy(ClassToMapConverter.class)
+    public PersonIdentity getPersonIdentity() {
+        return personIdentity;
+    }
+
+    public void setPersonIdentity(PersonIdentity personIdentity) {
+        this.personIdentity = personIdentity;
     }
 
     @Override
