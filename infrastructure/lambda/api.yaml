@@ -311,8 +311,6 @@ components:
           example: "ipv-core-stub"
         request:
           type: "string"
-          pattern: "[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_=]+\\.[a-zA-Z0-9_\\-\\+\\/=]+"
-          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0dCIsImlhdCI6MTUxNjIzOTAyMn0.SbcN-ywpLObhMbbaMCtW1Un8LYhQzHsEth9LvTk4oQQ"
     AuthorizationResponse:
       required:
         - "redirect_uri"
