@@ -10,14 +10,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.domain.AuthorizationResponse;
 import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
+import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.address.library.service.AuditService;
 import uk.gov.di.ipv.cri.address.library.service.SessionService;
 import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
@@ -40,11 +43,15 @@ class AddressHandlerTest {
 
     @Mock private EventProbe eventProbe;
 
+    @Mock private AuditService auditService;
+
     private AddressHandler addressHandler;
 
     @BeforeEach
     void setUp() {
-        addressHandler = new AddressHandler(mockSessionService, mockAddressService, eventProbe);
+        addressHandler =
+                new AddressHandler(
+                        mockSessionService, mockAddressService, eventProbe, auditService);
     }
 
     @Test
@@ -75,7 +82,7 @@ class AddressHandlerTest {
     @Test
     void ValidSaveReturnsAuthorizationCode()
             throws JsonProcessingException, AddressProcessingException, SessionExpiredException,
-                    SessionNotFoundException {
+                    SessionNotFoundException, SqsException {
 
         when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
         when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", SESSION_ID));
@@ -105,6 +112,7 @@ class AddressHandlerTest {
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(eventProbe).counterMetric("address");
+        verify(auditService).sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_REQUEST_SENT);
     }
 
     @Test
