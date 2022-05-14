@@ -2,6 +2,7 @@ package uk.gov.di.ipv.cri.address.api.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -50,7 +51,10 @@ public class VerifiableCredentialService {
     public SignedJWT generateSignedVerifiableCredentialJwt(
             String subject, List<CanonicalAddress> canonicalAddresses) throws JOSEException {
         var now = Instant.now();
-        ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
+        ObjectMapper mapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .registerModule(new JavaTimeModule());
 
         int size = canonicalAddresses.size();
         var addresses = new Object[size];

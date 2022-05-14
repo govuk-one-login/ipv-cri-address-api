@@ -13,7 +13,6 @@ import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
@@ -96,7 +96,7 @@ class IssueCredentialHandlerTest {
 
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
-        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(HttpStatusCode.OK, response.getStatusCode());
     }
 
     @Test
@@ -142,7 +142,7 @@ class IssueCredentialHandlerTest {
         verifyNoMoreInteractions(mockVerifiableCredentialService);
 
         Map responseBody = new ObjectMapper().readValue(response.getBody(), Map.class);
-        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatusCode.BAD_REQUEST, response.getStatusCode());
         assertEquals(ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR.getCode(), responseBody.get("code"));
         assertEquals(
                 ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR.getMessage(),
@@ -159,7 +159,7 @@ class IssueCredentialHandlerTest {
 
         assertEquals(
                 ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
-        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatusCode.BAD_REQUEST, response.getStatusCode());
     }
 
     @Test
@@ -180,7 +180,7 @@ class IssueCredentialHandlerTest {
                         .errorCode("")
                         .sdkHttpResponse(
                                 SdkHttpResponse.builder()
-                                        .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                                        .statusCode(HttpStatusCode.INTERNAL_SERVER_ERROR)
                                         .build())
                         .errorMessage("AWS DynamoDbException Occurred")
                         .build();
@@ -220,7 +220,7 @@ class IssueCredentialHandlerTest {
                         .errorCode("")
                         .sdkHttpResponse(
                                 SdkHttpResponse.builder()
-                                        .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+                                        .statusCode(HttpStatusCode.INTERNAL_SERVER_ERROR)
                                         .build())
                         .errorMessage("AWS DynamoDbException Occurred")
                         .build();

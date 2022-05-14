@@ -4,8 +4,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.Level;
+import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -62,20 +62,20 @@ public class PostcodeLookupHandler
             List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
             eventProbe.counterMetric(LAMBDA_NAME);
 
-            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, results);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
 
         } catch (PostcodeLookupValidationException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
+                    HttpStatusCode.BAD_REQUEST, ErrorResponse.INVALID_POSTCODE);
         } catch (SessionExpiredException | SessionNotFoundException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_BAD_REQUEST, e.getMessage());
+                    HttpStatusCode.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
+                    HttpStatusCode.INTERNAL_SERVER_ERROR, ErrorResponse.SERVER_ERROR);
         }
     }
 }
