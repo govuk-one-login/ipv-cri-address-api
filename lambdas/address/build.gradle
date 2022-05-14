@@ -8,7 +8,8 @@ dependencies {
 			configurations.lambda,
 			configurations.nimbus,
 			configurations.jackson,
-			configurations.dynamodb
+			configurations.dynamodb,
+			configurations.sqs
 
 	aspect configurations.powertools
 

@@ -24,11 +24,14 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
+import uk.gov.di.ipv.cri.address.library.domain.AuditEventTypes;
 import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
+import uk.gov.di.ipv.cri.address.library.exception.SqsException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.address.library.service.AuditService;
 import uk.gov.di.ipv.cri.address.library.service.SessionService;
 import uk.gov.di.ipv.cri.address.library.util.EventProbe;
 
@@ -41,6 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -55,10 +59,11 @@ class IssueCredentialHandlerTest {
 
     @Mock private AddressService mockAddressService;
     @Mock private EventProbe mockEventProbe;
+    @Mock private AuditService mockAuditService;
     @InjectMocks private IssueCredentialHandler handler;
 
     @Test
-    void shouldReturn200OkWhenIssueCredentialRequestIsValid() throws JOSEException {
+    void shouldReturn200OkWhenIssueCredentialRequestIsValid() throws JOSEException, SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -93,7 +98,7 @@ class IssueCredentialHandlerTest {
         verify(mockVerifiableCredentialService)
                 .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
-
+        verify(mockAuditService).sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_VC_ISSUED);
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
         assertEquals(HttpStatusCode.OK, response.getStatusCode());
@@ -101,7 +106,7 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldThrowJOSEExceptionWhenGenerateVerifiableCredentialIsMalformed()
-            throws JsonProcessingException, JOSEException {
+            throws JsonProcessingException, JOSEException, SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -140,7 +145,7 @@ class IssueCredentialHandlerTest {
         verify(mockEventProbe).log(Level.ERROR, unExpectedJOSEException);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verifyNoMoreInteractions(mockVerifiableCredentialService);
-
+        verify(mockAuditService, never()).sendAuditEvent(any());
         Map responseBody = new ObjectMapper().readValue(response.getBody(), Map.class);
         assertEquals(HttpStatusCode.BAD_REQUEST, response.getStatusCode());
         assertEquals(ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR.getCode(), responseBody.get("code"));
@@ -150,13 +155,14 @@ class IssueCredentialHandlerTest {
     }
 
     @Test
-    void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied() {
+    void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied()
+            throws SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         setupEventProbeErrorBehaviour();
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
-
+        verify(mockAuditService, never()).sendAuditEvent(any());
         assertEquals(
                 ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
         assertEquals(HttpStatusCode.BAD_REQUEST, response.getStatusCode());
@@ -164,7 +170,7 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldThrowAWSExceptionWhenAServerErrorOccursRetrievingASessionItemWithAccessToken()
-            throws JsonProcessingException {
+            throws JsonProcessingException, SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -196,7 +202,7 @@ class IssueCredentialHandlerTest {
 
         verify(mockSessionService).getSessionByAccessToken(accessToken);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
-
+        verify(mockAuditService, never()).sendAuditEvent(any());
         String responseBody = new ObjectMapper().readValue(response.getBody(), String.class);
         assertEquals(awsErrorDetails.sdkHttpResponse().statusCode(), response.getStatusCode());
         assertEquals(awsErrorDetails.errorMessage(), responseBody);
@@ -204,7 +210,7 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldThrowAWSExceptionWhenAServerErrorOccursDuringRetrievingAnAddressItemWithSessionId()
-            throws JsonProcessingException {
+            throws JsonProcessingException, SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -241,7 +247,7 @@ class IssueCredentialHandlerTest {
         verify(mockSessionService).getSessionByAccessToken(accessToken);
         verify(mockAddressService).getAddressItem(sessionId);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
-
+        verify(mockAuditService, never()).sendAuditEvent(any());
         String responseBody = new ObjectMapper().readValue(response.getBody(), String.class);
         assertEquals(awsErrorDetails.sdkHttpResponse().statusCode(), response.getStatusCode());
         assertEquals(awsErrorDetails.errorMessage(), responseBody);
