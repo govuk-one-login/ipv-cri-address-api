@@ -1,5 +1,4 @@
-# di-ipv-cri-address-api
-Address Collector Credential Issuer API
+# Address Collector Credential Issuer API
 
 ## Check out submodules (First Time)
 > The first time you check out or clone the repository, you will need to run the following commands:
