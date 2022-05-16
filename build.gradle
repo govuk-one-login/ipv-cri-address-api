@@ -9,9 +9,7 @@ defaultTasks 'clean', 'spotlessApply', 'build'
 ext {
 	dependencyVersions = [
 		jackson_version          : "2.13.1",
-		aws_sdk_sqs_version	     : "1.12.197",
-		aws_sdk_version          : "1.12.208",
-		aws_lambda_core_version  : "1.2.1",
+		aws_sdk_version          : "2.17.190",
 		aws_lambda_events_version: "3.11.0",
 		aws_powertools_version   : "1.9.0",
 		nimbusds_oauth_version   : "9.25",
@@ -60,23 +58,29 @@ subprojects {
 		mockito
 	}
 
+	// The dynamodb enhanced package loads the apache-client as well as the spi-client, so
+	// we need to add the apache-client to the dependencies exclusion to not get a mismatch
+	configurations.all {
+		exclude group:"software.amazon.awssdk", module: "apache-client"
+	}
+
 	dependencies {
 
-		dynamodb "com.amazonaws:aws-java-sdk-dynamodb:${dependencyVersions.aws_sdk_version}",
-				"software.amazon.awssdk:dynamodb-enhanced:2.17.116"
+		dynamodb "software.amazon.awssdk:dynamodb:${dependencyVersions.aws_sdk_version}",
+				"software.amazon.awssdk:dynamodb-enhanced:${dependencyVersions.aws_sdk_version}"
 
 		gson "com.google.code.gson:gson:2.8.9"
 
-		lambda "com.amazonaws:aws-lambda-java-core:${dependencyVersions.aws_lambda_core_version}",
+		lambda "software.amazon.awssdk:lambda:${dependencyVersions.aws_sdk_version}",
 				"com.amazonaws:aws-lambda-java-events:${dependencyVersions.aws_lambda_events_version}",
 				"software.amazon.lambda:powertools-parameters:${dependencyVersions.aws_powertools_version}",
-				"org.apache.httpcomponents:httpclient:4.5.13"
+				"software.amazon.awssdk:url-connection-client:${dependencyVersions.aws_sdk_version}"
 
-		sqs "com.amazonaws:aws-java-sdk-sqs:${dependencyVersions.aws_sdk_sqs_version}"
+		sqs "software.amazon.awssdk:sqs:${dependencyVersions.aws_sdk_version}"
 
-		kms "com.amazonaws:aws-java-sdk-kms:${dependencyVersions.aws_sdk_version}"
+		kms "software.amazon.awssdk:kms:${dependencyVersions.aws_sdk_version}"
 
-		lambda_tests "com.amazonaws:aws-lambda-java-tests:1.1.1"
+		lambda_tests "software.amazon.awssdk:aws-lambda-java-tests:1.1.1"
 
 		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
 				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",

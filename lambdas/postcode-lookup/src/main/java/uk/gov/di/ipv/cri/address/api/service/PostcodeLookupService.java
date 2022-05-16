@@ -2,10 +2,11 @@ package uk.gov.di.ipv.cri.address.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.http.HttpStatusCode;
+import software.amazon.awssdk.http.SdkHttpFullRequest;
+import software.amazon.awssdk.http.SdkHttpMethod;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
@@ -14,6 +15,7 @@ import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -67,10 +69,17 @@ public class PostcodeLookupService {
             request =
                     HttpRequest.newBuilder()
                             .uri(
-                                    new URIBuilder(configurationService.getOsPostcodeAPIUrl())
-                                            .addParameter("postcode", postcode)
-                                            .addParameter("key", configurationService.getOsApiKey())
-                                            .build())
+                                    SdkHttpFullRequest.builder()
+                                            .uri(
+                                                    new URI(
+                                                            configurationService
+                                                                    .getOsPostcodeAPIUrl()))
+                                            .appendRawQueryParameter("postcode", postcode)
+                                            .appendRawQueryParameter(
+                                                    "key", configurationService.getOsApiKey())
+                                            .method(SdkHttpMethod.GET)
+                                            .build()
+                                            .getUri())
                             .header("Accept", "application/json")
                             .GET()
                             .build();
@@ -99,10 +108,10 @@ public class PostcodeLookupService {
 
         OrdnanceSurveyPostcodeError error;
         switch (response.statusCode()) {
-            case HttpStatus.SC_OK:
+            case HttpStatusCode.OK:
                 // These responses are fine
                 break;
-            case HttpStatus.SC_BAD_REQUEST:
+            case HttpStatusCode.BAD_REQUEST:
                 try {
                     error =
                             new ObjectMapper()
@@ -117,7 +126,7 @@ public class PostcodeLookupService {
                 }
                 return new ArrayList<>();
 
-            case HttpStatus.SC_NOT_FOUND:
+            case HttpStatusCode.NOT_FOUND:
                 log.error("{}404: Not Found", LOG_RESPONSE_PREFIX);
                 return new ArrayList<>();
 

@@ -22,8 +22,7 @@ import uk.gov.di.ipv.cri.address.library.util.SignedJWTFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
-import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -47,8 +46,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     public static final String ADDRESS_LOCALITY = "LEEDS";
     public static final String POSTAL_CODE = "LS10 4QL";
     public static final String COUNTRY_CODE = "GBR";
-    public static final Instant VALID_FROM = Instant.parse("2010-02-26T00:00:00.00Z");
-    public static final Instant VALID_UNTIL = Instant.parse("2021-01-16T00:00:00.00Z");
+    public static final LocalDate VALID_FROM = LocalDate.of(2010, 02, 26);
+    public static final LocalDate VALID_UNTIL = LocalDate.of(2021, 01, 16);
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Mock private ConfigurationService mockConfigurationService;
 
@@ -88,8 +87,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         address.setAddressLocality(ADDRESS_LOCALITY);
         address.setPostalCode(POSTAL_CODE);
         address.setAddressCountry(COUNTRY_CODE);
-        address.setValidFrom(Date.from(VALID_FROM));
-        address.setValidUntil(Date.from(VALID_UNTIL));
+        address.setValidFrom(VALID_FROM);
+        address.setValidUntil(VALID_UNTIL);
         List<CanonicalAddress> canonicalAddresses = List.of(address);
 
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));

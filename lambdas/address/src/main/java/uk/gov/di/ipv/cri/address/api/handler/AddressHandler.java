@@ -4,10 +4,10 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.Level;
+import software.amazon.awssdk.http.HttpStatusCode;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -48,7 +48,7 @@ public class AddressHandler
                 new AddressService(),
                 new EventProbe(),
                 new AuditService(
-                        AmazonSQSClientBuilder.defaultClient(),
+                        SqsClient.builder().build(),
                         new ConfigurationService(),
                         new ObjectMapper()));
     }
@@ -89,20 +89,20 @@ public class AddressHandler
 
                 eventProbe.counterMetric(LAMBDA_NAME);
                 return ApiGatewayResponseGenerator.proxyJsonResponse(
-                        HttpStatus.SC_CREATED, new AuthorizationResponse(session));
+                        HttpStatusCode.CREATED, new AuthorizationResponse(session));
             }
 
             // If we don't have at least one address, do not save
-            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatus.SC_OK, "");
+            return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, "");
 
         } catch (SessionNotFoundException | SessionExpiredException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_BAD_REQUEST, e.getMessage());
+                    HttpStatusCode.BAD_REQUEST, e.getMessage());
         } catch (AddressProcessingException | SqsException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                    HttpStatusCode.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 }

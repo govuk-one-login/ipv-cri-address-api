@@ -4,15 +4,15 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
-import org.apache.http.HttpStatus;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.http.HttpStatusCode;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -64,7 +64,7 @@ public class IssueCredentialHandler
         this.eventProbe = new EventProbe();
         this.auditService =
                 new AuditService(
-                        AmazonSQSClientBuilder.defaultClient(),
+                        SqsClient.builder().build(),
                         new ConfigurationService(),
                         new ObjectMapper());
     }
@@ -87,20 +87,20 @@ public class IssueCredentialHandler
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJwtResponse(
-                    HttpStatus.SC_OK, signedJWT.serialize());
+                    HttpStatusCode.OK, signedJWT.serialize());
         } catch (AwsServiceException ex) {
             eventProbe.log(ERROR, ex).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR, ex.awsErrorDetails().errorMessage());
+                    HttpStatusCode.INTERNAL_SERVER_ERROR, ex.awsErrorDetails().errorMessage());
         } catch (CredentialRequestException | ParseException | JOSEException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_BAD_REQUEST, ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR);
+                    HttpStatusCode.BAD_REQUEST, ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR);
         } catch (SqsException sqsException) {
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatus.SC_INTERNAL_SERVER_ERROR, sqsException.getMessage());
+                    HttpStatusCode.INTERNAL_SERVER_ERROR, sqsException.getMessage());
         }
     }
 

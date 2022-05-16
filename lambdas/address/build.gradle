@@ -4,8 +4,8 @@ plugins {
 }
 
 dependencies {
-	implementation project(":lib")
-	implementation configurations.lambda,
+	implementation project(":lib"),
+			configurations.lambda,
 			configurations.nimbus,
 			configurations.jackson,
 			configurations.dynamodb,
