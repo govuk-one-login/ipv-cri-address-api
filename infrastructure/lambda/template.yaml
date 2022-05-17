@@ -211,7 +211,7 @@ Resources:
         - SQSSendMessagePolicy:
             QueueName: !ImportValue AuditEventQueueName
         - KMSDecryptPolicy:
-            KeyId: !Ref AddressCriDecryptionKey
+            KeyId: !ImportValue core-infrastructure-CriDecryptionKey1Id
         - Statement:
             - Effect: Allow
               Action:
@@ -370,7 +370,7 @@ Resources:
             Effect: Allow
             Action:
               - "kms:Sign"
-            Resource: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${AddressCriVcSigningKey}"
+            Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
         - SQSSendMessagePolicy:
             QueueName: !ImportValue AuditEventQueueName
         - SSMParameterReadPolicy:
@@ -400,72 +400,14 @@ Resources:
               Action:
                 - kms:GetPublicKey
               Resource:
-                - !GetAtt AddressCriVcSigningKey.Arn
-                - !GetAtt AddressCriDecryptionKey.Arn
+                - !ImportValue core-infrastructure-CriVcSigningKey1Arn
+                - !ImportValue core-infrastructure-CriDecryptionKey1Arn
             - Effect: Allow
               Action:
                 - kms:ListKeys
                 - kms:ListResourceTags
                 - kms:DescribeKey
               Resource: "*"
-
-  AddressCriVcSigningKey:
-    Type: AWS::KMS::Key
-    Properties:
-      Description: Asymmetric key used by Address Cri for signing verifiable credentials.
-      Enabled: true
-      KeySpec: ECC_NIST_P256
-      KeyUsage: SIGN_VERIFY
-      KeyPolicy:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: 'Enable Root access'
-            Effect: Allow
-            Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action:
-              - 'kms:*'
-            Resource: '*'
-      Tags:
-        - Key: "jwkset"
-          Value: "true"
-        - Key: "awsStackName"
-          Value: !Sub "${AWS::StackName}"
-
-  SigningKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriVcSigningKey
-      TargetKeyId: !Ref AddressCriVcSigningKey
-
-  AddressCriDecryptionKey:
-    Type: AWS::KMS::Key
-    Properties:
-      Description: Asymmetric key used by Address CRI to decrypt the Authorization JAR JWE
-      Enabled: true
-      KeySpec: RSA_2048
-      KeyUsage: ENCRYPT_DECRYPT
-      KeyPolicy:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: 'Enable Root access'
-            Effect: Allow
-            Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action:
-              - 'kms:*'
-            Resource: '*'
-      Tags:
-        - Key: "jwkset"
-          Value: "true"
-        - Key: "awsStackName"
-          Value: !Sub "${AWS::StackName}"
-
-  DecryptionKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: !Sub alias/${AWS::StackName}/${Environment}/AddressCriDecryptionKey
-      TargetKeyId: !Ref AddressCriDecryptionKey
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"
@@ -685,7 +627,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
       Type: String
-      Value: !Ref AddressCriDecryptionKey
+      Value: !ImportValue core-infrastructure-CriDecryptionKey1Id
       Description: The (KMS) encryption key identifier for decrypting authorisation requests
 
   OrdnanceSurveyAPIURLParameter:
@@ -709,7 +651,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/verifiableCredentialKmsSigningKeyId"
       Type: String
-      Value: !Ref AddressCriVcSigningKey
+      Value: !ImportValue core-infrastructure-CriVcSigningKey1Id
       Description: Verifiable Credential Key Id
 
   AccessTokenFunctionPermission:
