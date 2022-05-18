@@ -9,7 +9,6 @@ defaultTasks 'clean', 'spotlessApply', 'build'
 ext {
 	dependencyVersions = [
 		jackson_version          : "2.13.1",
-		aws_sdk_version          : "2.17.190",
 		aws_lambda_events_version: "3.11.0",
 		aws_powertools_version   : "1.9.0",
 		nimbusds_oauth_version   : "9.25",
@@ -29,7 +28,6 @@ repositories {
 }
 
 subprojects {
-
 	java {
 		sourceCompatibility = JavaVersion.VERSION_11
 		targetCompatibility = JavaVersion.VERSION_11
@@ -39,9 +37,11 @@ subprojects {
 		maven {
 			url 'https://gds.jfrog.io/artifactory/di-allowed-repos'
 		}
+		mavenCentral()
 	}
 
 	configurations {
+		aws
 		dynamodb
 		jackson
 		lambda
@@ -65,20 +65,20 @@ subprojects {
 	}
 
 	dependencies {
+		aws platform('software.amazon.awssdk:bom:2.17.191')
 
-		dynamodb "software.amazon.awssdk:dynamodb:${dependencyVersions.aws_sdk_version}",
-				"software.amazon.awssdk:dynamodb-enhanced:${dependencyVersions.aws_sdk_version}"
+		dynamodb "software.amazon.awssdk:dynamodb",
+				"software.amazon.awssdk:dynamodb-enhanced"
 
 		gson "com.google.code.gson:gson:2.8.9"
 
-		lambda "software.amazon.awssdk:lambda:${dependencyVersions.aws_sdk_version}",
+		lambda "software.amazon.awssdk:lambda",
 				"com.amazonaws:aws-lambda-java-events:${dependencyVersions.aws_lambda_events_version}",
-				"software.amazon.lambda:powertools-parameters:${dependencyVersions.aws_powertools_version}",
-				"software.amazon.awssdk:url-connection-client:${dependencyVersions.aws_sdk_version}"
+				"software.amazon.lambda:powertools-parameters:${dependencyVersions.aws_powertools_version}"
 
-		sqs "software.amazon.awssdk:sqs:${dependencyVersions.aws_sdk_version}"
+		sqs "software.amazon.awssdk:sqs"
 
-		kms "software.amazon.awssdk:kms:${dependencyVersions.aws_sdk_version}"
+		kms "software.amazon.awssdk:kms"
 
 		lambda_tests "software.amazon.awssdk:aws-lambda-java-tests:1.1.1"
 
@@ -102,6 +102,9 @@ subprojects {
 
 		test_runtime "org.junit.jupiter:junit-jupiter-engine:${dependencyVersions.junit}"
 	}
+
+	apply plugin: 'java'
+
 }
 
 sonarqube {
