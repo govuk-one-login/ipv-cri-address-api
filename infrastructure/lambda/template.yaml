@@ -61,6 +61,8 @@ Globals:
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
         AWS_STACK_NAME: !Sub ${AWS::StackName}
         POWERTOOLS_LOG_LEVEL: INFO
+    Tags:
+      CheckovRulesToSkip: "CKV_AWS_173.CKV_AWS_116"
 
 Mappings:
   SessionTtlMapping:
@@ -199,12 +201,15 @@ Resources:
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
+      Tags:
+        CheckovRulesToSkip: "CKV_AWS_120"
 
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/AccessLog-${AddressApi}/${Environment}
       RetentionInDays: 365
+      KmsKeyId: !GetAtt ResourceEncryptionKmsKey1.Arn
 
   SessionFunction:
     Type: AWS::Serverless::Function
@@ -229,6 +234,8 @@ Resources:
             QueueName: !ImportValue AuditEventQueueName
         - KMSDecryptPolicy:
             KeyId: !ImportValue core-infrastructure-CriDecryptionKey1Id
+        - KMSDecryptPolicy:
+            KeyId: !Ref ResourceEncryptionKmsKey1
         - Statement:
             - Effect: Allow
               Action:
@@ -427,11 +434,43 @@ Resources:
                 - kms:DescribeKey
               Resource: "*"
 
+  ResourceEncryptionKmsKey1:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: 'kms:*'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              Service: !Sub "logs.${AWS::Region}.amazonaws.com"
+            Action:
+              - "kms:Encrypt*"
+              - "kms:Decrypt*"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:Describe*"
+            Resource: "*"
+            Condition:
+              ArnLike:
+                "kms:EncryptionContext:aws:logs:arn": !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+
   AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
       TableName: !Sub "address-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref ResourceEncryptionKmsKey1
+        SSEEnabled: true
+        SSEType: "KMS"
       AttributeDefinitions:
         - AttributeName: "sessionId"
           AttributeType: "S"
@@ -444,6 +483,12 @@ Resources:
     Properties:
       TableName: !Sub "session-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref ResourceEncryptionKmsKey1
+        SSEEnabled: true
+        SSEType: "KMS"
       AttributeDefinitions:
         - AttributeName: "sessionId"
           AttributeType: "S"
