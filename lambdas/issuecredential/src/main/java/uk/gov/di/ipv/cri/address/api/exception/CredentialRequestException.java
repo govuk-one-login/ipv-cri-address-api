@@ -1,6 +1,6 @@
 package uk.gov.di.ipv.cri.address.api.exception;
 
-import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
+import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
 
 public class CredentialRequestException extends Exception {
     public CredentialRequestException(ErrorResponse invalidRequestParam) {

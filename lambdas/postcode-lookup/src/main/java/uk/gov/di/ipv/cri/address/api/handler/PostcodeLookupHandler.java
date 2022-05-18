@@ -11,14 +11,14 @@ import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
-import uk.gov.di.ipv.cri.address.library.annotations.ExcludeFromGeneratedCoverageReport;
-import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
-import uk.gov.di.ipv.cri.address.library.error.ErrorResponse;
-import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.address.library.service.SessionService;
-import uk.gov.di.ipv.cri.address.library.util.ApiGatewayResponseGenerator;
-import uk.gov.di.ipv.cri.address.library.util.EventProbe;
+import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.common.library.domain.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
+import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
+import uk.gov.di.ipv.cri.common.library.service.SessionService;
+import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
 import java.util.List;
 

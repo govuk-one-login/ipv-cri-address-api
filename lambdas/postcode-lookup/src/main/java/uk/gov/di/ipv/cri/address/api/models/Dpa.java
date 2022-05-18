@@ -1,7 +1,7 @@
 package uk.gov.di.ipv.cri.address.api.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import uk.gov.di.ipv.cri.address.library.domain.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.domain.CanonicalAddress;
 
 public class Dpa {
 

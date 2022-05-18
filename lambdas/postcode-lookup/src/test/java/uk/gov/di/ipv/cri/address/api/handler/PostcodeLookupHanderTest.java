@@ -12,11 +12,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
-import uk.gov.di.ipv.cri.address.library.exception.SessionExpiredException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.address.library.exception.SessionValidationException;
-import uk.gov.di.ipv.cri.address.library.service.SessionService;
-import uk.gov.di.ipv.cri.address.library.util.EventProbe;
+import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionValidationException;
+import uk.gov.di.ipv.cri.common.library.service.SessionService;
+import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
 import java.time.Instant;
 import java.util.ArrayList;
