@@ -45,7 +45,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
 
     public static final String ADDRESS_LOCALITY = "LEEDS";
     public static final String POSTAL_CODE = "LS10 4QL";
-    public static final String COUNTRY_CODE = "GBR";
+    public static final String COUNTRY_CODE = "GB";
     public static final LocalDate VALID_FROM = LocalDate.of(2010, 02, 26);
     public static final LocalDate VALID_UNTIL = LocalDate.of(2021, 01, 16);
     private final ObjectMapper objectMapper = new ObjectMapper();

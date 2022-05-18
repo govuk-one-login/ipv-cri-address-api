@@ -395,8 +395,8 @@ components:
           example: "SW1A 1AA"
         addressCountry:
           type: "string"
-          example: "GBR"
-          description: "ISO 3-Letter Country Code"
+          example: "GB"
+          description: "ISO 2-Letter Country Code"
         validFrom:
           description: "Date in ISO 8601 format"
           type: "string"

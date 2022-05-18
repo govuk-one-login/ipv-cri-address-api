@@ -452,8 +452,8 @@ public class Dpa {
         canonicalAddress.setAddressLocality(this.getPostTown());
         canonicalAddress.setPostalCode(this.getPostcode());
         // All addresses returned by this service can only possibly
-        // exist within tbe within the United Kingdom, so set to GBR
-        canonicalAddress.setAddressCountry("GBR");
+        // exist within the United Kingdom, so set to GB
+        canonicalAddress.setAddressCountry("GB");
         return canonicalAddress;
     }
 }
