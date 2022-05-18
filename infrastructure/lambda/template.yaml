@@ -208,6 +208,9 @@ Resources:
         - DynamoDBWritePolicy:
             TableName:
               Ref: SessionTable
+        - DynamoDBWritePolicy:
+            TableName:
+              Ref: PersonIdentityTable
         - SQSSendMessagePolicy:
             QueueName: !ImportValue AuditEventQueueName
         - KMSDecryptPolicy:
@@ -221,6 +224,7 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressCriAudience"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/PersonIdentityTableName"
         - Statement:
             - Effect: Allow
               Action:
@@ -457,7 +461,24 @@ Resources:
               - "subject"
             ProjectionType: "INCLUDE"
       TimeToLiveSpecification:
-        AttributeName: expiry-date
+        AttributeName: expiryDate
+        Enabled: true
+
+  PersonIdentityTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub "person-identity-${AWS::StackName}"
+      BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      AttributeDefinitions:
+        - AttributeName: "sessionId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "sessionId"
+          KeyType: "HASH"
+      TimeToLiveSpecification:
+        AttributeName: expiryDate
         Enabled: true
 
   ApiUsagePlan:
@@ -516,6 +537,14 @@ Resources:
       Value: !Sub address-${AWS::StackName}
       Type: String
       Description: address item dynamodb table name
+
+  ParameterPersonIdentityTableName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/PersonIdentityTableName"
+      Value: !Sub person-identity-${AWS::StackName}
+      Type: String
+      Description: person identity dynamodb table name
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
