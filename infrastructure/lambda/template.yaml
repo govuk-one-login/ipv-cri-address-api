@@ -104,9 +104,9 @@ Mappings:
 
   IPVCore1IssuerMapping:
     Environment:
-      staging: "https://staging-di-ipv-core-front.london.cloudapps.digital"
-      integration: "https://integration-di-ipv-core-front.london.cloudapps.digital"
-      production: "https://di-ipv-core-front.london.cloudapps.digital"
+      staging: "https://identity.staging.account.gov.uk"
+      integration: "https://identity.integration.account.gov.uk"
+      production: "https://identity.account.gov.uk"
 
   IPVCoreStubPublicSigningJwkBase64Mapping:
     Environment:
@@ -126,9 +126,9 @@ Mappings:
 
   IPVCore1RedirectURIMapping:
     Environment:
-      staging: "https://staging-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=debugAddress"
-      integration: "https://integration-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=address"
-      production: "https://di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=address"
+      staging: "https://identity.staging.account.gov.uk/credential-issuer/callback?id=address"
+      integration: "https://identity.integration.account.gov.uk/credential-issuer/callback?id=address"
+      production: "https://identity.account.gov.uk/credential-issuer/callback?id=address"
 
   OrdnanceSurveyAPIURLMapping:
     Environment:
