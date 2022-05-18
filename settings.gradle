@@ -9,6 +9,9 @@ project(':session').projectDir = new File('./common-lambdas/session')
 project(":accesstoken").projectDir = new File('./common-lambdas/accesstoken')
 project(':jwkset').projectDir = new File('./common-lambdas/jwkset')
 
+// CRI specific lib
+include 'lib'
+
 // CRI specific lambdas
 include "postcode-lookup", "address", "issuecredential"
 project(':postcode-lookup').projectDir = new File('./lambdas/postcode-lookup')
