@@ -10,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
-import uk.gov.di.ipv.cri.address.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
