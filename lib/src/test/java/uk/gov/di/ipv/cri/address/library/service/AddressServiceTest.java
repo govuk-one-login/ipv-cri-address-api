@@ -12,10 +12,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.di.ipv.cri.common.library.domain.CanonicalAddress;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
-import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
+import uk.gov.di.ipv.cri.common.library.domain.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 
 import java.time.LocalDate;
