@@ -30,8 +30,12 @@ Conditions:
   IsStubEnvironment: !Or
     - !Equals [ !Ref Environment, dev]
     - !Equals [ !Ref Environment, build ]
+    - !Equals [ !Ref Environment, staging ]
+    - !Equals [ !Ref Environment, integration ]
   IsProdLikeEnvironment:
-    !Not [Condition: IsStubEnvironment]
+    - !Equals [ !Ref Environment, staging ]
+    - !Equals [ !Ref Environment, integration ]
+    - !Equals [ !Ref Environment, production ]
   UsePermissionsBoundary:
     Fn::Not:
       - Fn::Equals:
