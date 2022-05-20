@@ -23,7 +23,6 @@ public class AddressItem {
         this.sessionId = sessionId;
     }
 
-    // @DynamoDbConvertedBy(ListOfMapConverter.class)
     public List<CanonicalAddress> getAddresses() {
         return addresses;
     }
