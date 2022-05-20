@@ -1,31 +1,31 @@
 plugins {
-	id "java"
-	id "io.freefair.aspectj.post-compile-weaving" version "6.3.0"
+	id "java-library"
 	id "jacoco"
 }
 
 dependencies {
+
 	implementation project(":common-lib"),
 			configurations.aws,
 			configurations.lambda,
-			configurations.gson
-
-	aspect configurations.powertools
+			configurations.jackson,
+			configurations.dynamodb,
+			configurations.nimbus,
+			configurations.powertools,
+			configurations.sqs,
+			configurations.kms
 
 	testImplementation configurations.tests
 
 	testRuntimeOnly configurations.test_runtime
 }
 
-task buildZip(type: Zip) {
-	from compileJava
-	from processResources
-	into('lib') {
-		from configurations.runtimeClasspath
+tasks.named("jar") {
+	manifest {
+		attributes("Implementation-Title": project.name,
+		"Implementation-Version": project.version)
 	}
 }
-
-build.finalizedBy(buildZip)
 
 test {
 	useJUnitPlatform()
