@@ -30,8 +30,12 @@ Conditions:
   IsStubEnvironment: !Or
     - !Equals [ !Ref Environment, dev]
     - !Equals [ !Ref Environment, build ]
-  IsProdLikeEnvironment:
-    !Not [Condition: IsStubEnvironment]
+    - !Equals [ !Ref Environment, staging ]
+    - !Equals [ !Ref Environment, integration ]
+  IsProdLikeEnvironment: !Or
+    - !Equals [ !Ref Environment, staging ]
+    - !Equals [ !Ref Environment, integration ]
+    - !Equals [ !Ref Environment, production ]
   UsePermissionsBoundary:
     Fn::Not:
       - Fn::Equals:
@@ -79,6 +83,8 @@ Mappings:
     Environment:
       dev: "ES256"
       build: "ES256"
+      staging: "ES256"
+      integration: "ES256"
 
   IPVCore1AuthenticationAlgMapping:
     Environment:
@@ -90,6 +96,8 @@ Mappings:
     Environment:
       dev: "https://dev-di-ipv-cri-address-front.london.cloudapps.digital"
       build: "https://build-di-ipv-cri-address-front.london.cloudapps.digital"
+      staging: "https://staging-di-ipv-cri-address-front.london.cloudapps.digital"
+      integration: "https://integration-di-ipv-cri-address-front.london.cloudapps.digital"
 
   IPVCore1AudienceMapping:
     Environment:
@@ -101,34 +109,40 @@ Mappings:
     Environment:
       dev: "https://di-ipv-core-stub.london.cloudapps.digital"
       build: "https://di-ipv-core-stub.london.cloudapps.digital"
+      staging: "https://di-ipv-core-stub.london.cloudapps.digital"
+      integration: "https://di-ipv-core-stub.london.cloudapps.digital"
 
   IPVCore1IssuerMapping:
     Environment:
-      staging: "https://staging-di-ipv-core-front.london.cloudapps.digital"
-      integration: "https://integration-di-ipv-core-front.london.cloudapps.digital"
-      production: "https://di-ipv-core-front.london.cloudapps.digital"
+      staging: "https://identity.staging.account.gov.uk"
+      integration: "https://identity.integration.account.gov.uk"
+      production: "https://identity.account.gov.uk"
 
   IPVCoreStubPublicSigningJwkBase64Mapping:
     Environment:
       dev: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
       build: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
+      staging: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
+      integration: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
 
   IPVCore1PublicSigningJwkBase64Mapping:
     Environment:
       staging: "eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6ImtlMVRNRnFNb0Z5eHg1eXpOdFFRbGw0dk9yeHZUdFBKQ0huUzRqOHpoMlUiLCJ5IjoicURLX0g4QXpKS2FIbU1zaHg5TGp2LTB0ek5rV2EtSkVHUzJtZHRKUjFPQSJ9"
-      integration: "todo"
+      integration: "eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6IkJUUWdWQjU0RE9JcDU0eGRVSVg0SGtUX3pCdjZHdVdMV1RUTkdxMk15dEkiLCJ5IjoiTFFRamx5ZEtOMUhXZFJQcFBpalJObEJrbi1qaDgzZzBBUmIyNms2WVh1byJ9"
       production: "todo"
 
   IPVCoreStubRedirectURIMapping:
     Environment:
       dev: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       build: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
+      staging: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
+      integration: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
 
   IPVCore1RedirectURIMapping:
     Environment:
-      staging: "https://staging-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=debugAddress"
-      integration: "https://integration-di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=address"
-      production: "https://di-ipv-core-front.london.cloudapps.digital/credential-issuer/callback?id=address"
+      staging: "https://identity.staging.account.gov.uk/credential-issuer/callback?id=address"
+      integration: "https://identity.integration.account.gov.uk/credential-issuer/callback?id=address"
+      production: "https://identity.account.gov.uk/credential-issuer/callback?id=address"
 
   OrdnanceSurveyAPIURLMapping:
     Environment:
@@ -208,6 +222,9 @@ Resources:
         - DynamoDBWritePolicy:
             TableName:
               Ref: SessionTable
+        - DynamoDBWritePolicy:
+            TableName:
+              Ref: PersonIdentityTable
         - SQSSendMessagePolicy:
             QueueName: !ImportValue AuditEventQueueName
         - KMSDecryptPolicy:
@@ -221,6 +238,7 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressCriAudience"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/PersonIdentityTableName"
         - Statement:
             - Effect: Allow
               Action:
@@ -457,7 +475,24 @@ Resources:
               - "subject"
             ProjectionType: "INCLUDE"
       TimeToLiveSpecification:
-        AttributeName: expiry-date
+        AttributeName: expiryDate
+        Enabled: true
+
+  PersonIdentityTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: !Sub "person-identity-${AWS::StackName}"
+      BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      AttributeDefinitions:
+        - AttributeName: "sessionId"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "sessionId"
+          KeyType: "HASH"
+      TimeToLiveSpecification:
+        AttributeName: expiryDate
         Enabled: true
 
   ApiUsagePlan:
@@ -516,6 +551,14 @@ Resources:
       Value: !Sub address-${AWS::StackName}
       Type: String
       Description: address item dynamodb table name
+
+  ParameterPersonIdentityTableName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/PersonIdentityTableName"
+      Value: !Sub person-identity-${AWS::StackName}
+      Type: String
+      Description: person identity dynamodb table name
 
   MaxJwtTtlParameter:
     Type: AWS::SSM::Parameter
