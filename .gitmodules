@@ -1,4 +1,4 @@
-[submodule "commmon-lib"]
+[submodule "common-lib"]
 	path = common-lib
 	url = git@github.com:alphagov/di-ipv-cri-lib.git
 	branch = main
