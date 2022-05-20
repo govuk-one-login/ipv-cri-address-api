@@ -2,7 +2,7 @@ package uk.gov.di.ipv.cri.address.library.persistence.item;
 
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import uk.gov.di.ipv.cri.common.library.domain.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 
 import java.util.ArrayList;
 import java.util.List;
