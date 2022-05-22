@@ -432,6 +432,12 @@ Resources:
     Properties:
       TableName: !Sub "address-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref ResourceEncryptionKmsKey
+        SSEEnabled: true
+        SSEType: "KMS"
       AttributeDefinitions:
         - AttributeName: "sessionId"
           AttributeType: "S"
@@ -444,6 +450,12 @@ Resources:
     Properties:
       TableName: !Sub "session-${AWS::StackName}"
       BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref ResourceEncryptionKmsKey
+        SSEEnabled: true
+        SSEType: "KMS"
       AttributeDefinitions:
         - AttributeName: "sessionId"
           AttributeType: "S"
@@ -485,6 +497,10 @@ Resources:
       BillingMode: "PAY_PER_REQUEST"
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref ResourceEncryptionKmsKey
+        SSEEnabled: true
+        SSEType: "KMS"
       AttributeDefinitions:
         - AttributeName: "sessionId"
           AttributeType: "S"
@@ -494,6 +510,33 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expiryDate
         Enabled: true
+
+  ResourceEncryptionKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: 'kms:*'
+            Resource: '*'
+          - Effect: Allow
+            Principal:
+              Service: !Sub "logs.${AWS::Region}.amazonaws.com"
+            Action:
+              - "kms:Encrypt*"
+              - "kms:Decrypt*"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:Describe*"
+            Resource: "*"
+            Condition:
+              ArnLike:
+                "kms:EncryptionContext:aws:logs:arn": !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+
 
   ApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
