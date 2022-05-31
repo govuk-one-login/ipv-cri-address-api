@@ -782,3 +782,9 @@ Outputs:
     Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
+
+  AddressApiGatewayId:
+    Description: "API GatewayID of the Address CRI API"
+    Value: !Sub "${AddressApi}"
+    Export:
+      Name: !Sub ${AWS::StackName}-AddressApiGatewayId
