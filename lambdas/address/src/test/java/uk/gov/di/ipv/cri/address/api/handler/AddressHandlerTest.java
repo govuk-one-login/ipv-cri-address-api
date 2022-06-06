@@ -3,7 +3,6 @@ package uk.gov.di.ipv.cri.address.api.handler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -80,7 +79,7 @@ class AddressHandlerTest {
     }
 
     @Test
-    void ValidSaveReturnsAuthorizationCode()
+    void ValidSaveGeneratesAuthorizationCode()
             throws JsonProcessingException, AddressProcessingException, SessionExpiredException,
                     SessionNotFoundException, SqsException {
 
@@ -105,10 +104,6 @@ class AddressHandlerTest {
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
         assertEquals(201, responseEvent.getStatusCode());
-
-        assertEquals(
-                responseEvent.getBody(),
-                new ObjectMapper().writeValueAsString(authorizationResponse));
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(eventProbe).counterMetric("address");
