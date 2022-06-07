@@ -46,7 +46,7 @@ activate api
 
 api -> api: create authorization_code
 api -> db: write address, authorization_code
-return 201
+return 204 (NO_CONTENT)
 
 fe -> api: POST /authorization
 activate api
