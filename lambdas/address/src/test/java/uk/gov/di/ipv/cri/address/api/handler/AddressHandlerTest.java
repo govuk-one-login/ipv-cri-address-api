@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.http.HttpStatusCode;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
@@ -103,7 +104,7 @@ class AddressHandlerTest {
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        assertEquals(201, responseEvent.getStatusCode());
+        assertEquals(HttpStatusCode.NO_CONTENT, responseEvent.getStatusCode());
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(eventProbe).counterMetric("address");
@@ -122,7 +123,7 @@ class AddressHandlerTest {
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        assertEquals(200, responseEvent.getStatusCode());
+        assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
 
         verifyNoInteractions(eventProbe);
     }

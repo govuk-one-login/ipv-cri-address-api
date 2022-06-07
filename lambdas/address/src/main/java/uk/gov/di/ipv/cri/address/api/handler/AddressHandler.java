@@ -87,7 +87,7 @@ public class AddressHandler
                 sessionService.createAuthorizationCode(session);
 
                 eventProbe.counterMetric(LAMBDA_NAME);
-                return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.CREATED, "");
+                return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.NO_CONTENT, "");
             }
 
             // If we don't have at least one address, do not save
