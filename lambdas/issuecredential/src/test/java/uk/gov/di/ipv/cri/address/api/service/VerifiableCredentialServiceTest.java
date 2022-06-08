@@ -3,6 +3,8 @@ package uk.gov.di.ipv.cri.address.api.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
@@ -48,7 +50,10 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     public static final String COUNTRY_CODE = "GB";
     public static final LocalDate VALID_FROM = LocalDate.of(2010, 02, 26);
     public static final LocalDate VALID_UNTIL = LocalDate.of(2021, 01, 16);
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper =
+            new ObjectMapper()
+                    .registerModule(new Jdk8Module())
+                    .registerModule(new JavaTimeModule());
     @Mock private ConfigurationService mockConfigurationService;
 
     @BeforeEach
@@ -61,7 +66,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     void shouldReturnAVerifiedCredentialWhenGivenCanonicalAddresses() throws JOSEException {
         SignedJWTFactory mockSignedClaimSetJwt = mock(SignedJWTFactory.class);
         var verifiableCredentialService =
-                new VerifiableCredentialService(mockSignedClaimSetJwt, mockConfigurationService);
+                new VerifiableCredentialService(
+                        mockSignedClaimSetJwt, mockConfigurationService, objectMapper);
 
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("address-cri-issue");
@@ -93,7 +99,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
 
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
         var verifiableCredentialService =
-                new VerifiableCredentialService(signedJwtFactory, mockConfigurationService);
+                new VerifiableCredentialService(
+                        signedJwtFactory, mockConfigurationService, objectMapper);
 
         SignedJWT signedJWT =
                 verifiableCredentialService.generateSignedVerifiableCredentialJwt(
