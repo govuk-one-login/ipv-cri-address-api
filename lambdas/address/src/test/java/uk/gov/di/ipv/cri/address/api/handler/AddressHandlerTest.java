@@ -13,7 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
-import uk.gov.di.ipv.cri.common.library.domain.AuditEventTypes;
+import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.domain.AuthorizationResponse;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
@@ -112,7 +112,7 @@ class AddressHandlerTest {
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(eventProbe).counterMetric("address");
-        verify(auditService).sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_REQUEST_SENT);
+        verify(auditService).sendAuditEvent(AuditEventType.REQUEST_SENT);
     }
 
     @Test

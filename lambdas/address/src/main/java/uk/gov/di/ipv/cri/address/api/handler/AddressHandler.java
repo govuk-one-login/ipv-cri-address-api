@@ -14,7 +14,7 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
-import uk.gov.di.ipv.cri.common.library.domain.AuditEventTypes;
+import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.domain.AuthorizationResponse;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
@@ -27,6 +27,7 @@ import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,7 +51,8 @@ public class AddressHandler
                 new AuditService(
                         SqsClient.builder().build(),
                         new ConfigurationService(),
-                        new ObjectMapper()));
+                        new ObjectMapper(),
+                        Clock.systemUTC()));
     }
 
     public AddressHandler(
@@ -81,7 +83,7 @@ public class AddressHandler
                 // Save our addresses to the address table
                 addressService.saveAddresses(UUID.fromString(sessionId), addresses);
 
-                auditService.sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_REQUEST_SENT);
+                auditService.sendAuditEvent(AuditEventType.REQUEST_SENT);
 
                 // Now we've saved our address, we need to create an authorization code for the
                 // session
