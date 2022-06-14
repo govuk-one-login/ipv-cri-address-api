@@ -34,18 +34,27 @@ public class VerifiableCredentialService {
     private final SignedJWTFactory signedJwtFactory;
     private final ConfigurationService configurationService;
 
+    private final ObjectMapper objectMapper;
+
     public VerifiableCredentialService() {
         this.configurationService = new ConfigurationService();
         this.signedJwtFactory =
                 new SignedJWTFactory(
                         new KMSSigner(
                                 configurationService.getVerifiableCredentialKmsSigningKeyId()));
+        this.objectMapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .registerModule(new JavaTimeModule());
     }
 
     public VerifiableCredentialService(
-            SignedJWTFactory signedClaimSetJwt, ConfigurationService configurationService) {
+            SignedJWTFactory signedClaimSetJwt,
+            ConfigurationService configurationService,
+            ObjectMapper objectMapper) {
         this.signedJwtFactory = signedClaimSetJwt;
         this.configurationService = configurationService;
+        this.objectMapper = objectMapper;
     }
 
     public SignedJWT generateSignedVerifiableCredentialJwt(
@@ -55,12 +64,6 @@ public class VerifiableCredentialService {
                 new ObjectMapper()
                         .registerModule(new Jdk8Module())
                         .registerModule(new JavaTimeModule());
-
-        int size = canonicalAddresses.size();
-        var addresses = new Object[size];
-        for (int i = 0; i < size; i++) {
-            addresses[i] = mapper.convertValue(canonicalAddresses.get(i), Map.class);
-        }
 
         var claimsSet =
                 new JWTClaimsSet.Builder()
@@ -81,9 +84,17 @@ public class VerifiableCredentialService {
                                         VC_CONTEXT,
                                         new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
                                         VC_CREDENTIAL_SUBJECT,
-                                        Map.of(VC_ADDRESS_KEY, addresses)))
+                                        Map.of(
+                                                VC_ADDRESS_KEY,
+                                                convertAddresses(canonicalAddresses))))
                         .build();
 
         return signedJwtFactory.createSignedJwt(claimsSet);
+    }
+
+    private Object[] convertAddresses(List<CanonicalAddress> addresses) {
+        return addresses.stream()
+                .map(address -> objectMapper.convertValue(address, Map.class))
+                .toArray();
     }
 }

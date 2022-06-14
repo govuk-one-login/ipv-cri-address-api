@@ -33,7 +33,7 @@ return session-id
 
 fe-[#blue]>fe: display post code page
 
-fe -> api: POST /postcode-lookup
+fe -> api: GET /postcode-lookup
 activate api
 api->pcl: /postcode-lookup
 api<--pcl: addresses
@@ -41,20 +41,27 @@ return addresses
 
 fe-[#blue]>fe: display addresses
 
-fe->api: /address
+fe->api: POST /address
 activate api
 
 api -> api: create authorization_code
 api -> db: write address, authorization_code
-return 204 (authorization_code)
+return 204 (NO_CONTENT)
 
-core <[#green]- fe: /callback\n(authorization code)
+fe -> api: POST /authorization
+activate api
+api -> api: get authorization_code from session-id
+db -> api: read authorization_code
+api -> fe: authorization_code
+destroy api
+
+core <[#green]- fe: /callback\n(authorization_code)
 destroy fe
 == Oauth return ==
 
 
 
-core -[#green]> api: /token (auth code)
+core -[#green]> api: /token (authorization_code)
 activate api
 api -> api: create token
 api -> db: write token

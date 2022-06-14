@@ -3,13 +3,13 @@ package uk.gov.di.ipv.cri.address.api.handler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.http.HttpStatusCode;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
@@ -29,9 +29,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AddressHandlerTest {
@@ -80,7 +86,7 @@ class AddressHandlerTest {
     }
 
     @Test
-    void ValidSaveReturnsAuthorizationCode()
+    void ValidSaveGeneratesAuthorizationCode()
             throws JsonProcessingException, AddressProcessingException, SessionExpiredException,
                     SessionNotFoundException, SqsException {
 
@@ -104,11 +110,7 @@ class AddressHandlerTest {
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        assertEquals(201, responseEvent.getStatusCode());
-
-        assertEquals(
-                responseEvent.getBody(),
-                new ObjectMapper().writeValueAsString(authorizationResponse));
+        assertEquals(HttpStatusCode.NO_CONTENT, responseEvent.getStatusCode());
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(eventProbe).counterMetric("address");
@@ -127,7 +129,7 @@ class AddressHandlerTest {
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        assertEquals(200, responseEvent.getStatusCode());
+        assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
 
         verifyNoInteractions(eventProbe);
     }
