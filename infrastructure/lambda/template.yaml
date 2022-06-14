@@ -61,7 +61,7 @@ Globals:
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
         AWS_STACK_NAME: !Sub ${AWS::StackName}
         POWERTOOLS_LOG_LEVEL: INFO
-
+        SQS_AUDIT_EVENT_PREFIX: IPV_ADDRESS_CRI
 Mappings:
   SessionTtlMapping:
     Environment:

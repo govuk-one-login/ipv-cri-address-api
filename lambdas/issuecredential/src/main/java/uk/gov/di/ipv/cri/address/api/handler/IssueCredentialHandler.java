@@ -19,7 +19,7 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
-import uk.gov.di.ipv.cri.common.library.domain.AuditEventTypes;
+import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
@@ -28,6 +28,7 @@ import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
+import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -66,7 +67,8 @@ public class IssueCredentialHandler
                 new AuditService(
                         SqsClient.builder().build(),
                         new ConfigurationService(),
-                        new ObjectMapper());
+                        new ObjectMapper(),
+                        Clock.systemUTC());
     }
 
     @Override
@@ -83,7 +85,7 @@ public class IssueCredentialHandler
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                             sessionItem.getSubject(), addressItem.getAddresses());
-            auditService.sendAuditEvent(AuditEventTypes.IPV_ADDRESS_CRI_VC_ISSUED);
+            auditService.sendAuditEvent(AuditEventType.VC_ISSUED);
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJwtResponse(
