@@ -15,7 +15,6 @@ import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
-import uk.gov.di.ipv.cri.common.library.domain.AuthorizationResponse;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
