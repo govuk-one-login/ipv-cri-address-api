@@ -58,7 +58,8 @@ class PostcodeLookupServiceTest {
     void ioExceptionOrInterruptedThrowsProcessingException()
             throws IOException, InterruptedException {
         // Mock a valid url so service doesn't fall over validating URI
-        when(mockConfigurationService.getOsPostcodeAPIUrl()).thenReturn("http://localhost:8080/");
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
 
         // Simulate Http Client IO Failure
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
@@ -78,7 +79,8 @@ class PostcodeLookupServiceTest {
     @Test
     void invalidUrlThrowsProcessingException() throws PostcodeLookupProcessingException {
         // Simulate a failure of the URI builder
-        when(mockConfigurationService.getOsPostcodeAPIUrl()).thenReturn("invalidURL{}");
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("invalidURL{}");
         assertThrows(
                 PostcodeLookupProcessingException.class,
                 () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
@@ -87,7 +89,8 @@ class PostcodeLookupServiceTest {
     @Test
     void notFoundReturnsNoResults() throws IOException, InterruptedException {
         // Mock a valid url so service doesn't fall over validating URI
-        when(mockConfigurationService.getOsPostcodeAPIUrl()).thenReturn("http://localhost:8080/");
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
         // Simulate a 404 response
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.NOT_FOUND);
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
@@ -99,7 +102,8 @@ class PostcodeLookupServiceTest {
     @Test
     void badRequestReturnsEmptyButLogs() throws IOException, InterruptedException {
         // Mock a valid url so service doesn't fall over validating URI
-        when(mockConfigurationService.getOsPostcodeAPIUrl()).thenReturn("http://localhost:8080/");
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
         // Simulate a 400 bad request response
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.BAD_REQUEST);
         // Do NOT simulate a body
@@ -113,7 +117,8 @@ class PostcodeLookupServiceTest {
     @Test
     void badRequestReturnsEmptyButLogsWithDetails() throws IOException, InterruptedException {
         // Mock a valid url so service doesn't fall over validating URI
-        when(mockConfigurationService.getOsPostcodeAPIUrl()).thenReturn("http://localhost:8080/");
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
         // Simulate a 400 bad request response
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.BAD_REQUEST);
 
@@ -140,7 +145,8 @@ class PostcodeLookupServiceTest {
     @Test
     void non200ThrowsProcessingException() throws IOException, InterruptedException {
         // Mock a valid url so service doesn't fall over validating URI
-        when(mockConfigurationService.getOsPostcodeAPIUrl()).thenReturn("http://localhost:8080/");
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
         // Simulate a 500 response
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.INTERNAL_SERVER_ERROR);
         when(httpClient.send(any(), any(HttpResponse.BodyHandlers.ofString().getClass())))
@@ -154,7 +160,8 @@ class PostcodeLookupServiceTest {
     @Test
     void validPostcodeReturnsResults() throws IOException, InterruptedException {
         // Mock a valid url so service doesn't fall over validating URI
-        when(mockConfigurationService.getOsPostcodeAPIUrl()).thenReturn("http://localhost:8080/");
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
         // Simulate a 200 response
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
         when(mockResponse.body())

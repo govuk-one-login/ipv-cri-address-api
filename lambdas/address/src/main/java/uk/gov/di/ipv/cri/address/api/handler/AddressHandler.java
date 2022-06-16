@@ -5,6 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.logging.log4j.Level;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -43,15 +45,20 @@ public class AddressHandler
 
     @ExcludeFromGeneratedCoverageReport
     public AddressHandler() {
-        this(
-                new SessionService(),
-                new AddressService(),
-                new EventProbe(),
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .registerModule(new JavaTimeModule());
+        ConfigurationService configurationService = new ConfigurationService();
+        this.sessionService = new SessionService();
+        this.addressService = new AddressService(configurationService, objectMapper);
+        this.eventProbe = new EventProbe();
+        this.auditService =
                 new AuditService(
                         SqsClient.builder().build(),
-                        new ConfigurationService(),
-                        new ObjectMapper(),
-                        Clock.systemUTC()));
+                        configurationService,
+                        objectMapper,
+                        Clock.systemUTC());
     }
 
     public AddressHandler(
