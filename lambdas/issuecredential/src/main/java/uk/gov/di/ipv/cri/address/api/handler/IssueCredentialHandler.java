@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
@@ -23,6 +24,9 @@ import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
+import uk.gov.di.ipv.cri.common.library.exception.AccessTokenExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
@@ -36,6 +40,10 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static org.apache.logging.log4j.Level.ERROR;
+import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.ACCESS_TOKEN_EXPIRED;
+import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_EXPIRED;
+import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_NOT_FOUND;
+import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR;
 
 public class IssueCredentialHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -101,15 +109,46 @@ public class IssueCredentialHandler
             eventProbe.log(ERROR, ex).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.INTERNAL_SERVER_ERROR, ex.awsErrorDetails().errorMessage());
+                    OAuth2Error.SERVER_ERROR.getHTTPStatusCode(),
+                    OAuth2Error.SERVER_ERROR
+                            .appendDescription(" - " + ex.awsErrorDetails().errorMessage())
+                            .toJSONObject());
         } catch (CredentialRequestException | ParseException | JOSEException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.BAD_REQUEST, ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR);
+                    OAuth2Error.INVALID_REQUEST.getHTTPStatusCode(),
+                    OAuth2Error.INVALID_REQUEST
+                            .appendDescription(
+                                    " - " + VERIFIABLE_CREDENTIAL_ERROR.getErrorSummary())
+                            .toJSONObject());
         } catch (SqsException sqsException) {
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.INTERNAL_SERVER_ERROR, sqsException.getMessage());
+                    OAuth2Error.SERVER_ERROR.getHTTPStatusCode(),
+                    OAuth2Error.SERVER_ERROR
+                            .appendDescription(" - " + sqsException.getMessage())
+                            .toJSONObject());
+        } catch (AccessTokenExpiredException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + ACCESS_TOKEN_EXPIRED.getErrorSummary())
+                            .toJSONObject());
+        } catch (SessionExpiredException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + SESSION_EXPIRED.getErrorSummary())
+                            .toJSONObject());
+        } catch (SessionNotFoundException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + SESSION_NOT_FOUND.getErrorSummary())
+                            .toJSONObject());
         }
     }
 
