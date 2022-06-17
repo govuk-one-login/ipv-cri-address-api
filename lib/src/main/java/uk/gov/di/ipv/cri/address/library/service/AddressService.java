@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
@@ -18,31 +16,22 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class AddressService {
-    private final ConfigurationService configurationService;
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
     private ObjectReader addressReader;
 
     @ExcludeFromGeneratedCoverageReport
-    public AddressService() {
-        this.configurationService = new ConfigurationService();
-        this.dataStore =
+    public AddressService(ConfigurationService configurationService, ObjectMapper objectMapper) {
+        this(
                 new DataStore<>(
-                        configurationService.getAddressTableName(),
+                        configurationService.getParameterValue("AddressTableName"),
                         AddressItem.class,
-                        DataStore.getClient());
-        this.objectMapper =
-                new ObjectMapper()
-                        .registerModule(new Jdk8Module())
-                        .registerModule(new JavaTimeModule());
+                        DataStore.getClient()),
+                objectMapper);
     }
 
-    public AddressService(
-            DataStore<AddressItem> dataStore,
-            ConfigurationService configurationService,
-            ObjectMapper objectMapper) {
+    public AddressService(DataStore<AddressItem> dataStore, ObjectMapper objectMapper) {
         this.dataStore = dataStore;
-        this.configurationService = configurationService;
         this.objectMapper = objectMapper;
     }
 

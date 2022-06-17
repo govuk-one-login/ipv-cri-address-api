@@ -5,6 +5,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.ParseException;
@@ -59,15 +61,20 @@ public class IssueCredentialHandler
     }
 
     public IssueCredentialHandler() {
+        ConfigurationService configurationService = new ConfigurationService();
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .registerModule(new Jdk8Module())
+                        .registerModule(new JavaTimeModule());
         this.verifiableCredentialService = getVerifiableCredentialService();
-        this.addressService = new AddressService();
+        this.addressService = new AddressService(configurationService, objectMapper);
         this.sessionService = new SessionService();
         this.eventProbe = new EventProbe();
         this.auditService =
                 new AuditService(
                         SqsClient.builder().build(),
-                        new ConfigurationService(),
-                        new ObjectMapper(),
+                        configurationService,
+                        objectMapper,
                         Clock.systemUTC());
     }
 

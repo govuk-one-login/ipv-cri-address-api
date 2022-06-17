@@ -16,7 +16,6 @@ import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
-import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -33,14 +32,12 @@ class AddressServiceTest {
     private static final UUID SESSION_ID = UUID.randomUUID();
     @Mock private DataStore<AddressItem> mockDataStore;
     @Mock private ObjectMapper mockObjectMapper;
-    @Mock private ConfigurationService mockConfigurationService;
 
     private AddressService addressService;
 
     @BeforeEach
     void setup() {
-        this.addressService =
-                new AddressService(mockDataStore, mockConfigurationService, mockObjectMapper);
+        this.addressService = new AddressService(mockDataStore, mockObjectMapper);
     }
 
     @Test

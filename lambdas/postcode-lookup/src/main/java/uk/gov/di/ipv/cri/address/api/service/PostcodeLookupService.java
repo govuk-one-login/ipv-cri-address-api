@@ -37,8 +37,8 @@ public class PostcodeLookupService {
     Logger log = LogManager.getLogger();
 
     public PostcodeLookupService() {
-        configurationService = new ConfigurationService();
-        client =
+        this.configurationService = new ConfigurationService();
+        this.client =
                 HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_2)
                         .connectTimeout(Duration.ofSeconds(10))
@@ -72,11 +72,13 @@ public class PostcodeLookupService {
                                     SdkHttpFullRequest.builder()
                                             .uri(
                                                     new URI(
-                                                            configurationService
-                                                                    .getOsPostcodeAPIUrl()))
+                                                            configurationService.getParameterValue(
+                                                                    "OrdnanceSurveyAPIURL")))
                                             .appendRawQueryParameter("postcode", postcode)
                                             .appendRawQueryParameter(
-                                                    "key", configurationService.getOsApiKey())
+                                                    "key",
+                                                    configurationService.getSecretValue(
+                                                            "OrdnanceSurveyAPIKey"))
                                             .method(SdkHttpMethod.GET)
                                             .build()
                                             .getUri())

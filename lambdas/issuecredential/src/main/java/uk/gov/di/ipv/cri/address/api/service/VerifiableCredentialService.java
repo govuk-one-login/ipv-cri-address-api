@@ -60,10 +60,6 @@ public class VerifiableCredentialService {
     public SignedJWT generateSignedVerifiableCredentialJwt(
             String subject, List<CanonicalAddress> canonicalAddresses) throws JOSEException {
         var now = Instant.now();
-        ObjectMapper mapper =
-                new ObjectMapper()
-                        .registerModule(new Jdk8Module())
-                        .registerModule(new JavaTimeModule());
 
         var claimsSet =
                 new JWTClaimsSet.Builder()
