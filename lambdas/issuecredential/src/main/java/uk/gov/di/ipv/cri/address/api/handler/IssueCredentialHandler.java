@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
@@ -104,27 +105,43 @@ public class IssueCredentialHandler
             eventProbe.log(ERROR, ex).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.INTERNAL_SERVER_ERROR, ex.awsErrorDetails().errorMessage());
+                    OAuth2Error.SERVER_ERROR.getHTTPStatusCode(),
+                    OAuth2Error.SERVER_ERROR.appendDescription(" - " + ex.awsErrorDetails().errorMessage()));
         } catch (CredentialRequestException | ParseException | JOSEException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.BAD_REQUEST, ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR);
+                    OAuth2Error.INVALID_REQUEST.getHTTPStatusCode(),
+                    OAuth2Error.INVALID_REQUEST
+                            .appendDescription(" - " + ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR)
+                            .toJSONObject());
         } catch (SqsException sqsException) {
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.INTERNAL_SERVER_ERROR, sqsException.getMessage());
+                    OAuth2Error.SERVER_ERROR.getHTTPStatusCode(),
+                    OAuth2Error.SERVER_ERROR
+                            .appendDescription(" - " + sqsException.getMessage())
+                            .toJSONObject());
         } catch (AccessTokenExpiredException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.FORBIDDEN, ErrorResponse.ACCESS_TOKEN_EXPIRED);
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + ErrorResponse.ACCESS_TOKEN_EXPIRED)
+                            .toJSONObject());
         } catch (SessionExpiredException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.FORBIDDEN, ErrorResponse.SESSION_EXPIRED);
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + ErrorResponse.SESSION_EXPIRED)
+                            .toJSONObject());
         } catch (SessionNotFoundException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.FORBIDDEN, ErrorResponse.SESSION_NOT_FOUND);
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + ErrorResponse.SESSION_NOT_FOUND)
+                            .toJSONObject());
         }
     }
 
