@@ -23,6 +23,9 @@ import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
+import uk.gov.di.ipv.cri.common.library.exception.AccessTokenExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
@@ -44,7 +47,7 @@ public class IssueCredentialHandler
     private final VerifiableCredentialService verifiableCredentialService;
     private final AddressService addressService;
     private final SessionService sessionService;
-    private EventProbe eventProbe;
+    private final EventProbe eventProbe;
     private final AuditService auditService;
 
     public IssueCredentialHandler(
@@ -86,7 +89,7 @@ public class IssueCredentialHandler
 
         try {
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
-            var sessionItem = this.sessionService.getSessionByAccessToken(accessToken);
+            var sessionItem = sessionService.getSessionByAccessToken(accessToken);
             var addressItem = addressService.getAddressItem(sessionItem.getSessionId());
 
             SignedJWT signedJWT =
@@ -110,6 +113,18 @@ public class IssueCredentialHandler
         } catch (SqsException sqsException) {
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.INTERNAL_SERVER_ERROR, sqsException.getMessage());
+        } catch (AccessTokenExpiredException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatusCode.FORBIDDEN, ErrorResponse.ACCESS_TOKEN_EXPIRED);
+        } catch (SessionExpiredException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatusCode.FORBIDDEN, ErrorResponse.SESSION_EXPIRED);
+        } catch (SessionNotFoundException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatusCode.FORBIDDEN, ErrorResponse.SESSION_NOT_FOUND);
         }
     }
 
