@@ -288,6 +288,12 @@ Resources:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
       RetentionInDays: 365
 
+  PrivateAddressApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
+      RetentionInDays: 365
+
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -622,17 +628,20 @@ Resources:
         BurstLimit: 100 # requests the API can handle concurrently
         RateLimit: 50 # allowed requests per second
 
-  ApiKey1:
-    Type: AWS::ApiGateway::ApiKey
+  PrivateAddressApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - PrivateAddressApiStage
     Properties:
-      Description: Api key 1
-      Enabled: true
-
-  ApiKey2:
-    Type: AWS::ApiGateway::ApiKey
-    Properties:
-      Description: Api key 2
-      Enabled: true
+      ApiStages:
+        - ApiId: !Ref PrivateAddressApi
+          Stage: !Ref Environment
+      Quota:
+        Limit: 500000
+        Period: DAY
+      Throttle:
+        BurstLimit: 100 # requests the API can handle concurrently
+        RateLimit: 50 # allowed requests per second
 
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
@@ -907,3 +916,27 @@ Outputs:
     Value: !Sub "${PublicAddressApi}"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiGatewayId
+
+  PublicAddressApiBaseUrl:
+    Description: "Base url of the public Address CRI API"
+    Value: !Sub "https://${PublicAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicAddressApiBaseUrl
+
+  PublicAddressApiGatewayId:
+    Description: "API GatewayID of the public Address CRI API"
+    Value: !Sub "${PublicAddressApi}"
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicAddressApiGatewayId
+
+  PrivateAddressApiBaseUrl:
+    Description: "Base url of the private Address CRI API"
+    Value: !Sub "https://${PrivateAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateAddressApiBaseUrl
+
+  PrivateAddressApiGatewayId:
+    Description: "API GatewayID of the private Address CRI API"
+    Value: !Sub "${PrivateAddressApi}"
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
