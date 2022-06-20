@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
 import org.apache.logging.log4j.Level;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -31,6 +32,9 @@ import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
+
+import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_EXPIRED;
+import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_NOT_FOUND;
 
 public class AddressHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -102,10 +106,20 @@ public class AddressHandler
             // If we don't have at least one address, do not save
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, "");
 
-        } catch (SessionNotFoundException | SessionExpiredException e) {
+        } catch (SessionNotFoundException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.BAD_REQUEST, e.getMessage());
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + SESSION_NOT_FOUND.getErrorSummary())
+                            .toJSONObject());
+        } catch (SessionExpiredException e) {
+            eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(" - " + SESSION_EXPIRED.getErrorSummary())
+                            .toJSONObject());
         } catch (AddressProcessingException | SqsException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(

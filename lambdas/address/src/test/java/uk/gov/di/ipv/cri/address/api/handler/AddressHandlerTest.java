@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -80,7 +80,7 @@ class AddressHandlerTest {
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        assertEquals(400, responseEvent.getStatusCode());
+        assertEquals(403, responseEvent.getStatusCode());
         verify(eventProbe).log(Level.ERROR, exception);
         verify(eventProbe).counterMetric("address", 0d);
     }

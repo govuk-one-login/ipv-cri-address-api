@@ -80,7 +80,7 @@ class PostcodeLookupHanderTest {
     }
 
     @Test
-    void SessionErrorThrows400()
+    void SessionErrorThrows403()
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     SessionExpiredException, SessionNotFoundException {
 
@@ -95,7 +95,7 @@ class PostcodeLookupHanderTest {
 
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        assertEquals(400, responseEvent.getStatusCode());
+        assertEquals(403, responseEvent.getStatusCode());
         verify(eventProbe).log(Level.ERROR, exception);
         verify(eventProbe).counterMetric("postcode_lookup", 0d);
     }
