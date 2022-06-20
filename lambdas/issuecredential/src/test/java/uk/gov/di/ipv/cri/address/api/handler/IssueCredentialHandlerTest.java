@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.jose.JOSEException;
@@ -11,7 +12,6 @@ import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
-import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.logging.log4j.Level;
@@ -149,8 +149,8 @@ class IssueCredentialHandlerTest {
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verifyNoMoreInteractions(mockVerifiableCredentialService);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
-        var responseBody = new ObjectMapper().readValue(response.getBody(), Map.class);
-        assertEquals(OAuth2Error.INVALID_REQUEST.getHTTPStatusCode(), response.getStatusCode());
+        Map<String, Object> responseBody =
+                new ObjectMapper().readValue(response.getBody(), new TypeReference<>() {});
         assertThat(
                 responseBody.get("error_description").toString(),
                 containsString(VERIFIABLE_CREDENTIAL_ERROR.getErrorSummary()));
@@ -205,7 +205,8 @@ class IssueCredentialHandlerTest {
         verify(mockSessionService).getSessionByAccessToken(accessToken);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
-        var responseBody = new ObjectMapper().readValue(response.getBody(), Map.class);
+        Map<String, Object> responseBody =
+                new ObjectMapper().readValue(response.getBody(), new TypeReference<>() {});
         assertEquals(awsErrorDetails.sdkHttpResponse().statusCode(), response.getStatusCode());
         assertThat(
                 responseBody.get("error_description").toString(),
@@ -252,7 +253,8 @@ class IssueCredentialHandlerTest {
         verify(mockAddressService).getAddressItem(sessionId);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
-        var responseBody = new ObjectMapper().readValue(response.getBody(), Map.class);
+        Map<String, Object> responseBody =
+                new ObjectMapper().readValue(response.getBody(), new TypeReference<>() {});
         assertEquals(awsErrorDetails.sdkHttpResponse().statusCode(), response.getStatusCode());
         assertThat(
                 responseBody.get("error_description").toString(),
