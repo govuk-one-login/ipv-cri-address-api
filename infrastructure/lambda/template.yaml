@@ -178,9 +178,10 @@ Mappings:
       production: "https://di-ipv-cri-address-front.london.cloudapps.digital"
 
 Resources:
-  AddressApi:
+  PublicAddressApi:
     Type: AWS::Serverless::Api
     Properties:
+      Description: Public Address CRI API
       MethodSettings:
         - LoggingLevel: INFO
           ResourcePath: '/*'
@@ -191,8 +192,20 @@ Resources:
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
       AccessLogSetting:
-        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
-        Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicAddressApiAccessLogGroup}'
+        Format: >-
+          {
+          "requestId":"$context.requestId",
+          "ip":"$context.identity.sourceIp",
+          "requestTime":"$context.requestTime",
+          "httpMethod":"$context.httpMethod",
+          "path":"$context.path",
+          "routeKey":"$context.routeKey",
+          "status":"$context.status",
+          "protocol":"$context.protocol",
+          "responseLatency":"$context.responseLatency",
+          "responseLength":"$context.responseLength"
+          }
       TracingEnabled: true
       Name: !Sub "address-cri-${AWS::StackName}"
       StageName: !Ref Environment
@@ -212,7 +225,7 @@ Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/apigateway/AccessLog-${AddressApi}/${Environment}
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
       RetentionInDays: 365
 
   SessionFunction:
@@ -534,13 +547,13 @@ Resources:
         AttributeName: expiryDate
         Enabled: true
 
-  ApiUsagePlan:
+  PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     DependsOn:
-      - AddressApiStage
+      - PublicAddressApiStage
     Properties:
       ApiStages:
-        - ApiId: !Ref AddressApi
+        - ApiId: !Ref PublicAddressApi
           Stage: !Ref Environment
       Quota:
         Limit: 500000
@@ -825,12 +838,12 @@ Outputs:
 
   AddressApiBaseUrl:
     Description: "Base url of the Address CRI API"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Value: !Sub "https://${PublicAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
 
   AddressApiGatewayId:
     Description: "API GatewayID of the Address CRI API"
-    Value: !Sub "${AddressApi}"
+    Value: !Sub "${PublicAddressApi}"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiGatewayId
