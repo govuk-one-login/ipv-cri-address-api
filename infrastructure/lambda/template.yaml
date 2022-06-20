@@ -334,6 +334,7 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
         - Statement:
             - Effect: Allow
               Action:
