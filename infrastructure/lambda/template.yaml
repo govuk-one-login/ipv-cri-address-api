@@ -43,6 +43,10 @@ Conditions:
           - "none"
 Globals:
   Function:
+    VpcConfig:
+      SecurityGroupIds:
+        - !ImportValue cri-vpc-LambdaSecurityGroup
+      SubnetIds: !Split [ ",", !ImportValue cri-vpc-PrivateSubnets ]
     PermissionsBoundary: !If
       - UsePermissionsBoundary
       - !Ref PermissionsBoundary
