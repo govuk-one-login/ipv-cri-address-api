@@ -632,7 +632,7 @@ Resources:
         BurstLimit: 100 # requests the API can handle concurrently
         RateLimit: 50 # allowed requests per second
 
-  PrivateAddressApiUsagePlan:
+  PrivateApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     DependsOn:
       - PrivateAddressApiStage
