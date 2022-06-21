@@ -67,6 +67,15 @@ Globals:
         POWERTOOLS_LOG_LEVEL: INFO
         SQS_AUDIT_EVENT_PREFIX: IPV_ADDRESS_CRI
 Mappings:
+
+  VPCEndpointIdMapping:
+    Environment:
+      dev: vpce-082cab7c78139eb54
+      build: vpce-0787187ab5693b050
+      staging: vpce-007b9da09e6aa5099
+      integration: vpce-0ab1f14412c691f58
+      production: vpce-0bc445fadec768f21
+
   SessionTtlMapping:
     Environment:
       dev: "172800" # 2 days
@@ -173,9 +182,10 @@ Mappings:
       production: "https://di-ipv-cri-address-front.london.cloudapps.digital"
 
 Resources:
-  AddressApi:
+  PublicAddressApi:
     Type: AWS::Serverless::Api
     Properties:
+      Description: Public Address CRI API
       MethodSettings:
         - LoggingLevel: INFO
           ResourcePath: '/*'
@@ -186,10 +196,22 @@ Resources:
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
       AccessLogSetting:
-        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
-        Format: '{ "requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "caller":"$context.identity.caller", "user":"$context.identity.user","requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }'
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicAddressApiAccessLogGroup}'
+        Format: >-
+          {
+          "requestId":"$context.requestId",
+          "ip":"$context.identity.sourceIp",
+          "requestTime":"$context.requestTime",
+          "httpMethod":"$context.httpMethod",
+          "path":"$context.path",
+          "routeKey":"$context.routeKey",
+          "status":"$context.status",
+          "protocol":"$context.protocol",
+          "responseLatency":"$context.responseLatency",
+          "responseLength":"$context.responseLength"
+          }
       TracingEnabled: true
-      Name: !Sub "address-cri-${AWS::StackName}"
+      Name: !Sub "${AWS::StackName}-PublicAddressApi"
       StageName: !Ref Environment
       DefinitionBody:
         openapi: "3.0.1" # workaround to get `sam validate` to work
@@ -204,10 +226,76 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
 
-  ApiAccessLogGroup:
+  PrivateAddressApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Description: Private Address CRI API
+      MethodSettings:
+        - LoggingLevel: INFO
+          ResourcePath: '/*'
+          HttpMethod: '*'
+          # Disable data trace in production to avoid logging customer sensitive information
+          DataTraceEnabled: true
+          MetricsEnabled: true
+          ThrottlingRateLimit: 5
+          ThrottlingBurstLimit: 10
+      AccessLogSetting:
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateAddressApiAccessLogGroup}'
+        Format: >-
+          {
+          "requestId":"$context.requestId",
+          "ip":"$context.identity.sourceIp",
+          "requestTime":"$context.requestTime",
+          "httpMethod":"$context.httpMethod",
+          "path":"$context.path",
+          "routeKey":"$context.routeKey",
+          "status":"$context.status",
+          "protocol":"$context.protocol",
+          "responseLatency":"$context.responseLatency",
+          "responseLength":"$context.responseLength"
+          }
+      TracingEnabled: true
+      Name: !Sub "${AWS::StackName}-PrivateAddressApi"
+      StageName: !Ref Environment
+      DefinitionBody:
+        openapi: "3.0.1" # workaround to get `sam validate` to work
+        paths: # workaround to get `sam validate` to work
+          /never-created:
+            options: { } # workaround to get `sam validate` to work
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: './private-api.yaml'
+      OpenApiVersion: 3.0.1
+      EndpointConfiguration:
+        Type: PRIVATE
+      Auth:
+        ResourcePolicy:
+          CustomStatements:
+            - Action: 'execute-api:Invoke'
+              Effect: Allow
+              Principal: '*'
+              Resource:
+                - 'execute-api:/*'
+            - Action: 'execute-api:Invoke'
+              Effect: Deny
+              Principal: '*'
+              Resource:
+                - 'execute-api:/*'
+              Condition:
+                StringNotEquals:
+                  'aws:SourceVpce': !FindInMap [ VPCEndpointIdMapping, Environment, !Ref 'Environment' ]
+
+  PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/apigateway/AccessLog-${AddressApi}/${Environment}
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
+      RetentionInDays: 365
+
+  PrivateAddressApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
       RetentionInDays: 365
 
   SessionFunction:
@@ -529,13 +617,13 @@ Resources:
         AttributeName: expiryDate
         Enabled: true
 
-  ApiUsagePlan:
+  PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     DependsOn:
-      - AddressApiStage
+      - PublicAddressApiStage
     Properties:
       ApiStages:
-        - ApiId: !Ref AddressApi
+        - ApiId: !Ref PublicAddressApi
           Stage: !Ref Environment
       Quota:
         Limit: 500000
@@ -544,31 +632,34 @@ Resources:
         BurstLimit: 100 # requests the API can handle concurrently
         RateLimit: 50 # allowed requests per second
 
-  ApiKey1:
-    Type: AWS::ApiGateway::ApiKey
+  PrivateAddressApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - PrivateAddressApiStage
     Properties:
-      Description: Api key 1
-      Enabled: true
-
-  ApiKey2:
-    Type: AWS::ApiGateway::ApiKey
-    Properties:
-      Description: Api key 2
-      Enabled: true
+      ApiStages:
+        - ApiId: !Ref PrivateAddressApi
+          Stage: !Ref Environment
+      Quota:
+        Limit: 500000
+        Period: DAY
+      Throttle:
+        BurstLimit: 100 # requests the API can handle concurrently
+        RateLimit: 50 # allowed requests per second
 
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
     Properties:
-      KeyId: !Ref ApiKey1
+      KeyId: !ImportValue core-infrastructure-ApiKey1
       KeyType: API_KEY
-      UsagePlanId: !Ref ApiUsagePlan
+      UsagePlanId: !Ref PublicAddressApiUsagePlan
 
   LinkUsagePlanApiKey2:
     Type: AWS::ApiGateway::UsagePlanKey
     Properties:
-      KeyId: !Ref ApiKey2
+      KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
-      UsagePlanId: !Ref ApiUsagePlan
+      UsagePlanId: !Ref PublicAddressApiUsagePlan
 
   ParameterSessionTableName:
     Type: AWS::SSM::Parameter
@@ -782,50 +873,38 @@ Resources:
 
 Outputs:
 
-  SessionApiUrl:
-    Description: "URL for the Address API /session resource"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/session"
-    Export:
-      Name: !Sub ${AWS::StackName}-SessionApiUrl
-
-  PostcodeLookupApiUrl:
-    Description: "URL for the Address API /postcode-lookup resource"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/postcode-lookup"
-    Export:
-      Name: !Sub ${AWS::StackName}-PostcodeLookupApiUrl
-
-  AddressApiUrl:
-    Description: "URL for the Address API /address resource"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/address"
-    Export:
-      Name: !Sub ${AWS::StackName}-AddressApiUrl
-
-  TokenApiUrl:
-    Description: "URL for the Address API /token resource"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/token"
-    Export:
-      Name: !Sub ${AWS::StackName}-TokenApiUrl
-
-  CredentialIssueApiUrl:
-    Description: "URL for the Address API /credential/issue resource"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/credential/issue"
-    Export:
-      Name: !Sub ${AWS::StackName}-CredentialIssueApiUrl
-
-  JWKSetApiUrl:
-    Description: "URL for the Address API /.well-known/jwks.json resource"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json"
-    Export:
-      Name: !Sub ${AWS::StackName}-JWKSetApiUrl
-
   AddressApiBaseUrl:
     Description: "Base url of the Address CRI API"
-    Value: !Sub "https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Value: !Sub "https://${PublicAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
 
   AddressApiGatewayId:
     Description: "API GatewayID of the Address CRI API"
-    Value: !Sub "${AddressApi}"
+    Value: !Sub "${PublicAddressApi}"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiGatewayId
+
+  PublicAddressApiBaseUrl:
+    Description: "Base url of the public Address CRI API"
+    Value: !Sub "https://${PublicAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicAddressApiBaseUrl
+
+  PublicAddressApiGatewayId:
+    Description: "API GatewayID of the public Address CRI API"
+    Value: !Sub "${PublicAddressApi}"
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicAddressApiGatewayId
+
+  PrivateAddressApiBaseUrl:
+    Description: "Base url of the private Address CRI API"
+    Value: !Sub "https://${PrivateAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateAddressApiBaseUrl
+
+  PrivateAddressApiGatewayId:
+    Description: "API GatewayID of the private Address CRI API"
+    Value: !Sub "${PrivateAddressApi}"
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
