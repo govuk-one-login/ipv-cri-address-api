@@ -207,7 +207,7 @@ Resources:
           "responseLength":"$context.responseLength"
           }
       TracingEnabled: true
-      Name: !Sub "address-cri-${AWS::StackName}"
+      Name: !Sub "${AWS::StackName}-PublicAddressApi"
       StageName: !Ref Environment
       DefinitionBody:
         openapi: "3.0.1" # workaround to get `sam validate` to work
@@ -251,7 +251,7 @@ Resources:
           "responseLength":"$context.responseLength"
           }
       TracingEnabled: true
-      Name: !Sub "address-cri-${AWS::StackName}"
+      Name: !Sub "${AWS::StackName}-PrivateAddressApi"
       StageName: !Ref Environment
       DefinitionBody:
         openapi: "3.0.1" # workaround to get `sam validate` to work
