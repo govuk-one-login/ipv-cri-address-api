@@ -74,19 +74,19 @@ Mappings:
 
   SessionTtlMapping:
     Environment:
-      dev: "172800" # 2 days
-      build: "172800" # 2 days
-      staging: "172800" # 2 days
-      integration: "172800" # 2 days
-      production: "172800" # 2 days
+      dev: 7200 # 2 hours
+      build: 7200 # 2 hours
+      staging: 7200 # 2 hours
+      integration: 7200 # 2 hours
+      production: 7200 # 2 hours
 
   MaxJwtTtlMapping:
     Environment:
-      dev: "9600" # 2 hrs
-      build: "2700" # 45 mins
-      staging: "2700"
-      integration: "2700"
-      production: "2700"
+      dev: 7200 # 2 hours
+      build: 7200 # 2 hours
+      staging: 7200 # 2 hours
+      integration: 7200 # 2 hours
+      production: 7200 # 2 hours
 
   IPVCoreStubAuthenticationAlgMapping:
     Environment:
