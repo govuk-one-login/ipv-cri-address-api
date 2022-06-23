@@ -27,6 +27,9 @@ Conditions:
   CreateDevResources: !Equals
     - !Ref Environment
     - dev
+  IsProdEnvironment: !Equals
+    - !Ref Environment
+    - production
   IsStubEnvironment: !Or
     - !Equals [ !Ref Environment, dev]
     - !Equals [ !Ref Environment, build ]
