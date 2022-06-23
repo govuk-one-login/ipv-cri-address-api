@@ -27,6 +27,9 @@ Conditions:
   CreateDevResources: !Equals
     - !Ref Environment
     - dev
+  IsProdEnvironment: !Equals
+    - !Ref Environment
+    - production
   IsStubEnvironment: !Or
     - !Equals [ !Ref Environment, dev]
     - !Equals [ !Ref Environment, build ]
@@ -66,51 +69,31 @@ Globals:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
         POWERTOOLS_LOG_LEVEL: INFO
         SQS_AUDIT_EVENT_PREFIX: IPV_ADDRESS_CRI
+        POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
 Mappings:
-
-  VPCEndpointIdMapping:
-    Environment:
-      dev: vpce-082cab7c78139eb54
-      build: vpce-0787187ab5693b050
-      staging: vpce-007b9da09e6aa5099
-      integration: vpce-0ab1f14412c691f58
-      production: vpce-0bc445fadec768f21
 
   SessionTtlMapping:
     Environment:
-      dev: "172800" # 2 days
-      build: "172800" # 2 days
-      staging: "172800" # 2 days
-      integration: "172800" # 2 days
-      production: "172800" # 2 days
+      dev: 7200 # 2 hours
+      build: 7200 # 2 hours
+      staging: 7200 # 2 hours
+      integration: 7200 # 2 hours
+      production: 7200 # 2 hours
 
   MaxJwtTtlMapping:
     Environment:
-      dev: "9600" # 2 hrs
-      build: "2700" # 45 mins
-      staging: "2700"
-      integration: "2700"
-      production: "2700"
-
-  IPVCoreStubAuthenticationAlgMapping:
-    Environment:
-      dev: "ES256"
-      build: "ES256"
-      staging: "ES256"
-      integration: "ES256"
-
-  IPVCore1AuthenticationAlgMapping:
-    Environment:
-      staging: "ES256"
-      integration: "ES256"
-      production: "ES256"
+      dev: 7200 # 2 hours
+      build: 7200 # 2 hours
+      staging: 7200 # 2 hours
+      integration: 7200 # 2 hours
+      production: 7200 # 2 hours
 
   IPVCoreStubAudienceMapping:
     Environment:
-      dev: "https://dev-di-ipv-cri-address-front.london.cloudapps.digital"
-      build: "https://build-di-ipv-cri-address-front.london.cloudapps.digital"
-      staging: "https://staging-di-ipv-cri-address-front.london.cloudapps.digital"
-      integration: "https://integration-di-ipv-cri-address-front.london.cloudapps.digital"
+      dev: "https://review-a.dev.account.gov.uk"
+      build: "https://review-a.build.account.gov.uk"
+      staging: "https://review-a.staging.account.gov.uk"
+      integration: "https://review-a.integration.account.gov.uk"
 
   IPVCore1AudienceMapping:
     Environment:
@@ -183,7 +166,7 @@ Resources:
           ResourcePath: '/*'
           HttpMethod: '*'
           # Disable data trace in production to avoid logging customer sensitive information
-          DataTraceEnabled: true
+          DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
@@ -227,7 +210,7 @@ Resources:
           ResourcePath: '/*'
           HttpMethod: '*'
           # Disable data trace in production to avoid logging customer sensitive information
-          DataTraceEnabled: true
+          DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
@@ -276,7 +259,10 @@ Resources:
                 - 'execute-api:/*'
               Condition:
                 StringNotEquals:
-                  'aws:SourceVpce': !FindInMap [ VPCEndpointIdMapping, Environment, !Ref 'Environment' ]
+                  aws:SourceVpce: !If
+                    - CreateDevResources
+                    - vpce-082cab7c78139eb54
+                    - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -297,7 +283,6 @@ Resources:
       Handler: uk.gov.di.ipv.cri.common.api.handler.SessionHandler::handleRequest
       Environment:
         Variables:
-          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-session
           SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
       Policies:
@@ -345,7 +330,6 @@ Resources:
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       Environment:
         Variables:
-          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-postcode-lookup
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -387,7 +371,6 @@ Resources:
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       Environment:
         Variables:
-          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-address
           SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
       Policies:
@@ -432,7 +415,6 @@ Resources:
       Handler: uk.gov.di.ipv.cri.common.api.handler.AuthorizationHandler::handleRequest
       Environment:
         Variables:
-          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-authorization
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -460,7 +442,6 @@ Resources:
       Handler: uk.gov.di.ipv.cri.common.api.handler.AccessTokenHandler::handleRequest
       Environment:
         Variables:
-          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-access-token
       Policies:
         - DynamoDBCrudPolicy:
@@ -487,7 +468,6 @@ Resources:
       CodeUri: ../../lambdas/issuecredential/build/distributions/issuecredential.zip
       Environment:
         Variables:
-          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
           SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
       Policies:
@@ -521,7 +501,6 @@ Resources:
       CodeUri: ../../common-lambdas/jwkset/build/distributions/jwkset.zip
       Environment:
         Variables:
-          POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-jwkset
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -692,22 +671,12 @@ Resources:
       Value: !FindInMap [ SessionTtlMapping, Environment, !Ref 'Environment' ]
       Description: default time to live for an address session item (seconds)
 
-  IPVCoreStubAuthenticationAlgParameter:
-    Condition: IsStubEnvironment
+  AuthenticationAlgParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg"
       Type: String
-      Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
-
-  IPVCore1AuthenticationAlgParameter:
-    Condition: IsProdLikeEnvironment
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/authenticationAlg"
-      Type: String
-      Value: !FindInMap [IPVCore1AuthenticationAlgMapping, Environment, !Ref 'Environment']
-
+      Value: ES256
 
   IPVCoreStubAudienceParameter:
     Condition: IsStubEnvironment
