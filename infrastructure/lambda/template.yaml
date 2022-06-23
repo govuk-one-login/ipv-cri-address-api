@@ -221,7 +221,7 @@ Resources:
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: './api.yaml'
+            Location: './public-api.yaml'
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
         Type: REGIONAL
@@ -624,21 +624,6 @@ Resources:
     Properties:
       ApiStages:
         - ApiId: !Ref PublicAddressApi
-          Stage: !Ref Environment
-      Quota:
-        Limit: 500000
-        Period: DAY
-      Throttle:
-        BurstLimit: 100 # requests the API can handle concurrently
-        RateLimit: 50 # allowed requests per second
-
-  PrivateAddressApiUsagePlan:
-    Type: AWS::ApiGateway::UsagePlan
-    DependsOn:
-      - PrivateAddressApiStage
-    Properties:
-      ApiStages:
-        - ApiId: !Ref PrivateAddressApi
           Stage: !Ref Environment
       Quota:
         Limit: 500000
