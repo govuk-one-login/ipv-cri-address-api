@@ -88,6 +88,19 @@ Mappings:
       integration: 7200 # 2 hours
       production: 7200 # 2 hours
 
+  IPVCoreStubAuthenticationAlgMapping:
+    Environment:
+      dev: "ES256"
+      build: "ES256"
+      staging: "ES256"
+      integration: "ES256"
+
+  IPVCore1AuthenticationAlgMapping:
+    Environment:
+      staging: "ES256"
+      integration: "ES256"
+      production: "ES256"
+
   IPVCoreStubAudienceMapping:
     Environment:
       dev: "https://review-a.dev.account.gov.uk"
@@ -671,12 +684,22 @@ Resources:
       Value: !FindInMap [ SessionTtlMapping, Environment, !Ref 'Environment' ]
       Description: default time to live for an address session item (seconds)
 
-  AuthenticationAlgParameter:
+  IPVCoreStubAuthenticationAlgParameter:
+    Condition: IsStubEnvironment
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg"
       Type: String
-      Value: ES256
+      Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
+
+  IPVCore1AuthenticationAlgParameter:
+    Condition: IsProdLikeEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/authenticationAlg"
+      Type: String
+      Value: !FindInMap [IPVCore1AuthenticationAlgMapping, Environment, !Ref 'Environment']
+
 
   IPVCoreStubAudienceParameter:
     Condition: IsStubEnvironment
