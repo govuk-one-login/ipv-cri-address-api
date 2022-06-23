@@ -71,32 +71,19 @@ Mappings:
 
   SessionTtlMapping:
     Environment:
-      dev: "172800" # 2 days
-      build: "172800" # 2 days
-      staging: "172800" # 2 days
-      integration: "172800" # 2 days
-      production: "172800" # 2 days
+      dev: 7200 # 2 hours
+      build: 7200 # 2 hours
+      staging: 7200 # 2 hours
+      integration: 7200 # 2 hours
+      production: 7200 # 2 hours
 
   MaxJwtTtlMapping:
     Environment:
-      dev: "9600" # 2 hrs
-      build: "2700" # 45 mins
-      staging: "2700"
-      integration: "2700"
-      production: "2700"
-
-  IPVCoreStubAuthenticationAlgMapping:
-    Environment:
-      dev: "ES256"
-      build: "ES256"
-      staging: "ES256"
-      integration: "ES256"
-
-  IPVCore1AuthenticationAlgMapping:
-    Environment:
-      staging: "ES256"
-      integration: "ES256"
-      production: "ES256"
+      dev: 7200 # 2 hours
+      build: 7200 # 2 hours
+      staging: 7200 # 2 hours
+      integration: 7200 # 2 hours
+      production: 7200 # 2 hours
 
   IPVCoreStubAudienceMapping:
     Environment:
@@ -681,22 +668,12 @@ Resources:
       Value: !FindInMap [ SessionTtlMapping, Environment, !Ref 'Environment' ]
       Description: default time to live for an address session item (seconds)
 
-  IPVCoreStubAuthenticationAlgParameter:
-    Condition: IsStubEnvironment
+  AuthenticationAlgParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/authenticationAlg"
       Type: String
-      Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
-
-  IPVCore1AuthenticationAlgParameter:
-    Condition: IsProdLikeEnvironment
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/clients/ipv-core/jwtAuthentication/authenticationAlg"
-      Type: String
-      Value: !FindInMap [IPVCore1AuthenticationAlgMapping, Environment, !Ref 'Environment']
-
+      Value: ES256
 
   IPVCoreStubAudienceParameter:
     Condition: IsStubEnvironment
