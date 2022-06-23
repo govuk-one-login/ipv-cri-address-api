@@ -69,14 +69,6 @@ Globals:
         POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
 Mappings:
 
-  VPCEndpointIdMapping:
-    Environment:
-      dev: vpce-082cab7c78139eb54
-      build: vpce-0787187ab5693b050
-      staging: vpce-007b9da09e6aa5099
-      integration: vpce-0ab1f14412c691f58
-      production: vpce-0bc445fadec768f21
-
   SessionTtlMapping:
     Environment:
       dev: "172800" # 2 days
@@ -277,7 +269,10 @@ Resources:
                 - 'execute-api:/*'
               Condition:
                 StringNotEquals:
-                  'aws:SourceVpce': !FindInMap [ VPCEndpointIdMapping, Environment, !Ref 'Environment' ]
+                  aws:SourceVpce: !If
+                    - CreateDevResources
+                    - vpce-082cab7c78139eb54
+                    - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
