@@ -87,10 +87,10 @@ Mappings:
 
   IPVCoreStubAudienceMapping:
     Environment:
-      dev: "https://dev-di-ipv-cri-address-front.london.cloudapps.digital"
-      build: "https://build-di-ipv-cri-address-front.london.cloudapps.digital"
-      staging: "https://staging-di-ipv-cri-address-front.london.cloudapps.digital"
-      integration: "https://integration-di-ipv-cri-address-front.london.cloudapps.digital"
+      dev: "https://review-a.dev.account.gov.uk"
+      build: "https://review-a.build.account.gov.uk"
+      staging: "https://review-a.staging.account.gov.uk"
+      integration: "https://review-a.integration.account.gov.uk"
 
   IPVCore1AudienceMapping:
     Environment:
