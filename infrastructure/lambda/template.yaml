@@ -95,6 +95,10 @@ Mappings:
       staging: "ES256"
       integration: "ES256"
 
+  IPVCoreStubPreProdAuthenticationAlgMapping:
+    Environment:
+      production: "ES256"
+
   IPVCore1AuthenticationAlgMapping:
     Environment:
       staging: "ES256"
@@ -107,6 +111,10 @@ Mappings:
       build: "https://review-a.build.account.gov.uk"
       staging: "https://review-a.staging.account.gov.uk"
       integration: "https://review-a.integration.account.gov.uk"
+
+  IPVCoreStubPreProdAudienceMapping:
+    Environment:
+      production: "https://review-a.account.gov.uk"
 
   IPVCore1AudienceMapping:
     Environment:
@@ -121,6 +129,10 @@ Mappings:
       staging: "https://di-ipv-core-stub.london.cloudapps.digital"
       integration: "https://di-ipv-core-stub.london.cloudapps.digital"
 
+  IPVCoreStubPreProdIssuerMapping:
+    Environment:
+      production: "https://di-ipv-core-stub.london.cloudapps.digital"
+
   IPVCore1IssuerMapping:
     Environment:
       staging: "https://identity.staging.account.gov.uk"
@@ -134,6 +146,10 @@ Mappings:
       staging: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
       integration: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
 
+  IPVCoreStubPreProdPublicSigningJwkBase64Mapping:
+    Environment:
+      production: "ewogICAgImt0eSI6ICJFQyIsCiAgICAidXNlIjogInNpZyIsCiAgICAiY3J2IjogIlAtMjU2IiwKICAgICJraWQiOiAiaXB2LWNvcmUtc3R1Yi0xLWZyb20tbWtqd2sub3JnIiwKICAgICJ4IjogIklmUjFQejlPdWNJMll3YldKVGEtT3h0MDJ6X3pnTkR5RmtocGZ3OFFXcjAiLAogICAgInkiOiAiWGo2alJ6S0EwUWVTTEMtZTE1bVg3U2hucG9xZ0c4d1F3ZWcwNlhJYTBEcyIsCiAgICAiYWxnIjogIkVTMjU2Igp9"
+
   IPVCore1PublicSigningJwkBase64Mapping:
     Environment:
       staging: "eyJrdHkiOiJFQyIsImNydiI6IlAtMjU2IiwieCI6ImtlMVRNRnFNb0Z5eHg1eXpOdFFRbGw0dk9yeHZUdFBKQ0huUzRqOHpoMlUiLCJ5IjoicURLX0g4QXpKS2FIbU1zaHg5TGp2LTB0ek5rV2EtSkVHUzJtZHRKUjFPQSJ9"
@@ -146,6 +162,10 @@ Mappings:
       build: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       staging: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
       integration: "https://di-ipv-core-stub.london.cloudapps.digital/callback"
+
+  IPVCoreStubPreProdRedirectURIMapping:
+    Environment:
+      production: "https://di-ipv-core-stub-pre-prod.london.cloudapps.digital/callback"
 
   IPVCore1RedirectURIMapping:
     Environment:
@@ -692,6 +712,14 @@ Resources:
       Type: String
       Value: !FindInMap [IPVCoreStubAuthenticationAlgMapping, Environment, !Ref 'Environment']
 
+  IPVCoreStubPreProdAuthenticationAlgParameter:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub-pre-prod/jwtAuthentication/authenticationAlg"
+      Type: String
+      Value: !FindInMap [IPVCoreStubPreProdAuthenticationAlgMapping, Environment, !Ref 'Environment']
+
   IPVCore1AuthenticationAlgParameter:
     Condition: IsProdLikeEnvironment
     Type: AWS::SSM::Parameter
@@ -700,7 +728,6 @@ Resources:
       Type: String
       Value: !FindInMap [IPVCore1AuthenticationAlgMapping, Environment, !Ref 'Environment']
 
-
   IPVCoreStubAudienceParameter:
     Condition: IsStubEnvironment
     Type: AWS::SSM::Parameter
@@ -708,6 +735,14 @@ Resources:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/audience"
       Type: String
       Value: !FindInMap [ IPVCoreStubAudienceMapping, Environment, !Ref 'Environment' ]
+
+  IPVCoreStubPreProdAudienceParameter:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub-pre-prod/jwtAuthentication/audience"
+      Type: String
+      Value: !FindInMap [ IPVCoreStubPreProdAudienceMapping, Environment, !Ref 'Environment' ]
 
   IPVCore1AudienceParameter:
     Condition: IsProdLikeEnvironment
@@ -725,6 +760,14 @@ Resources:
       Type: String
       Value: !FindInMap [IPVCoreStubIssuerMapping, Environment, !Ref 'Environment']
 
+  IPVCoreStubPreProdIssuerParameter:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub-pre-prod/jwtAuthentication/issuer"
+      Type: String
+      Value: !FindInMap [IPVCoreStubPreProdIssuerMapping, Environment, !Ref 'Environment']
+
   IPVCore1IssuerParameter:
     Condition: IsProdLikeEnvironment
     Type: AWS::SSM::Parameter
@@ -741,6 +784,14 @@ Resources:
       Type: String
       Value: !FindInMap [IPVCoreStubPublicSigningJwkBase64Mapping, Environment, !Ref 'Environment']
 
+  IPVCoreStubPreProdPublicSigningJwkBase64Parameter:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub-pre-prod/jwtAuthentication/publicSigningJwkBase64"
+      Type: String
+      Value: !FindInMap [IPVCoreStubPreProdPublicSigningJwkBase64Mapping, Environment, !Ref 'Environment']
+
   IPVCore1PublicSigningJwkBase64Parameter:
     Condition: IsProdLikeEnvironment
     Type: AWS::SSM::Parameter
@@ -756,6 +807,14 @@ Resources:
       Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub/jwtAuthentication/redirectUri"
       Type: String
       Value: !FindInMap [IPVCoreStubRedirectURIMapping, Environment, !Ref 'Environment']
+
+  IPVCoreStubPreProdRedirectURIParameter:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/clients/ipv-core-stub-pre-prod/jwtAuthentication/redirectUri"
+      Type: String
+      Value: !FindInMap [IPVCoreStubPreProdRedirectURIMapping, Environment, !Ref 'Environment']
 
   IPVCore1RedirectURIParameter:
     Condition: IsProdLikeEnvironment
