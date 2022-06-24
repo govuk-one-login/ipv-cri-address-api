@@ -632,6 +632,21 @@ Resources:
         BurstLimit: 100 # requests the API can handle concurrently
         RateLimit: 50 # allowed requests per second
 
+  PrivateAddressApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - PrivateAddressApiStage
+    Properties:
+      ApiStages:
+        - ApiId: !Ref PrivateAddressApi
+          Stage: !Ref Environment
+      Quota:
+        Limit: 500000
+        Period: DAY
+      Throttle:
+        BurstLimit: 100 # requests the API can handle concurrently
+        RateLimit: 50 # allowed requests per second
+
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
     Properties:
