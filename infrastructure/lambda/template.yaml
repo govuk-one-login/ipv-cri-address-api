@@ -383,13 +383,11 @@ Resources:
 
   SessionFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn:
-      - SessionFunction
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
-      FilterPattern: " "
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
@@ -434,13 +432,11 @@ Resources:
 
   PostcodeLookupFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn:
-      - PostcodeLookupFunction
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
-      FilterPattern: " "
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
 
   AddressFunction:
     Type: AWS::Serverless::Function
@@ -488,13 +484,11 @@ Resources:
 
   AddressFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn:
-      - AddressFunction
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
-      FilterPattern: " "
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
 
   AuthorizationFunction:
     Type: AWS::Serverless::Function
@@ -524,13 +518,11 @@ Resources:
 
   AuthorizationFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn:
-      - AuthorizationFunction
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
-      FilterPattern: " "
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
 
   AccessTokenFunction:
     Type: AWS::Serverless::Function
@@ -560,13 +552,11 @@ Resources:
 
   AccessTokenFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn:
-      - AccessTokenFunction
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
-      FilterPattern: " "
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
 
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
@@ -603,13 +593,11 @@ Resources:
 
   IssueCredentialFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn:
-      - IssueCredentialFunction
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
-      FilterPattern: " "
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
 
   JWKSetFunction:
     Type: AWS::Serverless::Function
@@ -638,13 +626,11 @@ Resources:
 
   JWKSetFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    DependsOn:
-      - JWKSetFunction
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${JWKSetFunction}"
-      FilterPattern: " "
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${JWKSetFunction}"
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"
