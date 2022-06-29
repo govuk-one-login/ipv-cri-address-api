@@ -624,14 +624,6 @@ Resources:
                 - kms:DescribeKey
               Resource: "*"
 
-  JWKSetFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Sub "/aws/lambda/${JWKSetFunction}"
-
   AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
