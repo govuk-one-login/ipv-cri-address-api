@@ -2,7 +2,6 @@ package uk.gov.di.ipv.cri.address.api.handler;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,14 +12,10 @@ import software.amazon.awssdk.http.HttpStatusCode;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
-import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
-import uk.gov.di.ipv.cri.common.library.domain.AuthorizationResponse;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
-import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
@@ -49,15 +44,11 @@ class AddressHandlerTest {
 
     @Mock private EventProbe eventProbe;
 
-    @Mock private AuditService auditService;
-
     private AddressHandler addressHandler;
 
     @BeforeEach
     void setUp() {
-        addressHandler =
-                new AddressHandler(
-                        mockSessionService, mockAddressService, eventProbe, auditService);
+        addressHandler = new AddressHandler(mockSessionService, mockAddressService, eventProbe);
     }
 
     @Test
@@ -87,8 +78,7 @@ class AddressHandlerTest {
 
     @Test
     void ValidSaveGeneratesAuthorizationCode()
-            throws JsonProcessingException, AddressProcessingException, SessionExpiredException,
-                    SessionNotFoundException, SqsException {
+            throws AddressProcessingException, SessionExpiredException, SessionNotFoundException {
 
         when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
         when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", SESSION_ID));
@@ -99,7 +89,6 @@ class AddressHandlerTest {
         CanonicalAddress canonicalAddress = new CanonicalAddress();
         canonicalAddress.setUprn(Long.valueOf("12345"));
         canonicalAddresses.add(canonicalAddress);
-        AuthorizationResponse authorizationResponse = new AuthorizationResponse(sessionItem);
 
         AddressItem addressItem = new AddressItem();
         addressItem.setAddresses(canonicalAddresses);
@@ -114,7 +103,6 @@ class AddressHandlerTest {
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(eventProbe).counterMetric("address");
-        verify(auditService).sendAuditEvent(AuditEventType.REQUEST_SENT);
     }
 
     @Test

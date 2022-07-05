@@ -14,6 +14,7 @@ import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.nimbusds.jwt.JWTClaimNames.EXPIRATION_TIME;
 import static com.nimbusds.jwt.JWTClaimNames.ISSUER;
@@ -86,6 +87,16 @@ public class VerifiableCredentialService {
                         .build();
 
         return signedJwtFactory.createSignedJwt(claimsSet);
+    }
+
+    public Map<String, Object> getAuditEventExtensions(List<CanonicalAddress> addresses) {
+        return Map.of(
+                ISSUER,
+                Objects.requireNonNull(
+                        configurationService.getVerifiableCredentialIssuer(),
+                        "VC issuer must not be null"),
+                "addressesEntered",
+                Objects.nonNull(addresses) ? addresses.size() : 0);
     }
 
     private Object[] convertAddresses(List<CanonicalAddress> addresses) {
