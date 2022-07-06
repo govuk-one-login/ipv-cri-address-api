@@ -10,26 +10,21 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
 import org.apache.logging.log4j.Level;
 import software.amazon.awssdk.http.HttpStatusCode;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
-import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
-import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
-import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,7 +40,6 @@ public class AddressHandler
     private final AddressService addressService;
     private final SessionService sessionService;
     private final EventProbe eventProbe;
-    private final AuditService auditService;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressHandler() {
@@ -57,23 +51,13 @@ public class AddressHandler
         this.sessionService = new SessionService();
         this.addressService = new AddressService(configurationService, objectMapper);
         this.eventProbe = new EventProbe();
-        this.auditService =
-                new AuditService(
-                        SqsClient.builder().build(),
-                        configurationService,
-                        objectMapper,
-                        Clock.systemUTC());
     }
 
     public AddressHandler(
-            SessionService sessionService,
-            AddressService addressService,
-            EventProbe eventProbe,
-            AuditService auditService) {
+            SessionService sessionService, AddressService addressService, EventProbe eventProbe) {
         this.sessionService = sessionService;
         this.addressService = addressService;
         this.eventProbe = eventProbe;
-        this.auditService = auditService;
     }
 
     @Override
@@ -92,8 +76,6 @@ public class AddressHandler
 
                 // Save our addresses to the address table
                 addressService.saveAddresses(UUID.fromString(sessionId), addresses);
-
-                auditService.sendAuditEvent(AuditEventType.REQUEST_SENT);
 
                 // Now we've saved our address, we need to create an authorization code for the
                 // session
@@ -120,7 +102,7 @@ public class AddressHandler
                     OAuth2Error.ACCESS_DENIED
                             .appendDescription(" - " + SESSION_EXPIRED.getErrorSummary())
                             .toJSONObject());
-        } catch (AddressProcessingException | SqsException e) {
+        } catch (AddressProcessingException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     HttpStatusCode.INTERNAL_SERVER_ERROR, e.getMessage());

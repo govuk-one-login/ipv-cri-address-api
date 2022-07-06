@@ -26,6 +26,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,27 +49,28 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     public static final String ADDRESS_LOCALITY = "LEEDS";
     public static final String POSTAL_CODE = "LS10 4QL";
     public static final String COUNTRY_CODE = "GB";
-    public static final LocalDate VALID_FROM = LocalDate.of(2010, 02, 26);
-    public static final LocalDate VALID_UNTIL = LocalDate.of(2021, 01, 16);
+    public static final LocalDate VALID_FROM = LocalDate.of(2010, 2, 26);
+    public static final LocalDate VALID_UNTIL = LocalDate.of(2021, 1, 16);
     private final ObjectMapper objectMapper =
             new ObjectMapper()
                     .registerModule(new Jdk8Module())
                     .registerModule(new JavaTimeModule());
     @Mock private ConfigurationService mockConfigurationService;
+    @Mock private SignedJWTFactory mockSignedClaimSetJwt;
+
+    private VerifiableCredentialService verifiableCredentialService;
 
     @BeforeEach
     void setUp() {
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("https://address-cri.account.gov.uk.TBC");
+        this.verifiableCredentialService =
+                new VerifiableCredentialService(
+                        mockSignedClaimSetJwt, mockConfigurationService, objectMapper);
     }
 
     @Test
     void shouldReturnAVerifiedCredentialWhenGivenCanonicalAddresses() throws JOSEException {
-        SignedJWTFactory mockSignedClaimSetJwt = mock(SignedJWTFactory.class);
-        var verifiableCredentialService =
-                new VerifiableCredentialService(
-                        mockSignedClaimSetJwt, mockConfigurationService, objectMapper);
-
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("address-cri-issue");
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(342L);
@@ -98,7 +100,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         List<CanonicalAddress> canonicalAddresses = List.of(address);
 
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
-        var verifiableCredentialService =
+        verifiableCredentialService =
                 new VerifiableCredentialService(
                         signedJwtFactory, mockConfigurationService, objectMapper);
 
@@ -115,7 +117,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         assertAll(
                 () -> {
                     assertEquals(
-                            address.getUprn().get().toString(),
+                            address.getUprn().toString(),
                             claimsSet
                                     .get(VC_CLAIM)
                                     .get(VC_CREDENTIAL_SUBJECT)
@@ -189,5 +191,27 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                 });
         ECDSAVerifier ecVerifier = new ECDSAVerifier(ECKey.parse(TestFixtures.EC_PUBLIC_JWK_1));
         assertTrue(signedJWT.verify(ecVerifier));
+    }
+
+    @Test
+    void shouldGetAuditEventContext() {
+        List<CanonicalAddress> testAddresses = List.of(new CanonicalAddress());
+        String vcIssuer = "vc-issuer";
+        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(vcIssuer);
+
+        Map<String, Object> auditEventContext =
+                verifiableCredentialService.getAuditEventExtensions(testAddresses);
+
+        assertEquals(vcIssuer, auditEventContext.get("iss"));
+        assertEquals(1, auditEventContext.get("addressesEntered"));
+    }
+
+    @Test
+    void shouldGetAuditEventContextWithZeroAddressesEnteredWhenNullProvided() {
+        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn("vc-issuer");
+
+        Map<String, Object> auditEventContext =
+                verifiableCredentialService.getAuditEventExtensions(null);
+        assertEquals(0, auditEventContext.get("addressesEntered"));
     }
 }

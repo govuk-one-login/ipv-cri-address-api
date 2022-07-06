@@ -2,6 +2,7 @@ package uk.gov.di.ipv.cri.address.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.oauth2.sdk.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
@@ -11,18 +12,26 @@ import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingExceptio
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
+import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
+import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
+import uk.gov.di.ipv.cri.common.library.domain.personidentity.PersonIdentityDetailed;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
@@ -57,7 +66,7 @@ public class PostcodeLookupService {
                     JsonProcessingException {
 
         // Check the postcode is valid
-        if (postcode == null || postcode.isEmpty()) {
+        if (StringUtils.isBlank(postcode)) {
             throw new PostcodeLookupValidationException("Postcode cannot be null or empty");
         }
 
@@ -165,5 +174,23 @@ public class PostcodeLookupService {
                 .filter(result -> result.getDpa() != null)
                 .map(result -> result.getDpa().toCanonicalAddress())
                 .collect(Collectors.toList());
+    }
+
+    public AuditEventContext getAuditEventContext(
+            String postcode, Map<String, String> requestHeaders, SessionItem sessionItem) {
+        Objects.requireNonNull(requestHeaders, "requestHeaders must not be null");
+        Objects.requireNonNull(sessionItem, "sessionItem must not be null");
+        if (StringUtils.isBlank(postcode)) {
+            throw new IllegalArgumentException("postcode must not be null or blank");
+        }
+        Address address = new Address();
+        String beautifiedPostcode =
+                URLDecoder.decode(postcode, Charset.defaultCharset()).toUpperCase();
+        address.setPostalCode(beautifiedPostcode);
+
+        return new AuditEventContext(
+                new PersonIdentityDetailed(null, null, List.of(address)),
+                requestHeaders,
+                sessionItem);
     }
 }

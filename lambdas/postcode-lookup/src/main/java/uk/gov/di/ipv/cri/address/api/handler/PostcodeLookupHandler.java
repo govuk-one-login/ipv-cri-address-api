@@ -13,10 +13,13 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
+import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
+import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
@@ -33,24 +36,28 @@ public class PostcodeLookupHandler
     private final PostcodeLookupService postcodeLookupService;
     private final SessionService sessionService;
     private final EventProbe eventProbe;
+    private final AuditService auditService;
+
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "postcode_lookup";
 
     public PostcodeLookupHandler(
             PostcodeLookupService postcodeLookupService,
             SessionService sessionService,
-            EventProbe eventProbe) {
+            EventProbe eventProbe,
+            AuditService auditService) {
         this.postcodeLookupService = postcodeLookupService;
         this.sessionService = sessionService;
         this.eventProbe = eventProbe;
+        this.auditService = auditService;
     }
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupHandler() {
-
         this.postcodeLookupService = new PostcodeLookupService();
         this.sessionService = new SessionService();
         this.eventProbe = new EventProbe();
+        this.auditService = new AuditService();
     }
 
     @Override
@@ -58,13 +65,16 @@ public class PostcodeLookupHandler
     @Metrics(captureColdStart = true)
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
-
         String sessionId = input.getHeaders().get(SESSION_ID);
         String postcode = input.getPathParameters().get("postcode");
 
         try {
-            sessionService.validateSessionId(sessionId);
+            SessionItem sessionItem = sessionService.validateSessionId(sessionId);
             List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
+            auditService.sendAuditEvent(
+                    AuditEventType.REQUEST_SENT,
+                    postcodeLookupService.getAuditEventContext(
+                            postcode, input.getHeaders(), sessionItem));
             eventProbe.counterMetric(LAMBDA_NAME);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);

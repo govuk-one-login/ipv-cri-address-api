@@ -17,6 +17,7 @@ import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +28,7 @@ import software.amazon.awssdk.http.SdkHttpResponse;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
@@ -45,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -74,7 +77,8 @@ class IssueCredentialHandlerTest {
                         IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
         setRequestBodyAsPlainJWT(event);
-
+        ArgumentCaptor<AuditEventContext> auditEventContextArgCaptor =
+                ArgumentCaptor.forClass(AuditEventContext.class);
         final UUID sessionId = UUID.randomUUID();
         CanonicalAddress address = new CanonicalAddress();
         address.setBuildingNumber("114");
@@ -88,11 +92,15 @@ class IssueCredentialHandlerTest {
         sessionItem.setSessionId(sessionId);
         addressItem.setAddresses(canonicalAddresses);
 
+        Map<String, Object> testAuditEventExtensions = Map.of("test", "auditEventContext");
+
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
         when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses))
                 .thenReturn(mock(SignedJWT.class));
+        when(mockVerifiableCredentialService.getAuditEventExtensions(canonicalAddresses))
+                .thenReturn(testAuditEventExtensions);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
@@ -100,8 +108,15 @@ class IssueCredentialHandlerTest {
         verify(mockAddressService).getAddressItem(sessionId);
         verify(mockVerifiableCredentialService)
                 .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
-        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
-        verify(mockAuditService).sendAuditEvent(AuditEventType.VC_ISSUED);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER);
+        verify(mockAuditService)
+                .sendAuditEvent(
+                        eq(AuditEventType.VC_ISSUED),
+                        auditEventContextArgCaptor.capture(),
+                        eq(testAuditEventExtensions));
+        AuditEventContext actualAuditEventContext = auditEventContextArgCaptor.getValue();
+        assertEquals(event.getHeaders(), actualAuditEventContext.getRequestHeaders());
+        assertEquals(sessionItem, actualAuditEventContext.getSessionItem());
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
         assertEquals(HttpStatusCode.OK, response.getStatusCode());
