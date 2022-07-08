@@ -49,6 +49,11 @@ Conditions:
       - Fn::Equals:
           - !Ref PermissionsBoundary
           - "none"
+  AddProvisionedConcurrency: !Not
+    - !Equals
+      - !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ]
+      - 0
+
 Globals:
   Function:
     VpcConfig:
@@ -65,7 +70,6 @@ Globals:
       - !Ref CodeSigningConfigArn
     Timeout: 30 # seconds
     Runtime: java11
-    AutoPublishAlias: live
     Tracing: Active
     MemorySize: 512
     Environment:
@@ -75,11 +79,26 @@ Globals:
         POWERTOOLS_LOG_LEVEL: INFO
         SQS_AUDIT_EVENT_PREFIX: IPV_ADDRESS_CRI
         POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
-    ProvisionedConcurrencyConfig: !If
-      - IsProdEnvironment
-      - ProvisionedConcurrentExecutions: 1
+    AutoPublishAlias: live
+    ProvisionedConcurrencyConfig:
+      !If
+      - AddProvisionedConcurrency
+      - ProvisionedConcurrentExecutions: !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ]
       - !Ref AWS::NoValue
+
 Mappings:
+
+  EnvironmentConfiguration:
+    dev:
+      provisionedConcurrency: 0
+    build:
+      provisionedConcurrency: 1
+    staging:
+      provisionedConcurrency: 0
+    integration:
+      provisionedConcurrency: 0
+    prod:
+      provisionedConcurrency: 1
 
   SessionTtlMapping:
     Environment:
