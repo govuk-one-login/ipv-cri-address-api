@@ -90,7 +90,7 @@ Mappings:
     dev:
       provisionedConcurrency: 0
     build:
-      provisionedConcurrency: 0
+      provisionedConcurrency: 1
     staging:
       provisionedConcurrency: 0
     integration:
