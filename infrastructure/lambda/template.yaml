@@ -952,49 +952,49 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt AccessTokenFunction.Arn
+      FunctionName: !Ref AccessTokenFunction.Alias
       Principal: apigateway.amazonaws.com
 
   AuthorizationFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt AuthorizationFunction.Arn
+      FunctionName: !Ref AuthorizationFunction.Alias
       Principal: apigateway.amazonaws.com
 
   SessionFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt SessionFunction.Arn
+      FunctionName: !Ref SessionFunction.Alias
       Principal: apigateway.amazonaws.com
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt PostcodeLookupFunction.Arn
+      FunctionName: !Ref PostcodeLookupFunction.Alias
       Principal: apigateway.amazonaws.com
 
   AddressFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt AddressFunction.Arn
+      FunctionName: !Ref AddressFunction.Alias
       Principal: apigateway.amazonaws.com
 
   IssueCredentialFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt IssueCredentialFunction.Arn
+      FunctionName: !Ref IssueCredentialFunction.Alias
       Principal: apigateway.amazonaws.com
 
   JWKSetFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt JWKSetFunction.Arn
+      FunctionName: !Ref JWKSetFunction.Alias
       Principal: apigateway.amazonaws.com
 
 Outputs:
