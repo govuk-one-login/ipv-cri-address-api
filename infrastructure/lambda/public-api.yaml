@@ -58,7 +58,10 @@ paths:
                 $ref: "#/components/schemas/Error"
 
       security:
-        - api_key: []
+        Fn::If:
+          - IsNotDevEnvironment
+          - []
+          - Ref: AWS::NoValue
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
@@ -109,7 +112,10 @@ paths:
                 $ref: "#/components/schemas/Error"
 
       security:
-        - api_key: []
+        Fn::If:
+          - IsNotDevEnvironment
+          - []
+          - Ref: AWS::NoValue
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"

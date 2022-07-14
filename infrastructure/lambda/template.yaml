@@ -264,6 +264,7 @@ Resources:
 
   PrivateAddressApi:
     Type: AWS::Serverless::Api
+    Condition: IsNotDevEnvironment
     Properties:
       Description: Private Address CRI API
       MethodSettings:
@@ -325,6 +326,50 @@ Resources:
                     - vpce-082cab7c78139eb54
                     - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
+  DevOnlyAddressApi:
+    Type: AWS::Serverless::Api
+    Condition: IsDevEnvironment
+    Properties:
+      Description: Dev Only Private Address CRI API
+      MethodSettings:
+        - LoggingLevel: INFO
+          ResourcePath: '/*'
+          HttpMethod: '*'
+          DataTraceEnabled: !If [IsProdEnvironment, false, true]
+          MetricsEnabled: true
+          ThrottlingRateLimit: 5
+          ThrottlingBurstLimit: 10
+      AccessLogSetting:
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyAddressApiAccessLogGroup}'
+        Format: >-
+          {
+          "requestId":"$context.requestId",
+          "ip":"$context.identity.sourceIp",
+          "requestTime":"$context.requestTime",
+          "httpMethod":"$context.httpMethod",
+          "path":"$context.path",
+          "routeKey":"$context.routeKey",
+          "status":"$context.status",
+          "protocol":"$context.protocol",
+          "responseLatency":"$context.responseLatency",
+          "responseLength":"$context.responseLength"
+          }
+      TracingEnabled: true
+      Name: !Sub "${AWS::StackName}-PrivateAddressApi"
+      StageName: !Ref Environment
+      DefinitionBody:
+        openapi: "3.0.1" # workaround to get `sam validate` to work
+        paths: # workaround to get `sam validate` to work
+          /never-created:
+            options: { } # workaround to get `sam validate` to work
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: './private-api.yaml'
+      OpenApiVersion: 3.0.1
+      EndpointConfiguration:
+        Type: REGIONAL
+
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -341,9 +386,17 @@ Resources:
 
   PrivateAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
+    Condition: IsNotDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
       RetentionInDays: 365
+
+  DevOnlyAddressApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsDevEnvironment
+    Properties:
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyAddressApi}-private-AccessLogs
+      RetentionInDays: 30
 
   PrivateAddressApiAccessLogGroupSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -729,6 +782,7 @@ Resources:
 
   PrivateAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
+    Condition: IsNotDevEnvironment
     DependsOn:
       - PrivateAddressApiStage
     Properties:
@@ -999,23 +1053,11 @@ Resources:
 
 Outputs:
 
-  AddressApiBaseUrl:
-    Description: "Base url of the Address CRI API"
-    Value: !Sub "https://${PublicAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
-    Export:
-      Name: !Sub ${AWS::StackName}-AddressApiBaseUrl
-
   AddressApiGatewayId:
     Description: "API GatewayID of the Address CRI API"
     Value: !Sub "${PublicAddressApi}"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiGatewayId
-
-  PublicAddressApiBaseUrl:
-    Description: "Base url of the public Address CRI API"
-    Value: !Sub "https://${PublicAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
-    Export:
-      Name: !Sub ${AWS::StackName}-PublicAddressApiBaseUrl
 
   PublicAddressApiGatewayId:
     Description: "API GatewayID of the public Address CRI API"
@@ -1023,14 +1065,8 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-PublicAddressApiGatewayId
 
-  PrivateAddressApiBaseUrl:
-    Description: "Base url of the private Address CRI API"
-    Value: !Sub "https://${PrivateAddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
-    Export:
-      Name: !Sub ${AWS::StackName}-PrivateAddressApiBaseUrl
-
   PrivateAddressApiGatewayId:
     Description: "API GatewayID of the private Address CRI API"
-    Value: !Sub "${PrivateAddressApi}"
+    Value: !If [IsNotDevEnvironment, !Ref PrivateAddressApi, !Ref DevOnlyAddressApi]
     Export:
       Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
