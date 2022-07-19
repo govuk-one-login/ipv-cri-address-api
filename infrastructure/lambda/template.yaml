@@ -1053,6 +1053,10 @@ Resources:
 
 Outputs:
 
+  StackName:
+    Description: "CloudFormation stack name"
+    Value: !Sub "${AWS::StackName}"
+
   AddressApiGatewayId:
     Description: "API GatewayID of the Address CRI API"
     Value: !Sub "${PublicAddressApi}"
