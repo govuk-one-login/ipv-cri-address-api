@@ -19,6 +19,7 @@ import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,7 @@ class AddressHandlerTest {
 
         List<CanonicalAddress> canonicalAddresses = new ArrayList<>();
         CanonicalAddress canonicalAddress = new CanonicalAddress();
+        canonicalAddress.setValidFrom(LocalDate.of(2013, 8, 9));
         canonicalAddress.setUprn(Long.valueOf("12345"));
         canonicalAddresses.add(canonicalAddress);
 
