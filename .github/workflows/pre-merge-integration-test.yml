@@ -43,6 +43,13 @@ jobs:
       - name: Gradle build
         run: ./gradlew build -x test -x spotlessCheck
 
+      - name: Generate code signing config
+        id: signing
+        uses: rusty-actions/sam-code-signing-config@39f63740a9f8622eb9b6755413a31a6013a62a86
+        with:
+          template: ./infrastructure/lambda/template.yaml
+          profile: ${{ secrets.SIGNING_PROFILE_NAME }}
+
       - name: SAM build
         run: sam build -t infrastructure/lambda/template.yaml
 
