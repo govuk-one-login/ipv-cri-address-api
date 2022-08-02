@@ -64,9 +64,7 @@ Globals:
       - UsePermissionsBoundary
       - !Ref PermissionsBoundary
       - !Ref AWS::NoValue
-    CodeSigningConfigArn: !If
-      - CreateDevResources
-      - !Ref AWS::NoValue
+    CodeSigningConfigArn:
       - !Ref CodeSigningConfigArn
     Timeout: 30 # seconds
     Runtime: java11
@@ -331,9 +329,7 @@ Resources:
                 - 'execute-api:/*'
               Condition:
                 StringNotEquals:
-                  aws:SourceVpce: !If
-                    - CreateDevResources
-                    - vpce-082cab7c78139eb54
+                  aws:SourceVpce:
                     - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
   DevOnlyAddressApi:
