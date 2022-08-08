@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: di-ipv-cri-dev
     timeout-minutes: 15
+    container:
+      image: ubuntu:latest
     env:
       AWS_REGION: eu-west-2
       ENVIRONMENT: dev
@@ -21,6 +23,17 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - name: Update/Install requirements
+        run: |
+          apt update --fix-missing -y && \
+          apt install -y software-properties-common 
+          apt upgrade -y
+          add-apt-repository ppa:git-core/ppa -y
+          add-apt-repository ppa:deadsnakes/ppa -y
+          apt update -y
+          apt install -y git
+          apt install -y python3.10
+          apt install -y python3.10-venv
       - name: Check out repo
         uses: actions/checkout@v2
         with:
@@ -43,12 +56,12 @@ jobs:
       - name: Gradle build
         run: ./gradlew build -x test -x spotlessCheck
 
-      - name: Generate code signing config
-        id: signing
-        uses: rusty-actions/sam-code-signing-config@39f63740a9f8622eb9b6755413a31a6013a62a86
-        with:
-          template: ./infrastructure/lambda/template.yaml
-          profile: ${{ secrets.SIGNING_PROFILE_NAME }}
+      - name: Update code signing config
+        run: |
+          START_LINE=$(grep -n CodeSigningConfigArn ./infrastructure/lambda/template.yaml | head -n 1 | sed 's/\([0-9]*\).*/\1/')
+          END_LINE=$(grep -n Environment ./infrastructure/lambda/template.yaml | head -n 1 | sed 's/\([0-9]*\).*/\1/')
+          sed -ie "${START_LINE},$((END_LINE-1))d" ./infrastructure/lambda/template.yaml
+          sed -ie '/CodeSigningConfig/d' ./infrastructure/lambda/template.yaml
 
       - name: SAM build
         run: sam build -t infrastructure/lambda/template.yaml
