@@ -56,7 +56,7 @@ jobs:
           sam deploy -t infrastructure/lambda/template.yaml \
             --no-fail-on-empty-changeset \
             --no-confirm-changeset \
-            --parameter-overrides Environment=${{ env.ENVIRONMENT }} \
+            --parameter-overrides "Environment=${{ env.ENVIRONMENT }} CodeSigningEnabled=false" \
             --stack-name $STACK_NAME \
             --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix $STACK_NAME \
