@@ -3,6 +3,9 @@ Transform: "AWS::Serverless-2016-10-31"
 Description: "Digital Identity IPV CRI Address API"
 
 Parameters:
+  CodeSigningEnabled:
+    Type: "String"
+    Default: "true"
   CodeSigningConfigArn:
     Type: String
     Default: "none"
@@ -24,6 +27,9 @@ Parameters:
     Default: "none"
 
 Conditions:
+  EnforceCodeSigning: !Equals
+    - !Ref  CodeSigningEnabled
+    - true
   CreateDevResources: !Equals
     - !Ref Environment
     - dev
@@ -65,9 +71,9 @@ Globals:
       - !Ref PermissionsBoundary
       - !Ref AWS::NoValue
     CodeSigningConfigArn: !If
-      - CreateDevResources
-      - !Ref AWS::NoValue
+      - EnforceCodeSigning
       - !Ref CodeSigningConfigArn
+      - !Ref AWS::NoValue
     Timeout: 30 # seconds
     Runtime: java11
     Tracing: Active
