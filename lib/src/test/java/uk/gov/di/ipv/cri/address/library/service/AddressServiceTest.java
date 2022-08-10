@@ -24,6 +24,12 @@ import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +40,17 @@ class AddressServiceTest {
     @Mock private ObjectMapper mockObjectMapper;
 
     private AddressService addressService;
+
+    private static final String ERROR_SINGLE_ADDRESS_NOT_CURRENT =
+            "setAddressValidity found a single address but is not a CURRENT address.";
+    private static final String ERROR_TOO_MANY_ADDRESSES =
+            "setAddressValidity given too many Addresses to process.";
+    private static final String ERROR_COULD_NOT_DETERMINE_CURRENT_ADDRESS =
+            "setAddressValidity found two addresses but could not determine which address is a CURRENT addressType.";
+    private static final String ERROR_ADDRESS_LINKING_NOT_NEEDED =
+            "setAddressValidity found PREVIOUS address but validUntil was already set - automatic date linking failed.";
+    private static final String ERROR_ADDRESS_DATE_IS_INVALID =
+            "setAddressValidity found address where validFrom and validUntil are Equal.";
 
     @BeforeEach
     void setup() {
@@ -142,5 +159,330 @@ class AddressServiceTest {
     void shouldGetAddressItem() {
         addressService.getAddressItem(SESSION_ID);
         verify(mockDataStore).getItem(String.valueOf(SESSION_ID));
+    }
+
+    @Test
+    void shouldSucceedWithNoAddresses() {
+        List<CanonicalAddress> canonicalAddresses = new ArrayList<>();
+        assertDoesNotThrow(() -> addressService.setAddressValidity(canonicalAddresses));
+    }
+
+    @Test
+    void shouldEvaluateToPreviousWithNULLNULL() {
+        // The reason for the linker existing is that a second address, intended as
+        // a PREVIOUS address has ValidFrom and ValidUntil not set - null,null. This however
+        // matches the pattern for a CURRENT address with unknown start date.
+        // In this specific case, we evaluate null, null as the intended PREVIOUS address.
+
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setValidFrom(null);
+        currentAddress.setValidUntil(null);
+
+        List<CanonicalAddress> canonicalAddresses = List.of(currentAddress);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+        assertEquals(ERROR_SINGLE_ADDRESS_NOT_CURRENT, exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAboutToTrampleAlreadySetDates() {
+        // When AddressCRIFront is setting ValidUntil in previous addresses
+        // The linker can be removed entirely.
+
+        final LocalDate TEST_DATE_0 = LocalDate.of(1999, 12, 31);
+        final LocalDate TEST_DATE_1 = LocalDate.of(1999, 11, 30);
+
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setValidFrom(TEST_DATE_0);
+        currentAddress.setValidUntil(null);
+
+        CanonicalAddress previousAddress = new CanonicalAddress();
+        previousAddress.setValidFrom(null);
+        previousAddress.setValidUntil(TEST_DATE_1);
+
+        List<CanonicalAddress> canonicalAddresses = List.of(currentAddress, previousAddress);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+
+        assertEquals(ERROR_ADDRESS_LINKING_NOT_NEEDED, exception.getMessage());
+    }
+
+    @Test
+    void shouldSucceedWithSingleCurrentAddress() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setValidFrom(date);
+
+        List<CanonicalAddress> canonicalAddresses = List.of(currentAddress);
+
+        assertDoesNotThrow(() -> addressService.setAddressValidity(canonicalAddresses));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenGivenSingleInvalidAddress() {
+
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setValidFrom(null);
+        currentAddress.setValidUntil(null);
+
+        List<CanonicalAddress> canonicalAddresses = List.of(currentAddress);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+
+        assertEquals(ERROR_SINGLE_ADDRESS_NOT_CURRENT, exception.getMessage());
+    }
+
+    @Test
+    void shouldSucceedWithTwoValidAddresses() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setValidFrom(date);
+
+        CanonicalAddress previousAddress = new CanonicalAddress();
+        previousAddress.setValidFrom(null);
+        previousAddress.setValidUntil(null);
+
+        assertNull(previousAddress.getValidUntil());
+
+        List<CanonicalAddress> canonicalAddresses = List.of(currentAddress, previousAddress);
+
+        assertDoesNotThrow(() -> addressService.setAddressValidity(canonicalAddresses));
+
+        // Linking performed
+        assertTrue(currentAddress.getValidFrom().isEqual(previousAddress.getValidUntil()));
+    }
+
+    @Test
+    void shouldSucceedWithTwoCurrentAddresses() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress currentAddress0 = new CanonicalAddress();
+        currentAddress0.setValidFrom(date);
+
+        CanonicalAddress currentAddress1 = new CanonicalAddress();
+        currentAddress1.setValidFrom(date.plusYears(1));
+        currentAddress1.setValidUntil(null);
+
+        List<CanonicalAddress> canonicalAddresses = List.of(currentAddress0, currentAddress1);
+
+        assertDoesNotThrow(() -> addressService.setAddressValidity(canonicalAddresses));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenGivenTwoInvalidAddresses() {
+
+        CanonicalAddress address0 = new CanonicalAddress();
+        address0.setValidFrom(null);
+        address0.setValidUntil(null);
+
+        CanonicalAddress address1 = new CanonicalAddress();
+        address1.setValidFrom(null);
+        address1.setValidUntil(null);
+
+        List<CanonicalAddress> canonicalAddresses = List.of(address0, address1);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+
+        assertEquals(ERROR_COULD_NOT_DETERMINE_CURRENT_ADDRESS, exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenGivenTwoPreviousAddresses() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress previousAddress0 = new CanonicalAddress();
+        previousAddress0.setValidFrom(date);
+        previousAddress0.setValidUntil(date.plusYears(1));
+
+        CanonicalAddress previousAddress1 = new CanonicalAddress();
+        previousAddress1.setValidFrom(date.plusYears(2));
+        previousAddress1.setValidUntil(date.plusYears(3));
+
+        List<CanonicalAddress> canonicalAddresses = List.of(previousAddress0, previousAddress1);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+
+        assertEquals(ERROR_COULD_NOT_DETERMINE_CURRENT_ADDRESS, exception.getMessage());
+    }
+
+    @Test
+    void shouldSucceedWithTwoValidAddressesInReverseOrder() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setValidFrom(date);
+
+        CanonicalAddress previousAddress = new CanonicalAddress();
+        previousAddress.setValidFrom(null);
+        previousAddress.setValidUntil(null);
+
+        assertNull(previousAddress.getValidUntil());
+
+        // Order Reversed
+        List<CanonicalAddress> canonicalAddresses = List.of(previousAddress, currentAddress);
+
+        assertDoesNotThrow(() -> addressService.setAddressValidity(canonicalAddresses));
+
+        // Linking performed
+        assertTrue(currentAddress.getValidFrom().isEqual(previousAddress.getValidUntil()));
+    }
+
+    @Test
+    void shouldThrowExceptionGivenInvalidFirstAddressDates() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress address0 = new CanonicalAddress();
+        address0.setValidFrom(date);
+        address0.setValidUntil(date);
+
+        CanonicalAddress address1 = new CanonicalAddress();
+        address1.setValidFrom(date);
+        address1.setValidUntil(null);
+
+        List<CanonicalAddress> canonicalAddresses = List.of(address0, address1);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+
+        assertEquals(ERROR_ADDRESS_DATE_IS_INVALID, exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenGivenInvalidSecondAddressDates() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress address0 = new CanonicalAddress();
+        address0.setValidFrom(date);
+        address0.setValidUntil(null);
+
+        CanonicalAddress address1 = new CanonicalAddress();
+        address1.setValidFrom(date);
+        address1.setValidUntil(date);
+
+        // Reversed
+        List<CanonicalAddress> canonicalAddresses = List.of(address1, address0);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+
+        assertEquals(ERROR_ADDRESS_DATE_IS_INVALID, exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenGivenThreeAddresses() {
+
+        LocalDate date = LocalDate.of(2013, 8, 9);
+
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setValidFrom(date);
+
+        CanonicalAddress previousAddress1 = new CanonicalAddress();
+        previousAddress1.setValidFrom(null);
+        previousAddress1.setValidUntil(null);
+
+        CanonicalAddress previousAddress2 = new CanonicalAddress();
+        previousAddress2.setValidFrom(null);
+        previousAddress2.setValidUntil(null);
+
+        List<CanonicalAddress> canonicalAddresses =
+                List.of(currentAddress, previousAddress1, previousAddress2);
+
+        AddressProcessingException exception =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.setAddressValidity(canonicalAddresses));
+
+        assertEquals(ERROR_TOO_MANY_ADDRESSES, exception.getMessage());
+    }
+
+    @Test
+    void shouldReturnTrueWithExpectedCurrentFormatDates() {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setValidFrom(LocalDate.now().minusYears(1));
+        address.setValidUntil(null);
+
+        assertTrue(addressService.isCurrentAddress(address));
+    }
+
+    @Test
+    void shouldReturnFalseWithExpectedPreviousFormatDates() {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setValidFrom(null);
+        address.setValidUntil(LocalDate.now().minusYears(1));
+
+        assertFalse(addressService.isCurrentAddress(address));
+    }
+
+    @Test
+    void shouldReturnFalseWithExpectedInvalidFormatDates() {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setValidFrom(LocalDate.now().minusYears(1));
+        address.setValidUntil(LocalDate.now().minusYears(1));
+
+        assertFalse(addressService.isCurrentAddress(address));
+    }
+
+    @Test
+    void shouldReturnTrueWithNULLNULLFormatDates() {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setValidFrom(null);
+        address.setValidUntil(null);
+
+        assertTrue(addressService.isNotCurrentAddress(address));
+    }
+
+    @Test
+    void shouldReturnTrueWithInvalidFormatDates() {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setValidFrom(LocalDate.now());
+        address.setValidUntil(LocalDate.now());
+
+        assertTrue(addressService.isInvalidAddress(address));
+    }
+
+    @Test
+    void shouldReturnFalseWithExpectedCurrentFormatDates() {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setValidFrom(LocalDate.now().minusYears(1));
+        address.setValidUntil(null);
+
+        assertFalse(addressService.isInvalidAddress(address));
+    }
+
+    @Test
+    void shouldReturnFalseWhenGivenExpectedPreviousFormatDates() {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setValidFrom(null);
+        address.setValidUntil(LocalDate.now().minusYears(1));
+
+        assertFalse(addressService.isInvalidAddress(address));
     }
 }
