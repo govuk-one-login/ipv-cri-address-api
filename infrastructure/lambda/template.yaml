@@ -469,11 +469,12 @@ Resources:
               Resource:
                 - !ImportValue AuditEventQueueEncryptionKeyArn
 
-  SessionFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambdalg/${SessionFunction}"
-      RetentionInDays: 14
+# Will need to enable and import at later date to overcome clean deployment issues
+#  SessionFunctionLogGroup:
+#    Type: AWS::Logs::LogGroup
+#    Properties:
+#      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
+#      RetentionInDays: 14
 
   SessionFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -481,7 +482,7 @@ Resources:
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
       FilterPattern: ""
-      LogGroupName: !Ref SessionFunctionLogGroup
+      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
@@ -536,11 +537,12 @@ Resources:
               Resource:
                 - !ImportValue AuditEventQueueEncryptionKeyArn
 
-  PostcodeLookupFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambdalg/${PostcodeLookupFunction}"
-      RetentionInDays: 14
+# Will need to enable and import at later date to overcome clean deployment issues
+#  PostcodeLookupFunctionLogGroup:
+#    Type: AWS::Logs::LogGroup
+#    Properties:
+#      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
+#      RetentionInDays: 14
 
   PostcodeLookupFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -548,7 +550,7 @@ Resources:
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
       FilterPattern: ""
-      LogGroupName: !Ref PostcodeLookupFunctionLogGroup
+      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
 
   AddressFunction:
     Type: AWS::Serverless::Function
@@ -583,11 +585,12 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-  AddressFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambdalg/${AddressFunction}"
-      RetentionInDays: 14
+# Will need to enable and import at later date to overcome clean deployment issues
+#  AddressFunctionLogGroup:
+#    Type: AWS::Logs::LogGroup
+#    Properties:
+#      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
+#      RetentionInDays: 14
 
   AddressFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -595,7 +598,7 @@ Resources:
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
       FilterPattern: ""
-      LogGroupName: !Ref AddressFunctionLogGroup
+      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
 
   AuthorizationFunction:
     Type: AWS::Serverless::Function
@@ -623,11 +626,12 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-  AuthorizationFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambdalg/${AuthorizationFunction}"
-      RetentionInDays: 14
+# Will need to enable and import at later date to overcome clean deployment issues
+#  AuthorizationFunctionLogGroup:
+#    Type: AWS::Logs::LogGroup
+#    Properties:
+#      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
+#      RetentionInDays: 14
 
   AuthorizationFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -635,7 +639,7 @@ Resources:
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
       FilterPattern: ""
-      LogGroupName: !Ref AuthorizationFunctionLogGroup
+      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
 
   AccessTokenFunction:
     Type: AWS::Serverless::Function
@@ -663,11 +667,12 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-  AccessTokenFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambdalg/${AccessTokenFunction}"
-      RetentionInDays: 14
+# Will need to enable and import at later date to overcome clean deployment issues
+#  AccessTokenFunctionLogGroup:
+#    Type: AWS::Logs::LogGroup
+#    Properties:
+#      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
+#      RetentionInDays: 14
 
   AccessTokenFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -675,7 +680,7 @@ Resources:
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
       FilterPattern: ""
-      LogGroupName: !Ref AccessTokenFunctionLogGroup
+      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
 
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
@@ -710,11 +715,12 @@ Resources:
             Resource:
               - !ImportValue AuditEventQueueEncryptionKeyArn
 
-  IssueCredentialFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambdalg/${IssueCredentialFunction}"
-      RetentionInDays: 14
+# Will need to enable and import at later date to overcome clean deployment issues
+#  IssueCredentialFunctionLogGroup:
+#    Type: AWS::Logs::LogGroup
+#    Properties:
+#      LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
+#      RetentionInDays: 14
 
 
   IssueCredentialFunctionLogsSubscriptionFilter:
@@ -723,7 +729,7 @@ Resources:
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
       FilterPattern: ""
-      LogGroupName: !Ref IssueCredentialFunctionLogGroup
+      LogGroupName:  !Sub "/aws/lambda/${IssueCredentialFunction}"
 
   JWKSetFunction:
     Type: AWS::Serverless::Function
