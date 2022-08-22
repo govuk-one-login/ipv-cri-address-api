@@ -1,6 +1,7 @@
 plugins {
 	id "java-library"
 	id "jacoco"
+	id "io.freefair.aspectj.post-compile-weaving" version "6.3.0"
 }
 
 dependencies {
@@ -14,6 +15,8 @@ dependencies {
 			configurations.powertools,
 			configurations.sqs,
 			configurations.kms
+
+	aspect configurations.powertools
 
 	testImplementation configurations.tests
 
