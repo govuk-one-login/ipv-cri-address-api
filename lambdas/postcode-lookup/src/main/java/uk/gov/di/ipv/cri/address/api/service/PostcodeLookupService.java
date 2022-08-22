@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.lambda.powertools.tracing.Tracing;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
@@ -61,6 +62,7 @@ public class PostcodeLookupService {
         this.log = log;
     }
 
+    @Tracing
     public List<CanonicalAddress> lookupPostcode(String postcode)
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     JsonProcessingException {
