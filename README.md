@@ -1,8 +1,13 @@
 # Address Collector Credential Issuer API
 
+## Hooks
+
+**important:** One you've cloned the repo, run `pre-commit install` to install the pre-commit hooks.
+If you have not installed `pre-commit` then please do so [here](https://pre-commit.com/).
+
 ## Check out submodules (First Time)
 > The first time you check out or clone the repository, you will need to run the following commands:
- 
+
 `git submodule update --init --recursive`
 
 ## Update submodules (Subsequent times)
@@ -11,7 +16,7 @@
 `git submodule update --recursive`
 
 ## Updating submodules to the latest "main" branch
-> You can also update the submodules to the latest "main" branch, but this is not done automatically 
+> You can also update the submodules to the latest "main" branch, but this is not done automatically
 > in case there have been changes made to the shared libraries you do not yet want to track
 
 cd into each submodule (folders are `/lib` and `/common-lambdas`) and run the following commands:
@@ -50,7 +55,7 @@ Before your **first** deploy, build a sam config toml file.
 > **Ensure you change the environment name**, when asked, to `dev` instead of `default`.
 > All other defaults can be accepted by leaving them blank
 
-The command to run is: 
+The command to run is:
 
 `gds aws  di-ipv-cri-dev -- sam deploy -t infrastructure/lambda/template.yaml --guided`
 
@@ -89,11 +94,11 @@ For Dev the following equivalent GitHub secrets:
 
 ## Publishing KMS Public keys
 
-The Address API uses an AWS KMS EC private key to sign verifiable credentials, 
+The Address API uses an AWS KMS EC private key to sign verifiable credentials,
 and an AWS KMS RSA private key to decrypt the Authorization JAR.
 
 The public keys need to be published so that clients:
-* can verify the signature of the verifiable credential, 
+* can verify the signature of the verifiable credential,
 * encrypt the Authorization JAR before sending to this CRI.
 
 The `JWKSetHandler` lambda function publishes these public keys as a JWKSet to `https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json`.
