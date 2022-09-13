@@ -16,7 +16,7 @@
 <!-- List any related ADRs or RFCs -->
 <!-- Delete/copy as appropriate -->
 
-- [KBV-XXXX](https://govukverify.atlassian.net/browse/KBV-XXX)
+- [OJ-XXXX](https://govukverify.atlassian.net/browse/OJ-XXX)
 
 ## Checklists
 
