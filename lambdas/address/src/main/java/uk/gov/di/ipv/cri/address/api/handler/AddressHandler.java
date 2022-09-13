@@ -62,7 +62,7 @@ public class AddressHandler
     }
 
     @Override
-    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST)
+    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST, clearState = true)
     @Metrics(captureColdStart = true)
     @Tracing
     public APIGatewayProxyResponseEvent handleRequest(
@@ -75,6 +75,7 @@ public class AddressHandler
             // If we have at least one address, we can return a 201 with the authorization code
             if (!addresses.isEmpty()) {
                 SessionItem session = sessionService.validateSessionId(sessionId);
+                eventProbe.log(Level.INFO, "found session");
 
                 // Links validUntil in a PREVIOUS address to validFrom in a CURRENT
                 addressService.setAddressValidity(addresses);

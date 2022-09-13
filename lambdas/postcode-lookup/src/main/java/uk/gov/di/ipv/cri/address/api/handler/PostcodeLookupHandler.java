@@ -62,7 +62,7 @@ public class PostcodeLookupHandler
     }
 
     @Override
-    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST)
+    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST, clearState = true)
     @Metrics(captureColdStart = true)
     @Tracing
     public APIGatewayProxyResponseEvent handleRequest(
@@ -72,6 +72,7 @@ public class PostcodeLookupHandler
 
         try {
             SessionItem sessionItem = sessionService.validateSessionId(sessionId);
+            eventProbe.log(Level.INFO, "found session");
             List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
             auditService.sendAuditEvent(
                     AuditEventType.REQUEST_SENT,
