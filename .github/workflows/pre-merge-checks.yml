@@ -23,6 +23,10 @@ jobs:
           cache: 'gradle'
       - name: Run Spotless
         run: ./gradlew --no-daemon spotlessCheck
+      - name: Pre-commit Checks
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
 
   build:
     runs-on: ubuntu-latest
