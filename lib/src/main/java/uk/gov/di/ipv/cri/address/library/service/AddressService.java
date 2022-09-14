@@ -29,6 +29,8 @@ public class AddressService {
             "setAddressValidity found PREVIOUS address but validUntil was already set - automatic date linking failed.";
     private static final String ERROR_ADDRESS_DATE_IS_INVALID =
             "setAddressValidity found address where validFrom and validUntil are Equal.";
+    private static final String SECRET =
+            "https://hello:test@hello.com";
 
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
