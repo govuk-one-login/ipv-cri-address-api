@@ -175,8 +175,7 @@ class IssueCredentialHandlerTest {
     void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied()
             throws SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        setupEventProbeErrorBehaviour();
-
+        setupEventProbeBehaviour();
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
@@ -196,7 +195,7 @@ class IssueCredentialHandlerTest {
                         accessToken.toAuthorizationHeader()));
 
         setRequestBodyAsPlainJWT(event);
-        setupEventProbeErrorBehaviour();
+        setupEventProbeBehaviour();
 
         AwsErrorDetails awsErrorDetails =
                 AwsErrorDetails.builder()
@@ -277,6 +276,11 @@ class IssueCredentialHandlerTest {
     }
 
     private void setupEventProbeErrorBehaviour() {
+        setupEventProbeBehaviour();
+        when(mockEventProbe.log(any(Level.class), any(String.class))).thenReturn(mockEventProbe);
+    }
+
+    private void setupEventProbeBehaviour() {
         when(mockEventProbe.counterMetric(anyString(), anyDouble())).thenReturn(mockEventProbe);
         when(mockEventProbe.log(any(Level.class), any(Exception.class))).thenReturn(mockEventProbe);
     }

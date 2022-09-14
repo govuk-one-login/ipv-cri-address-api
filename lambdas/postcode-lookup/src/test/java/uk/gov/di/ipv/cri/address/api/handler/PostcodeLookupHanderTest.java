@@ -86,7 +86,8 @@ class PostcodeLookupHanderTest {
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     SessionExpiredException, SessionNotFoundException {
 
-        setupEventProbeErrorBehaviour();
+        when(eventProbe.counterMetric(anyString(), anyDouble())).thenReturn(eventProbe);
+        when(eventProbe.log(any(Level.class), any(Exception.class))).thenReturn(eventProbe);
 
         SessionNotFoundException exception = new SessionNotFoundException("Session not found");
 
@@ -107,7 +108,8 @@ class PostcodeLookupHanderTest {
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     SessionExpiredException, SessionValidationException, SessionNotFoundException {
 
-        setupEventProbeErrorBehaviour();
+        when(eventProbe.counterMetric(anyString(), anyDouble())).thenReturn(eventProbe);
+        when(eventProbe.log(any(Level.class), any(Exception.class))).thenReturn(eventProbe);
 
         RuntimeException exception = new RuntimeException("Any other exception");
 
@@ -155,5 +157,6 @@ class PostcodeLookupHanderTest {
     private void setupEventProbeErrorBehaviour() {
         when(eventProbe.counterMetric(anyString(), anyDouble())).thenReturn(eventProbe);
         when(eventProbe.log(any(Level.class), any(Exception.class))).thenReturn(eventProbe);
+        when(eventProbe.log(any(Level.class), any(String.class))).thenReturn(eventProbe);
     }
 }
