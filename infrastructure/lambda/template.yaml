@@ -425,7 +425,7 @@ Resources:
   SessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../common-lambdas/session/build/distributions/session.zip
+      CodeUri: ../../common-lambdas/session
       Handler: uk.gov.di.ipv.cri.common.api.handler.SessionHandler::handleRequest
       Environment:
         Variables:
@@ -487,8 +487,9 @@ Resources:
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
-      Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
+      CodeUri: ../../lambdas/postcode-lookup-node/
+      Handler: app.lambdaHandler
+      Runtime: nodejs16.x
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-postcode-lookup
@@ -536,7 +537,14 @@ Resources:
                 - 'kms:GenerateDataKey'
               Resource:
                 - !ImportValue AuditEventQueueEncryptionKeyArn
-
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        # Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        EntryPoints:
+        - app.ts
 # Will need to enable and import at later date to overcome clean deployment issues
 #  PostcodeLookupFunctionLogGroup:
 #    Type: AWS::Logs::LogGroup
@@ -555,7 +563,7 @@ Resources:
   AddressFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../lambdas/address/build/distributions/address.zip
+      CodeUri: ../../lambdas/address
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       Environment:
         Variables:
@@ -603,7 +611,7 @@ Resources:
   AuthorizationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../common-lambdas/authorization/build/distributions/authorization.zip
+      CodeUri: ../../common-lambdas/authorization
       Handler: uk.gov.di.ipv.cri.common.api.handler.AuthorizationHandler::handleRequest
       Environment:
         Variables:
@@ -644,7 +652,8 @@ Resources:
   AccessTokenFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../common-lambdas/accesstoken/build/distributions/accesstoken.zip
+      CodeUri: ../../common-lambdas/accesstoken
+
       Handler: uk.gov.di.ipv.cri.common.api.handler.AccessTokenHandler::handleRequest
       Environment:
         Variables:
@@ -686,7 +695,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler::handleRequest
-      CodeUri: ../../lambdas/issuecredential/build/distributions/issuecredential.zip
+      CodeUri: ../../lambdas/issuecredential
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-issuecredential
@@ -735,7 +744,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: uk.gov.di.ipv.cri.common.api.handler.JWKSetHandler::handleRequest
-      CodeUri: ../../common-lambdas/jwkset/build/distributions/jwkset.zip
+      CodeUri: ../../common-lambdas/jwkset
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-jwkset
