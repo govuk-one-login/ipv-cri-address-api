@@ -422,52 +422,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PrivateAddressApiAccessLogGroup
 
-  SessionFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../../common-lambdas/session
-      Handler: uk.gov.di.ipv.cri.common.api.handler.SessionHandler::handleRequest
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-session
-          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - AWSXrayWriteOnlyAccess
-        - DynamoDBWritePolicy:
-            TableName:
-              Ref: SessionTable
-        - DynamoDBWritePolicy:
-            TableName:
-              Ref: PersonIdentityTable
-        - SQSSendMessagePolicy:
-            QueueName: !ImportValue AuditEventQueueName
-        - KMSDecryptPolicy:
-            KeyId: !ImportValue core-infrastructure-CriDecryptionKey1Id
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AuthRequestKmsEncryptionKeyId"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/PersonIdentityTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/verifiable-credential/issuer"
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParametersByPath
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
-        - Statement:
-            - Sid: auditEventQueueKmsEncryptionKeyPermission
-              Effect: Allow
-              Action:
-                - 'kms:Decrypt'
-                - 'kms:GenerateDataKey'
-              Resource:
-                - !ImportValue AuditEventQueueEncryptionKeyArn
 
 # Will need to enable and import at later date to overcome clean deployment issues
 #  SessionFunctionLogGroup:
@@ -476,13 +430,6 @@ Resources:
 #      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
 #      RetentionInDays: 14
 
-  SessionFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
 
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
@@ -608,31 +555,6 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
 
-  AuthorizationFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../../common-lambdas/authorization
-      Handler: uk.gov.di.ipv.cri.common.api.handler.AuthorizationHandler::handleRequest
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-authorization
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - AWSXrayWriteOnlyAccess
-        - DynamoDBReadPolicy:
-            TableName: !Ref SessionTable
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParametersByPath
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
 # Will need to enable and import at later date to overcome clean deployment issues
 #  AuthorizationFunctionLogGroup:
@@ -641,40 +563,7 @@ Resources:
 #      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
 #      RetentionInDays: 14
 
-  AuthorizationFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
 
-  AccessTokenFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../../common-lambdas/accesstoken
-
-      Handler: uk.gov.di.ipv.cri.common.api.handler.AccessTokenHandler::handleRequest
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-access-token
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName:
-              Ref: SessionTable
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/SessionTtl"
-        - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParametersByPath
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
 # Will need to enable and import at later date to overcome clean deployment issues
 #  AccessTokenFunctionLogGroup:
@@ -683,13 +572,6 @@ Resources:
 #      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
 #      RetentionInDays: 14
 
-  AccessTokenFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
 
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
@@ -740,30 +622,6 @@ Resources:
       FilterPattern: ""
       LogGroupName:  !Sub "/aws/lambda/${IssueCredentialFunction}"
 
-  JWKSetFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: uk.gov.di.ipv.cri.common.api.handler.JWKSetHandler::handleRequest
-      CodeUri: ../../common-lambdas/jwkset
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-jwkset
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - AWSXrayWriteOnlyAccess
-        - Statement:
-            - Effect: Allow
-              Action:
-                - kms:GetPublicKey
-              Resource:
-                - !ImportValue core-infrastructure-CriVcSigningKey1Arn
-                - !ImportValue core-infrastructure-CriDecryptionKey1Arn
-            - Effect: Allow
-              Action:
-                - kms:ListKeys
-                - kms:ListResourceTags
-                - kms:DescribeKey
-              Resource: "*"
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"
@@ -1070,26 +928,6 @@ Resources:
       Value: !ImportValue core-infrastructure-CriVcSigningKey1Id
       Description: Verifiable Credential Key Id
 
-  AccessTokenFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref AccessTokenFunction.Alias
-      Principal: apigateway.amazonaws.com
-
-  AuthorizationFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref AuthorizationFunction.Alias
-      Principal: apigateway.amazonaws.com
-
-  SessionFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref SessionFunction.Alias
-      Principal: apigateway.amazonaws.com
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -1110,13 +948,6 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref IssueCredentialFunction.Alias
-      Principal: apigateway.amazonaws.com
-
-  JWKSetFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref JWKSetFunction.Alias
       Principal: apigateway.amazonaws.com
 
 Outputs:
