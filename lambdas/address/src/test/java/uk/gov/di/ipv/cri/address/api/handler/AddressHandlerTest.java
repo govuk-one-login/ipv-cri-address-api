@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
@@ -26,13 +27,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,7 +57,7 @@ class AddressHandlerTest {
     void SessionValidationReturns400()
             throws SessionExpiredException, SessionNotFoundException, AddressProcessingException {
 
-        setupEventProbeErrorBehaviour();
+        setupEventProbeExpectedErrorBehaviour();
 
         SessionNotFoundException exception = new SessionNotFoundException("Session not found");
         when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", SESSION_ID));
@@ -75,6 +76,7 @@ class AddressHandlerTest {
         assertEquals(403, responseEvent.getStatusCode());
         verify(eventProbe).log(Level.ERROR, exception);
         verify(eventProbe).counterMetric("address", 0d);
+        verifyNoMoreInteractions(eventProbe);
     }
 
     @Test
@@ -104,7 +106,9 @@ class AddressHandlerTest {
         assertEquals(HttpStatusCode.NO_CONTENT, responseEvent.getStatusCode());
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
+        verify(eventProbe).log(Level.INFO, "found session");
         verify(eventProbe).counterMetric("address");
+        verifyNoMoreInteractions(eventProbe);
     }
 
     @Test
@@ -124,8 +128,8 @@ class AddressHandlerTest {
         verifyNoInteractions(eventProbe);
     }
 
-    private void setupEventProbeErrorBehaviour() {
-        when(eventProbe.counterMetric(anyString(), anyDouble())).thenReturn(eventProbe);
-        when(eventProbe.log(any(Level.class), any(Exception.class))).thenReturn(eventProbe);
+    private void setupEventProbeExpectedErrorBehaviour() {
+        when(eventProbe.log(eq(Level.ERROR), Mockito.any(Exception.class))).thenReturn(eventProbe);
+        when(eventProbe.counterMetric("address", 0d)).thenReturn(eventProbe);
     }
 }
