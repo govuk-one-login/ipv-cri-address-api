@@ -53,7 +53,7 @@ task cucumber() {
 				'--tags',
 				"${tags}",
 				'--glue',
-				'gov/uk/kbv/api/stepDefinitions',
+				'gov/uk/address/api/stepDefinitions',
 				'src/test/resources'
 			]
 		}
