@@ -15,3 +15,7 @@ include "postcode-lookup", "address", "issuecredential"
 project(':postcode-lookup').projectDir = new File('./lambdas/postcode-lookup')
 project(':address').projectDir = new File('./lambdas/address')
 project(':issuecredential').projectDir = new File('./lambdas/issuecredential')
+include 'integration-tests'
+project(':integration-tests').projectDir = new File('./integration-tests')
+
+startParameter.excludedTaskNames = [':integration-tests:test']
