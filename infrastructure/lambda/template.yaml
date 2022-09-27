@@ -826,6 +826,7 @@ Resources:
 
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
+    Condition: IsNotDevEnvironment
     DependsOn:
       - PublicAddressApiStage
     Properties:
@@ -857,6 +858,7 @@ Resources:
 
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
+    Condition: IsNotDevEnvironment
     Properties:
       KeyId: !ImportValue core-infrastructure-ApiKey1
       KeyType: API_KEY
@@ -864,6 +866,7 @@ Resources:
 
   LinkUsagePlanApiKey2:
     Type: AWS::ApiGateway::UsagePlanKey
+    Condition: IsNotDevEnvironment
     Properties:
       KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
