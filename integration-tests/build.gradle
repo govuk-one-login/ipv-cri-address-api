@@ -1,0 +1,63 @@
+plugins {
+	id 'java'
+}
+repositories {
+	mavenLocal()
+	maven {
+		url = uri('https://repo.maven.apache.org/maven2/')
+	}
+	mavenCentral()
+}
+
+ext {
+	cucumberVersion = '7.7.0'
+	junitJupiterapi = '5.9.0'
+	jacksonDatabind = '2.9.5'
+	apacheHttpClient = '4.5.13'
+	apacheCommonLang = '3.12.0'
+}
+
+dependencies {
+	testImplementation "io.cucumber:cucumber-java:$cucumberVersion"
+	testImplementation "io.cucumber:cucumber-junit:$cucumberVersion"
+	testImplementation "org.apache.httpcomponents:httpclient:$apacheHttpClient"
+	testImplementation "org.apache.commons:commons-lang3:$apacheCommonLang"
+	testImplementation "org.junit.jupiter:junit-jupiter-api:$junitJupiterapi"
+	testImplementation "com.fasterxml.jackson.core:jackson-databind:$jacksonDatabind"
+	testImplementation configurations.nimbus
+}
+
+configurations {
+	cucumberRuntime {
+		extendsFrom testImplementation
+	}
+}
+
+def tags = findProperty('tags') == null ? 'not @Ignore' : "${findProperty('tags')} and not @Ignore"
+test {
+	systemProperty "cucumber.filter.tags", System.getProperty("cucumber.filter.tags")
+	systemProperty "cucumber.options", System.properties.getProperty("cucumber.options")
+	useJUnitPlatform()
+}
+
+
+task cucumber() {
+	dependsOn assemble, testClasses
+	doLast {
+		javaexec {
+			main = "io.cucumber.core.cli.Main"
+			classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+			args = [
+				'--plugin',
+				'pretty',
+				'--tags',
+				"${tags}",
+				'--glue',
+				'gov/uk/address/api/stepDefinitions',
+				'src/test/resources'
+			]
+		}
+	}
+}
+
+gradle.startParameter.excludedTaskNames.add(':integration-tests:test')
