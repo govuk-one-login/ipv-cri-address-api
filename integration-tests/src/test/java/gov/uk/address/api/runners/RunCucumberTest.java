@@ -9,6 +9,5 @@ import org.junit.runner.RunWith;
         plugin = {"json:target/cucumber.json", "html:target/default-html-reports"},
         features = "src/test/resources",
         glue = "gov/uk/address/api/stepDefinitions",
-        dryRun = false
-)
+        dryRun = false)
 public class RunCucumberTest {}

@@ -3,7 +3,7 @@ package gov.uk.address.api.util;
 import java.math.BigInteger;
 
 public class PostcodeLookupResponse {
-   private BigInteger uprn;
+    private BigInteger uprn;
     private String buildingNumber;
     private String streetName;
     private String addressLocality;
@@ -11,7 +11,6 @@ public class PostcodeLookupResponse {
     private String addressCountry;
     private String organisationName;
     private String validFrom;
-
 
     public BigInteger getUprn() {
         return uprn;

@@ -165,19 +165,26 @@ public class AddressApiHappyPath {
     }
 
     @When("the user performs a postcode lookup")
-    public void theUserPerformsAPostcodeLookup() throws IOException, InterruptedException, URISyntaxException {
+    public void theUserPerformsAPostcodeLookup()
+            throws IOException, InterruptedException, URISyntaxException {
         var request =
                 HttpRequest.newBuilder()
-                        .uri(new URIBuilder(getPrivateAPIEndpoint()).setPath(POSTCODE_LOOKUP + POST_CODE)
-                                .build())
-                        .setHeader("session_id", sessionId).GET().build();
+                        .uri(
+                                new URIBuilder(getPrivateAPIEndpoint())
+                                        .setPath(POSTCODE_LOOKUP + POST_CODE)
+                                        .build())
+                        .setHeader("session_id", sessionId)
+                        .GET()
+                        .build();
 
         this.response = sendHttpRequest(request);
     }
 
     @Then("user receives a list of addresses")
     public void userReceivesAListOfAddresses() throws IOException {
-        postcodeLookupResponse = Arrays.asList(objectMapper.readValue(response.body(), PostcodeLookupResponse[].class));
+        postcodeLookupResponse =
+                Arrays.asList(
+                        objectMapper.readValue(response.body(), PostcodeLookupResponse[].class));
         assertEquals(200, response.statusCode());
         assertFalse(postcodeLookupResponse.isEmpty());
         assertNotNull(postcodeLookupResponse.get(0).getUprn());
@@ -185,27 +192,33 @@ public class AddressApiHappyPath {
     }
 
     @When("the user selects address")
-    public void theUserSelectsAddress() throws URISyntaxException, IOException, InterruptedException {
+    public void theUserSelectsAddress()
+            throws URISyntaxException, IOException, InterruptedException {
 
-        var requestBody = "[\n" +
-                "  {\n" +
-                "    \"uprn\": "+ postcodeLookupResponse.get(0).getUprn() +",\n" +
-                "    \"organisationName\": \"PRIME MINISTER & FIRST LORD OF THE TREASURY\",\n" +
-                "    \"departmentName\": \"\",\n" +
-                "    \"subBuildingName\": \"\",\n" +
-                "    \"buildingNumber\": \"10\",\n" +
-                "    \"dependentStreetName\": \"\",\n" +
-                "    \"doubleDependentAddressLocality\": \"\",\n" +
-                "    \"dependentAddressLocality\": \"\",\n" +
-                "    \"buildingName\": \"\",\n" +
-                "    \"streetName\": \"DOWNING STREET\",\n" +
-                "    \"addressLocality\": \"LONDON\",\n" +
-                "    \"postalCode\": \"" + POST_CODE + "\",\n" +
-                "    \"addressCountry\": \"GB\",\n" +
-                "    \"validFrom\": \"2020-01-01\",\n" +
-                "    \"validUntil\": \"\"\n" +
-                "  }\n" +
-                "]";
+        var requestBody =
+                "[\n"
+                        + "  {\n"
+                        + "    \"uprn\": "
+                        + postcodeLookupResponse.get(0).getUprn()
+                        + ",\n"
+                        + "    \"organisationName\": \"PRIME MINISTER & FIRST LORD OF THE TREASURY\",\n"
+                        + "    \"departmentName\": \"\",\n"
+                        + "    \"subBuildingName\": \"\",\n"
+                        + "    \"buildingNumber\": \"10\",\n"
+                        + "    \"dependentStreetName\": \"\",\n"
+                        + "    \"doubleDependentAddressLocality\": \"\",\n"
+                        + "    \"dependentAddressLocality\": \"\",\n"
+                        + "    \"buildingName\": \"\",\n"
+                        + "    \"streetName\": \"DOWNING STREET\",\n"
+                        + "    \"addressLocality\": \"LONDON\",\n"
+                        + "    \"postalCode\": \""
+                        + POST_CODE
+                        + "\",\n"
+                        + "    \"addressCountry\": \"GB\",\n"
+                        + "    \"validFrom\": \"2020-01-01\",\n"
+                        + "    \"validUntil\": \"\"\n"
+                        + "  }\n"
+                        + "]";
 
         var request =
                 HttpRequest.newBuilder()
@@ -319,16 +332,15 @@ public class AddressApiHappyPath {
         assertEquals("VerifiableCredential", payload.get("vc").get("type").get(0).asText());
         assertEquals("AddressCredential", payload.get("vc").get("type").get(1).asText());
 
-        assertEquals(POST_CODE,
+        assertEquals(
+                POST_CODE,
                 payload.get("vc")
                         .get("credentialSubject")
                         .get("address")
                         .get(0)
                         .get("postalCode")
-                        .asText()
-               );
+                        .asText());
     }
-
 
     private String getPublicAPIEndpoint() {
         return getApiEndpoint(
@@ -351,5 +363,4 @@ public class AddressApiHappyPath {
         HttpRequest request = HttpRequest.newBuilder().uri(url).GET().build();
         return sendHttpRequest(request).body();
     }
-
 }
