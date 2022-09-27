@@ -10,6 +10,5 @@ import org.junit.runner.RunWith;
         features = "src/test/resources",
         glue = "gov/uk/address/api/stepDefinitions",
         dryRun = false
-        // tags = "address_api_happy"
-        )
+)
 public class RunCucumberTest {}
