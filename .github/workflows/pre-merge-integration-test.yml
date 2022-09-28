@@ -17,6 +17,7 @@ jobs:
       AWS_REGION: eu-west-2
       ENVIRONMENT: dev
       STACK_NAME_PREFIX: pre-merge-integration
+      SECRET_PREFIX: pre-merge-test
     permissions:
       id-token: write
       contents: read
@@ -56,7 +57,7 @@ jobs:
           sam deploy -t infrastructure/lambda/template.yaml \
             --no-fail-on-empty-changeset \
             --no-confirm-changeset \
-            --parameter-overrides "Environment=${{ env.ENVIRONMENT }} CodeSigningEnabled=false" \
+            --parameter-overrides "Environment=${{ env.ENVIRONMENT }} SecretPrefix=${{ env.SECRET_PREFIX }} CodeSigningEnabled=false" \
             --stack-name $STACK_NAME \
             --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix $STACK_NAME \

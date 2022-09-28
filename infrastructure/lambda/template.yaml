@@ -25,6 +25,10 @@ Parameters:
     Description: "The ARN of the permissions boundary to apply when creating IAM roles"
     Type: String
     Default: "none"
+  SecretPrefix:
+    Type: String
+    Default: "none"
+    Description: Secrets name prefix
 
 Conditions:
   EnforceCodeSigning: !Equals
@@ -55,6 +59,11 @@ Conditions:
       - Fn::Equals:
           - !Ref PermissionsBoundary
           - "none"
+  UseSecretPrefix:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref SecretPrefix
+          - "none"
   AddProvisionedConcurrency: !Not
     - !Equals
       - !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ]
@@ -84,6 +93,7 @@ Globals:
       Variables:
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
         AWS_STACK_NAME: !Sub ${AWS::StackName}
+        SECRET_PREFIX: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
         POWERTOOLS_LOG_LEVEL: INFO
         SQS_AUDIT_EVENT_PREFIX: IPV_ADDRESS_CRI
         POWERTOOLS_METRICS_NAMESPACE: di-ipv-cri-address-api
@@ -504,8 +514,9 @@ Resources:
               Effect: Allow
               Action:
                 - 'secretsmanager:*'
-              Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${AWS::StackName}/OrdnanceSurveyAPIKey*"
+              Resource: !Sub
+                - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${Prefix}/OrdnanceSurveyAPIKey*"
+                - Prefix: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
             - Sid: ReadParametersPolicy
               Effect: Allow
               Action:
