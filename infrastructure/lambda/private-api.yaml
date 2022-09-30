@@ -174,6 +174,45 @@ paths:
           Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${CommonStackName}-AuthorizationFunction/invocations
         passthroughBehavior: "when_no_match"
 
+  /address-lookup:
+    get:
+      parameters:
+        - in: header
+          name: "session_id"
+          schema:
+            type: string
+          required: true
+      responses:
+        "400":
+          description: "400 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "500 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "200":
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostcodeLookupResponse"
+      x-amazon-apigateway-request-validator: "Validate both"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostcodeLookupFunction.Arn}:live/invocations
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+
 components:
   parameters:
     SessionHeader:

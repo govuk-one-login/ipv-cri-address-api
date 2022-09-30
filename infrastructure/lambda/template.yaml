@@ -551,6 +551,52 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref IssueCredentialFunctionLogGroup
 
+  AddressLookupFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: ../../lambdas/addresses
+      Handler: app.handler
+      Runtime: nodejs16.x
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-address-lookup
+          PERSON_IDENTITY_TABLE_NAME: !Ref PersonIdentityTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName: !Ref PersonIdentityTable
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        # Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        EntryPoints:
+          - app.ts
+
+    AddressLookupFunctionLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: !Sub "/aws/lambda/${AddressLookupFunction}"
+        RetentionInDays: 30
+
+    AddressLookupFunctionLogsSubscriptionFilter:
+      Type: AWS::Logs::SubscriptionFilter
+      Condition: IsNotDevEnvironment
+      Properties:
+        DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+        FilterPattern: ""
+        LogGroupName: !Ref AddressLookupFunctionLogGroup
+
+    AddressLookupFunctionLogsSubscriptionFilterCSLS:
+      Type: AWS::Logs::SubscriptionFilter
+      Condition: IsNotDevEnvironment
+      Properties:
+        DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
+        FilterPattern: ""
+        LogGroupName: !Ref AddressLookupFunctionGroup
+
   AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -654,6 +700,13 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref IssueCredentialFunction.Alias
+      Principal: apigateway.amazonaws.com
+
+  AddressLookupFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AddressLookupFunction.Alias
       Principal: apigateway.amazonaws.com
 
 Outputs:
