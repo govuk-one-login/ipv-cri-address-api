@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -eu
-#./gradlew -x test
 sam validate -t infrastructure/lambda/template.yaml
 sam build -t infrastructure/lambda/template.yaml --config-env dev
-sam deploy -t infrastructure/lambda/template.yaml --config-env dev --config-file samconfig.toml --no-fail-on-empty-changeset
+sam deploy --config-env dev --config-file infrastructure/lambda/samconfig.toml --no-fail-on-empty-changeset
