@@ -402,7 +402,7 @@ Resources:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
       RetentionInDays: 365
 
-  PublicAddressApiAccessLogGroupSubscriptionFilterOld:
+  PublicAddressApiAccessLogGroupSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -410,7 +410,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PublicAddressApiAccessLogGroup
 
-  PublicAddressApiAccessLogGroupSubscriptionFilter:
+  PublicAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -432,7 +432,7 @@ Resources:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyAddressApi}-private-AccessLogs
       RetentionInDays: 30
 
-  PrivateAddressApiAccessLogGroupSubscriptionFilterOld:
+  PrivateAddressApiAccessLogGroupSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -440,7 +440,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref PrivateAddressApiAccessLogGroup
 
-  PrivateAddressApiAccessLogGroupSubscriptionFilter:
+  PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -495,14 +495,14 @@ Resources:
               Resource:
                 - !ImportValue AuditEventQueueEncryptionKeyArn
 
-# Will need to enable and import at later date to overcome clean deployment issues
-#  SessionFunctionLogGroup:
-#    Type: AWS::Logs::LogGroup
-#    Properties:
-#      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
-#      RetentionInDays: 14
+  # Will need to enable and import at later date to overcome clean deployment issues
+  #  SessionFunctionLogGroup:
+  #    Type: AWS::Logs::LogGroup
+  #    Properties:
+  #      LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
+  #      RetentionInDays: 14
 
-  SessionFunctionLogsSubscriptionFilterOld:
+  SessionFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -510,7 +510,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Sub "/aws/lambda/${SessionFunction}"
 
-  SessionFunctionLogsSubscriptionFilter:
+  SessionFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -572,14 +572,14 @@ Resources:
               Resource:
                 - !ImportValue AuditEventQueueEncryptionKeyArn
 
-# Will need to enable and import at later date to overcome clean deployment issues
-#  PostcodeLookupFunctionLogGroup:
-#    Type: AWS::Logs::LogGroup
-#    Properties:
-#      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
-#      RetentionInDays: 14
+  # Will need to enable and import at later date to overcome clean deployment issues
+  #  PostcodeLookupFunctionLogGroup:
+  #    Type: AWS::Logs::LogGroup
+  #    Properties:
+  #      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
+  #      RetentionInDays: 14
 
-  PostcodeLookupFunctionLogsSubscriptionFilterOld:
+  PostcodeLookupFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -587,7 +587,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
 
-  PostcodeLookupFunctionLogsSubscriptionFilter:
+  PostcodeLookupFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -628,14 +628,14 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-# Will need to enable and import at later date to overcome clean deployment issues
-#  AddressFunctionLogGroup:
-#    Type: AWS::Logs::LogGroup
-#    Properties:
-#      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
-#      RetentionInDays: 14
+  # Will need to enable and import at later date to overcome clean deployment issues
+  #  AddressFunctionLogGroup:
+  #    Type: AWS::Logs::LogGroup
+  #    Properties:
+  #      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
+  #      RetentionInDays: 14
 
-  AddressFunctionLogsSubscriptionFilterOld:
+  AddressFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -643,7 +643,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
 
-  AddressFunctionLogsSubscriptionFilter:
+  AddressFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -677,14 +677,14 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-# Will need to enable and import at later date to overcome clean deployment issues
-#  AuthorizationFunctionLogGroup:
-#    Type: AWS::Logs::LogGroup
-#    Properties:
-#      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
-#      RetentionInDays: 14
+  # Will need to enable and import at later date to overcome clean deployment issues
+  #  AuthorizationFunctionLogGroup:
+  #    Type: AWS::Logs::LogGroup
+  #    Properties:
+  #      LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
+  #      RetentionInDays: 14
 
-  AuthorizationFunctionLogsSubscriptionFilterOld:
+  AuthorizationFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -692,7 +692,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Sub "/aws/lambda/${AuthorizationFunction}"
 
-  AuthorizationFunctionLogsSubscriptionFilter:
+  AuthorizationFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -726,14 +726,14 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-# Will need to enable and import at later date to overcome clean deployment issues
-#  AccessTokenFunctionLogGroup:
-#    Type: AWS::Logs::LogGroup
-#    Properties:
-#      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
-#      RetentionInDays: 14
+  # Will need to enable and import at later date to overcome clean deployment issues
+  #  AccessTokenFunctionLogGroup:
+  #    Type: AWS::Logs::LogGroup
+  #    Properties:
+  #      LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
+  #      RetentionInDays: 14
 
-  AccessTokenFunctionLogsSubscriptionFilterOld:
+  AccessTokenFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -741,7 +741,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Sub "/aws/lambda/${AccessTokenFunction}"
 
-  AccessTokenFunctionLogsSubscriptionFilter:
+  AccessTokenFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -782,15 +782,15 @@ Resources:
             Resource:
               - !ImportValue AuditEventQueueEncryptionKeyArn
 
-# Will need to enable and import at later date to overcome clean deployment issues
-#  IssueCredentialFunctionLogGroup:
-#    Type: AWS::Logs::LogGroup
-#    Properties:
-#      LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
-#      RetentionInDays: 14
+  # Will need to enable and import at later date to overcome clean deployment issues
+  #  IssueCredentialFunctionLogGroup:
+  #    Type: AWS::Logs::LogGroup
+  #    Properties:
+  #      LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
+  #      RetentionInDays: 14
 
 
-  IssueCredentialFunctionLogsSubscriptionFilterOld:
+  IssueCredentialFunctionLogsSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
@@ -798,7 +798,7 @@ Resources:
       FilterPattern: ""
       LogGroupName:  !Sub "/aws/lambda/${IssueCredentialFunction}"
 
-  IssueCredentialFunctionLogsSubscriptionFilter:
+  IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
