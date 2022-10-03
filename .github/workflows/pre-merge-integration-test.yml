@@ -79,8 +79,8 @@ jobs:
 
           gradle integration-tests:cucumber
 
-      - name: Delete integration test stack
-        if: always()
-        run: |
-          STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
-          sam delete --stack-name $STACK_NAME --region ${{ env.AWS_REGION }} --no-prompts
+#      - name: Delete integration test stack
+#        if: always()
+#        run: |
+#          STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
+#          sam delete --stack-name $STACK_NAME --region ${{ env.AWS_REGION }} --no-prompts
