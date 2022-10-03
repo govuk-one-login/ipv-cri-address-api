@@ -24,8 +24,7 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v2
-        with:
-          submodules: true
+
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
@@ -57,7 +56,7 @@ jobs:
           sam deploy -t infrastructure/lambda/template.yaml \
             --no-fail-on-empty-changeset \
             --no-confirm-changeset \
-            --parameter-overrides "Environment=${{ env.ENVIRONMENT }} SecretPrefix=${{ env.SECRET_PREFIX }} CodeSigningEnabled=false" \
+            --parameter-overrides "Environment=${{ env.ENVIRONMENT }} SecretPrefix=${{ env.SECRET_PREFIX }} CodeSigningEnabled=false AuditEventNamePrefix=/common-cri-parameters/AddressAuditEventNamePrefix CriIdentifier=/common-cri-parameters/AddressCriIdentifier CommonStackName=address-common-cri-api" \
             --stack-name $STACK_NAME \
             --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
             --s3-prefix $STACK_NAME \
