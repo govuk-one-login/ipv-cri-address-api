@@ -58,15 +58,16 @@ paths:
                 $ref: "#/components/schemas/Error"
 
       security:
-        Fn::If:
-          - IsNotDevEnvironment
-          - []
-          - Ref: AWS::NoValue
+        - api_key:
+            Fn::If:
+              - IsNotDevEnvironment
+              - []
+              - Ref: AWS::NoValue
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AccessTokenFunction.Arn}:live/invocations
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${CommonStackName}-AccessTokenFunction/invocations
         responses:
           default:
             statusCode: "200"
@@ -112,36 +113,16 @@ paths:
                 $ref: "#/components/schemas/Error"
 
       security:
-        Fn::If:
-          - IsNotDevEnvironment
-          - []
-          - Ref: AWS::NoValue
+        - api_key:
+            Fn::If:
+              - IsNotDevEnvironment
+              - []
+              - Ref: AWS::NoValue
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${IssueCredentialFunction.Arn}:live/invocations
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        contentHandling: "CONVERT_TO_TEXT"
-        type: "aws_proxy"
-
-  /.well-known/jwks.json:
-    summary: Public Key JWKSet for the Address CRI
-    get:
-      responses:
-        '200':
-          description: 200 Ok
-          content:
-            application/jwk-set+json:
-              schema:
-                type: string
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${JWKSetFunction.Arn}:live/invocations
         responses:
           default:
             statusCode: "200"
