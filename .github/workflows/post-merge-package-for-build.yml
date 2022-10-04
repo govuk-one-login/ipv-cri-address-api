@@ -31,7 +31,7 @@ jobs:
       - name: Assume temporary AWS role
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.BUILD_CRI_V1_GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Gradle build
@@ -42,7 +42,7 @@ jobs:
         uses: rusty-actions/sam-code-signing-config@39f63740a9f8622eb9b6755413a31a6013a62a86
         with:
           template: ./infrastructure/lambda/template.yaml
-          profile: ${{ secrets.SIGNING_PROFILE_NAME }}
+          profile: ${{ secrets.BUILD_SIGNING_PROFILE_NAME }}
 
       - name: SAM Validate
         run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/lambda/template.yaml
@@ -54,7 +54,7 @@ jobs:
         run: |
           sam package -t infrastructure/lambda/template.yaml  \
             ${{ steps.signing.outputs.signing_config }} \
-            --s3-bucket ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }} \
+            --s3-bucket ${{ secrets.BUILD_CRI_V1_ARTIFACT_SOURCE_BUCKET_NAME }} \
             --region ${{ env.AWS_REGION }} --output-template-file=cf-template.yaml
 
       - name: Zip the CloudFormation template
@@ -62,6 +62,5 @@ jobs:
 
       - name: Upload zipped CloudFormation artifact to S3
         env:
-          ARTIFACT_SOURCE_BUCKET_NAME: ${{ secrets.ARTIFACT_SOURCE_BUCKET_NAME }}
+          ARTIFACT_SOURCE_BUCKET_NAME: ${{ secrets.BUILD_CRI_V1_ARTIFACT_SOURCE_BUCKET_NAME }}
         run: aws s3 cp template.zip "s3://$ARTIFACT_SOURCE_BUCKET_NAME/template.zip"
-

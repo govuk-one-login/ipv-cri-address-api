@@ -31,7 +31,7 @@ jobs:
       - name: Assume temporary AWS role
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ secrets.DEV_GH_ACTIONS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.DEV_CRI_V1_GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: SAM Validate
@@ -54,7 +54,7 @@ jobs:
         run: |
           sam package -t infrastructure/lambda/template.yaml  \
             ${{ steps.signing.outputs.signing_config }} \
-            --s3-bucket ${{ secrets.DEV_ARTIFACT_SOURCE_BUCKET_NAME }} \
+            --s3-bucket ${{ secrets.DEV_CRI_V1_ARTIFACT_SOURCE_BUCKET_NAME }} \
             --region ${{ env.AWS_REGION }} --output-template-file=cf-template.yaml
 
       - name: Zip the CloudFormation template
@@ -62,5 +62,5 @@ jobs:
 
       - name: Upload zipped CloudFormation artifact to S3
         env:
-          DEV_ARTIFACT_SOURCE_BUCKET_NAME: ${{ secrets.DEV_ARTIFACT_SOURCE_BUCKET_NAME }}
+          DEV_ARTIFACT_SOURCE_BUCKET_NAME: ${{ secrets.DEV_CRI_V1_ARTIFACT_SOURCE_BUCKET_NAME }}
         run: aws s3 cp template.zip "s3://$DEV_ARTIFACT_SOURCE_BUCKET_NAME/template.zip"
