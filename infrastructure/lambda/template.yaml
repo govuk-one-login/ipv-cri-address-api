@@ -625,13 +625,21 @@ Resources:
       FilterPattern: ""
       LogGroupName:  !Sub "/aws/lambda/${IssueCredentialFunction}"
 
-
-  HelloWorldFunction:
+  AddressLookupFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: ../../lambdas/addresses
-      Handler: app.lambdaHandler
+      Handler: app.handler
       Runtime: nodejs16.x
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: di-ipv-cri-address-api-address-lookup
+          PERSON_IDENTITY_TABLE_NAME: !Ref PersonIdentityTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+              TableName: !Ref PersonIdentityTable
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -640,6 +648,14 @@ Resources:
         # Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
         EntryPoints:
           - app.ts
+
+  AddressLookupFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
+    Properties:
+      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${AddressLookupFunction}"
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"
@@ -949,9 +965,6 @@ Resources:
       Value: !ImportValue core-infrastructure-CriVcSigningKey1Id
       Description: Verifiable Credential Key Id
 
-
-
-
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -973,6 +986,12 @@ Resources:
       FunctionName: !Ref IssueCredentialFunction.Alias
       Principal: apigateway.amazonaws.com
 
+  AddressLookupFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AddressLookupFunction.Alias
+      Principal: apigateway.amazonaws.com
 
 Outputs:
 

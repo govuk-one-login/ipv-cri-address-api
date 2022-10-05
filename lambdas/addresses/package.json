@@ -1,13 +1,14 @@
 {
-  "name": "hello_world",
+  "name": "addresslookup",
   "version": "1.0.0",
-  "description": "hello world sample for NodeJS",
+  "description": "AddressLookup Lambda",
   "main": "app.js",
-  "repository": "https://github.com/awslabs/aws-sam-cli/tree/develop/samcli/local/init/templates/cookiecutter-aws-sam-hello-nodejs",
   "author": "SAM CLI",
   "license": "MIT",
   "dependencies": {
-    "esbuild": "^0.14.14"
+    "esbuild": "^0.14.14",
+    "@aws-sdk/client-dynamodb": "3.150.0",
+    "@aws-sdk/lib-dynamodb": "3.150.0"
   },
   "scripts": {
     "unit": "jest",

@@ -1,43 +1,38 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { addressLookupService } from './service/addressLookup-service';
 
-/**
- *
- * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
- * @param {Object} event - API Gateway Lambda Proxy Input Format
- *
- * Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
- * @returns {Object} object - API Gateway Lambda Proxy Output Format
- *
- */
-
-export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    
     let response: APIGatewayProxyResult;
-
-    // get session from session id
-
-    // get user data from session
-
-    // pull out addresses, if any, from user data
-
-    // return [] of address data or [] on a 200
-
-
+    
     try {
+        let sessionId = event.headers['session_id'] + '';
+        
+        const result = await addressLookupService.getAddressBySessionId(sessionId);
+
         response = {
-            statusCode: 200,
-            body: JSON.stringify({
-                message: 'hello world',
-            }),
-        };
-    } catch (err: unknown) {
+                statusCode: 200,
+                body: JSON.stringify({
+                    result
+                }),
+            };
+       
+    } catch (err) {
         console.log(err);
         response = {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: err instanceof Error ? err.message : 'some error happened',
-            }),
+            statusCode: 400,
+            body: 'No data found.',
         };
+        await handleError(err);
     }
-
     return response;
+   
+};
+
+const handleError = async (err: any) => {
+    const error_object = {
+        reason: 'An error has occurred.',
+        traceback: err.stack,
+    };
+    console.error(`Rejecting AddressLookup request ${JSON.stringify(error_object)}`);
 };
