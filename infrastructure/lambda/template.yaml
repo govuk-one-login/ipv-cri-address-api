@@ -363,7 +363,7 @@ Resources:
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../lambdas/postcode-lookup/build/distributions/postcode-lookup.zip
+      CodeUri: ../../lambdas/postcode-lookup
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       Environment:
         Variables:
@@ -438,7 +438,7 @@ Resources:
   AddressFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../../lambdas/address/build/distributions/address.zip
+      CodeUri: ../../lambdas/address
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       Environment:
         Variables:
@@ -492,7 +492,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler::handleRequest
-      CodeUri: ../../lambdas/issuecredential/build/distributions/issuecredential.zip
+      CodeUri: ../../lambdas/issuecredential
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
