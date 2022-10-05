@@ -1,16 +1,21 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { lambdaHandler } from '../../app';
+import { handler } from '../../app';
 
-describe('Unit test for app handler', function () {
+describe('AddressLookup handler', function () {
+    const mockDynamoDbClient = {
+        transactWrite: jest.fn(),
+        query: jest.fn(),
+      };
+
     it('verifies successful response', async () => {
         const event: APIGatewayProxyEvent = {
             httpMethod: 'get',
             body: '',
-            headers: {},
+            headers: {session_id:'some-session-id'},
             isBase64Encoded: false,
             multiValueHeaders: {},
             multiValueQueryStringParameters: {},
-            path: '/hello',
+            path: '/address-lookup',
             pathParameters: {},
             queryStringParameters: {},
             requestContext: {
@@ -41,23 +46,28 @@ describe('Unit test for app handler', function () {
                     userAgent: '',
                     userArn: '',
                 },
-                path: '/hello',
+                path: '/address-lookup',
                 protocol: 'HTTP/1.1',
                 requestId: 'c6af9ac6-7b61-11e6-9a41-93e8deadbeef',
                 requestTimeEpoch: 1428582896000,
                 resourceId: '123456',
-                resourcePath: '/hello',
+                resourcePath: '/address-lookup',
                 stage: 'dev',
             },
             resource: '',
             stageVariables: {},
         };
-        const result: APIGatewayProxyResult = await lambdaHandler(event);
+
+        mockDynamoDbClient.query.mockResolvedValue({
+            Items: ["addresses"],
+          });
+
+        const result: APIGatewayProxyResult = await handler(event);
 
         expect(result.statusCode).toEqual(200);
         expect(result.body).toEqual(
             JSON.stringify({
-                message: 'hello world',
+                message: 'addresses',
             }),
         );
     });
