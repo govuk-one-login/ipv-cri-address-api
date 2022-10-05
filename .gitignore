@@ -39,3 +39,6 @@ infrastructure/lambda/samconfig.toml
 # intellij project dir
 .idea
 *.env
+
+**/node_modules
+/lambdas/addresses/coverage/
