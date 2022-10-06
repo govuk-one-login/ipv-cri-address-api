@@ -18,6 +18,16 @@ dependencies {
 	testRuntimeOnly configurations.test_runtime
 }
 
+task buildZip(type: Zip) {
+	from compileJava
+	from processResources
+	into('lib') {
+		from configurations.runtimeClasspath
+	}
+}
+
+build.finalizedBy(buildZip)
+
 test {
 	useJUnitPlatform()
 	finalizedBy jacocoTestReport
