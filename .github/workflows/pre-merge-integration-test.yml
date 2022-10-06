@@ -53,7 +53,7 @@ jobs:
       - name: SAM deploy integration test stack
         run: |
           STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
-          sam deploy -t infrastructure/lambda/template.yaml \
+          sam deploy \
             --no-fail-on-empty-changeset \
             --no-confirm-changeset \
             --parameter-overrides "Environment=${{ env.ENVIRONMENT }} SecretPrefix=${{ env.SECRET_PREFIX }} CodeSigningEnabled=false AuditEventNamePrefix=/common-cri-parameters/AddressAuditEventNamePrefix CriIdentifier=/common-cri-parameters/AddressCriIdentifier CommonStackName=address-common-cri-api" \

@@ -46,13 +46,13 @@ jobs:
 
       - name: SAM Validate
         run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/lambda/template.yaml
-      
+
       - name: SAM build
         run: sam build -t infrastructure/lambda/template.yaml
 
       - name: SAM package
         run: |
-          sam package -t infrastructure/lambda/template.yaml  \
+          sam package \
             ${{ steps.signing.outputs.signing_config }} \
             --s3-bucket ${{ secrets.BUILD_CRI_V1_ARTIFACT_SOURCE_BUCKET_NAME }} \
             --region ${{ env.AWS_REGION }} --output-template-file=cf-template.yaml
