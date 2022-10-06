@@ -551,6 +551,22 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref IssueCredentialFunctionLogGroup
 
+  GetAddresses:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.lambdaHandler
+      CodeUri: ../../lambdas/get-addresses/
+      Runtime: nodejs16.x
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        # Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        EntryPoints:
+        - app.ts
+
+
   AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
