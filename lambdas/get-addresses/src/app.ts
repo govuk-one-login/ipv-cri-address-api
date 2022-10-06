@@ -1,34 +1,29 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-
-/**
- *
- * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
- * @param {Object} event - API Gateway Lambda Proxy Input Format
- *
- * Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
- * @returns {Object} object - API Gateway Lambda Proxy Output Format
- *
- */
+import { AddressService } from "./services/address-service";
+import config from "./config";
+import { DynamoDbClient } from "./lib/dynamo-db-client";
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     let response: APIGatewayProxyResult;
     try {
+        const sessionId = event.headers["session_id"] as string;
+
+        const addressService = new AddressService(config.addressLookupStorageTableName, DynamoDbClient);
+        const result = await addressService.getAddressesBySessionId(sessionId);
+
         response = {
             statusCode: 200,
             body: JSON.stringify({
-                message: "hello world",
+                result,
             }),
         };
-    } catch (err: unknown) {
+    } catch (err) {
         // eslint-disable-next-line no-console
-        console.log(err);
+        console.error(err);
         response = {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: err instanceof Error ? err.message : "some error happened",
-            }),
+            statusCode: 400,
+            body: "An error has occurred. " + err,
         };
     }
-
     return response;
 };
