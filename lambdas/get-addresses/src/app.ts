@@ -7,6 +7,13 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     let response: APIGatewayProxyResult;
     try {
         const sessionId = event.headers["session_id"] as string;
+        if (!sessionId) {
+            response = {
+                statusCode: 400,
+                body: "Missing header: session_id is required",
+            };
+            return response;
+        }
 
         const addressService = new AddressService(config.addressLookupStorageTableName, DynamoDbClient);
         const result = await addressService.getAddressesBySessionId(sessionId);
