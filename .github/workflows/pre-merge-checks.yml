@@ -8,6 +8,7 @@ on:
       - synchronize
 
 jobs:
+
   style-checks:
     runs-on: ubuntu-latest
     steps:
@@ -21,6 +22,26 @@ jobs:
           cache: 'gradle'
       - name: Run Spotless
         run: ./gradlew --no-daemon spotlessCheck
+
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-function:
+          - get-addresses
+    steps:
+      - name: Pull Repository
+        uses: actions/checkout@v3
+      - name: Set-up Node 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: NPM Install
+        working-directory: ./lambdas/${{ matrix.node-function }}
+        run: npm install
+      - name: run Lint
+        working-directory: ./lambdas/${{ matrix.node-function }}
+        run: npm run lint
 
   build:
     runs-on: ubuntu-latest
@@ -86,6 +107,26 @@ jobs:
           path: |
             */build/jacoco/
             */build/reports/
+
+  run-unit-tests-node:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-function:
+          - get-addresses
+    steps:
+      - name: Pull Repository
+        uses: actions/checkout@v3
+      - name: Set-up Node 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: NPM Install
+        working-directory: ./lambdas/${{ matrix.node-function }}
+        run: npm install
+      - name: run node tests
+        working-directory: ./lambdas/${{ matrix.node-function }}
+        run: npm run test
 
   run-sonar-analysis:
     runs-on: ubuntu-latest
