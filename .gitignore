@@ -1,4 +1,8 @@
+# node modules folder
 node_modules/
+
+# test coverage output
+coverage/
 
 # Compiled class file
 *.class
