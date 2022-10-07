@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -41,12 +42,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.apache.logging.log4j.Level.INFO;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -109,6 +109,8 @@ class IssueCredentialHandlerTest {
         verify(mockVerifiableCredentialService)
                 .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER);
+        verify(mockEventProbe).log(INFO, "found session");
+        verifyNoMoreInteractions(mockEventProbe);
         verify(mockAuditService)
                 .sendAuditEvent(
                         eq(AuditEventType.VC_ISSUED),
@@ -132,7 +134,8 @@ class IssueCredentialHandlerTest {
                         IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
         setRequestBodyAsPlainJWT(event);
-        setupEventProbeErrorBehaviour();
+        when(mockEventProbe.log(INFO, "found session")).thenReturn(mockEventProbe);
+        setupEventProbeExpectedErrorBehaviour();
         var unExpectedJOSEException = new JOSEException("Unexpected JOSE object type: JWSObject");
 
         final UUID sessionId = UUID.randomUUID();
@@ -169,20 +172,22 @@ class IssueCredentialHandlerTest {
         assertThat(
                 responseBody.get("error_description").toString(),
                 containsString(VERIFIABLE_CREDENTIAL_ERROR.getErrorSummary()));
+        verify(mockEventProbe).log(INFO, "found session");
+        verifyNoMoreInteractions(mockEventProbe);
     }
 
     @Test
     void shouldThrowCredentialRequestExceptionWhenAuthorizationHeaderIsNotSupplied()
             throws SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        setupEventProbeErrorBehaviour();
-
+        setupEventProbeExpectedErrorBehaviour();
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
         assertEquals(
                 ContentType.APPLICATION_JSON.getType(), response.getHeaders().get("Content-Type"));
         assertEquals(HttpStatusCode.BAD_REQUEST, response.getStatusCode());
+        verifyNoMoreInteractions(mockEventProbe);
     }
 
     @Test
@@ -196,7 +201,7 @@ class IssueCredentialHandlerTest {
                         accessToken.toAuthorizationHeader()));
 
         setRequestBodyAsPlainJWT(event);
-        setupEventProbeErrorBehaviour();
+        setupEventProbeExpectedErrorBehaviour();
 
         AwsErrorDetails awsErrorDetails =
                 AwsErrorDetails.builder()
@@ -226,6 +231,7 @@ class IssueCredentialHandlerTest {
         assertThat(
                 responseBody.get("error_description").toString(),
                 containsString(awsErrorDetails.errorMessage()));
+        verifyNoMoreInteractions(mockEventProbe);
     }
 
     @Test
@@ -239,7 +245,8 @@ class IssueCredentialHandlerTest {
                         accessToken.toAuthorizationHeader()));
 
         setRequestBodyAsPlainJWT(event);
-        setupEventProbeErrorBehaviour();
+        when(mockEventProbe.log(Level.INFO, "found session")).thenReturn(mockEventProbe);
+        setupEventProbeExpectedErrorBehaviour();
 
         AwsErrorDetails awsErrorDetails =
                 AwsErrorDetails.builder()
@@ -274,11 +281,15 @@ class IssueCredentialHandlerTest {
         assertThat(
                 responseBody.get("error_description").toString(),
                 containsString(awsErrorDetails.errorMessage()));
+        verify(mockEventProbe).log(INFO, "found session");
+        verifyNoMoreInteractions(mockEventProbe);
     }
 
-    private void setupEventProbeErrorBehaviour() {
-        when(mockEventProbe.counterMetric(anyString(), anyDouble())).thenReturn(mockEventProbe);
-        when(mockEventProbe.log(any(Level.class), any(Exception.class))).thenReturn(mockEventProbe);
+    private void setupEventProbeExpectedErrorBehaviour() {
+        when(mockEventProbe.log(eq(Level.ERROR), Mockito.any(Exception.class)))
+                .thenReturn(mockEventProbe);
+        when(mockEventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d))
+                .thenReturn(mockEventProbe);
     }
 
     private void setRequestBodyAsPlainJWT(APIGatewayProxyRequestEvent event) {

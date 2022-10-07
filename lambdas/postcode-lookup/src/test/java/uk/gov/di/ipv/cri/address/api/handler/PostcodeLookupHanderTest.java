@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
@@ -29,16 +30,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.apache.logging.log4j.Level.INFO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.LAMBDA_NAME;
 
 @ExtendWith(MockitoExtension.class)
 class PostcodeLookupHanderTest {
@@ -63,7 +66,8 @@ class PostcodeLookupHanderTest {
             throws JsonProcessingException, PostcodeLookupValidationException,
                     PostcodeLookupProcessingException {
 
-        setupEventProbeErrorBehaviour();
+        when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+        setupEventProbeExpectedErrorBehaviour();
 
         PostcodeLookupValidationException exception =
                 new PostcodeLookupValidationException("Postcode is empty");
@@ -77,8 +81,8 @@ class PostcodeLookupHanderTest {
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
         assertEquals(400, responseEvent.getStatusCode());
-        verify(eventProbe).log(Level.ERROR, exception);
-        verify(eventProbe).counterMetric("postcode_lookup", 0d);
+        verifyErrorsLoggedByEventProbe(exception);
+        verifyNoMoreInteractions(eventProbe);
     }
 
     @Test
@@ -86,20 +90,20 @@ class PostcodeLookupHanderTest {
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     SessionExpiredException, SessionNotFoundException {
 
-        setupEventProbeErrorBehaviour();
+        setupEventProbeExpectedErrorBehaviour();
 
         SessionNotFoundException exception = new SessionNotFoundException("Session not found");
 
-        when(apiGatewayProxyRequestEvent.getHeaders())
-                .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
+        String sessionId = UUID.randomUUID().toString();
+        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", sessionId));
         when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(Map.of("postcode", ""));
-        willThrow(exception).given(sessionService).validateSessionId(anyString());
+        willThrow(exception).given(sessionService).validateSessionId(sessionId);
 
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
         assertEquals(403, responseEvent.getStatusCode());
-        verify(eventProbe).log(Level.ERROR, exception);
-        verify(eventProbe).counterMetric("postcode_lookup", 0d);
+        verifyErrorsLoggedByEventProbe(exception);
+        verifyNoMoreInteractions(eventProbe);
     }
 
     @Test
@@ -107,7 +111,7 @@ class PostcodeLookupHanderTest {
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     SessionExpiredException, SessionValidationException, SessionNotFoundException {
 
-        setupEventProbeErrorBehaviour();
+        setupEventProbeExpectedErrorBehaviour();
 
         RuntimeException exception = new RuntimeException("Any other exception");
 
@@ -119,8 +123,8 @@ class PostcodeLookupHanderTest {
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
         assertEquals(500, responseEvent.getStatusCode());
-        verify(eventProbe).log(Level.ERROR, exception);
-        verify(eventProbe).counterMetric("postcode_lookup", 0d);
+        verifyErrorsLoggedByEventProbe(exception);
+        verifyNoMoreInteractions(eventProbe);
     }
 
     @Test
@@ -132,7 +136,8 @@ class PostcodeLookupHanderTest {
         Map<String, String> requestHeaders = Map.of("session_id", sessionId);
         AuditEventContext testAuditEventContext = mock(AuditEventContext.class);
 
-        when(eventProbe.counterMetric(anyString())).thenReturn(eventProbe);
+        when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+        when(eventProbe.counterMetric(LAMBDA_NAME)).thenReturn(eventProbe);
         when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(requestHeaders);
         when(apiGatewayProxyRequestEvent.getPathParameters())
                 .thenReturn(Map.of("postcode", testPostcode));
@@ -144,16 +149,22 @@ class PostcodeLookupHanderTest {
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
         assertEquals(200, responseEvent.getStatusCode());
-        verify(eventProbe).counterMetric("postcode_lookup");
         verify(sessionService).validateSessionId(sessionId);
         verify(postcodeLookupService)
                 .getAuditEventContext(testPostcode, requestHeaders, sessionItem);
         verify(postcodeLookupService).lookupPostcode(testPostcode);
         verify(auditService).sendAuditEvent(AuditEventType.REQUEST_SENT, testAuditEventContext);
+        verify(eventProbe).counterMetric(LAMBDA_NAME);
+        verifyNoMoreInteractions(eventProbe);
     }
 
-    private void setupEventProbeErrorBehaviour() {
-        when(eventProbe.counterMetric(anyString(), anyDouble())).thenReturn(eventProbe);
-        when(eventProbe.log(any(Level.class), any(Exception.class))).thenReturn(eventProbe);
+    private void setupEventProbeExpectedErrorBehaviour() {
+        when(eventProbe.log(eq(Level.ERROR), Mockito.any(Exception.class))).thenReturn(eventProbe);
+        when(eventProbe.counterMetric(LAMBDA_NAME, 0d)).thenReturn(eventProbe);
+    }
+
+    private void verifyErrorsLoggedByEventProbe(Exception exception) {
+        verify(eventProbe).log(Level.ERROR, exception);
+        verify(eventProbe).counterMetric(LAMBDA_NAME, 0d);
     }
 }
