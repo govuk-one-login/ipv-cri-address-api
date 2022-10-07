@@ -40,9 +40,6 @@ jobs:
           role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Gradle build
-        run: ./gradlew build -x test -x spotlessCheck
-
       - name: SAM build
         run: sam build -t infrastructure/lambda/template.yaml
 
