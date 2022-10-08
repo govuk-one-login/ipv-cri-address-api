@@ -28,7 +28,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // eslint-disable-next-line no-console
         console.error(err);
         response = {
-            statusCode: 400,
+            statusCode: 500,
             body: "An error has occurred. " + err,
         };
     }

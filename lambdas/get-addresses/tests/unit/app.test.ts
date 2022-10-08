@@ -1,67 +1,72 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { lambdaHandler } from '../../src/app';
+import { APIGatewayProxyEvent } from "aws-lambda";
+import { lambdaHandler } from "../../src/app";
+import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
+import { CanonicalAddress } from "../../src/types/address";
 
-describe('Unit test for GetAddresses handler', function () {
-    it('verifies successful response', async () => {
-        const event: APIGatewayProxyEvent = {
-            httpMethod: 'get',
-            body: '',
+const mockDynamoDbClient = jest.mocked(DynamoDbClient);
+
+describe("Handler", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it("should return an address when an address is found", async () => {
+        const addresses: CanonicalAddress[] = [
+            {
+                streetName: "Downing street",
+                buildingNumber: "10",
+                postalCode: "SW1A 2AA",
+            },
+        ];
+
+        const savedAddress = { Item: addresses };
+
+        mockDynamoDbClient.send = jest.fn().mockResolvedValue(savedAddress);
+
+        const params = {
             headers: {
-                "session_id": "some-session-id"    
+                session_id: "123-abc",
             },
-            isBase64Encoded: false,
-            multiValueHeaders: {},
-            multiValueQueryStringParameters: {},
-            path: '/addresses',
-            pathParameters: {},
-            queryStringParameters: {},
-            requestContext: {
-                accountId: "123456789012",
-                apiId: "1234",
-                authorizer: {},
-                httpMethod: "get",
-                identity: {
-                    accessKey: "",
-                    accountId: "",
-                    apiKey: "",
-                    apiKeyId: "",
-                    caller: "",
-                    clientCert: {
-                        clientCertPem: "",
-                        issuerDN: "",
-                        serialNumber: "",
-                        subjectDN: "",
-                        validity: { notAfter: "", notBefore: "" },
-                    },
-                    cognitoAuthenticationProvider: "",
-                    cognitoAuthenticationType: "",
-                    cognitoIdentityId: "",
-                    cognitoIdentityPoolId: "",
-                    principalOrgId: "",
-                    sourceIp: "",
-                    user: "",
-                    userAgent: "",
-                    userArn: "",
-                },
-                path: '/addresses',
-                protocol: 'HTTP/1.1',
-                requestId: 'c6af9ac6-7b61-11e6-9a41-93e8deadbeef',
-                requestTimeEpoch: 1428582896000,
-                resourceId: '123456',
-                resourcePath: '/addresses',
-                stage: 'dev',
-            },
-            resource: "",
-            stageVariables: {},
-        };
-        const result: APIGatewayProxyResult = await lambdaHandler(event);
+        } as unknown as APIGatewayProxyEvent;
 
-        expect(result.statusCode).toEqual(200);
-        console.log(JSON.stringify(result));
-        // expect(result.body).toEqual(
-        //     JSON.stringify({
-        //         message: 'addresses',
-        //     }),
-        // );
+        const result = await lambdaHandler(params);
+        const resultAddress = JSON.parse(result.body).result;
+        expect(resultAddress).toEqual(addresses);
+        expect(result.statusCode).toBe(200);
+    });
+
+    it("should return empty array when no address is found", async () => {
+        mockDynamoDbClient.send = jest.fn().mockResolvedValue({ Item: undefined });
+        const params = {
+            headers: {
+                session_id: "123-abc",
+            },
+        } as unknown as APIGatewayProxyEvent;
+        const result = await lambdaHandler(params);
+        const resultAddress = JSON.parse(result.body).result;
+        expect(resultAddress).toEqual([]);
+        expect(result.statusCode).toBe(200);
+    });
+
+    it("should return a status code 400 when no sesson id is passed", async () => {
+        const params = {
+            headers: {},
+        } as unknown as APIGatewayProxyEvent;
+        const result = await lambdaHandler(params);
+        const errorMessage = result.body;
+        expect(errorMessage).toContain("session_id is required");
+        expect(result.statusCode).toBe(400);
+    });
+
+    it("should return a status code 500 when we cannot connect to dynamodb", async () => {
+        mockDynamoDbClient.send = jest.fn().mockRejectedValue(new Error("DynamoDB Error"));
+        const params = {
+            headers: {
+                session_id: "123-abc",
+            },
+        } as unknown as APIGatewayProxyEvent;
+        const result = await lambdaHandler(params);
+        expect(result.statusCode).toBe(500);
+        expect(result.body).toContain("DynamoDB Error");
     });
 });

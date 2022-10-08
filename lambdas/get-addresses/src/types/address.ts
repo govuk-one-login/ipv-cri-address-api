@@ -1,6 +1,6 @@
 export type CanonicalAddress = {
-    validFrom: string;
-    validUntil: string;
+    validFrom?: string;
+    validUntil?: string;
     uprn?: string;
     organisationName?: string;
     departmentName?: string;
