@@ -311,7 +311,7 @@ Resources:
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
+      LogGroupName: !Sub "/aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs"
       RetentionInDays: 365
 
   PublicAddressApiAccessLogGroupSubscriptionFilter:
@@ -334,14 +334,14 @@ Resources:
     Type: AWS::Logs::LogGroup
     Condition: IsNotDevEnvironment
     Properties:
-      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
+      LogGroupName: !Sub "/aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs"
       RetentionInDays: 365
 
   DevOnlyAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Condition: IsDevEnvironment
     Properties:
-      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyAddressApi}-private-AccessLogs
+      LogGroupName: !Sub "/aws/apigateway/${AWS::StackName}-${DevOnlyAddressApi}-private-AccessLogs"
       RetentionInDays: 30
 
   PrivateAddressApiAccessLogGroupSubscriptionFilter:
@@ -416,7 +416,7 @@ Resources:
   PostcodeLookupFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-${PostcodeLookupFunction}"
       RetentionInDays: 30
 
   PostcodeLookupFunctionLogsSubscriptionFilter:
@@ -469,7 +469,7 @@ Resources:
   AddressFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-${AddressFunction}"
       RetentionInDays: 30
 
   AddressFunctionLogsSubscriptionFilter:
@@ -532,7 +532,7 @@ Resources:
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-${IssueCredentialFunction}"
       RetentionInDays: 30
 
   IssueCredentialFunctionLogsSubscriptionFilter:
