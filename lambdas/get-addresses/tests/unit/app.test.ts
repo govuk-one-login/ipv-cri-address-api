@@ -1,7 +1,20 @@
+jest.mock("../../src/services/config-service", () => {
+    return {
+        ConfigService: jest.fn().mockImplementation(() => {
+            return {
+                init: jest.fn().mockResolvedValue([]),
+                config: {
+                    AddressLookupTableName: "Test",
+                },
+            };
+        }),
+    };
+});
+
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { lambdaHandler } from "../../src/app";
-import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
 import { CanonicalAddress } from "../../src/types/address";
+import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
 
 const mockDynamoDbClient = jest.mocked(DynamoDbClient);
 
@@ -37,6 +50,7 @@ describe("Handler", () => {
 
     it("should return empty array when no address is found", async () => {
         mockDynamoDbClient.send = jest.fn().mockResolvedValue({ Item: undefined });
+
         const params = {
             headers: {
                 session_id: "123-abc",
@@ -52,6 +66,7 @@ describe("Handler", () => {
         const params = {
             headers: {},
         } as unknown as APIGatewayProxyEvent;
+
         const result = await lambdaHandler(params);
         const errorMessage = result.body;
         expect(errorMessage).toContain("session_id is required");
@@ -60,6 +75,7 @@ describe("Handler", () => {
 
     it("should return a status code 500 when we cannot connect to dynamodb", async () => {
         mockDynamoDbClient.send = jest.fn().mockRejectedValue(new Error("DynamoDB Error"));
+
         const params = {
             headers: {
                 session_id: "123-abc",
