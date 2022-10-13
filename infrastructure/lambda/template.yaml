@@ -551,12 +551,21 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref IssueCredentialFunctionLogGroup
 
-  GetAddresses:
+  GetAddressesFunction:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.lambdaHandler
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs16.x
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
+          PERSON_IDENTITY_TABLE_NAME: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -566,6 +575,27 @@ Resources:
         EntryPoints:
         - src/app.ts
 
+  GetAddressesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${GetAddressesFunction}"
+      RetentionInDays: 30
+
+  GetAddressesFunctionLogsSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
+    Properties:
+      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
+      FilterPattern: ""
+      LogGroupName: !Ref GetAddressesFunctionLogGroup
+
+  GetAddressesFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
+    Properties:
+      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
+      FilterPattern: ""
+      LogGroupName: !Ref GetAddressesFunctionLogGroup
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"
@@ -670,6 +700,13 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref IssueCredentialFunction.Alias
+      Principal: apigateway.amazonaws.com
+
+  GetAddressesFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetAddressesFunction.Alias
       Principal: apigateway.amazonaws.com
 
 Outputs:

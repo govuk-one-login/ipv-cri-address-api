@@ -5,11 +5,12 @@
 
 export default {
     transform: {
-        "^.+\\.ts?$": "esbuild-jest",
+        "^.+\\.ts?$": "ts-jest",
     },
     clearMocks: true,
     collectCoverage: true,
     coverageDirectory: "coverage",
     coverageProvider: "v8",
-    testMatch: ["**/tests/unit/*.test.ts"],
+    coveragePathIgnorePatterns: ["config.ts", "node_modules/"],
+    testMatch: ["**/tests/**/*.test.ts"],
 };
