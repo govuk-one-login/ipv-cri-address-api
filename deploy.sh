@@ -23,5 +23,5 @@ sam deploy --stack-name "$stack_name" \
    Environment=dev \
    AuditEventNamePrefix=/common-cri-parameters/AddressAuditEventNamePrefix \
    CriIdentifier=/common-cri-parameters/AddressCriIdentifier \
-   CommonStackName=address-common-cri-api \
+   CommonStackName=address-common-cri-api-local \
    SecretPrefix=address-cri-api
