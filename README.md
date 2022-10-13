@@ -5,24 +5,6 @@
 **important:** One you've cloned the repo, run `pre-commit install` to install the pre-commit hooks.
 If you have not installed `pre-commit` then please do so [here](https://pre-commit.com/).
 
-## Check out submodules (First Time)
-> The first time you check out or clone the repository, you will need to run the following commands:
-
-`git submodule update --init --recursive`
-
-## Update submodules (Subsequent times)
-> Subsequent times you will need to run the following commands:
-
-`git submodule update --recursive`
-
-## Updating submodules to the latest "main" branch
-> You can also update the submodules to the latest "main" branch, but this is not done automatically
-> in case there have been changes made to the shared libraries you do not yet want to track
-
-cd into each submodule (folders are `/lib` and `/common-lambdas`) and run the following commands:
-
-`git checkout main && git pull`
-
 ## Build
 
 > Ensure that you are using the java version specified in `.sdkmanrc`.
@@ -55,17 +37,11 @@ Before your **first** deploy, build a sam config toml file.
 > **Ensure you change the environment name**, when asked, to `dev` instead of `default`.
 > All other defaults can be accepted by leaving them blank
 
-The command to run is:
-
-`gds aws  di-ipv-cri-dev -- sam deploy -t infrastructure/lambda/template.yaml --guided`
-
-You will be asked for the Ordnance Survey API Key at this point.
-In production, this key is stored in the AWS Secrets Manager.
-
 Any time you wish to deploy, run:
 
-`gds aws  di-ipv-cri-dev -- ./deploy.sh`
+`gds aws  di-ipv-cri-dev -- ./deploy.sh STACKNAME`
 
+Make sure you replace `STACKNAME` with your stack name that you want to deploy to.
 
 ## Deploy to AWS lambda
 
