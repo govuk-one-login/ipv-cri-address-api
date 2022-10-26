@@ -314,14 +314,6 @@ Resources:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
       RetentionInDays: 365
 
-  PublicAddressApiAccessLogGroupSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Ref PublicAddressApiAccessLogGroup
-
   PublicAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
@@ -343,14 +335,6 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyAddressApi}-private-AccessLogs
       RetentionInDays: 30
-
-  PrivateAddressApiAccessLogGroupSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Ref PrivateAddressApiAccessLogGroup
 
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -419,14 +403,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
       RetentionInDays: 30
 
-  PostcodeLookupFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Ref PostcodeLookupFunctionLogGroup
-
   PostcodeLookupFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
@@ -471,14 +447,6 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
       RetentionInDays: 30
-
-  AddressFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Ref AddressFunctionLogGroup
 
   AddressFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -535,14 +503,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
       RetentionInDays: 30
 
-  IssueCredentialFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Ref IssueCredentialFunctionLogGroup
-
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
@@ -580,14 +540,6 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${GetAddressesFunction}"
       RetentionInDays: 30
-
-  GetAddressesFunctionLogsSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prod"
-      FilterPattern: ""
-      LogGroupName: !Ref GetAddressesFunctionLogGroup
 
   GetAddressesFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
