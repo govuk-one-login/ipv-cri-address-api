@@ -758,8 +758,19 @@ Resources:
               Namespace: AWS/ApiGateway
               MetricName: 5XXError
               Dimensions:
-                - Name: Stage
-                  Value: !Ref Environment
+                - Name: ApiName
+                  Value: !Sub "${AWS::StackName}-PublicAddressApi"
+            Period: 300
+            Stat: Sum
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 5XXError
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "${AWS::StackName}-PrivateAddressApi"
             Period: 300
             Stat: Sum
 
@@ -791,8 +802,19 @@ Resources:
               Namespace: AWS/ApiGateway
               MetricName: 4XXError
               Dimensions:
-                - Name: Stage
-                  Value: !Ref Environment
+                - Name: ApiName
+                  Value: !Sub "${AWS::StackName}-PublicAddressApi"
+            Period: 300
+            Stat: Sum
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 4XXError
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "${AWS::StackName}-PrivateAddressApi"
             Period: 300
             Stat: Sum
 
