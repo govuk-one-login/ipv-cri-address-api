@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class AddressApiHappyPath {
 
     private final String POST_CODE = "SW1A2AA";
+    private final String POST_CODE_FORMATTED = "SW1A 2AA";
     private final String ENVIRONMENT = "/dev"; // dev, build, staging, integration
     private final String SESSION = ENVIRONMENT + "/session";
     private final String POSTCODE_LOOKUP = ENVIRONMENT + "/postcode-lookup/";
@@ -188,7 +189,7 @@ public class AddressApiHappyPath {
         assertEquals(200, response.statusCode());
         assertFalse(postcodeLookupResponse.isEmpty());
         assertNotNull(postcodeLookupResponse.get(0).getUprn());
-        assertEquals(POST_CODE, postcodeLookupResponse.get(0).getPostalCode());
+        assertEquals(POST_CODE_FORMATTED, postcodeLookupResponse.get(0).getPostalCode());
     }
 
     @When("the user selects address")
