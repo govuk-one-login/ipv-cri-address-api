@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class AddressApiHappyPath {
 
-    private final String POST_CODE = "SW1A 2AA";
+    private final String POST_CODE = "SW1A2AA";
     private final String ENVIRONMENT = "/dev"; // dev, build, staging, integration
     private final String SESSION = ENVIRONMENT + "/session";
     private final String POSTCODE_LOOKUP = ENVIRONMENT + "/postcode-lookup/";
