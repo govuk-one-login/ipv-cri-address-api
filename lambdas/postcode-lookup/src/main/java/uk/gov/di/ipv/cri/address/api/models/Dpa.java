@@ -1,8 +1,10 @@
 package uk.gov.di.ipv.cri.address.api.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Dpa {
 
     @JsonProperty("UPRN")

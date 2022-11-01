@@ -85,7 +85,10 @@ public class PostcodeLookupService {
                                                     new URI(
                                                             configurationService.getParameterValue(
                                                                     "OrdnanceSurveyAPIURL")))
-                                            .appendRawQueryParameter("postcode", postcode)
+                                            .appendRawQueryParameter(
+                                                    "postcode",
+                                                    URLDecoder.decode(
+                                                            postcode, Charset.defaultCharset()))
                                             .appendRawQueryParameter(
                                                     "key",
                                                     configurationService.getSecretValue(
