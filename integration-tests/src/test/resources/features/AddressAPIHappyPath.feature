@@ -27,3 +27,7 @@ Feature: Address API happy path test
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
 
+    #Get_Addresses
+    When user sends a GET request to Addresses end point
+    Then user should receive a valid response
+

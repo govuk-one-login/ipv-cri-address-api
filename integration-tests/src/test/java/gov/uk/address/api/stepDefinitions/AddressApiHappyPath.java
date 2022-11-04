@@ -40,6 +40,7 @@ public class AddressApiHappyPath {
     private final String AUTHORIZATION = ENVIRONMENT + "/authorization";
     private final String TOKEN = ENVIRONMENT + "/token";
     private final String CREDENTIAL_ISSUE = ENVIRONMENT + "/credential/issue";
+    private final String GET_ADDRESSES = ENVIRONMENT + "/addresses";
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private String userIdentityJson;
@@ -320,6 +321,38 @@ public class AddressApiHappyPath {
         assertEquals(200, response.statusCode());
         assertNotNull(response.body());
         makeAssertions(SignedJWT.parse(response.body()));
+    }
+
+    @When("user sends a GET request to Addresses end point")
+    public void userSendsAGetRequestToAddressesEndpoint()
+            throws URISyntaxException, IOException, InterruptedException {
+        var request =
+                HttpRequest.newBuilder()
+                        .uri(new URIBuilder(getPrivateAPIEndpoint()).setPath(GET_ADDRESSES).build())
+                        .setHeader("session_id", sessionId)
+                        .GET()
+                        .build();
+
+        this.response = sendHttpRequest(request);
+    }
+
+    @Then("user should receive a valid response")
+    public void userShouldReceiveAValidResponse() throws ParseException, IOException {
+        JsonNode deserializedUser = objectMapper.readTree(userIdentityJson);
+        var inputPostCode =
+                deserializedUser
+                        .get("shared_claims")
+                        .get("address")
+                        .get(0)
+                        .get("postalCode")
+                        .asText();
+
+        assertEquals(200, response.statusCode());
+        JsonNode payload = objectMapper.readTree(response.body().toString());
+
+        assertEquals(
+                inputPostCode,
+                payload.get("result").get("addresses").get(0).get("postalCode").asText());
     }
 
     private void makeAssertions(SignedJWT decodedJWT) throws IOException {
