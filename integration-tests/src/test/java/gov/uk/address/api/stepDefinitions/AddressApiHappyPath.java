@@ -355,6 +355,15 @@ public class AddressApiHappyPath {
                 payload.get("result").get("addresses").get(0).get("postalCode").asText());
     }
 
+    @And("JWT lives for two hours")
+    public void jwt_lives_for_two_hours() throws ParseException, IOException {
+        SignedJWT decodedJWT = SignedJWT.parse(response.body());
+        var payload = objectMapper.readTree(decodedJWT.getPayload().toString());
+        assertNotNull(payload.get("nbf"));
+        assertNotNull(payload.get("exp"));
+        assertEquals(7200L, payload.get("exp").asLong() - payload.get("nbf").asLong());
+    }
+
     private void makeAssertions(SignedJWT decodedJWT) throws IOException {
         var header = decodedJWT.getHeader().toString();
         var payload = objectMapper.readTree(decodedJWT.getPayload().toString());
