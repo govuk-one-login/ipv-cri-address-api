@@ -141,11 +141,20 @@ Mappings:
 
   MaxJwtTtlMapping:
     Environment:
-      dev: 7200 # 2 hours
-      build: 7200 # 2 hours
-      staging: 7200 # 2 hours
-      integration: 7200 # 2 hours
-      production: 7200 # 2 hours
+      dev: 2
+      build: 2
+      staging: 2
+      integration: 2
+      production: 2
+
+  # Permitted values: SECONDS,MINUTES,HOURS,DAYS,MONTHS,YEARS
+  JwtTtlUnitMapping:
+    Environment:
+      dev: HOURS
+      build: HOURS
+      staging: HOURS
+      integration: HOURS
+      production: HOURS
 
   OrdnanceSurveyAPIURLMapping:
     Environment:
@@ -486,6 +495,7 @@ Resources:
             Resource:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
@@ -628,8 +638,16 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
       Type: String
-      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref 'Environment']
+      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
       Description: default time to live for an JWT in (seconds)
+
+  JwtTtlUnitParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
+      Type: String
+      Value: !FindInMap [ JwtTtlUnitMapping, Environment, !Ref Environment ]
+      Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
 
   OrdnanceSurveyAPIURLParameter:
     Type: AWS::SSM::Parameter

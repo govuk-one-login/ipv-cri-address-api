@@ -4,39 +4,33 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
+import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
-import java.time.Instant;
+import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.nimbusds.jwt.JWTClaimNames.EXPIRATION_TIME;
 import static com.nimbusds.jwt.JWTClaimNames.ISSUER;
-import static com.nimbusds.jwt.JWTClaimNames.NOT_BEFORE;
-import static com.nimbusds.jwt.JWTClaimNames.SUBJECT;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.ADDRESS_CREDENTIAL_TYPE;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.DI_CONTEXT;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_ADDRESS_KEY;
-import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_CLAIM;
-import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_CONTEXT;
-import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_CREDENTIAL_SUBJECT;
-import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_TYPE;
-import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VERIFIABLE_CREDENTIAL_TYPE;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.W3_BASE_CONTEXT;
 
 public class VerifiableCredentialService {
-
+    private final VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder;
     private final SignedJWTFactory signedJwtFactory;
     private final ConfigurationService configurationService;
-
     private final ObjectMapper objectMapper;
 
+    @ExcludeFromGeneratedCoverageReport
     public VerifiableCredentialService() {
         this.configurationService = new ConfigurationService();
         this.signedJwtFactory =
@@ -48,43 +42,36 @@ public class VerifiableCredentialService {
                 new ObjectMapper()
                         .registerModule(new Jdk8Module())
                         .registerModule(new JavaTimeModule());
+
+        this.vcClaimsSetBuilder =
+                new VerifiableCredentialClaimsSetBuilder(
+                        this.configurationService, Clock.systemUTC());
     }
 
     public VerifiableCredentialService(
             SignedJWTFactory signedClaimSetJwt,
             ConfigurationService configurationService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder) {
         this.signedJwtFactory = signedClaimSetJwt;
         this.configurationService = configurationService;
         this.objectMapper = objectMapper;
+        this.vcClaimsSetBuilder = vcClaimsSetBuilder;
     }
 
     public SignedJWT generateSignedVerifiableCredentialJwt(
             String subject, List<CanonicalAddress> canonicalAddresses) throws JOSEException {
-        var now = Instant.now();
-
+        long jwtTtl = this.configurationService.getMaxJwtTtl();
+        ChronoUnit jwtTtlUnit =
+                ChronoUnit.valueOf(this.configurationService.getParameterValue("JwtTtlUnit"));
         var claimsSet =
-                new JWTClaimsSet.Builder()
-                        .claim(SUBJECT, subject)
-                        .claim(ISSUER, configurationService.getVerifiableCredentialIssuer())
-                        .claim(NOT_BEFORE, now.getEpochSecond())
-                        .claim(
-                                EXPIRATION_TIME,
-                                now.plusSeconds(configurationService.getMaxJwtTtl())
-                                        .getEpochSecond())
-                        .claim(
-                                VC_CLAIM,
-                                Map.of(
-                                        VC_TYPE,
-                                        new String[] {
-                                            VERIFIABLE_CREDENTIAL_TYPE, ADDRESS_CREDENTIAL_TYPE
-                                        },
-                                        VC_CONTEXT,
-                                        new String[] {W3_BASE_CONTEXT, DI_CONTEXT},
-                                        VC_CREDENTIAL_SUBJECT,
-                                        Map.of(
-                                                VC_ADDRESS_KEY,
-                                                convertAddresses(canonicalAddresses))))
+                this.vcClaimsSetBuilder
+                        .subject(subject)
+                        .timeToLive(jwtTtl, jwtTtlUnit)
+                        .verifiableCredentialType(ADDRESS_CREDENTIAL_TYPE)
+                        .verifiableCredentialContext(new String[] {W3_BASE_CONTEXT, DI_CONTEXT})
+                        .verifiableCredentialSubject(
+                                Map.of(VC_ADDRESS_KEY, convertAddresses(canonicalAddresses)))
                         .build();
 
         return signedJwtFactory.createSignedJwt(claimsSet);
