@@ -20,3 +20,10 @@ updates:
     target-branch: main
     labels:
     - dependabot
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: main
+    labels:
+    - dependabot

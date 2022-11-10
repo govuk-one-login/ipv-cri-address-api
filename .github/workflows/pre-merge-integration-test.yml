@@ -7,6 +7,11 @@ on:
       - ready_for_review
       - synchronize
 
+  workflow_run:
+    workflows: ["Dependabot PR Check"]
+    types:
+      - completed
+
 jobs:
   deploy:
     name: pre-merge-integration-tests
@@ -45,7 +50,7 @@ jobs:
 
       - name: Set short SHA
         id: vars
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: SAM deploy integration test stack
         run: |
