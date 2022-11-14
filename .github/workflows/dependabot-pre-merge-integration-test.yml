@@ -1,0 +1,10 @@
+name: Dependabot pre merge integration test
+on:
+  workflow_run:
+    workflows: ["Dependabot PR Check"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/pre-merge-integration-test.yml@main

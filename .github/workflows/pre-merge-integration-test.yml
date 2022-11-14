@@ -7,14 +7,10 @@ on:
       - ready_for_review
       - synchronize
 
-  workflow_run:
-    workflows: ["Dependabot PR Check"]
-    types:
-      - completed
-
 jobs:
   deploy:
     name: pre-merge-integration-tests
+    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     environment: di-ipv-cri-dev
     timeout-minutes: 15
