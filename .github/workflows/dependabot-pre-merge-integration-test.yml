@@ -7,4 +7,4 @@ on:
 
 jobs:
   deploy:
-    uses: ./.github/workflows/pre-merge-integration-test.yml@main
+    uses: ./.github/workflows/pre-merge-integration-test.yml
