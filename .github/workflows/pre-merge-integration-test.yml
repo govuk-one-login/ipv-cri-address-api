@@ -10,7 +10,6 @@ on:
 jobs:
   deploy:
     name: pre-merge-integration-tests
-    if: ${{ github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     environment: di-ipv-cri-dev
     timeout-minutes: 15
