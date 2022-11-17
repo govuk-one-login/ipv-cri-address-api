@@ -22,6 +22,8 @@ updates:
     - dependabot
   - package-ecosystem: "gradle"
     directory: "/"
+    commit-message:
+      prefix: BAU
     schedule:
       interval: "weekly"
     target-branch: main
