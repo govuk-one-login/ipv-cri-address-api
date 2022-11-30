@@ -1,15 +1,16 @@
 Feature: Address API happy path test
+
   @address_api_happy
-  Scenario: Basic Address API journey
-    Given user has the user identity in the form of a signed JWT string
+  Scenario Outline: Basic Address API journey
+    Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
 
     #Session
     When user sends a POST request to session end point
     Then user gets a session-id
 
     #Postcode Lookup
-    When the user performs a postcode lookup
-    Then user receives a list of addresses
+    When the user performs a postcode lookup for post code "<testPostCode>"
+    Then user receives a list of addresses containing "<testPostCode>"
 
     #Address
     When the user selects address
@@ -26,9 +27,9 @@ Feature: Address API happy path test
     #Credential Issue
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
-    And JWT lives for two hours
 
-    #Get_Addresses
-    When user sends a GET request to Addresses end point
-    Then user should receive a valid response
-
+    Examples:
+      | testUserDataSheetRowNumber | testPostCode |
+      | 197                        | SW1A 2AA     |
+      | 23                         | CA14 5PH     |
+      | 1000                       | S62 5AB      |
