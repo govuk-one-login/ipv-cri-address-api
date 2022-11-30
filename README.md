@@ -95,3 +95,14 @@ Environment:
       Variables:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
 ````
+
+## Run all tests
+Make sure you have deployed a stack on AWS and provide that `STACK_NAME` below with corresponding `API_GATEWAY_ID_PRIVATE` and `API_GATEWAY_ID_PUBLIC` endpoints
+````
+STACK_NAME=xxxx IPV_CORE_STUB_CRI_ID=address-cri-dev ENVIRONMENT=dev API_GATEWAY_ID_PRIVATE=xxxx  API_GATEWAY_ID_PUBLIC=xxxx IPV_CORE_STUB_BASIC_AUTH_USER=user IPV_CORE_STUB_BASIC_AUTH_PASSWORD=xxxx IPV_CORE_STUB_URL="https://di-ipv-core-stub.london.cloudapps.digital" APIGW_API_KEY=xxxx gradle integration-tests:cucumber
+````
+
+## Run a particular test
+````
+STACK_NAME=xxxx IPV_CORE_STUB_CRI_ID=address-cri-dev ENVIRONMENT=dev API_GATEWAY_ID_PRIVATE=xxxx  API_GATEWAY_ID_PUBLIC=xxxx IPV_CORE_STUB_BASIC_AUTH_USER=user IPV_CORE_STUB_BASIC_AUTH_PASSWORD=xxxx IPV_CORE_STUB_URL="https://di-ipv-core-stub.london.cloudapps.digital" APIGW_API_KEY=xxxx gradle cucumber -P tags=@address_api_happy
+````
