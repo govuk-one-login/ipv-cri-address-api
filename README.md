@@ -13,23 +13,6 @@ Build with `./gradlew`
 
 This will run "build", "test", "buildZip", and "spotLess" reformatting
 
-## Test Locally
-Ensure you have built the project using the command above
-
-At present, only two lambdas can be tested locally, however this can easily extended.
-
-To test the `Address` lambda, run the following command:
-
-`gds aws di-ipv-cri-dev -- ./runlocal.sh address`
-
-This will pass data from the file "address.event" to the lambda.
-
-To test the `PostcodeLookup` lambda, run the following command:
-
-`gds aws di-ipv-cri-dev -- ./runlocal.sh postcode`
-
-
-
 ## Deploy to dev account
 
 Before your **first** deploy, build a sam config toml file.
