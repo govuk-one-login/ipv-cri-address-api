@@ -62,10 +62,12 @@ jobs:
 
       - name: Run API integration tests
         env:
+          ENVIRONMENT: dev
           IPV_CORE_STUB_URL: https://di-ipv-core-stub.london.cloudapps.digital
           APIGW_API_KEY: ${{ secrets.API_KEY_CRI_DEV }}
           IPV_CORE_STUB_BASIC_AUTH_USER: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_USER }}
           IPV_CORE_STUB_BASIC_AUTH_PASSWORD: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_PASSWORD }}
+          IPV_CORE_STUB_CRI_ID: address-cri-dev
         run: |
           STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
           API_GATEWAY_ID_PRIVATE=$(aws cloudformation describe-stacks --stack-name $STACK_NAME | jq -r '.Stacks[].Outputs[] | select(.OutputKey == "PrivateAddressApiGatewayId").OutputValue')
