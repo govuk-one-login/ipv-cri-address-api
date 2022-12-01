@@ -4,19 +4,17 @@ plugins {
 }
 
 ext {
-	cucumberVersion = '7.7.0'
 	apache_common_lang_version = '3.12.0'
 	jackson_databind_version = '2.9.5'
 }
 
 dependencies {
 	testImplementation configurations.nimbus
-	testImplementation "io.cucumber:cucumber-java:$cucumberVersion"
-	testImplementation "io.cucumber:cucumber-junit:$cucumberVersion"
+	testImplementation configurations.jackson
 	testImplementation "org.apache.commons:commons-lang3:${apache_common_lang_version}"
 	testImplementation "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}"
-	testImplementation "com.fasterxml.jackson.core:jackson-databind:${jackson_databind_version}"
 	testImplementation(testFixtures("uk.gov.account:cri-common-lib:${dependencyVersions.cri_common_lib}"))
+	testImplementation "io.cucumber:cucumber-junit:7.9.0"
 }
 
 configurations {

@@ -21,8 +21,8 @@ public class AddressSteps {
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
-    private String UPRN;
-    private String POSTCODE;
+    private String uprn;
+    private String postcode;
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext) {
@@ -44,16 +44,16 @@ public class AddressSteps {
         JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
         assertEquals(200, this.testContext.getResponse().statusCode());
         assertNotNull(jsonNode.get(0).get("uprn").asText());
-        UPRN = jsonNode.get(0).get("uprn").asText();
+        uprn = jsonNode.get(0).get("uprn").asText();
         assertEquals(postcode, jsonNode.get(0).get("postalCode").asText());
-        POSTCODE = jsonNode.get(0).get("postalCode").asText();
+        this.postcode = jsonNode.get(0).get("postalCode").asText();
     }
 
     @When("the user selects address")
     public void theUserSelectsAddress() throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(), UPRN, POSTCODE));
+                        this.testContext.getSessionId(), uprn, postcode));
     }
 
     @Then("the address is saved successfully")
@@ -62,7 +62,7 @@ public class AddressSteps {
     }
 
     @When("user sends a POST request to Credential Issue end point with a valid access token")
-    public void user_sends_a_post_request_to_credential_issue_end_point_with_a_valid_access_token()
+    public void userSendsAPostRequestToCredentialIssueEndPointWithAValidAccessToken()
             throws IOException, InterruptedException {
         JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
         var accessToken = jsonNode.get("access_token").asText();
@@ -92,7 +92,7 @@ public class AddressSteps {
         assertEquals("AddressCredential", payload.get("vc").get("type").get(1).asText());
 
         assertEquals(
-                POSTCODE,
+                postcode,
                 payload.get("vc")
                         .get("credentialSubject")
                         .get("address")

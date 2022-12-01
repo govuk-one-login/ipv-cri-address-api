@@ -1,21 +1,28 @@
 package gov.uk.address.api.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.client.HttpHeaders;
+import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.util.URIBuilder;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDate;
 
 public class AddressApiClient {
     private final HttpClient httpClient;
     private final ClientConfigurationService clientConfigurationService;
+    private final ObjectMapper objectMapper;
     private static final String JSON_MIME_MEDIA_TYPE = "application/json";
 
     public AddressApiClient(ClientConfigurationService clientConfigurationService) {
         this.clientConfigurationService = clientConfigurationService;
         this.httpClient = HttpClient.newBuilder().build();
+        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
     public HttpResponse<String> sendPostCodeLookUpRequest(String sessionId, String postcode)
@@ -24,7 +31,7 @@ public class AddressApiClient {
         var request =
                 HttpRequest.newBuilder()
                         .uri(
-                                new uk.gov.di.ipv.cri.common.library.util.URIBuilder(
+                                new URIBuilder(
                                                 this.clientConfigurationService
                                                         .getPrivateApiEndpoint())
                                         .setPath(
@@ -41,24 +48,17 @@ public class AddressApiClient {
     public HttpResponse<String> sendAddressRequest(String sessionId, String uprn, String postcode)
             throws IOException, InterruptedException {
 
-        var requestBody =
-                "[\n"
-                        + "  {\n"
-                        + "    \"uprn\": "
-                        + uprn
-                        + ",\n"
-                        + "    \"postalCode\": \""
-                        + postcode
-                        + "\",\n"
-                        + "    \"validFrom\": \"2020-01-01\",\n"
-                        + "    \"validUntil\": \"\"\n"
-                        + "  }\n"
-                        + "]";
+        CanonicalAddress currentAddress = new CanonicalAddress();
+        currentAddress.setUprn(Long.parseLong(uprn));
+        currentAddress.setPostalCode(postcode);
+        currentAddress.setValidFrom(LocalDate.of(2020, 1, 1));
+
+        var requestBody = objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
 
         var request =
                 HttpRequest.newBuilder()
                         .uri(
-                                new uk.gov.di.ipv.cri.common.library.util.URIBuilder(
+                                new URIBuilder(
                                                 this.clientConfigurationService
                                                         .getPrivateApiEndpoint())
                                         .setPath(
@@ -76,7 +76,7 @@ public class AddressApiClient {
         HttpRequest request =
                 HttpRequest.newBuilder()
                         .uri(
-                                new uk.gov.di.ipv.cri.common.library.util.URIBuilder(
+                                new URIBuilder(
                                                 this.clientConfigurationService
                                                         .getPublicApiEndpoint())
                                         .setPath(
