@@ -119,6 +119,9 @@ class IssueCredentialHandlerTest {
         AuditEventContext actualAuditEventContext = auditEventContextArgCaptor.getValue();
         assertEquals(event.getHeaders(), actualAuditEventContext.getRequestHeaders());
         assertEquals(sessionItem, actualAuditEventContext.getSessionItem());
+        verify(mockAuditService)
+                .sendAuditEvent(eq(AuditEventType.END), auditEventContextArgCaptor.capture());
+        assertEquals(sessionItem, auditEventContextArgCaptor.getValue().getSessionItem());
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
         assertEquals(HttpStatusCode.OK, response.getStatusCode());

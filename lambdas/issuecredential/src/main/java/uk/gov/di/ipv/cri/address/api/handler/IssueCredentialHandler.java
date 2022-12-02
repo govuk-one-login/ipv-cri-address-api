@@ -112,12 +112,18 @@ public class IssueCredentialHandler
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                             sessionItem.getSubject(), addressItem.getAddresses());
+
+            AuditEventContext auditEventContext =
+                    new AuditEventContext(input.getHeaders(), sessionItem);
             auditService.sendAuditEvent(
                     AuditEventType.VC_ISSUED,
-                    new AuditEventContext(input.getHeaders(), sessionItem),
+                    auditEventContext,
                     verifiableCredentialService.getAuditEventExtensions(
                             addressItem.getAddresses()));
+
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER);
+
+            auditService.sendAuditEvent(AuditEventType.END, auditEventContext);
 
             return ApiGatewayResponseGenerator.proxyJwtResponse(
                     HttpStatusCode.OK, signedJWT.serialize());
