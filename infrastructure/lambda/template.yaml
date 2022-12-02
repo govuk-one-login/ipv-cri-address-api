@@ -143,18 +143,18 @@ Mappings:
     Environment:
       dev: 2
       build: 2
-      staging: 2
-      integration: 2
-      production: 2
+      staging: 6
+      integration: 6
+      production: 6
 
   # Permitted values: SECONDS,MINUTES,HOURS,DAYS,MONTHS,YEARS
   JwtTtlUnitMapping:
     Environment:
       dev: HOURS
       build: HOURS
-      staging: HOURS
-      integration: HOURS
-      production: HOURS
+      staging: MONTHS
+      integration: MONTHS
+      production: MONTHS
 
   OrdnanceSurveyAPIURLMapping:
     Environment:
