@@ -1,5 +1,6 @@
 package gov.uk.address.api.stepdefinitions;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
@@ -12,9 +13,11 @@ import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AddressSteps {
 
@@ -99,5 +102,12 @@ public class AddressSteps {
                         .get(0)
                         .get("postalCode")
                         .asText());
+    }
+
+    @Then("user does not get any address")
+    public void user_does_not_get_any_address() throws JsonProcessingException {
+        var list = objectMapper.readValue(this.testContext.getResponse().body(), List.class);
+        assertTrue(list.isEmpty());
+        assertEquals(200, this.testContext.getResponse().statusCode());
     }
 }
