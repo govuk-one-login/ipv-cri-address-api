@@ -26,6 +26,12 @@ Any time you wish to deploy, run:
 
 Make sure you replace `STACKNAME` with your stack name that you want to deploy to.
 
+The CommonStackName and SecretPrefix are optional, but can be overridden by supplying
+
+additional arguments to `deploy.sh` i.e
+
+gds aws di-ipv-cri-dev -- ./deploy.sh STACKNAME YOUR-COMMON-STACKNAME YOUR-SECRET-PREFIX
+
 ## Deploy to AWS lambda
 
 Automated GitHub actions deployments to di-ipv-cri-build have been enabled for this repository.
