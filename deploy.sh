@@ -2,6 +2,8 @@
 set -e
 
 stack_name="$1"
+common_stack_name="${2:-address-common-cri-api-local}"
+secret_prefix="${3:-address-cri-api}"
 
 if [ -z "$stack_name" ]
 then
@@ -23,5 +25,5 @@ sam deploy --stack-name "$stack_name" \
    Environment=dev \
    AuditEventNamePrefix=/common-cri-parameters/AddressAuditEventNamePrefix \
    CriIdentifier=/common-cri-parameters/AddressCriIdentifier \
-   CommonStackName=address-common-cri-api-local \
-   SecretPrefix=address-cri-api
+   CommonStackName="$common_stack_name" \
+   SecretPrefix="$secret_prefix"
