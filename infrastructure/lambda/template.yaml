@@ -85,8 +85,10 @@ Globals:
   Function:
     VpcConfig:
       SecurityGroupIds:
-        - !ImportValue cri-vpc-LambdaSecurityGroup
-      SubnetIds: !Split [ ",", !ImportValue cri-vpc-PrivateSubnets ]
+        - !ImportValue dev-platform-vpc-AWSServicesEndpointSecurityGroupId
+      SubnetIds:
+        - !ImportValue dev-platform-vpc-PrivateSubnetIdA
+        - !ImportValue dev-platform-vpc-PrivateSubnetIdB
     PermissionsBoundary: !If
       - UsePermissionsBoundary
       - !Ref PermissionsBoundary
@@ -271,7 +273,7 @@ Resources:
                   aws:SourceVpce: !If
                     - CreateDevResources
                     - vpce-082cab7c78139eb54
-                    - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
+                    - !ImportValue dev-platform-vpc-ExecuteApiGatewayEndpointId
 
   DevOnlyAddressApi:
     Type: AWS::Serverless::Api
