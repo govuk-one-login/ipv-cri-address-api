@@ -133,7 +133,7 @@ Mappings:
     dev:
       provisionedConcurrency: 0
     build:
-      provisionedConcurrency: 1
+      provisionedConcurrency: 0
     staging:
       provisionedConcurrency: 0
     integration:
