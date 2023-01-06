@@ -6,7 +6,7 @@
     "dependencies": {
         "@aws-sdk/client-dynamodb": "3.150.0",
         "@aws-sdk/client-ssm": "^3.186.0",
-        "@aws-sdk/lib-dynamodb": "3.150.0",
+        "@aws-sdk/lib-dynamodb": "3.245.0",
         "esbuild": "0.14.14"
     },
     "scripts": {
