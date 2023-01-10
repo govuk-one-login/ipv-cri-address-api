@@ -1,46 +1,54 @@
 plugins {
-	id 'java'
-	id 'java-test-fixtures'
+    id 'java'
+    id 'java-test-fixtures'
+    id "io.qameta.allure" version "2.10.0"
 }
 
 ext {
-	apache_common_lang_version = '3.12.0'
-	jackson_databind_version = '2.9.5'
+    apache_common_lang_version = '3.12.0'
+    jackson_databind_version = '2.9.5'
 }
 
 dependencies {
-	testImplementation configurations.nimbus
-	testImplementation configurations.jackson
-	testImplementation "org.apache.commons:commons-lang3:${apache_common_lang_version}"
-	testImplementation "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}"
-	testImplementation(testFixtures("uk.gov.account:cri-common-lib:${dependencyVersions.cri_common_lib}"))
-	testImplementation "io.cucumber:cucumber-junit:7.9.0"
+    implementation 'io.qameta.allure:allure-maven:2.11.2'
+    implementation group: 'io.qameta.allure', name: 'allure-cucumber7-jvm', version: '2.18.1'
+    implementation 'com.github.automatedowl:allure-environment-writer:1.0.0'
+    testImplementation configurations.nimbus
+    testImplementation configurations.jackson
+    testImplementation "org.apache.commons:commons-lang3:${apache_common_lang_version}"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}"
+    testImplementation(testFixtures("uk.gov.account:cri-common-lib:${dependencyVersions.cri_common_lib}"))
+    testImplementation "io.cucumber:cucumber-junit:7.9.0"
 }
 
 configurations {
-	cucumberRuntime {
-		extendsFrom testImplementation
-	}
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
 }
 
 test {
-	systemProperty "cucumber.filter.tags", System.getProperty("cucumber.filter.tags")
-	systemProperty "cucumber.options", System.properties.getProperty("cucumber.options")
-	useJUnitPlatform()
+    systemProperty "cucumber.filter.tags", System.getProperty("cucumber.filter.tags")
+    systemProperty "cucumber.options", System.properties.getProperty("cucumber.options")
+    useJUnitPlatform()
 }
 
 task cucumber() {
-	dependsOn assemble, testClasses
-	doLast {
-		javaexec {
-			main = "io.cucumber.core.cli.Main"
-			classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
-			args = [
-				'--tags',
-				(findProperty('tags') == null ? "not @Ignore" : "${tags} and not @Ignore")
-			]
-		}
-	}
+    dependsOn assemble, testClasses
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin',
+                    'io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm',
+                    '--plugin',
+                    'pretty',
+                    '--tags',
+                    (findProperty('tags') == null ? "not @Ignore" : "${tags} and not @Ignore")
+            ]
+        }
+    }
 }
 
 gradle.startParameter.excludedTaskNames.add(':integration-tests:test')
