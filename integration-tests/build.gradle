@@ -1,6 +1,7 @@
 plugins {
 	id 'java'
 	id 'java-test-fixtures'
+	id "io.qameta.allure" version "2.10.0"
 }
 
 ext {
@@ -9,6 +10,9 @@ ext {
 }
 
 dependencies {
+	implementation 'io.qameta.allure:allure-maven:2.11.2'
+	implementation group: 'io.qameta.allure', name: 'allure-cucumber7-jvm', version: '2.18.1'
+	implementation 'com.github.automatedowl:allure-environment-writer:1.0.0'
 	testImplementation configurations.nimbus
 	testImplementation configurations.jackson
 	testImplementation "org.apache.commons:commons-lang3:${apache_common_lang_version}"
@@ -36,6 +40,10 @@ task cucumber() {
 			main = "io.cucumber.core.cli.Main"
 			classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
 			args = [
+				'--plugin',
+				'io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm',
+				'--plugin',
+				'pretty',
 				'--tags',
 				(findProperty('tags') == null ? "not @Ignore" : "${tags} and not @Ignore")
 			]
