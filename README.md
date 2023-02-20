@@ -85,6 +85,7 @@ Environment:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
 ````
 
+
 ## Run all tests
 Make sure you have deployed a stack on AWS and provide that `STACK_NAME` below with corresponding `API_GATEWAY_ID_PRIVATE` and `API_GATEWAY_ID_PUBLIC` endpoints
 ````
