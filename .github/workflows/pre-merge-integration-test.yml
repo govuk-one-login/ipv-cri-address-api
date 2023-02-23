@@ -45,6 +45,11 @@ jobs:
           role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+        gradle-version: 7.4.2
+
       - name: SAM build
         run: sam build -t infrastructure/lambda/template.yaml
 
