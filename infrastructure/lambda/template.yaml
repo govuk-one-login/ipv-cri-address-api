@@ -526,7 +526,7 @@ Resources:
     Properties:
       Handler: app.lambdaHandler
       CodeUri: ../../lambdas/get-addresses/
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
@@ -550,6 +550,8 @@ Resources:
         Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
         EntryPoints:
         - src/app.ts
+        External:
+        - "@aws-sdk/*"
 
   GetAddressesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
