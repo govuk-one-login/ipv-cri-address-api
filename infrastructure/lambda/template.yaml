@@ -543,7 +543,7 @@ Resources:
             Resource:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
     Metadata: # Manage esbuild properties
-      BuildMethod: "esnext"
+      BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
