@@ -28,7 +28,7 @@ jobs:
       - name: Setup SAM
         uses: aws-actions/setup-sam@v2
         with:
-          version: 1.65.0
+          version: 1.74.0
 
       - name: sam fix https://github.com/aws/aws-sam-cli/issues/4527
         run: $(dirname $(readlink $(which sam)))/pip install --force-reinstall "cryptography==38.0.4"
@@ -48,6 +48,11 @@ jobs:
 
       - name: SAM Validate
         run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/lambda/template.yaml
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4.2
 
       - name: SAM build
         run: sam build -t infrastructure/lambda/template.yaml
