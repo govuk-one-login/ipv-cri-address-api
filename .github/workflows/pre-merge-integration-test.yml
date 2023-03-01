@@ -36,6 +36,14 @@ jobs:
         with:
           version: 1.74.0
 
+      - name: Get Python version
+        run: python3 -V
+        
+      - name: Setup Python
+        uses: aws-actions/setup-python@v4
+        with: 
+          python-version: 3.11.2
+
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
