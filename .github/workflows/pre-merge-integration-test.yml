@@ -33,7 +33,7 @@ jobs:
 
       - name: Setup Python
         uses: actions/setup-python@v4
-        with: 
+        with:
           python-version: 3.11.2
 
       - name: Setup SAM
@@ -47,7 +47,7 @@ jobs:
           gradle-version: 7.4.2
 
       - name: Assume temporary AWS role
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
