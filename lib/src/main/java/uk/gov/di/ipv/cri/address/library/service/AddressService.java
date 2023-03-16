@@ -56,7 +56,7 @@ public class AddressService {
             addresses = getAddressReader().readValue(addressBody);
         } catch (JsonProcessingException e) {
             throw new AddressProcessingException(
-                    "could not parse addresses..." + e.getMessage(), e);
+                    "Could not parse addresses to a valid CanonicalAddress");
         }
 
         return addresses;
