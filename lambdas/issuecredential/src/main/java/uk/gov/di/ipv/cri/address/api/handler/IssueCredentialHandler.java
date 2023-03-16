@@ -41,6 +41,7 @@ import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -118,8 +119,7 @@ public class IssueCredentialHandler
             auditService.sendAuditEvent(
                     AuditEventType.VC_ISSUED,
                     auditEventContext,
-                    verifiableCredentialService.getAuditEventExtensions(
-                            addressItem.getAddresses()));
+                    verifiableCredentialService.getAuditEventExtensions(List.of()));
 
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER);
 
