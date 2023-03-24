@@ -1,21 +1,20 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,13 +31,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AddressServiceTest {
     private static final UUID SESSION_ID = UUID.randomUUID();
     @Mock private DataStore<AddressItem> mockDataStore;
-    @Mock private ObjectMapper mockObjectMapper;
 
     private AddressService addressService;
 
@@ -51,14 +49,23 @@ class AddressServiceTest {
             "setAddressValidity found PREVIOUS address but validUntil was already set - automatic date linking failed.";
     private static final String ERROR_ADDRESS_DATE_IS_INVALID =
             "setAddressValidity found address where validFrom and validUntil are Equal.";
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setup() {
-        this.addressService = new AddressService(mockDataStore, mockObjectMapper);
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper
+                .registerModule(new JavaTimeModule())
+                .registerModule(
+                        new SimpleModule()
+                                .addDeserializer(
+                                        CanonicalAddress.class,
+                                        new PiiRedactingDeserializer<>(CanonicalAddress.class)));
+        this.addressService = new AddressService(mockDataStore, objectMapper);
     }
 
     @Test
-    void shouldParseAddresses() throws AddressProcessingException, JsonProcessingException {
+    void shouldParseAddresses() throws AddressProcessingException {
         String addresses =
                 "[\n"
                         + "   {\n"
@@ -93,19 +100,44 @@ class AddressServiceTest {
                         + "   }\n"
                         + "]";
 
-        List<CanonicalAddress> readValueResult = List.of(new CanonicalAddress());
-        ObjectReader mockObjectReader = Mockito.mock(ObjectReader.class);
-        when(mockObjectReader.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES))
-                .thenReturn(mockObjectReader);
-        when(mockObjectMapper.readerForListOf(CanonicalAddress.class)).thenReturn(mockObjectReader);
-        when(mockObjectReader.readValue(addresses)).thenReturn(readValueResult);
-
         List<CanonicalAddress> parsedAddresses = addressService.parseAddresses(addresses);
 
-        assertThat(parsedAddresses.size(), equalTo(readValueResult.size()));
-        verify(mockObjectMapper).readerForListOf(CanonicalAddress.class);
-        verify(mockObjectReader).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        verify(mockObjectReader).readValue(addresses);
+        assertThat(parsedAddresses.size(), equalTo(3));
+    }
+
+    @Test
+    void shouldNotRevealPIIAddressDetailWhenAnInvalidDateIsSupplied() {
+        String addresses =
+                "[\n"
+                        + "   {\n"
+                        + "      \"uprn\": \"72262801\",\n"
+                        + "      \"buildingNumber\": \"8\",\n"
+                        + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
+                        + "      \"addressLocality\": \"LEEDS\",\n"
+                        + "      \"postalCode\": \"LS10 4QL\",\n"
+                        + "      \"addressCountry\": \"GB\",\n"
+                        + "      \"validFrom\": \"2010-00-00\",\n"
+                        + "      \"validUntil\": \"2021-01-16\"\n"
+                        + "   },\n"
+                        + "]";
+
+        AddressProcessingException addressProcessingException =
+                assertThrows(
+                        AddressProcessingException.class,
+                        () -> addressService.parseAddresses(addresses));
+
+        assertThat(
+                addressProcessingException.getMessage(),
+                containsString(
+                        String.format(
+                                "could not parse addresses...Error while deserializing object. Some PII fields were redacted. {\"uprn\":\"%s\",\"buildingNumber\":\"*\",\"streetName\":\"%s\",\"addressLocality\":\"%s\",\"postalCode\":\"%s\",\"addressCountry\":\"%s\",\"validFrom\":\"**********\",\"validUntil\":\"**********\"}",
+                                "*".repeat("72262801".length()),
+                                "*".repeat("GRANGE FIELDS WAY".length()),
+                                "*".repeat("LEEDS".length()),
+                                "*".repeat("LS10 4QL".length()),
+                                "*".repeat("GB".length()),
+                                "*".repeat("2010-00-00".length()),
+                                "*".repeat("2021-01-16".length()))));
     }
 
     @Test
