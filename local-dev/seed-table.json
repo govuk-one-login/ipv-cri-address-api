@@ -1,0 +1,22 @@
+{
+  "CIStorageTable": [
+    {
+      "PutRequest": {
+        "Item": {
+          "userId": {
+            "S": "test-user"
+          },
+          "sortKey": {
+            "S": "A01#theHash"
+          },
+          "ci": {
+            "S": "A01"
+          },
+          "issuedAt": {
+            "S": "2022-11-24T09:42:01.000Z"
+          }
+        }
+      }
+    }
+  ]
+}
