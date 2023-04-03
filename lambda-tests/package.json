@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "integration": "jest --config=jest.config.ts",
+    "lint": "prettier --check tests && eslint .",
+    "compile": "tsc",
+    "test": "npm run compile && npm run integration"
   },
   "author": "",
   "license": "ISC",
