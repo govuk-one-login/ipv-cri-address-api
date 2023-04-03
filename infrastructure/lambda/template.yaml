@@ -469,7 +469,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler::handleRequest
-      CodeUri: ../../lambdas/issuecredential
+      CodeUri: ../../build/libs/di-ipv-cri-address-api.jar
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
@@ -526,7 +526,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.lambdaHandler
-      CodeUri: ../../lambdas/get-addresses/
+      CodeUri: ../../build/libs/di-ipv-cri-address-api.jar
       Runtime: nodejs18.x
       Environment:
         Variables:
