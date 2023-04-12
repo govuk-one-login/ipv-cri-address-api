@@ -94,3 +94,22 @@ jobs:
         run: |
           STACK_NAME=${{ env.STACK_NAME_PREFIX }}-${{ steps.vars.outputs.sha_short }}
           aws cloudformation delete-stack --region ${{ env.AWS_REGION }} --stack-name $STACK_NAME
+
+  - name: Cucumber HTML Report action
+      uses: PavanMudigonda/html-reporter-github-pages@v1.0
+      id: test-report
+      if: always()
+      with:
+        test_results: target/cucumber-report
+        gh_pages: gh-pages
+        results_history: results-history
+
+      - name: Publish Github Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3.8.0
+        with:
+          github_token: ${{ secrets.RH_GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: results-history
+          keep_files: true
+
