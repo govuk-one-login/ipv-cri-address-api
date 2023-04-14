@@ -108,7 +108,7 @@ jobs:
         id: test-report
         if: always()
         with:
-          test_results: integration-tests/target
+          test_results: target
           gh_pages: gh-pages
           results_history: results-history
 
