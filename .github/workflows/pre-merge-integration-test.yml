@@ -105,7 +105,7 @@ jobs:
           results_history: results-history
 
       - name: Publish Github Pages
-        if: always()
+        if: ${{ github.actor != 'dependabot[bot]' }}
         uses: peaceiris/actions-gh-pages@v3.8.0
         with:
           github_token: ${{ secrets.RH_GITHUB_TOKEN }}
