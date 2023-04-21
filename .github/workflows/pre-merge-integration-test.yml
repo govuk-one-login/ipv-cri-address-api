@@ -20,7 +20,8 @@ jobs:
       SECRET_PREFIX: pre-merge-test
     permissions:
       id-token: write
-      contents: read
+      contents: write
+      packages: write
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
