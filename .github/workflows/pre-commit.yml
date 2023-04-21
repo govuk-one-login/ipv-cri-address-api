@@ -5,6 +5,10 @@ on: push
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
