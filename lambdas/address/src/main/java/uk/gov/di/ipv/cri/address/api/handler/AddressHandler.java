@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
@@ -25,6 +26,7 @@ import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
+import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
 import java.util.List;
 import java.util.UUID;
@@ -47,7 +49,13 @@ public class AddressHandler
         ObjectMapper objectMapper =
                 new ObjectMapper()
                         .registerModule(new Jdk8Module())
-                        .registerModule(new JavaTimeModule());
+                        .registerModule(new JavaTimeModule())
+                        .registerModule(
+                                new SimpleModule()
+                                        .addDeserializer(
+                                                CanonicalAddress.class,
+                                                new PiiRedactingDeserializer<>(
+                                                        CanonicalAddress.class)));
         ConfigurationService configurationService = new ConfigurationService();
         this.sessionService = new SessionService();
         this.addressService = new AddressService(configurationService, objectMapper);
