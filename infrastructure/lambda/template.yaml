@@ -127,6 +127,14 @@ Mappings:
       integration: 1024
       production: 2048
 
+  VcContainsUniqueIdMapping:
+    Environment:
+      dev: "true"
+      build: "false"
+      staging: "false"
+      integration: "false"
+      production: "false"
+
   EnvironmentConfiguration:
     dev:
       provisionedConcurrency: 0
@@ -500,6 +508,7 @@ Resources:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/release-flags/vc-expiry-removed"
+              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/release-flags/vc-contains-unique-id"
         - Statement:
             Effect: Allow
             Action:
@@ -667,6 +676,14 @@ Resources:
       Type: String
       Value: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
       Description: Table name to retrieve addresses from store
+
+  ReleaseFlagsVcContainsUniqueIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/release-flags/vc-contains-unique-id"
+      Type: String
+      Value: !FindInMap [ VcContainsUniqueIdMapping, Environment, !Ref Environment ]
+      Description: Verifiable Credential Contains UniqueId Mapping
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
