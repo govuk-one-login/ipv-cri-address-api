@@ -37,10 +37,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.LAMBDA_NAME;
 
 @ExtendWith(MockitoExtension.class)
@@ -150,10 +147,12 @@ class PostcodeLookupHanderTest {
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
         assertEquals(200, responseEvent.getStatusCode());
         verify(sessionService).validateSessionId(sessionId);
-        verify(postcodeLookupService)
+        verify(postcodeLookupService, times(2))
                 .getAuditEventContext(testPostcode, requestHeaders, sessionItem);
         verify(postcodeLookupService).lookupPostcode(testPostcode);
         verify(auditService).sendAuditEvent(AuditEventType.REQUEST_SENT, testAuditEventContext);
+        verify(auditService)
+                .sendAuditEvent(AuditEventType.RESPONSE_RECEIVED, testAuditEventContext);
         verify(eventProbe).counterMetric(LAMBDA_NAME);
         verifyNoMoreInteractions(eventProbe);
     }
