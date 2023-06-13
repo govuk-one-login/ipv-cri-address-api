@@ -73,11 +73,18 @@ public class PostcodeLookupHandler
         try {
             SessionItem sessionItem = sessionService.validateSessionId(sessionId);
             eventProbe.log(Level.INFO, "found session");
-            List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
             auditService.sendAuditEvent(
                     AuditEventType.REQUEST_SENT,
                     postcodeLookupService.getAuditEventContext(
                             postcode, input.getHeaders(), sessionItem));
+
+            List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
+
+            auditService.sendAuditEvent(
+                    AuditEventType.RESPONSE_RECEIVED,
+                    postcodeLookupService.getAuditEventContext(
+                            postcode, input.getHeaders(), sessionItem));
+
             eventProbe.counterMetric(LAMBDA_NAME);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
