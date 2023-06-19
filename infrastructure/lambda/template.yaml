@@ -546,12 +546,12 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - Statement:
-          - Sid: ReadParametersPolicy
-            Effect: Allow
-            Action:
-              - ssm:GetParameter
-            Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
+            - Sid: ReadParametersPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -559,9 +559,9 @@ Resources:
         Target: "es2020"
         Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
         EntryPoints:
-        - src/app.ts
+          - src/app.ts
         External:
-        - "@aws-sdk/*"
+          - "@aws-sdk/*"
 
   GetAddressesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -822,9 +822,6 @@ Resources:
             Period: 300
             Stat: Sum
 
-openapi:
-info:
-paths:
 Outputs:
 
   StackName:
