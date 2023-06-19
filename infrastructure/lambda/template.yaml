@@ -122,7 +122,7 @@ Mappings:
   MemorySizeMapping:
     Environment:
       dev: 512
-      build: 1024
+      build: 2048
       staging: 1024
       integration: 1024
       production: 2048
@@ -130,7 +130,7 @@ Mappings:
   VcContainsUniqueIdMapping:
     Environment:
       dev: "true"
-      build: "true"
+      build: "false"
       staging: "true"
       integration: "false"
       production: "false"
@@ -150,7 +150,7 @@ Mappings:
   MaxJwtTtlMapping:
     Environment:
       dev: 2
-      build: 2
+      build: 6
       staging: 6
       integration: 6
       production: 6
@@ -159,7 +159,7 @@ Mappings:
   JwtTtlUnitMapping:
     Environment:
       dev: HOURS
-      build: HOURS
+      build: MONTHS
       staging: MONTHS
       integration: MONTHS
       production: MONTHS
@@ -822,6 +822,9 @@ Resources:
             Period: 300
             Stat: Sum
 
+openapi:
+info:
+paths:
 Outputs:
 
   StackName:
