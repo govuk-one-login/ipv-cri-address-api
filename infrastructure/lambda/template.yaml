@@ -122,7 +122,7 @@ Mappings:
   MemorySizeMapping:
     Environment:
       dev: 512
-      build: 1024
+      build: 2048
       staging: 1024
       integration: 1024
       production: 2048
