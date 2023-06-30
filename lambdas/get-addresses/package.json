@@ -7,7 +7,7 @@
         "@aws-sdk/client-dynamodb": "3.362.0",
         "@aws-sdk/client-ssm": "^3.362.0",
         "@aws-sdk/lib-dynamodb": "3.150.0",
-        "esbuild": "0.14.14"
+        "esbuild": "0.18.10"
     },
     "scripts": {
         "unit": "jest --config=jest.config.ts",
