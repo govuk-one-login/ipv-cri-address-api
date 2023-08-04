@@ -22,8 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -185,6 +184,36 @@ class AddressServiceTest {
                 addressItemArgumentCaptor.getValue().getAddresses(), equalTo(addresses));
         MatcherAssert.assertThat(
                 addressItemArgumentCaptor.getValue().getSessionId(), equalTo(SESSION_ID));
+    }
+
+    @Test
+    void shouldSetAddressCountryIfNotProvided() {
+        List<CanonicalAddress> addresses = new ArrayList<>();
+        CanonicalAddress address1 = new CanonicalAddress();
+        address1.setPostalCode("LS10 4QL");
+        address1.setAddressCountry("GB");
+        address1.setValidFrom(LocalDate.of(2010, 2, 26));
+        address1.setValidUntil(LocalDate.of(2021, 1, 16));
+
+        CanonicalAddress address2 = new CanonicalAddress();
+        address2.setPostalCode("WF3 3SE");
+        address2.setAddressCountry("FR");
+        address2.setValidFrom(LocalDate.of(2021, 1, 16));
+        address2.setValidUntil(LocalDate.of(2021, 8, 2));
+
+        CanonicalAddress address3 = new CanonicalAddress();
+        address3.setPostalCode("WF1 2LZ");
+        address3.setValidFrom(LocalDate.of(2021, 8, 2));
+
+        addresses.add(address1);
+        addresses.add(address2);
+        addresses.add(address3);
+
+        addressService.setAddressCountryIfMissing(addresses);
+
+        MatcherAssert.assertThat(address1.getAddressCountry(), equalTo("GB"));
+        MatcherAssert.assertThat(address2.getAddressCountry(), equalTo("FR"));
+        MatcherAssert.assertThat(address3.getAddressCountry(), equalTo("GB"));
     }
 
     @Test
