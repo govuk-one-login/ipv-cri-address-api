@@ -106,6 +106,8 @@ class AddressHandlerTest {
         assertEquals(HttpStatusCode.NO_CONTENT, responseEvent.getStatusCode());
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
+        verify(mockAddressService).setAddressValidity(canonicalAddresses);
+        verify(mockAddressService).setAddressCountryIfMissing(canonicalAddresses);
         verify(eventProbe).log(Level.INFO, "found session");
         verify(eventProbe).counterMetric("address");
         verifyNoMoreInteractions(eventProbe);

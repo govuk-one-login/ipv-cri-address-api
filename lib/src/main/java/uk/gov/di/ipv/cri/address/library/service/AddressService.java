@@ -85,6 +85,13 @@ public class AddressService {
         return this.addressReader;
     }
 
+    public void setAddressCountryIfMissing(List<CanonicalAddress> addresses) {
+        addresses.stream()
+                .filter(Objects::nonNull)
+                .filter(address -> Objects.isNull(address.getAddressCountry()))
+                .forEach(address -> address.setAddressCountry("GB"));
+    }
+
     // See https://govukverify.atlassian.net/wiki/spaces/PYI/pages/3178004485/Decision+Log
     public void setAddressValidity(List<CanonicalAddress> addresses)
             throws AddressProcessingException {
