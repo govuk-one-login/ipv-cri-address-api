@@ -66,7 +66,7 @@ subprojects {
 	}
 
 	dependencies {
-		aws platform('software.amazon.awssdk:bom:2.17.191')
+		aws platform('software.amazon.awssdk:bom:2.20.153')
 
 		dynamodb "software.amazon.awssdk:dynamodb",
 				"software.amazon.awssdk:dynamodb-enhanced"
