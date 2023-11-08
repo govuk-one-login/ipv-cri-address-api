@@ -7,13 +7,12 @@ on:
       - ready_for_review
       - synchronize
 
-
 jobs:
   deploy:
     name: pre-merge-integration-tests
     runs-on: ubuntu-latest
     environment: di-ipv-cri-dev
-    timeout-minutes: 15
+    timeout-minutes: 16
     env:
       AWS_REGION: eu-west-2
       ENVIRONMENT: dev
