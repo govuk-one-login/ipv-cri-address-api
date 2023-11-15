@@ -184,8 +184,8 @@ Resources:
           # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 200
-          ThrottlingBurstLimit: 400
+          ThrottlingRateLimit: 1000
+          ThrottlingBurstLimit: 2000
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicAddressApiAccessLogGroup}'
         Format: >-
@@ -229,8 +229,8 @@ Resources:
           # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 200
-          ThrottlingBurstLimit: 400
+          ThrottlingRateLimit: 1000
+          ThrottlingBurstLimit: 2000
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateAddressApiAccessLogGroup}'
         Format: >-
@@ -292,8 +292,8 @@ Resources:
           HttpMethod: '*'
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 5
-          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 1000
+          ThrottlingBurstLimit: 2000
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyAddressApiAccessLogGroup}'
         Format: >-
