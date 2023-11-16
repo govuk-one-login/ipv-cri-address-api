@@ -184,8 +184,8 @@ Resources:
           # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 1000
-          ThrottlingBurstLimit: 2000
+          ThrottlingRateLimit: 2000
+          ThrottlingBurstLimit: 1000
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicAddressApiAccessLogGroup}'
         Format: >-
@@ -229,8 +229,8 @@ Resources:
           # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 1000
-          ThrottlingBurstLimit: 2000
+          ThrottlingRateLimit: 2000
+          ThrottlingBurstLimit: 1000
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateAddressApiAccessLogGroup}'
         Format: >-
@@ -292,8 +292,8 @@ Resources:
           HttpMethod: '*'
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 1000
-          ThrottlingBurstLimit: 2000
+          ThrottlingRateLimit: 2000
+          ThrottlingBurstLimit: 1000
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyAddressApiAccessLogGroup}'
         Format: >-
@@ -602,8 +602,8 @@ Resources:
         Limit: 500000
         Period: DAY
       Throttle:
-        BurstLimit: 200 # requests the API can handle concurrently
-        RateLimit: 100 # allowed requests per second
+        BurstLimit: 2000 # requests the API can handle concurrently
+        RateLimit: 1000 # allowed requests per second
 
   PrivateAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
@@ -618,8 +618,8 @@ Resources:
         Limit: 500000
         Period: DAY
       Throttle:
-        BurstLimit: 200 # requests the API can handle concurrently
-        RateLimit: 100 # allowed requests per second
+        BurstLimit: 2000 # requests the API can handle concurrently
+        RateLimit: 1000 # allowed requests per second
 
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
