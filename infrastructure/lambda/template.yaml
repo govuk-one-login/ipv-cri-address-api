@@ -184,8 +184,8 @@ Resources:
           # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 2000
-          ThrottlingBurstLimit: 1000
+          ThrottlingRateLimit: 200
+          ThrottlingBurstLimit: 400
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicAddressApiAccessLogGroup}'
         Format: >-
@@ -229,8 +229,8 @@ Resources:
           # Disable data trace in production to avoid logging customer sensitive information
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 2000
-          ThrottlingBurstLimit: 1000
+          ThrottlingRateLimit: 200
+          ThrottlingBurstLimit: 400
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateAddressApiAccessLogGroup}'
         Format: >-
@@ -292,8 +292,8 @@ Resources:
           HttpMethod: '*'
           DataTraceEnabled: !If [IsProdEnvironment, false, true]
           MetricsEnabled: true
-          ThrottlingRateLimit: 2000
-          ThrottlingBurstLimit: 1000
+          ThrottlingRateLimit: 5
+          ThrottlingBurstLimit: 10
       AccessLogSetting:
         DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyAddressApiAccessLogGroup}'
         Format: >-
@@ -546,12 +546,12 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - Statement:
-          - Sid: ReadParametersPolicy
-            Effect: Allow
-            Action:
-              - ssm:GetParameter
-            Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
+            - Sid: ReadParametersPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -559,9 +559,9 @@ Resources:
         Target: "es2020"
         Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
         EntryPoints:
-        - src/app.ts
+          - src/app.ts
         External:
-        - "@aws-sdk/*"
+          - "@aws-sdk/*"
 
   GetAddressesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -602,8 +602,8 @@ Resources:
         Limit: 500000
         Period: DAY
       Throttle:
-        BurstLimit: 2000 # requests the API can handle concurrently
-        RateLimit: 1000 # allowed requests per second
+        BurstLimit: 200 # requests the API can handle concurrently
+        RateLimit: 100 # allowed requests per second
 
   PrivateAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
@@ -618,8 +618,8 @@ Resources:
         Limit: 500000
         Period: DAY
       Throttle:
-        BurstLimit: 2000 # requests the API can handle concurrently
-        RateLimit: 1000 # allowed requests per second
+        BurstLimit: 200 # requests the API can handle concurrently
+        RateLimit: 100 # allowed requests per second
 
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
