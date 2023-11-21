@@ -17,3 +17,14 @@ repos:
     hooks:
       - id: prettier
         types_or: ["javascript", "ts", "json"]
+  - repo: https://github.com/awslabs/cfn-python-lint
+    rev: v0.80.4 # The version of cfn-lint to use
+    hooks:
+    -   id: cfn-python-lint
+        files: .template\.yaml$
+  - repo: https://github.com/bridgecrewio/checkov.git
+    rev: '2.5.4'
+    hooks:
+    - id: checkov
+      verbose: true
+      args: [--soft-fail]
