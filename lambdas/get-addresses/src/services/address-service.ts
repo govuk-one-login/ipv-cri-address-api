@@ -3,7 +3,10 @@ import { DynamoDBDocument, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { CanonicalAddress } from "../types/address";
 
 export class AddressService {
-    constructor(private tableName: string | undefined, private dynamoDbClient: DynamoDBDocument) {}
+    constructor(
+        private tableName: string | undefined,
+        private dynamoDbClient: DynamoDBDocument,
+    ) {}
 
     public async getAddressesBySessionId(sessionId: string | undefined): Promise<CanonicalAddress[]> {
         try {
