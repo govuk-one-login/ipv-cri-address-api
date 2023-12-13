@@ -1,7 +1,7 @@
 plugins {
 	id "java"
-	id "org.sonarqube" version "3.3"
-	id "com.diffplug.spotless" version "6.1.0"
+	id "org.sonarqube" version "4.4.+"
+	id "com.diffplug.spotless" version "6.23.+"
 }
 
 defaultTasks 'clean', 'spotlessApply', 'build'
@@ -111,13 +111,12 @@ subprojects {
 		// Configures environment variable to avoid initialization of AWS X-Ray segments for each tests
 		environment "LAMBDA_TASK_ROOT", "handler"
 	}
-
 }
 
-sonarqube {
+sonar {
 	properties {
-		property "sonar.projectKey", "alphagov_di-ipv-cri-address-api"
-		property "sonar.organization", "alphagov"
+		property "sonar.projectKey", "ipv-cri-address-api-java"
+		property "sonar.organization", "govuk-one-login"
 		property "sonar.host.url", "https://sonarcloud.io"
 	}
 }

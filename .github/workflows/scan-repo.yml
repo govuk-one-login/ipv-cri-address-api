@@ -1,0 +1,96 @@
+name: Scan repository
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Every Monday at 9am
+    - cron: "0 9 * * 1"
+
+concurrency:
+  group: scan-repo-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  unit-tests-ts:
+    name: Test coverage
+    uses: ./.github/workflows/run-unit-tests-ts.yml
+    with:
+      coverage-report: true
+
+  unit-tests-java:
+    name: Test coverage
+    uses: ./.github/workflows/run-unit-tests-java.yml
+    with:
+      coverage-report: true
+
+  sonarcloud-java:
+    name: SonarCloud / Java
+    needs: unit-tests-java
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4.2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: zulu
+          cache: gradle
+
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-address-api-java-${{ github.head_ref || github.ref_name }}
+          restore-keys: ${{ runner.os }}-address-api-java-
+          path: |
+            **/*/build/
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+          path: ~/.sonar/cache
+
+      - name: Run SonarCloud scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_JAVA }}
+        run: ./gradlew sonar --build-cache --parallel --info
+
+  sonarcloud-ts:
+    name: SonarCloud / TypeScript
+    needs: unit-tests-ts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run SonarCloud scan
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@cd7d35dde348251237efbbaee5345e95adef0321
+        with:
+          projectBaseDir: lambdas/get-addresses
+          coverage-location: lambdas/get-addresses/coverage
+          coverage-artifact: ${{ needs.unit-tests-ts.outputs.coverage-artifact }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sonar-token: ${{ secrets.SONAR_TOKEN_TS }}
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Run CodeQL scan
+        uses: govuk-one-login/github-actions/code-quality/codeql@cd7d35dde348251237efbbaee5345e95adef0321
+        with:
+          languages: javascript-typescript

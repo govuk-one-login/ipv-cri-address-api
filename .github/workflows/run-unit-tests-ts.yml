@@ -1,0 +1,51 @@
+name: Unit tests (TS)
+
+on:
+  workflow_call:
+    inputs:
+      coverage-report: { type: boolean, required: false, default: false }
+      coverage-artifact: { type: string, required: false, default: coverage-ts }
+    outputs:
+      coverage-artifact:
+        value: ${{ inputs.coverage-artifact }}
+
+concurrency:
+  group: unit-tests-ts-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions: { }
+
+jobs:
+  run-unit-tests:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lambdas/get-addresses
+    steps:
+      - name: Pull repository
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          cache: npm
+          cache-dependency-path: lambdas/get-addresses/package.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:coverage -- --config jest.config.ci.ts
+
+      - name: Archive coverage results
+        if: ${{ inputs.coverage-report }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.coverage-artifact }}
+          path: lambdas/get-addresses/coverage/lcov.info
+          retention-days: 3

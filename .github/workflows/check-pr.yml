@@ -1,0 +1,17 @@
+name: Check PR
+
+on: pull_request
+permissions: {}
+
+jobs:
+  code-quality:
+    name: Code quality
+    uses: ./.github/workflows/code-quality.yml
+
+  unit-tests-ts:
+    name: Unit tests
+    uses: ./.github/workflows/run-unit-tests-ts.yml
+
+  unit-tests-java:
+    name: Unit tests
+    uses: ./.github/workflows/run-unit-tests-java.yml

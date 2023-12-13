@@ -1,0 +1,36 @@
+name: Delete deployment
+run-name: ${{ github.event.pull_request.title || format('Delete deployment [{0}]', github.head_ref || github.ref_name) }}
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency: deploy-development-${{ github.head_ref || github.ref_name }}
+
+jobs:
+  delete-stack:
+    name: Delete stack
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Get stack name
+        uses: govuk-one-login/github-actions/beautify-branch-name@cd7d35dde348251237efbbaee5345e95adef0321
+        id: get-stack-name
+        with:
+          usage: Stack name
+          prefix: preview-address-api
+          length-limit: 128
+          verbose: false
+
+      - name: Delete stack
+        uses: govuk-one-login/github-actions/sam/delete-stacks@cd7d35dde348251237efbbaee5345e95adef0321
+        with:
+          stack-names: ${{ steps.get-stack-name.outputs.pretty-branch-name }}
+          aws-role-arn: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+          verbose: true
