@@ -7,6 +7,9 @@ on:
       stack-name:
         description: The deployed stack name
         value: ${{ jobs.deploy.outputs.stack-name }}
+      stack-outputs:
+        description: The deployed stack outputs
+        value: ${{ jobs.deploy.outputs.stack-outputs }}
       aws-region:
         description: The region in which the stack was deployed
         value: ${{ jobs.deploy.outputs.aws-region }}
@@ -41,7 +44,6 @@ jobs:
         id: build
         with:
           template: infrastructure/lambda/template.yaml
-          artifact-name: address-api
           cache-key: address-api
           pull-repository: false
 
@@ -58,6 +60,7 @@ jobs:
     outputs:
       aws-region: ${{ steps.deploy.outputs.aws-region }}
       stack-name: ${{ steps.deploy.outputs.stack-name }}
+      stack-outputs: ${{ steps.deploy.outputs.stack-outputs }}
     steps:
       - name: Deploy stack
         uses: govuk-one-login/github-actions/sam/deploy-stack@cd7d35dde348251237efbbaee5345e95adef0321
@@ -66,11 +69,10 @@ jobs:
           sam-deployment-bucket: ${{ vars.DEPLOYMENT_ARTIFACTS_BUCKET }}
           aws-role-arn: ${{ vars.DEPLOYMENT_ROLE_ARN }}
           stack-name-prefix: preview-address-api
+          cache-key: address-api
           s3-prefix: preview
           pull-repository: true
           delete-failed-stack: true
-          artifact-path: .aws-sam/build
-          artifact-name: ${{ needs.build.outputs.artifact-name }}
           tags: |
             cri:component=ipv-cri-address-api
             cri:stack-type=preview
@@ -79,3 +81,4 @@ jobs:
           parameters: |
             Environment=dev
             CodeSigningEnabled=false
+            SecretPrefix=pre-merge-test

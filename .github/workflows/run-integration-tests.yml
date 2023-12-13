@@ -1,0 +1,48 @@
+name: Integration tests
+
+on:
+  workflow_call:
+    inputs:
+      aws-region: { required: false, type: string }
+      stack-name: { required: true, type: string }
+      stack-outputs: { required: true, type: string }
+    secrets:
+      api-gateway-api-key: { required: true }
+      ipv-core-stub-basic-auth-pwd: { required: true }
+      ipv-core-stub-basic-auth-user: { required: true }
+
+permissions: {}
+
+concurrency:
+  group: integration-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  run-tests:
+    name: Integration
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    environment: di-ipv-cri-dev
+    steps:
+      - name: Pull repository
+        uses: actions/checkout@v3
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4.2
+
+      - name: Run tests
+        env:
+          ENVIRONMENT: dev
+          AWS_REGION: ${{ inputs.aws-region }}
+          STACK_NAME: ${{ inputs.stack-name }}
+          API_GATEWAY_ID_PUBLIC: ${{ fromJson(inputs.stack-outputs).PublicAddressApiGatewayId }}
+          API_GATEWAY_ID_PRIVATE: ${{ fromJson(inputs.stack-outputs).PrivateAddressApiGatewayId }}
+          IPV_CORE_STUB_BASIC_AUTH_PASSWORD: ${{ secrets.ipv-core-stub-basic-auth-pwd }}
+          IPV_CORE_STUB_BASIC_AUTH_USER: ${{ secrets.ipv-core-stub-basic-auth-user }}
+          IPV_CORE_STUB_URL: https://cri.core.build.stubs.account.gov.uk
+          IPV_CORE_STUB_CRI_ID: address-cri-dev
+          DEFAULT_CLIENT_ID: ipv-core-stub-aws-build
+          APIGW_API_KEY: ${{ secrets.api-gateway-api-key }}
+        run: ./gradlew integration-tests:cucumber
