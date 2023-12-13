@@ -1,0 +1,44 @@
+name: Unit tests (Java)
+
+on: workflow_call
+
+concurrency:
+  group: unit-tests-java-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions: { }
+
+jobs:
+  run-unit-tests:
+    name: Java
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull repository
+        uses: actions/checkout@v4
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 7.4.2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 11
+          distribution: zulu
+          cache: gradle
+
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-address-api-java-${{ github.head_ref || github.ref_name }}
+          restore-keys: ${{ runner.os }}-address-api-java-
+          path: |
+            **/*/build/
+
+      - name: Run tests
+        run: ./gradlew test --build-cache --parallel -x spotlessApply -x spotlessCheck

@@ -1,0 +1,53 @@
+name: Code quality
+
+on: workflow_call
+permissions: { }
+
+concurrency:
+  group: code-quality-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull repository
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          cache: npm
+          cache-dependency-path: lambdas/get-addresses/package.json
+
+      - name: Install dependencies
+        working-directory: lambdas/get-addresses
+        run: npm ci
+
+      - name: Run pre-commit
+        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@cd7d35dde348251237efbbaee5345e95adef0321
+        with:
+          all-files: true
+          pull-repository: false
+
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 11
+          distribution: zulu
+          cache: gradle
+
+      - name: Run Spotless
+        run: ./gradlew --no-daemon spotlessCheck
