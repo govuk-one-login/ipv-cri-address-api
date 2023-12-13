@@ -1,6 +1,13 @@
 name: Unit tests (Java)
 
-on: workflow_call
+on:
+  workflow_call:
+    inputs:
+      coverage-report: { type: boolean, required: false, default: false }
+      coverage-artifact: { type: string, required: false, default: coverage-java }
+    outputs:
+      coverage-artifact:
+        value: ${{ inputs.coverage-artifact }}
 
 concurrency:
   group: unit-tests-java-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -39,6 +46,17 @@ jobs:
           restore-keys: ${{ runner.os }}-address-api-java-
           path: |
             **/*/build/
+            !**/*/build/jacoco
+            !**/*/build/reports
 
       - name: Run tests
         run: ./gradlew test --build-cache --parallel -x spotlessApply -x spotlessCheck
+
+      - name: Archive coverage results
+        if: ${{ inputs.coverage-report }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.coverage-artifact }}
+          retention-days: 3
+          path: |
+            **/*/build/reports/jacoco/test/jacocoTestReport.xml

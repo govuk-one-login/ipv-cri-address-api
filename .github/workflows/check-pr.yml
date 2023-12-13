@@ -15,3 +15,23 @@ jobs:
   unit-tests-java:
     name: Unit tests
     uses: ./.github/workflows/run-unit-tests-java.yml
+
+  deploy:
+    name: Preview
+    uses: ./.github/workflows/deploy-branch.yml
+    permissions:
+      id-token: write
+      contents: read
+
+  integration-tests:
+    name: Run tests
+    needs: deploy
+    uses: ./.github/workflows/run-integration-tests.yml
+    with:
+      aws-region: ${{ needs.deploy.outputs.aws-region }}
+      stack-name: ${{ needs.deploy.outputs.stack-name }}
+      stack-outputs: ${{ needs.deploy.outputs.stack-outputs }}
+    secrets:
+      api-gateway-api-key: ${{ secrets.APIGW_API_KEY }}
+      ipv-core-stub-basic-auth-user: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_USER }}
+      ipv-core-stub-basic-auth-pwd: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_PASSWORD }}

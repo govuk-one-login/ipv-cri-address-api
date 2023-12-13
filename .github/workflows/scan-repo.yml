@@ -56,6 +56,8 @@ jobs:
           restore-keys: ${{ runner.os }}-address-api-java-
           path: |
             **/*/build/
+            !**/*/build/jacoco
+            !**/*/build/reports
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v3
@@ -63,6 +65,11 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
           path: ~/.sonar/cache
+
+      - name: Get coverage results
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.unit-tests-java.outputs.coverage-artifact }}
 
       - name: Run SonarCloud scan
         env:
