@@ -1,35 +1,37 @@
 {
-    "name": "get_addresses",
-    "version": "1.0.0",
-    "description": "GetAddresses Typescript Node Lambda",
-    "main": "app.js",
+    "name": "get-addresses",
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "unit": "jest --silent",
+        "test": "npm run unit --",
+        "test:coverage": "npm run unit -- --coverage",
+        "sam:validate": "cd ../../infrastructure/lambda && sam validate && sam validate --lint",
+        "sam:build": "npm run sam:validate && sam build --template ../../infrastructure/lambda/template.yaml --cached --parallel",
+        "deploy": "../../deploy.sh",
+        "compile": "tsc"
+    },
     "dependencies": {
         "@aws-sdk/client-dynamodb": "3.362.0",
         "@aws-sdk/client-ssm": "^3.362.0",
         "@aws-sdk/lib-dynamodb": "3.150.0",
         "esbuild": "0.14.14"
     },
-    "scripts": {
-        "unit": "jest --config=jest.config.ts",
-        "lint": "prettier --check src tests && eslint .",
-        "compile": "tsc",
-        "test": "npm run compile && npm run unit"
-    },
     "devDependencies": {
         "@types/aws-lambda": "8.10.92",
-        "@types/jest": "29.1.2",
+        "@types/jest": "^29.5.11",
         "@types/node": "18.8.3",
-        "@typescript-eslint/eslint-plugin": "5.10.2",
-        "@typescript-eslint/parser": "5.10.2",
+        "@typescript-eslint/eslint-plugin": "^6.14.0",
+        "@typescript-eslint/parser": "^6.14.0",
         "aws-sdk": "2.1407.0",
-        "esbuild-jest": "0.5.0",
-        "eslint": "8.8.0",
-        "eslint-config-prettier": "8.3.0",
-        "eslint-plugin-prettier": "4.0.0",
-        "jest": "29.1.2",
-        "prettier": "2.5.1",
-        "ts-jest": "29.0.3",
-        "ts-node": "10.4.0",
-        "typescript": "4.8.4"
+        "esbuild-jest": "^0.5.0",
+        "eslint": "^8.55.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-prettier": "^5.0.1",
+        "jest": "^29.7.0",
+        "prettier": "^3.1.1",
+        "ts-jest": "^29.1.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
     }
 }

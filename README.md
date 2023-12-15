@@ -22,7 +22,7 @@ Before your **first** deploy, build a sam config toml file.
 
 Any time you wish to deploy, run:
 
-`gds aws  di-ipv-cri-dev -- ./deploy.sh STACKNAME`
+`gds aws di-ipv-cri-dev -- ./deploy.sh STACKNAME`
 
 Make sure you replace `STACKNAME` with your stack name that you want to deploy to.
 

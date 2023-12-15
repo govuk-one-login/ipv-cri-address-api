@@ -1,16 +1,18 @@
-/*
- * For a detailed explanation regarding each configuration property and type check, visit:
- * https://jestjs.io/docs/configuration
- */
+import type { Config } from "jest";
 
 export default {
-    transform: {
-        "^.+\\.ts?$": "ts-jest",
-    },
+    preset: "ts-jest",
     clearMocks: true,
-    collectCoverage: true,
-    coverageDirectory: "coverage",
-    coverageProvider: "v8",
-    coveragePathIgnorePatterns: ["config.ts", "node_modules/"],
-    testMatch: ["**/tests/**/*.test.ts"],
-};
+    modulePaths: ["<rootDir>/src"],
+    collectCoverageFrom: ["<rootDir>/src/**/*"],
+    testMatch: ["<rootDir>/tests/**/*.test.ts"],
+    coverageThreshold: {
+        global: {
+            statements: 100,
+            branches: 80,
+            functions: 100,
+            lines: 100,
+        },
+    },
+    displayName: "lambdas/get-addresses",
+} satisfies Config;

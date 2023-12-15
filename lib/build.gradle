@@ -1,6 +1,6 @@
 plugins {
-	id "java-library"
 	id "jacoco"
+	id "java-library"
 	id "io.freefair.aspectj.post-compile-weaving" version "6.3.0"
 }
 
@@ -34,6 +34,7 @@ test {
 	useJUnitPlatform()
 	finalizedBy jacocoTestReport
 }
+
 jacocoTestReport {
 	dependsOn test
 	reports {

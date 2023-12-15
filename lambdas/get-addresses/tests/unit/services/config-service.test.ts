@@ -38,7 +38,9 @@ describe("Config Service", () => {
 
         await configService.init();
 
-        expect(mockGetParameterCommand).toHaveBeenCalledWith({ Name: "/test/AddressLookupTableName" });
+        expect(mockGetParameterCommand).toHaveBeenCalledWith({
+            Name: "/test/AddressLookupTableName",
+        });
         expect(configService.config.AddressLookupTableName).toEqual("myParameter");
     });
 
@@ -50,7 +52,9 @@ describe("Config Service", () => {
             expect.assertions(5);
             await configService.init();
         } catch (err) {
-            expect(mockGetParameterCommand).toHaveBeenCalledWith({ Name: "/test/AddressLookupTableName" });
+            expect(mockGetParameterCommand).toHaveBeenCalledWith({
+                Name: "/test/AddressLookupTableName",
+            });
             expect(configService.config.AddressLookupTableName).toEqual(undefined);
             expect(err).toBeDefined();
             expect(typeof err).toBe("object");
