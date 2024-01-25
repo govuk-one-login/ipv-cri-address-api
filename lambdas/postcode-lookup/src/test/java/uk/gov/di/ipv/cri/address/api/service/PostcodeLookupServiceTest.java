@@ -197,6 +197,25 @@ class PostcodeLookupServiceTest {
     }
 
     @Test
+    void shouldReplicateNullPointExceptionIncident641() throws IOException, InterruptedException {
+        // Mock a valid url so service doesn't fall over validating URI
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
+        // Simulate a 200 response
+        when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
+        String ordnanceSurvey200ResponseNotContainResults =
+                "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"}}";
+        when(mockResponse.body()).thenReturn(ordnanceSurvey200ResponseNotContainResults);
+
+        when(httpClient.send(
+                        any(HttpRequest.class),
+                        ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+        assertThrows(
+                NullPointerException.class, () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+    }
+
+    @Test
     void shouldUrlDecodePost() throws IOException, InterruptedException {
         String urlEncodedPostcode = "ZZ1%201ZZ";
         // Mock a valid url so service doesn't fall over validating URI
