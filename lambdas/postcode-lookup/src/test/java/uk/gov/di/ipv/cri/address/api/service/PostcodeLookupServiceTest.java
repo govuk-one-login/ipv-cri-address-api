@@ -2,6 +2,7 @@ package uk.gov.di.ipv.cri.address.api.service;
 
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -35,6 +36,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.contains;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -194,6 +196,52 @@ class PostcodeLookupServiceTest {
                         ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                 .thenReturn(mockResponse);
         assertFalse(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+    }
+
+    @Test
+    @DisplayName(
+            "it should return empty when response from Ordnance Survey is a 200 and results contains object with Dpa")
+    void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIsA200WithoutResults()
+            throws IOException, InterruptedException {
+        // Mock a valid url so service doesn't fall over validating URI
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
+        // Simulate a 200 response
+        when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
+        String ok200payloadWithoutResults =
+                "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"}},\"results\":[{\"DPA\"}]";
+        when(mockResponse.body()).thenReturn(ok200payloadWithoutResults);
+
+        when(httpClient.send(
+                        any(HttpRequest.class),
+                        ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+
+        assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+        verify(log).warn(contains("PostCode lookup returned no results"));
+    }
+
+    @Test
+    @DisplayName(
+            "it should return empty when response from Ordnance Survey is a 200 and no results provided")
+    void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIsA200WResultsArrayEmpty()
+            throws IOException, InterruptedException {
+        // Mock a valid url so service doesn't fall over validating URI
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
+        // Simulate a 200 response
+        when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
+        String ok200PayloadResultsEmpty =
+                "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[]}";
+        when(mockResponse.body()).thenReturn(ok200PayloadResultsEmpty);
+
+        when(httpClient.send(
+                        any(HttpRequest.class),
+                        ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+
+        assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+        verifyNoInteractions(log);
     }
 
     @Test

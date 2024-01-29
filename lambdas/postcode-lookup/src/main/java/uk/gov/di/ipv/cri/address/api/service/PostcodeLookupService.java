@@ -11,8 +11,10 @@ import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.lambda.powertools.tracing.Tracing;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.models.Dpa;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
+import uk.gov.di.ipv.cri.address.api.models.Result;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.PersonIdentityDetailed;
@@ -30,9 +32,11 @@ import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
@@ -175,16 +179,26 @@ public class PostcodeLookupService {
                 new ObjectMapper().readValue(response.body(), postcodeResponse.getClass());
 
         // Map the postcode response to our model
-        return postcodeResponse.getResults().stream()
-                .filter(result -> result.getDpa() != null)
-                .map(result -> result.getDpa().toCanonicalAddress())
-                .collect(Collectors.toList());
+        return Optional.ofNullable(postcodeResponse.getResults())
+                .map(
+                        results ->
+                                results.stream()
+                                        .map(Result::getDpa)
+                                        .filter(Objects::nonNull)
+                                        .map(Dpa::toCanonicalAddress)
+                                        .collect(Collectors.toList()))
+                .orElseGet(
+                        () -> {
+                            log.warn("PostCode lookup returned no results");
+                            return Collections.emptyList();
+                        });
     }
 
     public AuditEventContext getAuditEventContext(
             String postcode, Map<String, String> requestHeaders, SessionItem sessionItem) {
         Objects.requireNonNull(requestHeaders, "requestHeaders must not be null");
         Objects.requireNonNull(sessionItem, "sessionItem must not be null");
+
         if (StringUtils.isBlank(postcode)) {
             throw new IllegalArgumentException("postcode must not be null or blank");
         }
