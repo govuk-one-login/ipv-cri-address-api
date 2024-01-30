@@ -15,7 +15,9 @@
         "@aws-sdk/client-dynamodb": "3.362.0",
         "@aws-sdk/client-ssm": "^3.362.0",
         "@aws-sdk/lib-dynamodb": "3.150.0",
-        "esbuild": "0.14.14"
+        "@smithy/node-http-handler": "2.3.1",
+        "esbuild": "0.14.14",
+        "https": "1.0.0"
     },
     "devDependencies": {
         "@types/aws-lambda": "8.10.92",
