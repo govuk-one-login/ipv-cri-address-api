@@ -1,17 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { AddressService } from "./services/address-service";
 import { DynamoDbClient } from "./lib/dynamo-db-client";
-import { SsmClient } from "./lib/param-store-client";
-import { ConfigService } from "./services/config-service";
-
-const configService = new ConfigService(SsmClient);
-const initPromise = configService.init();
-
+import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
+const PARAMETER_PREFIX = process.env.AWS_STACK_NAME || "";
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     let response: APIGatewayProxyResult;
     try {
-        await initPromise;
-
         const sessionId = event.headers["session_id"] as string;
         if (!sessionId) {
             response = {
@@ -20,8 +14,9 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             };
             return response;
         }
-
-        const addressService = new AddressService(configService.config.AddressLookupTableName, DynamoDbClient);
+    
+        const addressLookupTableName = await getParameter(`/${PARAMETER_PREFIX}/AddressLookupTableName`);
+        const addressService = new AddressService(addressLookupTableName, DynamoDbClient);
         const result = await addressService.getAddressesBySessionId(sessionId);
 
         response = {

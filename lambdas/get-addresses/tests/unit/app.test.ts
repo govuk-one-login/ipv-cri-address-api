@@ -1,26 +1,19 @@
-jest.mock("../../src/services/config-service", () => {
-    return {
-        ConfigService: jest.fn().mockImplementation(() => {
-            return {
-                init: jest.fn().mockResolvedValue([]),
-                config: {
-                    AddressLookupTableName: "Test",
-                },
-            };
-        }),
-    };
-});
-
+jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
+    getParameter: jest.fn(),
+}));
+import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { lambdaHandler } from "../../src/app";
 import { CanonicalAddress } from "../../src/types/address";
 import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
 
 const mockDynamoDbClient = jest.mocked(DynamoDbClient);
+const mockedGetParameter = getParameter as jest.MockedFunction<typeof getParameter>;
 
 describe("Handler", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockedGetParameter.mockResolvedValue("Address-cri-api/AddressTableName");
     });
 
     it("should return an address when an address is found", async () => {
