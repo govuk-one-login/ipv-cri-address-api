@@ -1,9 +1,10 @@
 {
+    "type": "module",
     "name": "get-addresses",
     "scripts": {
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
-        "unit": "jest --silent",
+        "unit": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js --silent",
         "test": "npm run unit --",
         "test:coverage": "npm run unit -- --coverage",
         "sam:validate": "cd ../../infrastructure/lambda && sam validate && sam validate --lint",

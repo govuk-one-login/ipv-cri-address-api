@@ -5,13 +5,11 @@ import { SsmClient } from "./lib/param-store-client";
 import { ConfigService } from "./services/config-service";
 
 const configService = new ConfigService(SsmClient);
-const initPromise = configService.init();
+await configService.init();
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     let response: APIGatewayProxyResult;
     try {
-        await initPromise;
-
         const sessionId = event.headers["session_id"] as string;
         if (!sessionId) {
             response = {
