@@ -1,19 +1,21 @@
-jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
-    getParameter: jest.fn(),
-}));
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { lambdaHandler } from "../../src/app";
 import { CanonicalAddress } from "../../src/types/address";
 import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
 
-const mockDynamoDbClient = jest.mocked(DynamoDbClient);
-const mockedGetParameter = getParameter as jest.MockedFunction<typeof getParameter>;
+jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
+    getParameter: jest.fn(),
+}));
+
+const dynamoDbClientMock = jest.mocked(DynamoDbClient);
+const getParameterMock = jest.mocked(getParameter);
 
 describe("Handler", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        mockedGetParameter.mockResolvedValue("Address-cri-api/AddressTableName");
+
+        getParameterMock.mockResolvedValue("Address-cri-api/AddressTableName");
     });
 
     it("should return an address when an address is found", async () => {
@@ -27,7 +29,7 @@ describe("Handler", () => {
 
         const savedAddress = { Item: addresses };
 
-        mockDynamoDbClient.send = jest.fn().mockResolvedValue(savedAddress);
+        dynamoDbClientMock.send = jest.fn().mockResolvedValue(savedAddress);
 
         const params = {
             headers: {
@@ -42,7 +44,7 @@ describe("Handler", () => {
     });
 
     it("should return empty array when no address is found", async () => {
-        mockDynamoDbClient.send = jest.fn().mockResolvedValue({ Item: undefined });
+        dynamoDbClientMock.send = jest.fn().mockResolvedValue({ Item: undefined });
 
         const params = {
             headers: {
@@ -67,7 +69,7 @@ describe("Handler", () => {
     });
 
     it("should return a status code 500 when we cannot connect to dynamodb", async () => {
-        mockDynamoDbClient.send = jest.fn().mockRejectedValue(new Error("DynamoDB Error"));
+        dynamoDbClientMock.send = jest.fn().mockRejectedValue(new Error("DynamoDB Error"));
 
         const params = {
             headers: {
