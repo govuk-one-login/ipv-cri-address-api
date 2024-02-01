@@ -1,42 +1,26 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { AddressService } from "./services/address-service";
 import { DynamoDbClient } from "./lib/dynamo-db-client";
-import { SsmClient } from "./lib/param-store-client";
-import { ConfigService } from "./services/config-service";
+import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
+import { Logger } from "@aws-lambda-powertools/logger";
 
-const configService = new ConfigService(SsmClient);
-const initPromise = configService.init();
+const logger = new Logger();
+const parameterPrefix = process.env.AWS_STACK_NAME || "";
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    let response: APIGatewayProxyResult;
     try {
-        await initPromise;
-
-        const sessionId = event.headers["session_id"] as string;
+        const sessionId = event.headers["session_id"];
         if (!sessionId) {
-            response = {
-                statusCode: 400,
-                body: "Missing header: session_id is required",
-            };
-            return response;
+            return { statusCode: 400, body: "Missing header: session_id is required" };
         }
 
-        const addressService = new AddressService(configService.config.AddressLookupTableName, DynamoDbClient);
+        const addressLookupTableName = await getParameter(`/${parameterPrefix}/AddressLookupTableName`);
+        const addressService = new AddressService(addressLookupTableName, DynamoDbClient);
         const result = await addressService.getAddressesBySessionId(sessionId);
 
-        response = {
-            statusCode: 200,
-            body: JSON.stringify({
-                result,
-            }),
-        };
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error(err);
-        response = {
-            statusCode: 500,
-            body: "An error has occurred. " + err,
-        };
+        return { statusCode: 200, body: JSON.stringify({ result }) };
+    } catch (err: unknown) {
+        logger.error(`An error has occurred in Addresses handler. " + ${JSON.stringify(err)}`);
+        return { statusCode: 500, body: `An error has occurred. " + ${err}` };
     }
-    return response;
 };
