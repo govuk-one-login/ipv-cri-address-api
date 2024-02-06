@@ -28,7 +28,6 @@ import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
-import uk.gov.di.ipv.cri.common.library.domain.personidentity.PersonIdentityDetailed;
 import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.common.library.exception.AccessTokenExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
@@ -37,6 +36,7 @@ import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.service.AuditEventFactory;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedFactory;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
@@ -116,7 +116,7 @@ public class IssueCredentialHandler
 
             AuditEventContext auditEventContext =
                     new AuditEventContext(
-                            new PersonIdentityDetailed(
+                            PersonIdentityDetailedFactory.createPersonIdentityDetailedWithAddresses(
                                     null,
                                     null,
                                     addressService.mapCanonicalAddresses(

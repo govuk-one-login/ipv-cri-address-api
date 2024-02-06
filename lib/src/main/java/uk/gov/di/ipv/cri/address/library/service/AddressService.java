@@ -121,7 +121,7 @@ public class AddressService {
     public List<Address> mapCanonicalAddresses(List<CanonicalAddress> addresses) {
         return addresses.stream()
                 .map(
-                        (address) -> {
+                        address -> {
                             Address mappedAddress = new Address();
                             mappedAddress.setAddressCountry(address.getAddressCountry());
                             mappedAddress.setAddressLocality(address.getAddressLocality());
