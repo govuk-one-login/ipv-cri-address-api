@@ -28,6 +28,7 @@ import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
+import uk.gov.di.ipv.cri.common.library.domain.personidentity.PersonIdentityDetailed;
 import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.common.library.exception.AccessTokenExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
@@ -114,7 +115,15 @@ public class IssueCredentialHandler
                             sessionItem.getSubject(), addressItem.getAddresses());
 
             AuditEventContext auditEventContext =
-                    new AuditEventContext(input.getHeaders(), sessionItem);
+                    new AuditEventContext(
+                            new PersonIdentityDetailed(
+                                    null,
+                                    null,
+                                    addressService.mapCanonicalAddresses(
+                                            addressItem.getAddresses())),
+                            input.getHeaders(),
+                            sessionItem);
+
             auditService.sendAuditEvent(
                     AuditEventType.VC_ISSUED,
                     auditEventContext,
@@ -123,7 +132,8 @@ public class IssueCredentialHandler
 
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER);
 
-            auditService.sendAuditEvent(AuditEventType.END, auditEventContext);
+            auditService.sendAuditEvent(
+                    AuditEventType.END, new AuditEventContext(input.getHeaders(), sessionItem));
 
             return ApiGatewayResponseGenerator.proxyJwtResponse(
                     HttpStatusCode.OK, signedJWT.serialize());

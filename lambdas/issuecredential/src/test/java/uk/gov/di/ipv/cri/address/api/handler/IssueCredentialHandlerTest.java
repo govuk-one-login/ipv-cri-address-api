@@ -31,6 +31,7 @@ import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
+import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
@@ -91,11 +92,13 @@ class IssueCredentialHandlerTest {
         sessionItem.setSubject(SUBJECT);
         sessionItem.setSessionId(sessionId);
         addressItem.setAddresses(canonicalAddresses);
+        List<Address> addresses = mockAddressService.mapCanonicalAddresses(canonicalAddresses);
 
         Map<String, Object> testAuditEventExtensions = Map.of("test", "auditEventContext");
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockAddressService.mapCanonicalAddresses(canonicalAddresses)).thenReturn(addresses);
         when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses))
                 .thenReturn(mock(SignedJWT.class));
@@ -117,6 +120,10 @@ class IssueCredentialHandlerTest {
                         auditEventContextArgCaptor.capture(),
                         eq(testAuditEventExtensions));
         AuditEventContext actualAuditEventContext = auditEventContextArgCaptor.getValue();
+        assertEquals(HttpStatusCode.OK, response.getStatusCode());
+        assertEquals(
+                addresses,
+                auditEventContextArgCaptor.getValue().getPersonIdentity().getAddresses());
         assertEquals(event.getHeaders(), actualAuditEventContext.getRequestHeaders());
         assertEquals(sessionItem, actualAuditEventContext.getSessionItem());
         verify(mockAuditService)
@@ -124,7 +131,6 @@ class IssueCredentialHandlerTest {
         assertEquals(sessionItem, auditEventContextArgCaptor.getValue().getSessionItem());
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
-        assertEquals(HttpStatusCode.OK, response.getStatusCode());
     }
 
     @Test
