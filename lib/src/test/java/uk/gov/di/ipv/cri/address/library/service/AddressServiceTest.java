@@ -549,8 +549,8 @@ class AddressServiceTest {
     }
 
     @Nested
-    @DisplayName("Address Service Is an InValid Address")
-    class AddressServiceIsInValidAddress {
+    @DisplayName("Address Service is supplied an invalid Address")
+    class AddressServiceIsSuppliedInvalidAddress {
         @Test
         void shouldReturnTrueWithInvalidFormatDates() {
             CanonicalAddress address = new CanonicalAddress();

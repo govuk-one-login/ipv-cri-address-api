@@ -25,18 +25,21 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.tracing.Tracing;
 import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
+import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
+import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.error.ErrorResponse;
 import uk.gov.di.ipv.cri.common.library.exception.AccessTokenExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
+import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.AuditEventFactory;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
-import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedFactory;
+import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedBuilder;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
@@ -45,6 +48,7 @@ import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.apache.logging.log4j.Level.ERROR;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.ACCESS_TOKEN_EXPIRED;
@@ -107,6 +111,7 @@ public class IssueCredentialHandler
         try {
             var accessToken = validateInputHeaderBearerToken(input.getHeaders());
             var sessionItem = this.sessionService.getSessionByAccessToken(accessToken);
+
             eventProbe.log(Level.INFO, "found session");
             var addressItem = addressService.getAddressItem(sessionItem.getSessionId());
 
@@ -114,26 +119,9 @@ public class IssueCredentialHandler
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                             sessionItem.getSubject(), addressItem.getAddresses());
 
-            AuditEventContext auditEventContext =
-                    new AuditEventContext(
-                            PersonIdentityDetailedFactory.createPersonIdentityDetailedWithAddresses(
-                                    null,
-                                    null,
-                                    addressService.mapCanonicalAddresses(
-                                            addressItem.getAddresses())),
-                            input.getHeaders(),
-                            sessionItem);
-
-            auditService.sendAuditEvent(
-                    AuditEventType.VC_ISSUED,
-                    auditEventContext,
-                    verifiableCredentialService.getAuditEventExtensions(
-                            addressItem.getAddresses()));
-
+            sendVcIssuedAuditEvent(input.getHeaders(), addressItem, sessionItem);
             eventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER);
-
-            auditService.sendAuditEvent(
-                    AuditEventType.END, new AuditEventContext(input.getHeaders(), sessionItem));
+            sendEndAuditEvent(input.getHeaders(), sessionItem);
 
             return ApiGatewayResponseGenerator.proxyJwtResponse(
                     HttpStatusCode.OK, signedJWT.serialize());
@@ -182,6 +170,32 @@ public class IssueCredentialHandler
                             .appendDescription(" - " + SESSION_NOT_FOUND.getErrorSummary())
                             .toJSONObject());
         }
+    }
+
+    private void sendEndAuditEvent(Map<String, String> headers, SessionItem sessionItem)
+            throws SqsException {
+        auditService.sendAuditEvent(
+                AuditEventType.END, new AuditEventContext(headers, sessionItem));
+    }
+
+    private void sendVcIssuedAuditEvent(
+            Map<String, String> headers, AddressItem addressItem, SessionItem sessionItem)
+            throws SqsException {
+        AuditEventContext auditEventContext =
+                new AuditEventContext(
+                        PersonIdentityDetailedBuilder.builder()
+                                .withAddresses(
+                                        addressItem.getAddresses().stream()
+                                                .map(Address::new)
+                                                .collect(Collectors.toList()))
+                                .build(),
+                        headers,
+                        sessionItem);
+
+        auditService.sendAuditEvent(
+                AuditEventType.VC_ISSUED,
+                auditEventContext,
+                verifiableCredentialService.getAuditEventExtensions(addressItem.getAddresses()));
     }
 
     private AccessToken validateInputHeaderBearerToken(Map<String, String> headers)

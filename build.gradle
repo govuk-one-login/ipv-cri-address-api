@@ -35,7 +35,6 @@ subprojects {
 	}
 
 	repositories {
-		mavenLocal()
 		maven {
 			url 'https://gds.jfrog.io/artifactory/di-allowed-repos'
 		}
