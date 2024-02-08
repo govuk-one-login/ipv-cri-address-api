@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Logger;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
-import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
@@ -17,7 +16,6 @@ import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class AddressService {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -116,33 +114,6 @@ public class AddressService {
                 // Only the CURRENT address has date information.
                 throw new AddressProcessingException(ERROR_TOO_MANY_ADDRESSES);
         }
-    }
-
-    public List<Address> mapCanonicalAddresses(List<CanonicalAddress> addresses) {
-        return addresses.stream()
-                .map(
-                        address -> {
-                            Address mappedAddress = new Address();
-                            mappedAddress.setAddressCountry(address.getAddressCountry());
-                            mappedAddress.setAddressLocality(address.getAddressLocality());
-                            mappedAddress.setBuildingName(address.getBuildingName());
-                            mappedAddress.setBuildingNumber(address.getBuildingNumber());
-                            mappedAddress.setDepartmentName(address.getDepartmentName());
-                            mappedAddress.setDependentAddressLocality(
-                                    address.getDependentAddressLocality());
-                            mappedAddress.setDependentStreetName(address.getDependentStreetName());
-                            mappedAddress.setDoubleDependentAddressLocality(
-                                    address.getDoubleDependentAddressLocality());
-                            mappedAddress.setOrganisationName(address.getOrganisationName());
-                            mappedAddress.setPostalCode(address.getPostalCode());
-                            mappedAddress.setStreetName(address.getStreetName());
-                            mappedAddress.setSubBuildingName(address.getSubBuildingName());
-                            mappedAddress.setUprn(address.getUprn());
-                            mappedAddress.setValidFrom(address.getValidFrom());
-                            mappedAddress.setValidUntil(address.getValidUntil());
-                            return mappedAddress;
-                        })
-                .collect(Collectors.toList());
     }
 
     private void processAddresses(List<CanonicalAddress> addresses)

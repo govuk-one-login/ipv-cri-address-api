@@ -1,6 +1,5 @@
 package uk.gov.di.ipv.cri.address.library.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -15,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
-import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
@@ -29,7 +27,6 @@ import java.util.UUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -201,8 +198,7 @@ class AddressServiceTest {
         }
 
         @Test
-        void shouldPersistAnEmptyListOfAddressesWhenNoListOfCanonicalAddressesIsSupplied()
-                throws JsonProcessingException {
+        void shouldPersistAnEmptyListOfAddressesWhenNoListOfCanonicalAddressesIsSupplied() {
             addressService.saveAddresses(SESSION_ID, null);
             ArgumentCaptor<AddressItem> addressItemArgumentCaptor =
                     ArgumentCaptor.forClass(AddressItem.class);
@@ -587,80 +583,5 @@ class AddressServiceTest {
     void shouldGetAddressItem() {
         addressService.getAddressItem(SESSION_ID);
         verify(mockDataStore).getItem(String.valueOf(SESSION_ID));
-    }
-
-    @Nested
-    @DisplayName("Address Service maps canonical addresses to addresses")
-    class AddressServiceMapCanonicalAddresses {
-        @Test
-        void shouldNotErrorWhenMappingCanonicalAddresesOnEmptyInput() {
-            assertDoesNotThrow(() -> addressService.mapCanonicalAddresses(Collections.emptyList()));
-        }
-
-        @Test
-        void shouldMapCanonicalAddressesToAddresses() {
-            CanonicalAddress address = new CanonicalAddress();
-            address.setBuildingNumber("buildingNum");
-            address.setStreetName("street");
-            address.setPostalCode("postcode");
-
-            CanonicalAddress previousAddress = new CanonicalAddress();
-            previousAddress.setBuildingNumber("buildingNum");
-            previousAddress.setStreetName("street");
-            previousAddress.setPostalCode("postcode");
-
-            List<Address> mappedAddresses =
-                    addressService.mapCanonicalAddresses(List.of(address, previousAddress));
-            mappedAddresses.forEach(
-                    mappedAddress -> {
-                        assertAll(
-                                () -> {
-                                    assertEquals(
-                                            address.getAddressCountry(),
-                                            mappedAddress.getAddressCountry());
-                                    assertEquals(
-                                            address.getAddressLocality(),
-                                            mappedAddress.getAddressLocality());
-                                    assertEquals(
-                                            address.getDependentAddressLocality(),
-                                            mappedAddress.getDependentAddressLocality());
-                                    assertEquals(
-                                            address.getBuildingName(),
-                                            mappedAddress.getBuildingName());
-                                    assertEquals(
-                                            address.getDepartmentName(),
-                                            mappedAddress.getDepartmentName());
-                                    assertEquals(
-                                            address.getBuildingNumber(),
-                                            mappedAddress.getBuildingNumber());
-                                    assertEquals(
-                                            address.getDependentStreetName(),
-                                            mappedAddress.getDependentStreetName());
-                                    assertEquals(
-                                            address.getDoubleDependentAddressLocality(),
-                                            mappedAddress.getDoubleDependentAddressLocality());
-                                    assertEquals(
-                                            address.getOrganisationName(),
-                                            mappedAddress.getOrganisationName());
-                                    assertEquals(
-                                            address.getStreetName(), mappedAddress.getStreetName());
-                                    assertEquals(
-                                            address.getSubBuildingName(),
-                                            mappedAddress.getSubBuildingName());
-                                    assertEquals(address.getUprn(), mappedAddress.getUprn());
-                                    assertEquals(
-                                            address.getPostalCode(), mappedAddress.getPostalCode());
-                                });
-                    });
-        }
-
-        @Test
-        void shouldReturnTrueWithNULLNULLFormatDates() {
-            CanonicalAddress address = new CanonicalAddress();
-            address.setValidFrom(null);
-            address.setValidUntil(null);
-
-            assertTrue(addressService.isNotCurrentAddress(address));
-        }
     }
 }
