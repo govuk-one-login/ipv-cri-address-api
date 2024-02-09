@@ -13,6 +13,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
@@ -21,6 +22,7 @@ import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
@@ -98,6 +100,22 @@ class PostcodeLookupServiceTest {
                 .thenReturn("invalidURL{}");
         assertThrows(
                 PostcodeLookupProcessingException.class,
+                () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+    }
+
+    @Test
+    void shouldThrowTimeoutExceptionWhenHttpRequestExceedsSetTimeout()
+            throws PostcodeLookupTimeoutException, IOException, InterruptedException {
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
+
+        when(httpClient.send(
+                        any(HttpRequest.class),
+                        ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenThrow(HttpConnectTimeoutException.class);
+
+        assertThrows(
+                PostcodeLookupTimeoutException.class,
                 () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
     }
 

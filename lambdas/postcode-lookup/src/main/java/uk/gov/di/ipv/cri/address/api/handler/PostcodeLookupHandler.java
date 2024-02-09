@@ -97,8 +97,7 @@ public class PostcodeLookupHandler
         } catch (PostcodeLookupTimeoutException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
-                    HttpStatusCode.GATEWAY_TIMEOUT,
-                    ErrorResponse.SERVER_ERROR.getErrorSummary());
+                    HttpStatusCode.GATEWAY_TIMEOUT, ErrorResponse.SERVER_ERROR.getErrorSummary());
         } catch (SessionExpiredException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
