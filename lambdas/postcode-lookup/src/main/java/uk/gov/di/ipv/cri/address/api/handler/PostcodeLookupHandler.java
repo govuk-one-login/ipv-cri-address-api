@@ -11,6 +11,7 @@ import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.tracing.Tracing;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
@@ -93,6 +94,11 @@ public class PostcodeLookupHandler
                     OAuth2Error.INVALID_REQUEST
                             .appendDescription(" - " + INVALID_POSTCODE.getErrorSummary())
                             .toJSONObject());
+        } catch (PostcodeLookupTimeoutException e) {
+            eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatusCode.GATEWAY_TIMEOUT,
+                    ErrorResponse.SERVER_ERROR.getErrorSummary());
         } catch (SessionExpiredException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(

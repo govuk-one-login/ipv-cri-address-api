@@ -10,6 +10,7 @@ import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.lambda.powertools.tracing.Tracing;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.models.Dpa;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
@@ -27,6 +28,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
@@ -48,6 +50,8 @@ public class PostcodeLookupService {
 
     private final ConfigurationService configurationService;
 
+    long connectionTimeoutSeconds = 10;
+
     Logger log = LogManager.getLogger();
 
     public PostcodeLookupService() {
@@ -55,7 +59,7 @@ public class PostcodeLookupService {
         this.client =
                 HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_2)
-                        .connectTimeout(Duration.ofSeconds(10))
+                        .connectTimeout(Duration.ofSeconds(connectionTimeoutSeconds))
                         .build();
     }
 
@@ -100,6 +104,7 @@ public class PostcodeLookupService {
                                             .method(SdkHttpMethod.GET)
                                             .build()
                                             .getUri())
+                            .timeout(Duration.ofSeconds(connectionTimeoutSeconds))
                             .header("Accept", "application/json")
                             .GET()
                             .build();
@@ -119,6 +124,11 @@ public class PostcodeLookupService {
             // Now throw our prettier exception
             throw new PostcodeLookupProcessingException(
                     "Error sending request for postcode lookup", e);
+        } catch (HttpConnectTimeoutException e) {
+            log.error("Postcode lookup threw HTTP connection timeout exception", e);
+
+            throw new PostcodeLookupTimeoutException(
+                    "Error timed out waiting for postcode lookup response", e);
         } catch (IOException e) {
             log.error("Postcode lookup threw an IO exception", e);
 
