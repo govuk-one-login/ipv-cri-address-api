@@ -1,7 +1,9 @@
 package uk.gov.di.ipv.cri.address.api.exceptions;
 
-public class PostcodeLookupTimeoutException extends RuntimeException {
+import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 
+public class PostcodeLookupTimeoutException extends RuntimeException {
+    @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupTimeoutException() {
         super();
     }
@@ -14,6 +16,7 @@ public class PostcodeLookupTimeoutException extends RuntimeException {
         super(message, cause);
     }
 
+    @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupTimeoutException(Throwable cause) {
         super(cause);
     }

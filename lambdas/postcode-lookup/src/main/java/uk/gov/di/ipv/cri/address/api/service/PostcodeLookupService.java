@@ -16,6 +16,7 @@ import uk.gov.di.ipv.cri.address.api.models.Dpa;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
 import uk.gov.di.ipv.cri.address.api.models.Result;
+import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.PersonIdentityDetailed;
@@ -54,6 +55,7 @@ public class PostcodeLookupService {
 
     Logger log = LogManager.getLogger();
 
+    @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupService() {
         this.configurationService = new ConfigurationService();
         this.client =
