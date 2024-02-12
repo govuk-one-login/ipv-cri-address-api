@@ -31,6 +31,7 @@ import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
+import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
@@ -41,6 +42,7 @@ import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.apache.logging.log4j.Level.INFO;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -70,6 +72,11 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldReturn200OkWhenIssueCredentialRequestIsValid() throws JOSEException, SqsException {
+        ArgumentCaptor<AuditEventContext> endEventAuditEventContextArgCaptor =
+                ArgumentCaptor.forClass(AuditEventContext.class);
+        ArgumentCaptor<AuditEventContext> vcEventAuditEventContextArgCaptor =
+                ArgumentCaptor.forClass(AuditEventContext.class);
+
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -77,22 +84,25 @@ class IssueCredentialHandlerTest {
                         IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
                         accessToken.toAuthorizationHeader()));
         setRequestBodyAsPlainJWT(event);
-        ArgumentCaptor<AuditEventContext> auditEventContextArgCaptor =
-                ArgumentCaptor.forClass(AuditEventContext.class);
+
         final UUID sessionId = UUID.randomUUID();
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSubject(SUBJECT);
+        sessionItem.setSessionId(sessionId);
+
         CanonicalAddress address = new CanonicalAddress();
         address.setBuildingNumber("114");
         address.setStreetName("Wellington Street");
         address.setPostalCode("LS1 1BA");
         AddressItem addressItem = new AddressItem();
+
         List<CanonicalAddress> canonicalAddresses = List.of(address);
-
-        SessionItem sessionItem = new SessionItem();
-        sessionItem.setSubject(SUBJECT);
-        sessionItem.setSessionId(sessionId);
         addressItem.setAddresses(canonicalAddresses);
+        List<Address> addresses =
+                canonicalAddresses.stream().map(Address::new).collect(Collectors.toList());
 
-        Map<String, Object> testAuditEventExtensions = Map.of("test", "auditEventContext");
+        Map<String, Object> auditEventExtensions =
+                Map.of("iss", "issuer", "addressesEntered", addresses.size());
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
@@ -100,7 +110,7 @@ class IssueCredentialHandlerTest {
                         SUBJECT, canonicalAddresses))
                 .thenReturn(mock(SignedJWT.class));
         when(mockVerifiableCredentialService.getAuditEventExtensions(canonicalAddresses))
-                .thenReturn(testAuditEventExtensions);
+                .thenReturn(auditEventExtensions);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
@@ -111,20 +121,37 @@ class IssueCredentialHandlerTest {
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER);
         verify(mockEventProbe).log(INFO, "found session");
         verifyNoMoreInteractions(mockEventProbe);
+
         verify(mockAuditService)
                 .sendAuditEvent(
                         eq(AuditEventType.VC_ISSUED),
-                        auditEventContextArgCaptor.capture(),
-                        eq(testAuditEventExtensions));
-        AuditEventContext actualAuditEventContext = auditEventContextArgCaptor.getValue();
-        assertEquals(event.getHeaders(), actualAuditEventContext.getRequestHeaders());
-        assertEquals(sessionItem, actualAuditEventContext.getSessionItem());
+                        vcEventAuditEventContextArgCaptor.capture(),
+                        endEventAuditEventContextArgCaptor.capture());
         verify(mockAuditService)
-                .sendAuditEvent(eq(AuditEventType.END), auditEventContextArgCaptor.capture());
-        assertEquals(sessionItem, auditEventContextArgCaptor.getValue().getSessionItem());
+                .sendAuditEvent(
+                        eq(AuditEventType.END), endEventAuditEventContextArgCaptor.capture());
+
+        AuditEventContext endAuditEventContext = endEventAuditEventContextArgCaptor.getValue();
+        AuditEventContext vcAuditEventContext = vcEventAuditEventContextArgCaptor.getValue();
+
+        assertEquals(HttpStatusCode.OK, response.getStatusCode());
+        assertEquals(event.getHeaders(), endAuditEventContext.getRequestHeaders());
+        assertEquals(sessionItem, endAuditEventContext.getSessionItem());
+        assertEquals(sessionItem, endEventAuditEventContextArgCaptor.getValue().getSessionItem());
+
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
-        assertEquals(HttpStatusCode.OK, response.getStatusCode());
+
+        for (int i = 0; i < addresses.size(); i++) {
+            Address addressInAuditContext =
+                    vcAuditEventContext.getPersonIdentity().getAddresses().get(i);
+            assertEquals(addresses.get(i).getUprn(), addressInAuditContext.getUprn());
+            assertEquals(address.getBuildingNumber(), addressInAuditContext.getBuildingNumber());
+            assertEquals(address.getStreetName(), addressInAuditContext.getStreetName());
+            assertEquals(address.getAddressLocality(), addressInAuditContext.getAddressLocality());
+            assertEquals(address.getPostalCode(), addressInAuditContext.getPostalCode());
+            assertEquals(address.getAddressCountry(), addressInAuditContext.getAddressCountry());
+        }
     }
 
     @Test
