@@ -51,9 +51,9 @@ public class PostcodeLookupService {
 
     private final ConfigurationService configurationService;
 
-    long connectionTimeoutSeconds = 10;
+    private final long connectionTimeoutSeconds = 10;
 
-    Logger log = LogManager.getLogger();
+    private Logger log = LogManager.getLogger();
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupService() {
