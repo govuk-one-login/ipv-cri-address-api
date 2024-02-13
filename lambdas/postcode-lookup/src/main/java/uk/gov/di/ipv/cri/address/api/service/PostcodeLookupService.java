@@ -51,7 +51,7 @@ public class PostcodeLookupService {
 
     private final ConfigurationService configurationService;
 
-    private final long connectionTimeoutSeconds = 10;
+    private static final long CONNECTION_TIMEOUT_SECONDS = 10;
 
     private Logger log = LogManager.getLogger();
 
@@ -61,7 +61,7 @@ public class PostcodeLookupService {
         this.client =
                 HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_2)
-                        .connectTimeout(Duration.ofSeconds(connectionTimeoutSeconds))
+                        .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                         .build();
     }
 
@@ -106,7 +106,7 @@ public class PostcodeLookupService {
                                             .method(SdkHttpMethod.GET)
                                             .build()
                                             .getUri())
-                            .timeout(Duration.ofSeconds(connectionTimeoutSeconds))
+                            .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                             .header("Accept", "application/json")
                             .GET()
                             .build();
