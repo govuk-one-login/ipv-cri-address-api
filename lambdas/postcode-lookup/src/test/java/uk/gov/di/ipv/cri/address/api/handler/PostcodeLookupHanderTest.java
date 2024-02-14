@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
@@ -37,6 +38,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -124,6 +126,37 @@ class PostcodeLookupHanderTest {
         APIGatewayProxyResponseEvent responseEvent =
                 postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
         assertEquals(500, responseEvent.getStatusCode());
+        verifyErrorsLoggedByEventProbe(exception);
+        verifyNoMoreInteractions(eventProbe);
+    }
+
+    @Test
+    void PostcodeLookupTimeoutExceptionThrows504()
+            throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
+                    SessionExpiredException, SessionValidationException, SessionNotFoundException,
+                    JsonProcessingException {
+        String testPostcode = "LS1 1BA";
+        String sessionId = String.valueOf(UUID.randomUUID());
+        Map<String, String> requestHeaders = Map.of("session_id", sessionId);
+        SessionItem sessionItem = mock(SessionItem.class);
+        AuditEventContext testAuditEventContext = mock(AuditEventContext.class);
+
+        PostcodeLookupTimeoutException exception =
+                new PostcodeLookupTimeoutException("Error Connection Timeout");
+
+        when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+        setupEventProbeExpectedErrorBehaviour();
+
+        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(requestHeaders);
+        when(apiGatewayProxyRequestEvent.getPathParameters())
+                .thenReturn(Map.of("postcode", testPostcode));
+        when(sessionService.validateSessionId(sessionId)).thenReturn(sessionItem);
+        when(postcodeLookupService.getAuditEventContext(testPostcode, requestHeaders, sessionItem))
+                .thenReturn(testAuditEventContext);
+        doThrow(exception).when(postcodeLookupService).lookupPostcode(anyString());
+        APIGatewayProxyResponseEvent responseEvent =
+                postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+        assertEquals(504, responseEvent.getStatusCode());
         verifyErrorsLoggedByEventProbe(exception);
         verifyNoMoreInteractions(eventProbe);
     }

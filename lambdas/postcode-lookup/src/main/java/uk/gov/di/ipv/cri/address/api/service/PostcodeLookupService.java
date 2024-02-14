@@ -10,11 +10,13 @@ import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.lambda.powertools.tracing.Tracing;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.models.Dpa;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
 import uk.gov.di.ipv.cri.address.api.models.Result;
+import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.PersonIdentityDetailed;
@@ -27,6 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
@@ -48,14 +51,17 @@ public class PostcodeLookupService {
 
     private final ConfigurationService configurationService;
 
-    Logger log = LogManager.getLogger();
+    private static final long CONNECTION_TIMEOUT_SECONDS = 10;
 
+    private Logger log = LogManager.getLogger();
+
+    @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupService() {
         this.configurationService = new ConfigurationService();
         this.client =
                 HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_2)
-                        .connectTimeout(Duration.ofSeconds(10))
+                        .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                         .build();
     }
 
@@ -100,6 +106,7 @@ public class PostcodeLookupService {
                                             .method(SdkHttpMethod.GET)
                                             .build()
                                             .getUri())
+                            .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                             .header("Accept", "application/json")
                             .GET()
                             .build();
@@ -119,6 +126,11 @@ public class PostcodeLookupService {
             // Now throw our prettier exception
             throw new PostcodeLookupProcessingException(
                     "Error sending request for postcode lookup", e);
+        } catch (HttpConnectTimeoutException e) {
+            log.error("Postcode lookup threw HTTP connection timeout exception", e);
+
+            throw new PostcodeLookupTimeoutException(
+                    "Error timed out waiting for postcode lookup response", e);
         } catch (IOException e) {
             log.error("Postcode lookup threw an IO exception", e);
 
