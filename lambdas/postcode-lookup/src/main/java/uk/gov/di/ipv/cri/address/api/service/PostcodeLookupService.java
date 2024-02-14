@@ -19,10 +19,10 @@ import uk.gov.di.ipv.cri.address.api.models.Result;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
-import uk.gov.di.ipv.cri.common.library.domain.personidentity.PersonIdentityDetailed;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedBuilder;
 
 import java.io.IOException;
 import java.net.URI;
@@ -214,13 +214,12 @@ public class PostcodeLookupService {
         if (StringUtils.isBlank(postcode)) {
             throw new IllegalArgumentException("postcode must not be null or blank");
         }
+
         Address address = new Address();
-        String beautifiedPostcode =
-                URLDecoder.decode(postcode, Charset.defaultCharset()).toUpperCase();
-        address.setPostalCode(beautifiedPostcode);
+        address.setPostalCode(URLDecoder.decode(postcode, Charset.defaultCharset()).toUpperCase());
 
         return new AuditEventContext(
-                new PersonIdentityDetailed(null, null, List.of(address)),
+                PersonIdentityDetailedBuilder.builder().withAddresses(List.of(address)).build(),
                 requestHeaders,
                 sessionItem);
     }
