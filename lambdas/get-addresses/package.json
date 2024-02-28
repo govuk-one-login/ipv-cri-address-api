@@ -14,7 +14,7 @@
     "dependencies": {
         "@aws-lambda-powertools/logger": "^1.18.0",
         "@aws-lambda-powertools/parameters": "1.18.0",
-        "@aws-sdk/client-dynamodb": "3.362.0",
+        "@aws-sdk/client-dynamodb": "3.523.0",
         "@aws-sdk/client-ssm": "^3.362.0",
         "@aws-sdk/lib-dynamodb": "3.150.0",
         "esbuild": "0.14.14"
