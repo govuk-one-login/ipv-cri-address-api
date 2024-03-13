@@ -25,7 +25,7 @@ jobs:
     environment: di-ipv-cri-dev
     steps:
       - name: Pull repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v2
