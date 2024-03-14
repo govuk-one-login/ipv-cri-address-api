@@ -1,0 +1,49 @@
+{
+  "TableName": "SessionTable",
+  "KeySchema": [{ "AttributeName": "sessionId", "KeyType": "HASH" }],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "authorizationCode-index",
+      "KeySchema": [
+        {
+          "AttributeName": "authorizationCode",
+          "KeyType": "HASH"
+        }
+      ],
+      "Projection": {
+        "NonKeyAttributes": ["sessionId", "redirectUri", "clientId"],
+        "ProjectionType": "INCLUDE"
+      },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 10,
+        "WriteCapacityUnits": 5
+      }
+    },
+    {
+      "IndexName": "access-token-index",
+      "KeySchema": [
+        {
+          "AttributeName": "accessToken",
+          "KeyType": "HASH"
+        }
+      ],
+      "Projection": {
+        "NonKeyAttributes": ["sessionId", "subject"],
+        "ProjectionType": "INCLUDE"
+      },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 10,
+        "WriteCapacityUnits": 5
+      }
+    }
+  ],
+  "AttributeDefinitions": [
+    { "AttributeName": "sessionId", "AttributeType": "S" },
+    { "AttributeName": "authorizationCode", "AttributeType": "S" },
+    { "AttributeName": "accessToken", "AttributeType": "S" }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 10,
+    "WriteCapacityUnits": 5
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "Parameters": {
+    "ENVIRONMENT": "something-else-dev",
+    "LOCAL_DYNAMO_URL": "http://host.docker.internal:8000"
+  }
+}
