@@ -15,22 +15,22 @@ This will run "build", "test", "buildZip", and "spotLess" reformatting
 
 ## Deploy to dev account
 
-Before your **first** deploy, build a sam config toml file.
-> The stack name *must* be unique to you.
-> **Ensure you change the environment name**, when asked, to `dev` instead of `default`.
-> All other defaults can be accepted by leaving them blank
+Ensure you have the `sam-cli` and `gds-cli` installed, and that you can assume an admin role on the ` di-ipv-cri-address-dev` AWS account.
+Alternatively you can [create a sso profile](https://govukverify.atlassian.net/wiki/spaces/LO/pages/3725591061/Getting+set+up+with+AWS+SSO+in+terminal+CLI+-+quickstart)
 
 Any time you wish to deploy, run:
 
-`gds aws di-ipv-cri-dev -- ./deploy.sh STACKNAME`
+`gds aws  di-ipv-cri-address-dev -- ./deploy.sh`
 
-Make sure you replace `STACKNAME` with your stack name that you want to deploy to.
+or with an AWS SSO profile
 
-The CommonStackName and SecretPrefix are optional, but can be overridden by supplying
+`AWS_PROFILE=profile-name-you-created aws  di-ipv-cri-address-dev -- ./deploy.sh`
+
+The Stack Name, CommonStackName and SecretPrefix are optional, but can be overridden by supplying
 
 additional arguments to `deploy.sh` i.e
 
-gds aws di-ipv-cri-dev -- ./deploy.sh STACKNAME YOUR-COMMON-STACKNAME YOUR-SECRET-PREFIX
+gds aws  di-ipv-cri-address-dev -- ./deploy.sh STACKNAME YOUR-COMMON-STACKNAME YOUR-SECRET-PREFIX
 
 ## Deploy to AWS lambda
 
@@ -66,30 +66,11 @@ The public keys need to be published so that clients:
 * can verify the signature of the verifiable credential,
 * encrypt the Authorization JAR before sending to this CRI.
 
-The `JWKSetHandler` lambda function publishes these public keys as a JWKSet to `https://${AddressApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/.well-known/jwks.json`.
-
-KMS keys must be marked for publishing by setting the following AWS tags on the KMS resources in the SAM template:
-````
-Tags:
-- Key: "jwkset"
-  Value: "true"
-- Key: "awsStackName"
-  Value: !Sub "${AWS::StackName}"
-````
-
-The `JWKSetHandler` lambda function must be supplied the stack name it is published to the `AWS_STACK_NAME` environment variable:
-
-````
-Environment:
-      Variables:
-        AWS_STACK_NAME: !Sub ${AWS::StackName}
-````
+The environment variable `IPV_CORE_STUB_CRI_ID` with value `address-cri-dev` allows the command below to use keys in `ipv-config` pointing to keys in `di-ipv-cri-address-dev` for the deployed stack in that account.
 
 ## Run all tests
 Make sure you have deployed a stack on AWS and provide that `STACK_NAME` below with corresponding `API_GATEWAY_ID_PRIVATE` and `API_GATEWAY_ID_PUBLIC` endpoints
-````
-STACK_NAME=xxxx IPV_CORE_STUB_CRI_ID=address-cri-dev ENVIRONMENT=dev API_GATEWAY_ID_PRIVATE=xxxx  API_GATEWAY_ID_PUBLIC=xxxx IPV_CORE_STUB_BASIC_AUTH_USER=xxxx IPV_CORE_STUB_BASIC_AUTH_PASSWORD=xxxx IPV_CORE_STUB_URL="https://di-ipv-core-stub.london.cloudapps.digital" APIGW_API_KEY=xxxx gradle integration-tests:cucumber
-````
+
 
 Below runs by overriding the stub client to `https://cri.core.build.stubs.account.gov.uk` in AWS with stub a client_id ipv-core-stub-aws-stub using DEFAULT_CLIENT_ID env variable
 
