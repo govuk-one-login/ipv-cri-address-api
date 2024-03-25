@@ -44,7 +44,7 @@ jobs:
 
       - name: Archive coverage results
         if: ${{ inputs.coverage-report }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.coverage-artifact }}
           path: lambdas/get-addresses/coverage/lcov.info
