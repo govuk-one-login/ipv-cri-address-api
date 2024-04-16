@@ -66,7 +66,7 @@ Conditions:
     Fn::Not:
       - Fn::Equals:
           - !Ref SecretPrefix
-          - "none"
+          - "address-cri-api-v1"
   AddProvisionedConcurrency: !Not
     - !Equals
       - !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ]
