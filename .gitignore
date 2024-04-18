@@ -3,6 +3,7 @@ node_modules/
 
 # test coverage output
 coverage/
+/integration-tests/target/
 
 # Compiled class file
 *.class
