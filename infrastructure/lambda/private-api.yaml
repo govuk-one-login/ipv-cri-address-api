@@ -107,6 +107,8 @@ paths:
 
   /session:
     post:
+      parameters:
+        - $ref: "#/components/parameters/AuditHeader"
       requestBody:
         content:
           application/json:
