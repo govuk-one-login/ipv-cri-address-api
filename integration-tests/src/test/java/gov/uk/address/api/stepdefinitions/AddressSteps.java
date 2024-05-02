@@ -1,5 +1,9 @@
 package gov.uk.address.api.stepdefinitions;
 
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.Message;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +18,10 @@ import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
+
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.AmazonSQSException;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -41,6 +49,7 @@ public class AddressSteps {
                 this.addressApiClient.sendPostCodeLookUpRequest(
                         this.testContext.getSessionId(), postcode));
     }
+
 
     @Then("user receives a list of addresses containing {string}")
     public void userReceivesAListOfAddressesContaining(String postcode) throws IOException {
@@ -77,6 +86,25 @@ public class AddressSteps {
         assertEquals(200, this.testContext.getResponse().statusCode());
         assertNotNull(this.testContext.getResponse().body());
         makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
+    }
+
+    @Then("TXMA event is added to the sqs queue")
+    public void txma_event_is_added_to_the_sqs_queue() {
+        AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
+        List<Message> messages = sqs.receiveMessage("https://sqs.eu-west-2.amazonaws.com/005455562524/mariese-common-AuditEventQueue-7fXc39ahK8gF").getMessages();
+        System.out.println(messages);
+    }
+
+    @And("header value is not present in the message")
+    public void header_key_is_not_present_in_the_message() {
+        // Write code here that turns the phrase above into concrete actions
+        throw new io.cucumber.java.PendingException();
+    }
+
+    @And("header value is present in the message")
+    public void header_key_is_present_in_the_message() {
+        // Write code here that turns the phrase above into concrete actions
+        throw new io.cucumber.java.PendingException();
     }
 
     private void makeAssertions(SignedJWT decodedJWT) throws IOException {
