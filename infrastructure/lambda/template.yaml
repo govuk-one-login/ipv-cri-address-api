@@ -843,3 +843,8 @@ Outputs:
     Value: !If [IsNotDevEnvironment, !Ref PrivateAddressApi, !Ref DevOnlyAddressApi]
     Export:
       Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
+
+  AuditEventQueueUrl:
+    Condition: IsDevEnvironment
+    Value:
+      Fn::ImportValue: !Sub ${CommonStackName}-AuditEventQueueName

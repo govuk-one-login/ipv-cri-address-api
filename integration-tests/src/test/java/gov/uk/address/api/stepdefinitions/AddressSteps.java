@@ -29,6 +29,8 @@ public class AddressSteps {
     private String uprn;
     private String postcode;
 
+    private static final String TXMA_QUEUE_URL = System.getenv("TXMA_QUEUE_URL");
+
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext) {
         this.objectMapper = new ObjectMapper();
@@ -88,8 +90,7 @@ public class AddressSteps {
         ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest()
                         .withMaxNumberOfMessages(10)
-                        .withQueueUrl(
-                                "https://sqs.eu-west-2.amazonaws.com/005455562524/mariese-common-AuditEventQueue-7fXc39ahK8gF")
+                        .withQueueUrl(TXMA_QUEUE_URL)
                         .withWaitTimeSeconds(20)
                         .withVisibilityTimeout(20);
         ReceiveMessageResult receiveMessageResult = sqs.receiveMessage(receiveMessageRequest);
@@ -149,8 +150,7 @@ public class AddressSteps {
         ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest()
                         .withMaxNumberOfMessages(10)
-                        .withQueueUrl(
-                                "https://sqs.eu-west-2.amazonaws.com/005455562524/mariese-common-AuditEventQueue-7fXc39ahK8gF")
+                        .withQueueUrl(TXMA_QUEUE_URL)
                         .withWaitTimeSeconds(20)
                         .withVisibilityTimeout(20);
         ReceiveMessageResult receiveMessageResult = sqs.receiveMessage(receiveMessageRequest);
@@ -173,8 +173,7 @@ public class AddressSteps {
         AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
 
         PurgeQueueRequest pqRequest =
-                new PurgeQueueRequest(
-                        "https://sqs.eu-west-2.amazonaws.com/005455562524/mariese-common-AuditEventQueue-7fXc39ahK8gF");
+                new PurgeQueueRequest(TXMA_QUEUE_URL);
         sqs.purgeQueue(pqRequest);
     }
 }
