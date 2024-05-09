@@ -17,12 +17,11 @@ ext {
 		mockito                  : "4.3.1",
 		glassfish_version        : "3.0.3",
 		powertools_version       : "1.12.3",
-		cri_common_lib           : "1.6.3"
+		cri_common_lib           : "1.6.2"
 	]
 }
 
 repositories {
-	mavenLocal()
 	maven {
 		url 'https://gds.jfrog.io/artifactory/di-allowed-repos'
 	}
@@ -36,7 +35,6 @@ subprojects {
 	}
 
 	repositories {
-		mavenLocal()
 		maven {
 			url 'https://gds.jfrog.io/artifactory/di-allowed-repos'
 		}
