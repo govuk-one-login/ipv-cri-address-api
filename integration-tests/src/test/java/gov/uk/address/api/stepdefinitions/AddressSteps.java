@@ -1,9 +1,18 @@
 package gov.uk.address.api.stepdefinitions;
 
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
+import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.*;
+
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.*;
+
+import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +38,41 @@ public class AddressSteps {
     private String uprn;
     private String postcode;
 
-    private static final String TXMA_QUEUE_URL = System.getenv("TXMA_QUEUE_URL");
+    AmazonCloudFormation cloudFormation = AmazonCloudFormationClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
+
+    String stackName = System.getenv("STACK_NAME");
+
+    // Create a DescribeStacksRequest
+    DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackName);
+
+    DescribeStacksResult describeStacksResult = cloudFormation.describeStacks(describeStacksRequest);
+    Stack stack = describeStacksResult.getStacks().get(0); // Assuming only one stack is returned
+    String commonStackName = null;
+    public String setCommonStackName() {
+        for (Parameter parameter : stack.getParameters()) {
+            if ("CommonStackName".equals(parameter.getParameterKey())) {
+                commonStackName = parameter.getParameterValue();
+            }
+        }
+        System.out.println("commonStackName = " + commonStackName);
+        return commonStackName;
+    }
+    
+    DescribeStacksRequest describeCommonStacksRequest = new DescribeStacksRequest().withStackName(setCommonStackName());
+
+    DescribeStacksResult describeCommonStacksResult = cloudFormation.describeStacks(describeCommonStacksRequest);
+    Stack commonStack = describeCommonStacksResult.getStacks().get(0);
+    String auditEventQueueUrl = null;
+    public String txmaQueueUrl() {
+        for (Output output : commonStack.getOutputs()) {
+            if ("MockAuditEventQueueUrl".equals(output.getOutputKey())) {
+                auditEventQueueUrl = output.getOutputValue();
+            }
+        }
+        return auditEventQueueUrl;
+    }
+
+    private final String TXMA_QUEUE_URL = txmaQueueUrl();
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext) {

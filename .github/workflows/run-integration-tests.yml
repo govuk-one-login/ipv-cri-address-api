@@ -39,7 +39,6 @@ jobs:
           STACK_NAME: ${{ inputs.stack-name }}
           API_GATEWAY_ID_PUBLIC: ${{ fromJson(inputs.stack-outputs).PublicAddressApiGatewayId }}
           API_GATEWAY_ID_PRIVATE: ${{ fromJson(inputs.stack-outputs).PrivateAddressApiGatewayId }}
-          TXMA_QUEUE_URL: ${{ fromJson(inputs.stack-outputs).AuditEventQueueUrl }}
           IPV_CORE_STUB_BASIC_AUTH_PASSWORD: ${{ secrets.ipv-core-stub-basic-auth-pwd }}
           IPV_CORE_STUB_BASIC_AUTH_USER: ${{ secrets.ipv-core-stub-basic-auth-user }}
           IPV_CORE_STUB_URL: https://cri.core.build.stubs.account.gov.uk
