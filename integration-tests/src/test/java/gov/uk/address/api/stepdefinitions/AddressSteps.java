@@ -172,8 +172,7 @@ public class AddressSteps {
     public void sqsEventsHaveBeenDeleted() {
         AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
 
-        PurgeQueueRequest pqRequest =
-                new PurgeQueueRequest(TXMA_QUEUE_URL);
+        PurgeQueueRequest pqRequest = new PurgeQueueRequest(TXMA_QUEUE_URL);
         sqs.purgeQueue(pqRequest);
     }
 }
