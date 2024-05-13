@@ -10,6 +10,8 @@ on:
       api-gateway-api-key: { required: true }
       ipv-core-stub-basic-auth-pwd: { required: true }
       ipv-core-stub-basic-auth-user: { required: true }
+      AWS_ACCESS_KEY_ID: { required: true }
+      AWS_SECRET_ACCESS_KEY: { required: true }
 
 permissions: {}
 
