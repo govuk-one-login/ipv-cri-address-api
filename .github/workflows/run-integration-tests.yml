@@ -6,8 +6,6 @@ on:
       aws-region: { required: false, type: string }
       stack-name: { required: true, type: string }
       stack-outputs: { required: true, type: string }
-      aws-access-key-id: { required: true, type: string }
-      aws-secret-access-key: { required: true, type: string }
     secrets:
       api-gateway-api-key: { required: true }
       ipv-core-stub-basic-auth-pwd: { required: true }
@@ -47,6 +45,6 @@ jobs:
           IPV_CORE_STUB_CRI_ID: address-cri-dev
           DEFAULT_CLIENT_ID: ipv-core-stub-aws-build
           APIGW_API_KEY: ${{ secrets.api-gateway-api-key }}
-          AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
-          AWS_SECRET_KEY: ${{ inputs.aws-secret-access-key }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: ./gradlew integration-tests:cucumber

@@ -31,9 +31,9 @@ jobs:
       aws-region: ${{ needs.deploy.outputs.aws-region }}
       stack-name: ${{ needs.deploy.outputs.stack-name }}
       stack-outputs: ${{ needs.deploy.outputs.stack-outputs }}
-      aws-access-key-id: ${{ needs.deploy.outputs.aws-access-key-id }}
-      aws-secret-access-key: ${{ needs.deploy.outputs.aws-secret-access-key }}
     secrets:
       api-gateway-api-key: ${{ secrets.APIGW_API_KEY }}
       ipv-core-stub-basic-auth-user: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_USER }}
       ipv-core-stub-basic-auth-pwd: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
