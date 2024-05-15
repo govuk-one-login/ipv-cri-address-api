@@ -6,7 +6,6 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.PurgeQueueRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +21,7 @@ import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,6 +34,9 @@ public class AddressSteps {
     private final CriTestContext testContext;
     private String uprn;
     private String postcode;
+
+    private final AmazonSQS sqsClient =
+            AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
 
     private final String txmaQueueUrl =
             StackProperties.getOutput(
@@ -94,28 +97,22 @@ public class AddressSteps {
 
     @Then("TXMA event is added to the sqs queue containing header value")
     public void txma_event_is_added_to_the_sqs_queue() {
-        AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
-
         ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest()
                         .withMaxNumberOfMessages(10)
                         .withQueueUrl(txmaQueueUrl)
                         .withWaitTimeSeconds(20)
                         .withVisibilityTimeout(20);
-        ReceiveMessageResult receiveMessageResult = sqs.receiveMessage(receiveMessageRequest);
-        if (receiveMessageResult != null
-                && receiveMessageResult.getMessages() != null
-                && receiveMessageResult.getMessages().size() > 0) {
-            List<Message> sqsMessageList = receiveMessageResult.getMessages();
 
-            for (Message sqsMessage : sqsMessageList) {
-                String receivedMessageBody = sqsMessage.getBody();
-                if (receivedMessageBody.contains("IPV_ADDRESS_CRI_START")) {
-                    assertTrue(receivedMessageBody.contains("device_information"));
-                    System.out.println("receivedMessageBody = " + receivedMessageBody);
-                } else System.out.println("START event not found");
-            }
-        }
+        final List<Message> startEventMessages =
+                sqsClient.receiveMessage(receiveMessageRequest).getMessages().stream()
+                        .filter(message -> message.getBody().contains("IPV_ADDRESS_CRI_START"))
+                        .collect(Collectors.toList());
+
+        assertFalse(startEventMessages.isEmpty());
+
+        startEventMessages.forEach(
+                message -> assertTrue(message.getBody().contains("device_information")));
     }
 
     private void makeAssertions(SignedJWT decodedJWT) throws IOException {
@@ -154,34 +151,27 @@ public class AddressSteps {
 
     @Then("TXMA event is added to the sqs queue not containing header value")
     public void txmaEventIsAddedToTheSqsQueueNotContainingHeaderValue() {
-        AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
-
-        ReceiveMessageRequest receiveMessageRequest =
+        final ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest()
                         .withMaxNumberOfMessages(10)
                         .withQueueUrl(txmaQueueUrl)
                         .withWaitTimeSeconds(20)
                         .withVisibilityTimeout(20);
-        ReceiveMessageResult receiveMessageResult = sqs.receiveMessage(receiveMessageRequest);
-        if (receiveMessageResult != null
-                && receiveMessageResult.getMessages() != null
-                && !receiveMessageResult.getMessages().isEmpty()) {
-            List<Message> sqsMessageList = receiveMessageResult.getMessages();
 
-            for (Message sqsMessage : sqsMessageList) {
-                String receivedMessageBody = sqsMessage.getBody();
-                if (receivedMessageBody.contains("IPV_ADDRESS_CRI_START")) {
-                    assertFalse(receivedMessageBody.contains("device_information"));
-                } else System.out.println("START event not found");
-            }
-        }
+        final List<Message> startEventMessages =
+                sqsClient.receiveMessage(receiveMessageRequest).getMessages().stream()
+                        .filter(message -> message.getBody().contains("IPV_ADDRESS_CRI_START"))
+                        .collect(Collectors.toList());
+
+        assertFalse(startEventMessages.isEmpty());
+
+        startEventMessages.forEach(
+                message -> assertFalse(message.getBody().contains("device_information")));
     }
 
     @And("SQS events have been deleted")
     public void sqsEventsHaveBeenDeleted() {
-        AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
-
         PurgeQueueRequest pqRequest = new PurgeQueueRequest(txmaQueueUrl);
-        sqs.purgeQueue(pqRequest);
+        sqsClient.purgeQueue(pqRequest);
     }
 }
