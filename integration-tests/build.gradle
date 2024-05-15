@@ -28,7 +28,6 @@ test {
 	systemProperty "cucumber.filter.tags", System.getProperty("cucumber.filter.tags")
 	systemProperty "cucumber.options", System.properties.getProperty("cucumber.options")
 	useJUnitPlatform()
-	maxParallelForks = 1
 }
 
 task cucumber() {
