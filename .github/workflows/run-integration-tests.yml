@@ -10,8 +10,6 @@ on:
       api-gateway-api-key: { required: true }
       ipv-core-stub-basic-auth-pwd: { required: true }
       ipv-core-stub-basic-auth-user: { required: true }
-      AWS_ACCESS_KEY_ID: { required: true }
-      AWS_SECRET_ACCESS_KEY: { required: true }
 
 permissions: {}
 
@@ -34,6 +32,12 @@ jobs:
         with:
           gradle-version: 7.4.2
 
+      - name: Assume AWS Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+          aws-region: ${{ inputs.aws-region }}
+
       - name: Run tests
         env:
           ENVIRONMENT: dev
@@ -47,6 +51,4 @@ jobs:
           IPV_CORE_STUB_CRI_ID: address-cri-dev
           DEFAULT_CLIENT_ID: ipv-core-stub-aws-build
           APIGW_API_KEY: ${{ secrets.api-gateway-api-key }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: ./gradlew integration-tests:cucumber
