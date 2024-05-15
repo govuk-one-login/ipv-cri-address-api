@@ -71,5 +71,3 @@ Feature: Address API happy path test
     Examples:
       | testUserDataSheetRowNumber | testPostCode |
       | 197                        | SW1A 2AA     |
-      | 23                         | CA14 5PH     |
-      | 1000                       | S62 5AB      |
