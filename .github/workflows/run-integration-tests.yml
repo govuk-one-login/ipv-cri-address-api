@@ -23,6 +23,9 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: development
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Pull repository
         uses: actions/checkout@v4
@@ -51,7 +54,4 @@ jobs:
           IPV_CORE_STUB_CRI_ID: address-cri-dev
           DEFAULT_CLIENT_ID: ipv-core-stub-aws-build
           APIGW_API_KEY: ${{ secrets.api-gateway-api-key }}
-        permissions:
-          id-token: write
-          contents: read
         run: ./gradlew integration-tests:cucumber
