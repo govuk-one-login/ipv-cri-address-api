@@ -1,20 +1,18 @@
 package gov.uk.address.api.stepdefinitions;
 
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
-import com.amazonaws.services.cloudformation.model.*;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
-import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.*;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.PurgeQueueRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
+import gov.uk.address.api.util.StackProperties;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -25,58 +23,22 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AddressSteps {
-
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
     private String uprn;
     private String postcode;
 
-    AmazonCloudFormation cloudFormation =
-            AmazonCloudFormationClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
-
-    String stackName = System.getenv("STACK_NAME");
-
-    // Create a DescribeStacksRequest
-    DescribeStacksRequest describeStacksRequest =
-            new DescribeStacksRequest().withStackName(stackName);
-
-    DescribeStacksResult describeStacksResult =
-            cloudFormation.describeStacks(describeStacksRequest);
-    Stack stack = describeStacksResult.getStacks().get(0); // Assuming only one stack is returned
-    String commonStackName = null;
-
-    public String setCommonStackName() {
-        for (Parameter parameter : stack.getParameters()) {
-            if ("CommonStackName".equals(parameter.getParameterKey())) {
-                commonStackName = parameter.getParameterValue();
-            }
-        }
-        System.out.println("commonStackName = " + commonStackName);
-        return commonStackName;
-    }
-
-    DescribeStacksRequest describeCommonStacksRequest =
-            new DescribeStacksRequest().withStackName(setCommonStackName());
-
-    DescribeStacksResult describeCommonStacksResult =
-            cloudFormation.describeStacks(describeCommonStacksRequest);
-    Stack commonStack = describeCommonStacksResult.getStacks().get(0);
-    String auditEventQueueUrl = null;
-
-    public String txmaQueueUrl() {
-        for (Output output : commonStack.getOutputs()) {
-            if ("MockAuditEventQueueUrl".equals(output.getOutputKey())) {
-                auditEventQueueUrl = output.getOutputValue();
-            }
-        }
-        return auditEventQueueUrl;
-    }
-
-    private final String TXMA_QUEUE_URL = txmaQueueUrl();
+    private final String txmaQueueUrl =
+            StackProperties.getOutput(
+                    StackProperties.getParameter(System.getenv("STACK_NAME"), "CommonStackName"),
+                    "MockAuditEventQueueUrl");
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext) {
@@ -137,7 +99,7 @@ public class AddressSteps {
         ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest()
                         .withMaxNumberOfMessages(10)
-                        .withQueueUrl(TXMA_QUEUE_URL)
+                        .withQueueUrl(txmaQueueUrl)
                         .withWaitTimeSeconds(20)
                         .withVisibilityTimeout(20);
         ReceiveMessageResult receiveMessageResult = sqs.receiveMessage(receiveMessageRequest);
@@ -197,13 +159,13 @@ public class AddressSteps {
         ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest()
                         .withMaxNumberOfMessages(10)
-                        .withQueueUrl(TXMA_QUEUE_URL)
+                        .withQueueUrl(txmaQueueUrl)
                         .withWaitTimeSeconds(20)
                         .withVisibilityTimeout(20);
         ReceiveMessageResult receiveMessageResult = sqs.receiveMessage(receiveMessageRequest);
         if (receiveMessageResult != null
                 && receiveMessageResult.getMessages() != null
-                && receiveMessageResult.getMessages().size() > 0) {
+                && !receiveMessageResult.getMessages().isEmpty()) {
             List<Message> sqsMessageList = receiveMessageResult.getMessages();
 
             for (Message sqsMessage : sqsMessageList) {
@@ -219,7 +181,7 @@ public class AddressSteps {
     public void sqsEventsHaveBeenDeleted() {
         AmazonSQS sqs = AmazonSQSClientBuilder.standard().withRegion(Regions.EU_WEST_2).build();
 
-        PurgeQueueRequest pqRequest = new PurgeQueueRequest(TXMA_QUEUE_URL);
+        PurgeQueueRequest pqRequest = new PurgeQueueRequest(txmaQueueUrl);
         sqs.purgeQueue(pqRequest);
     }
 }
