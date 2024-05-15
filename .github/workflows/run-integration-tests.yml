@@ -11,9 +11,7 @@ on:
       ipv-core-stub-basic-auth-pwd: { required: true }
       ipv-core-stub-basic-auth-user: { required: true }
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
 
 concurrency:
   group: integration-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}

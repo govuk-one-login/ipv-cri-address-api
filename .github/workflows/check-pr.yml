@@ -27,6 +27,9 @@ jobs:
     name: Run tests
     needs: deploy
     uses: ./.github/workflows/run-integration-tests.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       aws-region: ${{ needs.deploy.outputs.aws-region }}
       stack-name: ${{ needs.deploy.outputs.stack-name }}
