@@ -35,7 +35,7 @@ jobs:
       stack-name: ${{ needs.deploy.outputs.stack-name }}
       stack-outputs: ${{ needs.deploy.outputs.stack-outputs }}
     secrets:
+      aws_role_arn: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
       api-gateway-api-key: ${{ secrets.APIGW_API_KEY }}
       ipv-core-stub-basic-auth-user: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_USER }}
       ipv-core-stub-basic-auth-pwd: ${{ secrets.IPV_CORE_STUB_BASIC_AUTH_PASSWORD }}
-

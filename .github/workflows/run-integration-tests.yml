@@ -7,6 +7,7 @@ on:
       stack-name: { required: true, type: string }
       stack-outputs: { required: true, type: string }
     secrets:
+      aws_role_arn: { required: true }
       api-gateway-api-key: { required: true }
       ipv-core-stub-basic-auth-pwd: { required: true }
       ipv-core-stub-basic-auth-user: { required: true }
@@ -22,7 +23,7 @@ jobs:
     name: Integration
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    environment: development
+    environment: di-ipv-cri-dev
     permissions:
       id-token: write
       contents: read
@@ -38,7 +39,7 @@ jobs:
       - name: Assume AWS Role
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
+          role-to-assume: ${{ secrets.aws_role_arn }}
           aws-region: ${{ inputs.aws-region }}
 
       - name: Run tests
