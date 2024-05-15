@@ -40,7 +40,7 @@ Parameters:
   CommonStackName:
     Description: "The name of the stack containing the common CRI lambdas/infra"
     Type: String
-    Default: mariese-common
+    Default: common-cri-api
   TxmaStackName:
     Description: "The stack containing the TXMA infrastructure"
     Type: String
