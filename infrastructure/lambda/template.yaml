@@ -40,7 +40,11 @@ Parameters:
   CommonStackName:
     Description: "The name of the stack containing the common CRI lambdas/infra"
     Type: String
-    Default: "common-cri-api"
+    Default: mariese-common
+  TxmaStackName:
+    Description: "The stack containing the TXMA infrastructure"
+    Type: String
+    Default: txma-infrastructure
 
 Conditions:
   EnforceCodeSigning: !Equals
@@ -386,7 +390,11 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
-          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
+          SQS_AUDIT_EVENT_QUEUE_URL:
+            Fn::ImportValue:
+              !Sub
+                - ${stackName}-AuditEventQueueUrl
+                - stackName: !If [IsDevEnvironment, !Ref CommonStackName, !Ref TxmaStackName]
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -421,7 +429,11 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
         - SQSSendMessagePolicy:
-            QueueName: !ImportValue AuditEventQueueName
+            QueueName:
+              Fn::ImportValue:
+                !Sub
+                  - ${stackName}-AuditEventQueueName
+                  - stackName: !If [IsDevEnvironment, !Ref CommonStackName, !Ref TxmaStackName]
         - Statement:
             - Sid: auditEventQueueKmsEncryptionKeyPermission
               Effect: Allow
@@ -429,7 +441,10 @@ Resources:
                 - 'kms:Decrypt'
                 - 'kms:GenerateDataKey'
               Resource:
-                - !ImportValue AuditEventQueueEncryptionKeyArn
+                - Fn::ImportValue:
+                    !Sub
+                      - ${stackName}-AuditEventQueueEncryptionKeyArn
+                      - stackName: !If [IsDevEnvironment, !Ref CommonStackName, !Ref TxmaStackName]
 
   PostcodeLookupFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -498,7 +513,11 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
-          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
+          SQS_AUDIT_EVENT_QUEUE_URL:
+            Fn::ImportValue: 
+              !Sub
+                - ${stackName}-AuditEventQueueUrl
+                - stackName: !If [IsDevEnvironment, !Ref CommonStackName, !Ref TxmaStackName]
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -512,7 +531,11 @@ Resources:
               - "kms:Sign"
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
         - SQSSendMessagePolicy:
-            QueueName: !ImportValue AuditEventQueueName
+            QueueName:
+              Fn::ImportValue:
+                !Sub
+                  - ${stackName}-AuditEventQueueName
+                  - stackName: !If [IsDevEnvironment, !Ref CommonStackName, !Ref TxmaStackName]
         - Statement:
             Effect: Allow
             Action:
@@ -532,8 +555,10 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
             Resource:
-              - !ImportValue AuditEventQueueEncryptionKeyArn
-
+              - Fn::ImportValue:
+                  !Sub
+                    - ${stackName}-AuditEventQueueEncryptionKeyArn
+                    - stackName: !If [IsDevEnvironment, !Ref CommonStackName, !Ref TxmaStackName]
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:

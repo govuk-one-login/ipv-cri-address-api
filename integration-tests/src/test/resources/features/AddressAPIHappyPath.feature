@@ -1,12 +1,19 @@
 Feature: Address API happy path test
 
-  @address_api_happy
-  Scenario Outline: Basic Address API journey
+  @Before_step
+  Scenario: Purge to be ran once before all tests
+  Given the SQS events are purged from the queue
+
+  @address_api_happy_with_header
+  Scenario Outline: Basic Address API journey with TXMA event header
     Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
 
     #Session
-    When user sends a POST request to session end point
+    When user sends a POST request to session end point with txma header
     Then user gets a session-id
+
+    #Assert on TXMA event
+    Then TXMA event is added to the sqs queue containing header value
 
     #Postcode Lookup
     When the user performs a postcode lookup for post code "<testPostCode>"
@@ -27,6 +34,44 @@ Feature: Address API happy path test
     #Credential Issue
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
+#    And SQS events have been deleted
+
+
+    Examples:
+      | testUserDataSheetRowNumber | testPostCode |
+      | 197                        | SW1A 2AA     |
+
+  @address_api_happy
+  Scenario Outline: Basic Address API journey
+    Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
+
+    #Session
+    When user sends a POST request to session end point
+    Then user gets a session-id
+
+    #Assert on TXMA event
+    Then TXMA event is added to the sqs queue not containing header value
+
+    #Postcode Lookup
+    When the user performs a postcode lookup for post code "<testPostCode>"
+    Then user receives a list of addresses containing "<testPostCode>"
+
+    #Address
+    When the user selects address
+    Then the address is saved successfully
+
+    #Authorization
+    When user sends a GET request to authorization end point
+    And a valid authorization code is returned in the response
+
+    #Access Token
+    When user sends a POST request to token end point
+    And a valid access token code is returned in the response
+
+    #Credential Issue
+    When user sends a POST request to Credential Issue end point with a valid access token
+    And a valid JWT is returned in the response
+#    And SQS events have been deleted
 
     Examples:
       | testUserDataSheetRowNumber | testPostCode |
