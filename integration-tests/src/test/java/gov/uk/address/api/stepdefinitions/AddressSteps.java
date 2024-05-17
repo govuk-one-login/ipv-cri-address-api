@@ -106,7 +106,7 @@ public class AddressSteps {
                         .withMaxNumberOfMessages(10)
                         .withQueueUrl(txmaQueueUrl)
                         .withWaitTimeSeconds(20)
-                        .withVisibilityTimeout(20);
+                        .withVisibilityTimeout(100);
 
         final List<Message> startEventMessages =
                 sqsClient.receiveMessage(receiveMessageRequest).getMessages().stream()
@@ -162,13 +162,13 @@ public class AddressSteps {
     }
 
     @Then("TXMA event is added to the sqs queue not containing header value")
-    public void txmaEventIsAddedToTheSqsQueueNotContainingHeaderValue() {
+    public void txmaEventIsAddedToTheSqsQueueNotContainingHeaderValue() throws Exception {
         final ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest()
                         .withMaxNumberOfMessages(10)
                         .withQueueUrl(txmaQueueUrl)
                         .withWaitTimeSeconds(20)
-                        .withVisibilityTimeout(20);
+                        .withVisibilityTimeout(100);
 
         ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
         List<Message> sqsMessageList = null;
@@ -183,7 +183,8 @@ public class AddressSteps {
                     assertFalse(receivedMessageBody.contains("device_information"));
                 } else System.out.println("START event not found");
             }
-        }
+        }else throw new Exception("RecieveMessageResult is empty");
+
 
         DeleteMessageBatchRequest batch =
                 new DeleteMessageBatchRequest().withQueueUrl(txmaQueueUrl);
