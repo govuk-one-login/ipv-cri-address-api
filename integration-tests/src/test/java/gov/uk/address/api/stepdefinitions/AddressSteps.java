@@ -183,8 +183,7 @@ public class AddressSteps {
                     assertFalse(receivedMessageBody.contains("device_information"));
                 } else System.out.println("START event not found");
             }
-        }else throw new Exception("RecieveMessageResult is empty");
-
+        } else throw new Exception("RecieveMessageResult is empty");
 
         DeleteMessageBatchRequest batch =
                 new DeleteMessageBatchRequest().withQueueUrl(txmaQueueUrl);
