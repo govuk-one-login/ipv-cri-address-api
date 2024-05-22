@@ -46,7 +46,6 @@ Parameters:
     Type: String
     Default: txma-infrastructure
 
-
 Conditions:
   EnforceCodeSigning: !Equals
     - !Ref  CodeSigningEnabled
