@@ -15,8 +15,8 @@ on:
 permissions: {}
 
 concurrency:
-  group: integration-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  group: integration-tests
+  cancel-in-progress: false
 
 jobs:
   run-tests:
