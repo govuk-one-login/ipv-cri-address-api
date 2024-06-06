@@ -3,10 +3,11 @@ name: Integration tests
 on:
   workflow_call:
     inputs:
-      aws-region: { required: false, type: string }
+      aws-region: { required: true, type: string }
       stack-name: { required: true, type: string }
       stack-outputs: { required: true, type: string }
     secrets:
+      aws_role_arn: { required: true }
       api-gateway-api-key: { required: true }
       ipv-core-stub-basic-auth-pwd: { required: true }
       ipv-core-stub-basic-auth-user: { required: true }
@@ -23,6 +24,9 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     environment: di-ipv-cri-dev
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Pull repository
         uses: actions/checkout@v4
@@ -31,6 +35,12 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 7.4.2
+
+      - name: Assume AWS Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.aws_role_arn }}
+          aws-region: ${{ inputs.aws-region }}
 
       - name: Run tests
         env:
@@ -45,4 +55,4 @@ jobs:
           IPV_CORE_STUB_CRI_ID: address-cri-dev
           DEFAULT_CLIENT_ID: ipv-core-stub-aws-build
           APIGW_API_KEY: ${{ secrets.api-gateway-api-key }}
-        run: ./gradlew integration-tests:cucumber
+        run: ./gradlew --no-daemon integration-tests:cucumber
