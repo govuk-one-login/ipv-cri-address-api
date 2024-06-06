@@ -3,9 +3,6 @@ Transform: "AWS::Serverless-2016-10-31"
 Description: "Digital Identity IPV CRI Address API"
 
 Parameters:
-  CodeSigningEnabled:
-    Type: "String"
-    Default: "true"
   CodeSigningConfigArn:
     Type: String
     Default: "none"
@@ -26,9 +23,9 @@ Parameters:
     Type: String
     Default: "none"
   SecretPrefix:
+    Description: Secrets name prefix
     Type: String
     Default: "none"
-    Description: Secrets name prefix
   AuditEventNamePrefix:
     Description: "The audit event name prefix"
     Type: AWS::SSM::Parameter::Value<String>
@@ -40,33 +37,19 @@ Parameters:
   CommonStackName:
     Description: "The name of the stack containing the common CRI lambdas/infra"
     Type: String
-    Default: "common-cri-api"
+    Default: common-cri-api
+  TxmaStackName:
+    Description: "The stack containing the TXMA infrastructure"
+    Type: String
+    Default: txma-infrastructure
 
 Conditions:
-  EnforceCodeSigning: !Equals
-    - !Ref  CodeSigningEnabled
-    - true
-  CreateDevResources: !Equals
-    - !Ref Environment
-    - dev
-  IsProdEnvironment: !Equals
-    - !Ref Environment
-    - production
-  IsDevEnvironment: !Equals
-    - !Ref Environment
-    - dev
-  IsNotDevEnvironment: !Not
-    - Condition: IsDevEnvironment
-  UsePermissionsBoundary:
-    Fn::Not:
-      - Fn::Equals:
-          - !Ref PermissionsBoundary
-          - "none"
-  UseSecretPrefix:
-    Fn::Not:
-      - Fn::Equals:
-          - !Ref SecretPrefix
-          - "none"
+  UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
+  UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, "none"]]
+  IsDevEnvironment: !Equals [!Ref Environment, dev]
+  IsProdEnvironment: !Equals [!Ref Environment, production]
+  IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
   AddProvisionedConcurrency: !Not
     - !Equals
       - !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ]
@@ -83,7 +66,7 @@ Globals:
       - !Ref PermissionsBoundary
       - !Ref AWS::NoValue
     CodeSigningConfigArn: !If
-      - EnforceCodeSigning
+      - UseCodeSigningConfig
       - !Ref CodeSigningConfigArn
       - !Ref AWS::NoValue
     Timeout: 30 # seconds
@@ -294,7 +277,7 @@ Resources:
               Condition:
                 StringNotEquals:
                   aws:SourceVpce: !If
-                    - CreateDevResources
+                    - IsDevEnvironment
                     - vpce-082cab7c78139eb54
                     - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
@@ -386,7 +369,8 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
-          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
+          SQS_AUDIT_EVENT_QUEUE_URL:
+            Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -421,15 +405,16 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
         - SQSSendMessagePolicy:
-            QueueName: !ImportValue AuditEventQueueName
+            QueueName:
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
         - Statement:
             - Sid: auditEventQueueKmsEncryptionKeyPermission
               Effect: Allow
               Action:
-                - 'kms:Decrypt'
-                - 'kms:GenerateDataKey'
+                - kms:Decrypt
+                - kms:GenerateDataKey
               Resource:
-                - !ImportValue AuditEventQueueEncryptionKeyArn
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
 
   PostcodeLookupFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -498,7 +483,8 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
-          SQS_AUDIT_EVENT_QUEUE_URL: !ImportValue AuditEventQueueUrl
+          SQS_AUDIT_EVENT_QUEUE_URL:
+            Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -512,7 +498,8 @@ Resources:
               - "kms:Sign"
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
         - SQSSendMessagePolicy:
-            QueueName: !ImportValue AuditEventQueueName
+            QueueName:
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
         - Statement:
             Effect: Allow
             Action:
@@ -532,8 +519,7 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
             Resource:
-              - !ImportValue AuditEventQueueEncryptionKeyArn
-
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -609,8 +595,7 @@ Resources:
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     Condition: IsNotDevEnvironment
-    DependsOn:
-      - PublicAddressApiStage
+    DependsOn: PublicAddressApiStage
     Properties:
       ApiStages:
         - ApiId: !Ref PublicAddressApi
@@ -625,8 +610,7 @@ Resources:
   PrivateAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     Condition: IsNotDevEnvironment
-    DependsOn:
-      - PrivateAddressApiStage
+    DependsOn: PrivateAddressApiStage
     Properties:
       ApiStages:
         - ApiId: !Ref PrivateAddressApi
@@ -796,11 +780,6 @@ Resources:
             Stat: Sum
 
 Outputs:
-
-  StackName:
-    Description: "CloudFormation stack name"
-    Value: !Sub "${AWS::StackName}"
-
   AddressApiGatewayId:
     Description: "API GatewayID of the Address CRI API"
     Value: !Sub "${PublicAddressApi}"

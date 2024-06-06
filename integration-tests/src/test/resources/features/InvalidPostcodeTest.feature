@@ -4,13 +4,16 @@ Feature: Invalid postcode test
   Scenario Outline: Invalid postcode
     Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
 
-    #Session
+    # Session
     When user sends a POST request to session end point
     Then user gets a session-id
 
-    #Postcode Lookup
+    # Postcode lookup
     When the user performs a postcode lookup for post code "<testPostCode>"
     Then user does not get any address
+
+    # TxMA events
+    And 3 events are deleted from the audit events SQS queue
 
     Examples:
       | testUserDataSheetRowNumber | testPostCode |

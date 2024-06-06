@@ -8,30 +8,43 @@ import gov.uk.address.api.client.AddressApiClient;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import software.amazon.awssdk.services.sqs.model.Message;
+import uk.gov.di.ipv.cri.common.library.aws.CloudFormationHelper;
+import uk.gov.di.ipv.cri.common.library.aws.SQSHelper;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
+import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AddressSteps {
-
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
-    private String uprn;
+    private final SQSHelper sqs;
+
     private String postcode;
+    private String uprn;
+
+    private final String auditEventQueueUrl =
+            CloudFormationHelper.getOutput(
+                    CloudFormationHelper.getParameter(System.getenv("STACK_NAME"), "TxmaStackName"),
+                    "AuditEventQueueUrl");
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext) {
         this.objectMapper = new ObjectMapper();
         this.addressApiClient = new AddressApiClient(clientConfigurationService);
         this.testContext = testContext;
+        this.sqs = new SQSHelper(null, this.objectMapper);
     }
 
     @When("the user performs a postcode lookup for post code {string}")
@@ -79,31 +92,41 @@ public class AddressSteps {
         makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
     }
 
-    private void makeAssertions(SignedJWT decodedJWT) throws IOException {
-        var header = decodedJWT.getHeader().toString();
-        var payloadValue = decodedJWT.getPayload().toString();
-        var payload = objectMapper.readTree(payloadValue);
+    @Then("TXMA event is added to the SQS queue containing device information header")
+    public void txmaEventIsAddedToSqsQueueContainingDeviceInformationHeader()
+            throws IOException, InterruptedException {
+        assertEquals("deviceInformation", getDeviceInformationHeader());
+    }
 
-        assertEquals("{\"typ\":\"JWT\",\"alg\":\"ES256\"}", header);
+    @Then("TXMA event is added to the SQS queue not containing device information header")
+    public void txmaEventIsAddedToSqsQueueNotContainingDeviceInformationHeader()
+            throws InterruptedException, IOException {
+        assertEquals("", getDeviceInformationHeader());
+    }
 
-        assertNotNull(payload.get("nbf"));
-        //        assertNotNull(payload.get("exp"));
-        //        long expectedJwtTtl = 2L * 60L * 60L;
-        //        assertEquals(expectedJwtTtl, payload.get("exp").asLong() -
-        // payload.get("nbf").asLong());
+    @And("{int} events are deleted from the audit events SQS queue")
+    public void deleteEventsFromSqsQueue(int messageCount) throws InterruptedException {
+        this.sqs.deleteMatchingMessages(
+                auditEventQueueUrl,
+                messageCount,
+                Collections.singletonMap("/user/session_id", testContext.getSessionId()));
+    }
 
-        assertNotNull(payload);
-        assertEquals("VerifiableCredential", payload.get("vc").get("type").get(0).asText());
-        assertEquals("AddressCredential", payload.get("vc").get("type").get(1).asText());
+    private String getDeviceInformationHeader() throws InterruptedException, IOException {
+        final List<Message> startEventMessages =
+                this.sqs.receiveMatchingMessages(
+                        auditEventQueueUrl,
+                        1,
+                        Map.ofEntries(
+                                entry("/event_name", "IPV_ADDRESS_CRI_START"),
+                                entry("/user/session_id", testContext.getSessionId())));
 
-        assertEquals(
-                postcode,
-                payload.get("vc")
-                        .get("credentialSubject")
-                        .get("address")
-                        .get(0)
-                        .get("postalCode")
-                        .asText());
+        assertEquals(1, startEventMessages.size());
+
+        return objectMapper
+                .readTree(startEventMessages.get(0).body())
+                .at("/restricted/device_information/encoded")
+                .asText();
     }
 
     @Then("user does not get any address")
@@ -111,5 +134,20 @@ public class AddressSteps {
         var list = objectMapper.readValue(this.testContext.getResponse().body(), List.class);
         assertTrue(list.isEmpty());
         assertEquals(200, this.testContext.getResponse().statusCode());
+    }
+
+    private void makeAssertions(SignedJWT decodedJWT) throws IOException {
+        final var header = decodedJWT.getHeader().toString();
+        final var payloadValue = decodedJWT.getPayload().toString();
+        final var payload = objectMapper.readTree(payloadValue);
+
+        assertEquals("{\"typ\":\"JWT\",\"alg\":\"ES256\"}", header);
+
+        assertNotNull(payload);
+        assertNotNull(payload.get("nbf"));
+
+        assertEquals("VerifiableCredential", payload.at("/vc/type/0").asText());
+        assertEquals("AddressCredential", payload.at("/vc/type/1").asText());
+        assertEquals(postcode, payload.at("/vc/credentialSubject/address/0/postalCode").asText());
     }
 }
