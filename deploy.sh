@@ -32,5 +32,6 @@ sam deploy --stack-name "$stack_name" \
   --parameter-overrides \
   Environment=dev \
   CodeSigningEnabled=false \
+  SecretPrefix=pre-merge-test \
   ${common_stack_name:+CommonStackName=$common_stack_name} \
   ${secret_prefix:+SecretPrefix=$secret_prefix}
