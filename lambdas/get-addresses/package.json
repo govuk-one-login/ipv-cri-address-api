@@ -17,7 +17,7 @@
         "@aws-sdk/client-dynamodb": "3.362.0",
         "@aws-sdk/client-ssm": "^3.362.0",
         "@aws-sdk/lib-dynamodb": "3.150.0",
-        "esbuild": "0.14.14"
+        "esbuild": "0.21.5"
     },
     "devDependencies": {
         "@types/aws-lambda": "8.10.92",
