@@ -9,6 +9,7 @@ import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.lambda.powertools.tracing.Tracing;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
@@ -45,10 +46,8 @@ import java.util.stream.Collectors;
 import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
 
 public class PostcodeLookupService {
-
     // Create our http client to enable asynchronous requests
     private final HttpClient client;
-
     private final ConfigurationService configurationService;
 
     private static final long CONNECTION_TIMEOUT_SECONDS = 10;
@@ -75,7 +74,7 @@ public class PostcodeLookupService {
     @Tracing
     public List<CanonicalAddress> lookupPostcode(String postcode)
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
-                    JsonProcessingException {
+                    JsonProcessingException, PostcodeLookupBadRequestException {
 
         // Check the postcode is valid
         if (StringUtils.isBlank(postcode)) {
@@ -83,54 +82,23 @@ public class PostcodeLookupService {
         }
 
         // Create our http request
-        HttpRequest request;
         HttpResponse<String> response;
-
-        try {
-            request =
-                    HttpRequest.newBuilder()
-                            .uri(
-                                    SdkHttpFullRequest.builder()
-                                            .uri(
-                                                    new URI(
-                                                            configurationService.getParameterValue(
-                                                                    "OrdnanceSurveyAPIURL")))
-                                            .appendRawQueryParameter(
-                                                    "postcode",
-                                                    URLDecoder.decode(
-                                                            postcode, Charset.defaultCharset()))
-                                            .appendRawQueryParameter(
-                                                    "key",
-                                                    configurationService.getSecretValue(
-                                                            "OrdnanceSurveyAPIKey"))
-                                            .method(SdkHttpMethod.GET)
-                                            .build()
-                                            .getUri())
-                            .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
-                            .header("Accept", "application/json")
-                            .GET()
-                            .build();
-        } catch (URISyntaxException e) {
-            log.error("Error creating URI for OS postcode lookup", e);
-            throw new PostcodeLookupProcessingException(
-                    "Error building URI for postcode lookup", e);
-        }
+        HttpRequest request = createHttpRequest(postcode);
 
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException e) {
-            log.error("Postcode lookup threw interrupted exception", e);
-
-            // Unblock the thread
-            Thread.currentThread().interrupt();
-            // Now throw our prettier exception
-            throw new PostcodeLookupProcessingException(
-                    "Error sending request for postcode lookup", e);
         } catch (HttpConnectTimeoutException e) {
             log.error("Postcode lookup threw HTTP connection timeout exception", e);
 
             throw new PostcodeLookupTimeoutException(
                     "Error timed out waiting for postcode lookup response", e);
+        } catch (InterruptedException e) {
+            log.error("Postcode lookup threw interrupted exception", e);
+            // Unblock the thread
+            Thread.currentThread().interrupt();
+            // Now throw our prettier exception
+            throw new PostcodeLookupProcessingException(
+                    "Error sending request for postcode lookup", e);
         } catch (IOException e) {
             log.error("Postcode lookup threw an IO exception", e);
 
@@ -204,6 +172,37 @@ public class PostcodeLookupService {
                             log.warn("PostCode lookup returned no results");
                             return Collections.emptyList();
                         });
+    }
+
+    private HttpRequest createHttpRequest(String postcode)
+            throws PostcodeLookupBadRequestException {
+        try {
+            URI uri =
+                    SdkHttpFullRequest.builder()
+                            .uri(
+                                    new URI(
+                                            configurationService.getParameterValue(
+                                                    "OrdnanceSurveyAPIURL")))
+                            .appendRawQueryParameter(
+                                    "postcode",
+                                    URLDecoder.decode(postcode, Charset.defaultCharset()))
+                            .appendRawQueryParameter(
+                                    "key",
+                                    configurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                            .method(SdkHttpMethod.GET)
+                            .build()
+                            .getUri();
+            return HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+        } catch (URISyntaxException e) {
+            log.error("Error creating URI for OS postcode lookup", e);
+            throw new PostcodeLookupBadRequestException(
+                    "Error building URI for postcode lookup", e);
+        }
     }
 
     public AuditEventContext getAuditEventContext(

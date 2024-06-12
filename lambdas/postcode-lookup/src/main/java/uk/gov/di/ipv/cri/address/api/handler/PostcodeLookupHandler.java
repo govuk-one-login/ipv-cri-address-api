@@ -11,6 +11,7 @@ import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.tracing.Tracing;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
 import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
@@ -87,7 +88,7 @@ public class PostcodeLookupHandler
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(HttpStatusCode.OK, results);
 
-        } catch (PostcodeLookupValidationException e) {
+        } catch (PostcodeLookupValidationException | PostcodeLookupBadRequestException e) {
             eventProbe.log(Level.ERROR, e).counterMetric(LAMBDA_NAME, 0d);
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     OAuth2Error.INVALID_REQUEST.getHTTPStatusCode(),
