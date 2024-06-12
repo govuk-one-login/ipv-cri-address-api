@@ -35,7 +35,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +50,7 @@ public class PostcodeLookupService {
     private final Logger log;
     private final ConfigurationService configurationService;
     private static final long CONNECTION_TIMEOUT_SECONDS = 10;
+
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupService() {
         this(new ConfigurationService(), getHttpClient(), LogManager.getLogger());
@@ -67,89 +67,87 @@ public class PostcodeLookupService {
     public List<CanonicalAddress> lookupPostcode(String postcode)
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     JsonProcessingException, PostcodeLookupBadRequestException {
-
         // Check the postcode is valid
         if (StringUtils.isBlank(postcode)) {
             throw new PostcodeLookupValidationException("Postcode cannot be null or empty");
         }
-
         // Create our http request
-        HttpResponse<String> response;
         HttpRequest request = createHttpRequest(postcode);
+        HttpResponse<String> response = sendHttpRequest(request);
 
-        try {
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (HttpConnectTimeoutException e) {
-            log.error("Postcode lookup threw HTTP connection timeout exception", e);
-
-            throw new PostcodeLookupTimeoutException(
-                    "Error timed out waiting for postcode lookup response", e);
-        } catch (InterruptedException e) {
-            log.error("Postcode lookup threw interrupted exception", e);
-            // Unblock the thread
-            Thread.currentThread().interrupt();
-            // Now throw our prettier exception
-            throw new PostcodeLookupProcessingException(
-                    "Error sending request for postcode lookup", e);
-        } catch (IOException e) {
-            log.error("Postcode lookup threw an IO exception", e);
-
-            throw new PostcodeLookupProcessingException(
-                    "Error sending request for postcode lookup", e);
-        }
-
-        OrdnanceSurveyPostcodeError error;
         switch (response.statusCode()) {
             case HttpStatusCode.OK:
-                // These responses are fine
-                break;
+                return processOrdnanceSurveySuccessResponse(response.body());
             case HttpStatusCode.BAD_REQUEST:
-                try {
-                    error =
-                            new ObjectMapper()
-                                    .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
-                    log.error(
-                            "{} status {}: {}",
-                            LOG_RESPONSE_PREFIX,
-                            error.getError().getStatuscode(),
-                            error.getError().getMessage());
-                } catch (Exception e) {
-                    log.error("{} unknown error: {}", LOG_RESPONSE_PREFIX, response.body());
-                }
-                return new ArrayList<>();
-
+                return processOrdnanceSurveyBadResponse(response.body());
             case HttpStatusCode.NOT_FOUND:
                 log.error("{}404: Not Found", LOG_RESPONSE_PREFIX);
-                return new ArrayList<>();
-
+                return Collections.emptyList();
             default:
-                try {
-                    error =
-                            new ObjectMapper()
-                                    .readValue(response.body(), OrdnanceSurveyPostcodeError.class);
-                    log.error(
-                            "{} status {}: {}",
-                            LOG_RESPONSE_PREFIX,
-                            error.getError().getStatuscode(),
-                            error.getError().getMessage());
-                    throw new PostcodeLookupProcessingException(
-                            LOG_RESPONSE_PREFIX
-                                    + error.getError().getStatuscode()
-                                    + ": "
-                                    + error.getError().getMessage());
-                } catch (Exception e) {
-                    log.error("{}unknown error: {}", LOG_RESPONSE_PREFIX, response.body());
-                }
-                throw new PostcodeLookupProcessingException(
-                        "Error processing postcode lookup: " + response.body());
+                return processOrdnanceSurveyErrorResponse(response.body());
+        }
+    }
+
+    public AuditEventContext getAuditEventContext(
+            String postcode, Map<String, String> requestHeaders, SessionItem sessionItem) {
+        Objects.requireNonNull(requestHeaders, "requestHeaders must not be null");
+        Objects.requireNonNull(sessionItem, "sessionItem must not be null");
+
+        if (StringUtils.isBlank(postcode)) {
+            throw new IllegalArgumentException("postcode must not be null or blank");
         }
 
+        Address address = new Address();
+        address.setPostalCode(URLDecoder.decode(postcode, Charset.defaultCharset()).toUpperCase());
+
+        return new AuditEventContext(
+                PersonIdentityDetailedBuilder.builder().withAddresses(List.of(address)).build(),
+                requestHeaders,
+                sessionItem);
+    }
+
+    private List<CanonicalAddress> processOrdnanceSurveyErrorResponse(String response) {
+        try {
+            OrdnanceSurveyPostcodeError error =
+                    new ObjectMapper().readValue(response, OrdnanceSurveyPostcodeError.class);
+            log.error(
+                    "{} status {}: {}",
+                    LOG_RESPONSE_PREFIX,
+                    error.getError().getStatuscode(),
+                    error.getError().getMessage());
+            throw new PostcodeLookupProcessingException(
+                    LOG_RESPONSE_PREFIX
+                            + error.getError().getStatuscode()
+                            + ": "
+                            + error.getError().getMessage());
+        } catch (Exception e) {
+            log.error("{}unknown error: {}", LOG_RESPONSE_PREFIX, response);
+            throw new PostcodeLookupProcessingException(
+                    "Error processing postcode lookup: " + response);
+        }
+    }
+
+    private List<CanonicalAddress> processOrdnanceSurveyBadResponse(String response) {
+        try {
+            OrdnanceSurveyPostcodeError error =
+                    new ObjectMapper().readValue(response, OrdnanceSurveyPostcodeError.class);
+            log.error(
+                    "{} status {}: {}",
+                    LOG_RESPONSE_PREFIX,
+                    error.getError().getStatuscode(),
+                    error.getError().getMessage());
+        } catch (Exception e) {
+            log.error("{} unknown error: {}", LOG_RESPONSE_PREFIX, response);
+        }
+        return Collections.emptyList();
+    }
+
+    private List<CanonicalAddress> processOrdnanceSurveySuccessResponse(String response)
+            throws JsonProcessingException {
+        // These responses are fine
         // Otherwise, let's try to parse the response
-        OrdnanceSurveyPostcodeResponse postcodeResponse = new OrdnanceSurveyPostcodeResponse();
-
-        postcodeResponse =
-                new ObjectMapper().readValue(response.body(), postcodeResponse.getClass());
-
+        OrdnanceSurveyPostcodeResponse postcodeResponse =
+                new ObjectMapper().readValue(response, OrdnanceSurveyPostcodeResponse.class);
         // Map the postcode response to our model
         return Optional.ofNullable(postcodeResponse.getResults())
                 .map(
@@ -166,15 +164,37 @@ public class PostcodeLookupService {
                         });
     }
 
+    private HttpResponse<String> sendHttpRequest(HttpRequest request) {
+        HttpResponse<String> response;
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (HttpConnectTimeoutException e) {
+            log.error("Postcode lookup threw HTTP connection timeout exception", e);
+            throw new PostcodeLookupTimeoutException(
+                    "Error timed out waiting for postcode lookup response", e);
+        } catch (InterruptedException e) {
+            log.error("Postcode lookup threw interrupted exception", e);
+            // Unblock the thread
+            Thread.currentThread().interrupt();
+            // Now throw our prettier exception
+            throw new PostcodeLookupProcessingException(
+                    "Error sending request for postcode lookup", e);
+        } catch (IOException e) {
+            log.error("Postcode lookup threw an IO exception", e);
+            throw new PostcodeLookupProcessingException(
+                    "Error sending request for postcode lookup", e);
+        }
+        return response;
+    }
+
     private HttpRequest createHttpRequest(String postcode)
             throws PostcodeLookupBadRequestException {
         try {
+            String urlParam = configurationService.getParameterValue("OrdnanceSurveyAPIURL");
+            URI ordnanceSurveyAPIURL = new URI(urlParam);
             URI uri =
                     SdkHttpFullRequest.builder()
-                            .uri(
-                                    new URI(
-                                            configurationService.getParameterValue(
-                                                    "OrdnanceSurveyAPIURL")))
+                            .uri(ordnanceSurveyAPIURL)
                             .appendRawQueryParameter(
                                     "postcode",
                                     URLDecoder.decode(postcode, Charset.defaultCharset()))
@@ -195,24 +215,6 @@ public class PostcodeLookupService {
             throw new PostcodeLookupBadRequestException(
                     "Error building URI for postcode lookup", e);
         }
-    }
-
-    public AuditEventContext getAuditEventContext(
-            String postcode, Map<String, String> requestHeaders, SessionItem sessionItem) {
-        Objects.requireNonNull(requestHeaders, "requestHeaders must not be null");
-        Objects.requireNonNull(sessionItem, "sessionItem must not be null");
-
-        if (StringUtils.isBlank(postcode)) {
-            throw new IllegalArgumentException("postcode must not be null or blank");
-        }
-
-        Address address = new Address();
-        address.setPostalCode(URLDecoder.decode(postcode, Charset.defaultCharset()).toUpperCase());
-
-        return new AuditEventContext(
-                PersonIdentityDetailedBuilder.builder().withAddresses(List.of(address)).build(),
-                requestHeaders,
-                sessionItem);
     }
 
     private static HttpClient getHttpClient() {
