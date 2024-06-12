@@ -48,20 +48,12 @@ import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LO
 public class PostcodeLookupService {
     // Create our http client to enable asynchronous requests
     private final HttpClient client;
+    private final Logger log;
     private final ConfigurationService configurationService;
-
     private static final long CONNECTION_TIMEOUT_SECONDS = 10;
-
-    private Logger log = LogManager.getLogger();
-
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupService() {
-        this.configurationService = new ConfigurationService();
-        this.client =
-                HttpClient.newBuilder()
-                        .version(HttpClient.Version.HTTP_2)
-                        .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
-                        .build();
+        this(new ConfigurationService(), getHttpClient(), LogManager.getLogger());
     }
 
     public PostcodeLookupService(
@@ -221,5 +213,12 @@ public class PostcodeLookupService {
                 PersonIdentityDetailedBuilder.builder().withAddresses(List.of(address)).build(),
                 requestHeaders,
                 sessionItem);
+    }
+
+    private static HttpClient getHttpClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                .build();
     }
 }
