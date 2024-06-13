@@ -2,7 +2,6 @@ package uk.gov.di.ipv.cri.address.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.oauth2.sdk.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
@@ -68,7 +67,7 @@ public class PostcodeLookupService {
             throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
                     JsonProcessingException, PostcodeLookupBadRequestException {
         // Check the postcode is valid
-        if (StringUtils.isBlank(postcode)) {
+        if (isBlank(postcode)) {
             throw new PostcodeLookupValidationException("Postcode cannot be null or empty");
         }
         // Create our http request
@@ -93,7 +92,7 @@ public class PostcodeLookupService {
         Objects.requireNonNull(requestHeaders, "requestHeaders must not be null");
         Objects.requireNonNull(sessionItem, "sessionItem must not be null");
 
-        if (StringUtils.isBlank(postcode)) {
+        if (isBlank(postcode)) {
             throw new IllegalArgumentException("postcode must not be null or blank");
         }
 
@@ -165,9 +164,8 @@ public class PostcodeLookupService {
     }
 
     private HttpResponse<String> sendHttpRequest(HttpRequest request) {
-        HttpResponse<String> response;
         try {
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (HttpConnectTimeoutException e) {
             log.error("Postcode lookup threw HTTP connection timeout exception", e);
             throw new PostcodeLookupTimeoutException(
@@ -184,7 +182,6 @@ public class PostcodeLookupService {
             throw new PostcodeLookupProcessingException(
                     "Error sending request for postcode lookup", e);
         }
-        return response;
     }
 
     private HttpRequest createHttpRequest(String postcode)
@@ -222,5 +219,9 @@ public class PostcodeLookupService {
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                 .build();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }
