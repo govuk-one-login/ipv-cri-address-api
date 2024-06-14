@@ -44,9 +44,19 @@ import java.util.stream.Collectors;
 import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
 
 public class PostcodeLookupService {
+    private static final String POSTCODE_LOOKUP_NO_SUCH_FIELD_ERROR =
+            "Postcode lookup threw a NoSuchFieldError. "
+                    + "This likely indicates a library version mismatch. "
+                    + "Ensure all dependencies are compatible and properly versioned.";
+    private static final String POSTCODE_LOOKUP_NO_SUCH_FIELD_ERROR_MESSAGE =
+            "Error occurred due to library incompatibility issues. "
+                    + "A field was not found, indicating a potential version mismatch "
+                    + "in your dependencies. Check your build configuration.";
     // Create our http client to enable asynchronous requests
     private final HttpClient client;
     private final Logger log;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConfigurationService configurationService;
     private static final long CONNECTION_TIMEOUT_SECONDS = 10;
 
@@ -105,10 +115,74 @@ public class PostcodeLookupService {
                 sessionItem);
     }
 
+    private static HttpClient getHttpClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                .build();
+    }
+
+    private HttpRequest createHttpRequest(String postcode)
+            throws PostcodeLookupBadRequestException {
+        try {
+            String urlParam = configurationService.getParameterValue("OrdnanceSurveyAPIURL");
+            URI ordnanceSurveyAPIURL = new URI(urlParam);
+
+            return HttpRequest.newBuilder()
+                    .uri(
+                            SdkHttpFullRequest.builder()
+                                    .uri(ordnanceSurveyAPIURL)
+                                    .appendRawQueryParameter(
+                                            "postcode",
+                                            URLDecoder.decode(postcode, Charset.defaultCharset()))
+                                    .appendRawQueryParameter(
+                                            "key",
+                                            configurationService.getSecretValue(
+                                                    "OrdnanceSurveyAPIKey"))
+                                    .method(SdkHttpMethod.GET)
+                                    .build()
+                                    .getUri())
+                    .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+        } catch (URISyntaxException e) {
+            log.error("Error creating URI for OS postcode lookup", e);
+
+            throw new PostcodeLookupBadRequestException(
+                    "Error building URI for postcode lookup", e);
+        }
+    }
+
+    private HttpResponse<String> sendHttpRequest(HttpRequest request) {
+        try {
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (HttpConnectTimeoutException e) {
+            log.error("Postcode lookup threw HTTP connection timeout exception", e);
+            throw new PostcodeLookupTimeoutException(
+                    "Error timed out waiting for postcode lookup response", e);
+        } catch (InterruptedException e) {
+            log.error("Postcode lookup threw interrupted exception", e);
+            // Unblock the thread
+            Thread.currentThread().interrupt();
+            // Now throw our prettier exception
+            throw new PostcodeLookupProcessingException(
+                    "Error sending request for postcode lookup", e);
+        } catch (NoSuchFieldError e) {
+            log.error(POSTCODE_LOOKUP_NO_SUCH_FIELD_ERROR, e);
+            throw new PostcodeLookupProcessingException(
+                    POSTCODE_LOOKUP_NO_SUCH_FIELD_ERROR_MESSAGE, e);
+        } catch (IOException e) {
+            log.error("Postcode lookup threw an IO exception", e);
+            throw new PostcodeLookupProcessingException(
+                    "Error sending request for postcode lookup", e);
+        }
+    }
+
     private List<CanonicalAddress> processOrdnanceSurveyErrorResponse(String response) {
         try {
             OrdnanceSurveyPostcodeError error =
-                    new ObjectMapper().readValue(response, OrdnanceSurveyPostcodeError.class);
+                    objectMapper.readValue(response, OrdnanceSurveyPostcodeError.class);
             log.error(
                     "{} status {}: {}",
                     LOG_RESPONSE_PREFIX,
@@ -129,7 +203,7 @@ public class PostcodeLookupService {
     private List<CanonicalAddress> processOrdnanceSurveyBadResponse(String response) {
         try {
             OrdnanceSurveyPostcodeError error =
-                    new ObjectMapper().readValue(response, OrdnanceSurveyPostcodeError.class);
+                    objectMapper.readValue(response, OrdnanceSurveyPostcodeError.class);
             log.error(
                     "{} status {}: {}",
                     LOG_RESPONSE_PREFIX,
@@ -146,7 +220,7 @@ public class PostcodeLookupService {
         // These responses are fine
         // Otherwise, let's try to parse the response
         OrdnanceSurveyPostcodeResponse postcodeResponse =
-                new ObjectMapper().readValue(response, OrdnanceSurveyPostcodeResponse.class);
+                objectMapper.readValue(response, OrdnanceSurveyPostcodeResponse.class);
         // Map the postcode response to our model
         return Optional.ofNullable(postcodeResponse.getResults())
                 .map(
@@ -163,65 +237,7 @@ public class PostcodeLookupService {
                         });
     }
 
-    private HttpResponse<String> sendHttpRequest(HttpRequest request) {
-        try {
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (HttpConnectTimeoutException e) {
-            log.error("Postcode lookup threw HTTP connection timeout exception", e);
-            throw new PostcodeLookupTimeoutException(
-                    "Error timed out waiting for postcode lookup response", e);
-        } catch (InterruptedException e) {
-            log.error("Postcode lookup threw interrupted exception", e);
-            // Unblock the thread
-            Thread.currentThread().interrupt();
-            // Now throw our prettier exception
-            throw new PostcodeLookupProcessingException(
-                    "Error sending request for postcode lookup", e);
-        } catch (IOException e) {
-            log.error("Postcode lookup threw an IO exception", e);
-            throw new PostcodeLookupProcessingException(
-                    "Error sending request for postcode lookup", e);
-        }
-    }
-
-    private HttpRequest createHttpRequest(String postcode)
-            throws PostcodeLookupBadRequestException {
-        try {
-            String urlParam = configurationService.getParameterValue("OrdnanceSurveyAPIURL");
-            URI ordnanceSurveyAPIURL = new URI(urlParam);
-            URI uri =
-                    SdkHttpFullRequest.builder()
-                            .uri(ordnanceSurveyAPIURL)
-                            .appendRawQueryParameter(
-                                    "postcode",
-                                    URLDecoder.decode(postcode, Charset.defaultCharset()))
-                            .appendRawQueryParameter(
-                                    "key",
-                                    configurationService.getSecretValue("OrdnanceSurveyAPIKey"))
-                            .method(SdkHttpMethod.GET)
-                            .build()
-                            .getUri();
-            return HttpRequest.newBuilder()
-                    .uri(uri)
-                    .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
-                    .header("Accept", "application/json")
-                    .GET()
-                    .build();
-        } catch (URISyntaxException e) {
-            log.error("Error creating URI for OS postcode lookup", e);
-            throw new PostcodeLookupBadRequestException(
-                    "Error building URI for postcode lookup", e);
-        }
-    }
-
-    private static HttpClient getHttpClient() {
-        return HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
-                .build();
-    }
-
-    private static boolean isBlank(String value) {
+    private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
 }
