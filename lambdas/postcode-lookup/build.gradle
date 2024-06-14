@@ -8,7 +8,6 @@ dependencies {
 	implementation configurations.cri_common_lib,
 			configurations.aws,
 			configurations.lambda,
-			configurations.gson,
 			configurations.nimbus
 
 	aspect configurations.powertools

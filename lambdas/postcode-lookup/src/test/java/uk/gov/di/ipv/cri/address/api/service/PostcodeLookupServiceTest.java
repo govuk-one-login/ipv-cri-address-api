@@ -94,6 +94,25 @@ class PostcodeLookupServiceTest {
         }
 
         @Test
+        @DisplayName(
+                "it should throw Error due to library incompatibility issues. check project build configuration"
+                        + "and ipv-cri-lib dependencies for version mismatches")
+        void noSuchFieldErrorThrowsProcessingException() throws IOException, InterruptedException {
+            // Mock a valid url so service doesn't fall over validating URI
+            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                    .thenReturn("http://localhost:8080/");
+
+            // Simulate Http Client IO Failure
+            when(httpClient.send(
+                            any(HttpRequest.class),
+                            ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                    .thenThrow(NoSuchFieldError.class);
+            assertThrows(
+                    PostcodeLookupProcessingException.class,
+                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+        }
+
+        @Test
         void ioExceptionThrowsProcessingException() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
