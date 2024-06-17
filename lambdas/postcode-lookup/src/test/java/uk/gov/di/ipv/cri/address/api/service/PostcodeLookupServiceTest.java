@@ -18,7 +18,7 @@ import software.amazon.awssdk.http.HttpStatusCode;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
-import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeValidationException;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
@@ -60,7 +60,7 @@ class PostcodeLookupServiceTest {
         @NullAndEmptySource
         void nullOrEmptyPostcodeReturnsValidationException(String postcode) {
             assertThrows(
-                    PostcodeLookupValidationException.class,
+                    PostcodeValidationException.class,
                     () -> postcodeLookupService.lookupPostcode(postcode));
         }
 
