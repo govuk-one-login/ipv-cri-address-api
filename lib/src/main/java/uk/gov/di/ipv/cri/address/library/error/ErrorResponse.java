@@ -2,7 +2,9 @@ package uk.gov.di.ipv.cri.address.library.error;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 
+@ExcludeFromGeneratedCoverageReport
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum ErrorResponse {
     LOOKUP_TIMEOUT(4010, "time out error"),
