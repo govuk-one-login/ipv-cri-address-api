@@ -11,7 +11,7 @@ import software.amazon.lambda.powertools.tracing.Tracing;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
-import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupValidationException;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeValidationException;
 import uk.gov.di.ipv.cri.address.api.models.Dpa;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
@@ -25,13 +25,14 @@ import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedBuilder;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.http.HttpClient;
-import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Collections;
@@ -55,10 +56,9 @@ public class PostcodeLookupService {
     // Create our http client to enable asynchronous requests
     private final HttpClient client;
     private final Logger log;
-
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConfigurationService configurationService;
-    private static final long CONNECTION_TIMEOUT_SECONDS = 10;
+    private static final long CONNECTION_TIMEOUT_SECONDS = 15;
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupService() {
@@ -74,12 +74,10 @@ public class PostcodeLookupService {
 
     @Tracing
     public List<CanonicalAddress> lookupPostcode(String postcode)
-            throws PostcodeLookupValidationException, PostcodeLookupProcessingException,
+            throws PostcodeValidationException, PostcodeLookupProcessingException,
                     JsonProcessingException, PostcodeLookupBadRequestException {
-        // Check the postcode is valid
-        if (isBlank(postcode)) {
-            throw new PostcodeLookupValidationException("Postcode cannot be null or empty");
-        }
+
+        this.validatePostCode(postcode);
         // Create our http request
         HttpRequest request = createHttpRequest(postcode);
         HttpResponse<String> response = sendHttpRequest(request);
@@ -101,10 +99,7 @@ public class PostcodeLookupService {
             String postcode, Map<String, String> requestHeaders, SessionItem sessionItem) {
         Objects.requireNonNull(requestHeaders, "requestHeaders must not be null");
         Objects.requireNonNull(sessionItem, "sessionItem must not be null");
-
-        if (isBlank(postcode)) {
-            throw new IllegalArgumentException("postcode must not be null or blank");
-        }
+        this.validatePostCode(postcode);
 
         Address address = new Address();
         address.setPostalCode(URLDecoder.decode(postcode, Charset.defaultCharset()).toUpperCase());
@@ -126,6 +121,7 @@ public class PostcodeLookupService {
             throws PostcodeLookupBadRequestException {
         try {
             String urlParam = configurationService.getParameterValue("OrdnanceSurveyAPIURL");
+            String apiKey = configurationService.getSecretValue("OrdnanceSurveyAPIKey");
             URI ordnanceSurveyAPIURL = new URI(urlParam);
 
             return HttpRequest.newBuilder()
@@ -135,10 +131,7 @@ public class PostcodeLookupService {
                                     .appendRawQueryParameter(
                                             "postcode",
                                             URLDecoder.decode(postcode, Charset.defaultCharset()))
-                                    .appendRawQueryParameter(
-                                            "key",
-                                            configurationService.getSecretValue(
-                                                    "OrdnanceSurveyAPIKey"))
+                                    .appendRawQueryParameter("key", apiKey)
                                     .method(SdkHttpMethod.GET)
                                     .build()
                                     .getUri())
@@ -157,7 +150,7 @@ public class PostcodeLookupService {
     private HttpResponse<String> sendHttpRequest(HttpRequest request) {
         try {
             return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (HttpConnectTimeoutException e) {
+        } catch (HttpTimeoutException | SocketTimeoutException e) {
             log.error("Postcode lookup threw HTTP connection timeout exception", e);
             throw new PostcodeLookupTimeoutException(
                     "Error timed out waiting for postcode lookup response", e);
@@ -167,7 +160,7 @@ public class PostcodeLookupService {
             Thread.currentThread().interrupt();
             // Now throw our prettier exception
             throw new PostcodeLookupProcessingException(
-                    "Error sending request for postcode lookup", e);
+                    "Error sending request for postcode lookup - Interrupted exception", e);
         } catch (NoSuchFieldError e) {
             log.error(POSTCODE_LOOKUP_NO_SUCH_FIELD_ERROR, e);
             throw new PostcodeLookupProcessingException(
@@ -175,7 +168,7 @@ public class PostcodeLookupService {
         } catch (IOException e) {
             log.error("Postcode lookup threw an IO exception", e);
             throw new PostcodeLookupProcessingException(
-                    "Error sending request for postcode lookup", e);
+                    "Error sending request for postcode lookup - IO exception", e);
         }
     }
 
@@ -235,6 +228,12 @@ public class PostcodeLookupService {
                             log.warn("PostCode lookup returned no results");
                             return Collections.emptyList();
                         });
+    }
+
+    private void validatePostCode(String postcode) {
+        if (isBlank(postcode)) {
+            throw new PostcodeValidationException("Postcode must not be null or blank");
+        }
     }
 
     private boolean isBlank(String value) {
