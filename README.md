@@ -12,7 +12,7 @@ If you have not installed `pre-commit` then please do so [here](https://pre-comm
 Build with `./gradlew`
 
 This will run "build", "test", "buildZip", and "spotLess" reformatting
-
+   
 ## Deploy to dev account
 
 Ensure you have the `sam-cli` and `gds-cli` installed, and that you can assume an admin role on the ` di-ipv-cri-address-dev` AWS account.
