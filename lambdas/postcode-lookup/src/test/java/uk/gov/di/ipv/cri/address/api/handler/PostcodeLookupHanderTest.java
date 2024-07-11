@@ -47,6 +47,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.LAMBDA_NAME;
 import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.POSTCODE_ERROR;
+import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.POSTCODE_ERROR_MESSAGE;
+import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.POSTCODE_ERROR_TYPE;
 import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.SESSION_ID;
 
 @ExtendWith(MockitoExtension.class)
@@ -83,7 +85,13 @@ class PostcodeLookupHanderTest {
         verifyErrorsLoggedByEventProbe(exception);
         verifyNoMoreInteractions(eventProbe);
 
-        assertEquals(Map.of("invalid_postcode_param", "Postcode is empty"), capturedDimension);
+        assertEquals(
+                Map.of(
+                        POSTCODE_ERROR_TYPE,
+                        "invalid_postcode_param",
+                        POSTCODE_ERROR_MESSAGE,
+                        "Postcode is empty"),
+                capturedDimension);
         assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
         assertEquals("\"Postcode is empty\"", responseEvent.getBody());
     }
@@ -112,7 +120,13 @@ class PostcodeLookupHanderTest {
         verifyErrorsLoggedByEventProbe(sessionNotFoundException);
         verifyNoMoreInteractions(eventProbe);
 
-        assertEquals(Map.of("session_not_found", "Session not found"), capturedDimension);
+        assertEquals(
+                Map.of(
+                        POSTCODE_ERROR_TYPE,
+                        "session_not_found",
+                        POSTCODE_ERROR_MESSAGE,
+                        "Session not found"),
+                capturedDimension);
         assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
         assertEquals(
                 "{\"error_description\":\"Access denied by resource owner or authorization server - Session not found\",\"error\":\"access_denied\"}",
@@ -143,7 +157,13 @@ class PostcodeLookupHanderTest {
         verifyErrorsLoggedByEventProbe(sessionExpiredException);
         verifyNoMoreInteractions(eventProbe);
 
-        assertEquals(Map.of("session_expired", "session expired"), capturedDimension);
+        assertEquals(
+                Map.of(
+                        POSTCODE_ERROR_TYPE,
+                        "session_expired",
+                        POSTCODE_ERROR_MESSAGE,
+                        "session expired"),
+                capturedDimension);
         assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
         assertEquals(
                 "{\"error_description\":\"Access denied by resource owner or authorization server - Session expired\",\"error\":\"access_denied\"}",
@@ -172,7 +192,13 @@ class PostcodeLookupHanderTest {
 
         verifyErrorsLoggedByEventProbe(exception);
         verifyNoMoreInteractions(eventProbe);
-        assertEquals(Map.of("lookup_server", "Any other exception"), dimension);
+        assertEquals(
+                Map.of(
+                        POSTCODE_ERROR_TYPE,
+                        "lookup_server",
+                        POSTCODE_ERROR_MESSAGE,
+                        "Any other exception"),
+                dimension);
         assertEquals(HttpStatusCode.UNAUTHORIZED, responseEvent.getStatusCode());
         assertEquals("\"Any other exception\"", responseEvent.getBody().toString());
     }
@@ -211,7 +237,13 @@ class PostcodeLookupHanderTest {
         verifyNoMoreInteractions(eventProbe);
 
         assertEquals(HttpStatusCode.REQUEST_TIMEOUT, responseEvent.getStatusCode());
-        assertEquals(Map.of("time_out_error", "Error Connection Timeout"), dimension);
+        assertEquals(
+                Map.of(
+                        POSTCODE_ERROR_TYPE,
+                        "time_out_error",
+                        POSTCODE_ERROR_MESSAGE,
+                        "Error Connection Timeout"),
+                dimension);
         assertEquals("\"Error Connection Timeout\"", responseEvent.getBody().toString());
     }
 

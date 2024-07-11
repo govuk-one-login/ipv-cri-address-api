@@ -56,6 +56,8 @@ public class PostcodeLookupHandler
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "postcode_lookup";
     protected static final String POSTCODE_ERROR = "postcode_lookup_error";
+    protected static final String POSTCODE_ERROR_TYPE = "postcode_lookup_error_type";
+    protected static final String POSTCODE_ERROR_MESSAGE = "postcode_lookup_error_message";
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupHandler() {
@@ -126,10 +128,11 @@ public class PostcodeLookupHandler
     private APIGatewayProxyResponseEvent handleException(
             Exception e, ErrorObject oauth2ErrorType, String message, int statusCode) {
         String[] formatMessage = message.toLowerCase().split(" ");
-        String metricName = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
+        String errorName = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
 
         eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
-        eventProbe.addDimensions(Map.of(metricName, e.getMessage()));
+        eventProbe.addDimensions(
+                Map.of(POSTCODE_ERROR_TYPE, errorName, POSTCODE_ERROR_MESSAGE, e.getMessage()));
 
         if (Objects.nonNull(oauth2ErrorType)) {
             return ApiGatewayResponseGenerator.proxyJsonResponse(
