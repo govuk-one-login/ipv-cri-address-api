@@ -127,12 +127,7 @@ public class PostcodeLookupHandler
 
     private APIGatewayProxyResponseEvent handleException(
             Exception e, ErrorObject oauth2ErrorType, String message, int statusCode) {
-        String[] formatMessage = message.toLowerCase().split(" ");
-        String errorName = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
-
-        eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
-        eventProbe.addDimensions(
-                Map.of(POSTCODE_ERROR_TYPE, errorName, POSTCODE_ERROR_MESSAGE, e.getMessage()));
+        setPostCodeLookupErrorMetrics(e, message);
 
         if (Objects.nonNull(oauth2ErrorType)) {
             return ApiGatewayResponseGenerator.proxyJsonResponse(
@@ -140,5 +135,18 @@ public class PostcodeLookupHandler
                     oauth2ErrorType.appendDescription(" - " + message).toJSONObject());
         }
         return ApiGatewayResponseGenerator.proxyJsonResponse(statusCode, e.getMessage());
+    }
+
+    private void setPostCodeLookupErrorMetrics(Exception e, String message) {
+        String[] formatMessage = message.toLowerCase().split(" ");
+        String metricErrorType = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
+
+        eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
+        eventProbe.addDimensions(
+                Map.of(
+                        POSTCODE_ERROR_TYPE,
+                        metricErrorType,
+                        POSTCODE_ERROR_MESSAGE,
+                        e.getMessage()));
     }
 }
