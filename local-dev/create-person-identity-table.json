@@ -1,0 +1,11 @@
+{
+  "TableName": "PersonIdentityTable",
+  "KeySchema": [{ "AttributeName": "sessionId", "KeyType": "HASH" }],
+  "AttributeDefinitions": [
+    { "AttributeName": "sessionId", "AttributeType": "S" }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 10,
+    "WriteCapacityUnits": 5
+  }
+}
