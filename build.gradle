@@ -14,7 +14,7 @@ ext {
 		nimbusds_jwt_version	 : 	"9.40",
 		protobuf_version         : "3.19.4",
 		junit                    : "5.10.2",
-		mockito                  : "4.3.1",
+		mockito                  : "5.2.0",
 		glassfish_version        : "3.0.3",
 		powertools_version       : "1.12.3",
 		cri_common_lib           : "2.1.0"
