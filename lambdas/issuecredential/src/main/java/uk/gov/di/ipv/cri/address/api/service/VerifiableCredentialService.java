@@ -8,6 +8,7 @@ import com.nimbusds.jwt.SignedJWT;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
@@ -32,7 +33,13 @@ public class VerifiableCredentialService {
 
     @ExcludeFromGeneratedCoverageReport
     public VerifiableCredentialService() {
-        this.configurationService = new ConfigurationService();
+        ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
+
+        this.configurationService =
+                new ConfigurationService(
+                        clientProviderFactory.getSSMProvider(),
+                        clientProviderFactory.getSecretsProvider());
+
         this.signedJwtFactory =
                 new SignedJWTFactory(
                         new KMSSigner(

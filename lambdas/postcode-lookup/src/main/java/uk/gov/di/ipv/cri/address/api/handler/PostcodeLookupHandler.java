@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import org.apache.logging.log4j.Level;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
@@ -21,11 +22,15 @@ import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
+import uk.gov.di.ipv.cri.common.library.service.AuditEventFactory;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
+import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -61,11 +66,24 @@ public class PostcodeLookupHandler
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupHandler() {
-        this(
-                new PostcodeLookupService(),
-                new SessionService(),
-                new EventProbe(),
-                new AuditService());
+        ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
+
+        ConfigurationService configurationService =
+                new ConfigurationService(
+                        clientProviderFactory.getSSMProvider(),
+                        clientProviderFactory.getSecretsProvider());
+
+        this.postcodeLookupService = new PostcodeLookupService();
+        this.sessionService =
+                new SessionService(
+                        configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
+        this.eventProbe = new EventProbe();
+        this.auditService =
+                new AuditService(
+                        clientProviderFactory.getSqsClient(),
+                        configurationService,
+                        new ObjectMapper(),
+                        new AuditEventFactory(configurationService, Clock.systemDefaultZone()));
     }
 
     public PostcodeLookupHandler(
