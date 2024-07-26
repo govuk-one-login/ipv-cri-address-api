@@ -9,7 +9,9 @@ dependencies {
 			configurations.cri_common_lib,
 			configurations.aws,
 			configurations.lambda,
-			configurations.nimbus
+			configurations.nimbus,
+			configurations.sqs,
+			configurations.dynamodb
 
 	aspect configurations.powertools
 

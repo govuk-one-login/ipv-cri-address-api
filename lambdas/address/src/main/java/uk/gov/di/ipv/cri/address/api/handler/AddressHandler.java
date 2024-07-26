@@ -25,6 +25,7 @@ import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
@@ -46,6 +47,8 @@ public class AddressHandler
 
     @ExcludeFromGeneratedCoverageReport
     public AddressHandler() {
+        ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
+
         ObjectMapper objectMapper =
                 new ObjectMapper()
                         .registerModule(new Jdk8Module())
@@ -56,8 +59,15 @@ public class AddressHandler
                                                 CanonicalAddress.class,
                                                 new PiiRedactingDeserializer<>(
                                                         CanonicalAddress.class)));
-        ConfigurationService configurationService = new ConfigurationService();
-        this.sessionService = new SessionService();
+
+        ConfigurationService configurationService =
+                new ConfigurationService(
+                        clientProviderFactory.getSSMProvider(),
+                        clientProviderFactory.getSecretsProvider());
+
+        this.sessionService =
+                new SessionService(
+                        configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
         this.addressService = new AddressService(configurationService, objectMapper);
         this.eventProbe = new EventProbe();
     }

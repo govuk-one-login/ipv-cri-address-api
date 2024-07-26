@@ -23,6 +23,7 @@ import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedBuilder;
+import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -62,7 +63,15 @@ public class PostcodeLookupService {
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupService() {
-        this(new ConfigurationService(), getHttpClient(), LogManager.getLogger());
+        ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
+
+        this.configurationService =
+                new ConfigurationService(
+                        clientProviderFactory.getSSMProvider(),
+                        clientProviderFactory.getSecretsProvider());
+
+        this.client = getHttpClient();
+        this.log = LogManager.getLogger();
     }
 
     public PostcodeLookupService(

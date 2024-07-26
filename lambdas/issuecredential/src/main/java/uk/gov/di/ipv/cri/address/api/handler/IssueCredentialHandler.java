@@ -27,6 +27,7 @@ import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
+import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
@@ -42,6 +43,7 @@ import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedBuilder;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
+import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
 import java.time.Clock;
@@ -79,15 +81,25 @@ public class IssueCredentialHandler
         this.auditService = auditService;
     }
 
+    @ExcludeFromGeneratedCoverageReport
     public IssueCredentialHandler() {
-        ConfigurationService configurationService = new ConfigurationService();
+        ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
+
+        ConfigurationService configurationService =
+                new ConfigurationService(
+                        clientProviderFactory.getSSMProvider(),
+                        clientProviderFactory.getSecretsProvider());
+
         ObjectMapper objectMapper =
                 new ObjectMapper()
                         .registerModule(new Jdk8Module())
                         .registerModule(new JavaTimeModule());
+
         this.verifiableCredentialService = getVerifiableCredentialService();
         this.addressService = new AddressService(configurationService, objectMapper);
-        this.sessionService = new SessionService();
+        this.sessionService =
+                new SessionService(
+                        configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
         this.eventProbe = new EventProbe();
         this.auditService =
                 new AuditService(
