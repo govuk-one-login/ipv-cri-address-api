@@ -1,0 +1,240 @@
+{
+  "consumer": {
+    "name": "IpvCoreBack"
+  },
+  "interactions": [
+    {
+      "_id": "bb211618a79234dfc8207510d508e9f2442a94fb",
+      "description": "Valid credential request for Experian VC",
+      "providerStates": [
+        {
+          "name": "dummyApiKey is a valid api key"
+        },
+        {
+          "name": "dummyAccessToken is a valid access token"
+        },
+        {
+          "name": "test-subject is a valid subject"
+        },
+        {
+          "name": "dummyAddressComponentId is a valid issuer"
+        },
+        {
+          "name": "addressCountry is GB"
+        },
+        {
+          "name": "streetName is HADLEY ROAD"
+        },
+        {
+          "name": "buildingNumber is 8"
+        },
+        {
+          "name": "addressLocality is BATH"
+        },
+        {
+          "name": "validFrom is 2000-01-01"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer dummyAccessToken",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "body": "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUo5LmV5SnBjM01pT2lKa2RXMXRlVUZrWkhKbGMzTkRiMjF3YjI1bGJuUkpaQ0lzSW5OMVlpSTZJblJsYzNRdGMzVmlhbVZqZENJc0ltNWlaaUk2TkRBM01Ea3dPRGd3TUN3aVpYaHdJam8wTURjd09UQTVOREF3TENKMll5STZleUowZVhCbElqcGJJbFpsY21sbWFXRmliR1ZEY21Wa1pXNTBhV0ZzSWl3aVFXUmtjbVZ6YzBOeVpXUmxiblJwWVd3aVhTd2lRR052Ym5SbGVIUWlPbHNpYUhSMGNITTZMeTkzZDNjdWR6TXViM0puTHpJd01UZ3ZZM0psWkdWdWRHbGhiSE12ZGpFaUxDSm9kSFJ3Y3pvdkwzWnZZMkZpTG1GalkyOTFiblF1WjI5MkxuVnJMMk52Ym5SbGVIUnpMMmxrWlc1MGFYUjVMWFl4TG1wemIyNXNaQ0pkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SmhaR1J5WlhOeklqcGJleUpoWkdSeVpYTnpRMjkxYm5SeWVTSTZJa2RDSWl3aVluVnBiR1JwYm1kT1lXMWxJam9pSWl3aWMzUnlaV1YwVG1GdFpTSTZJa2hCUkV4RldTQlNUMEZFSWl3aWNHOXpkR0ZzUTI5a1pTSTZJa0pCTWlBMVFVRWlMQ0ppZFdsc1pHbHVaMDUxYldKbGNpSTZJamdpTENKaFpHUnlaWE56VEc5allXeHBkSGtpT2lKQ1FWUklJaXdpZG1Gc2FXUkdjbTl0SWpvaU1qQXdNQzB3TVMwd01TSjlYWDE5TENKcWRHa2lPaUprZFcxdGVVcDBhU0o5LlVNR2tIaG1rZU5DN0hzSjVoOUJwTUFNQnNrMGpyVXZrU0R6UThYbTdmcmxFcHNaSHZJTFNqbUFVclNDV2F1R1ZlNTIteUc4eWJJT3JGYVhaYjhhVjhR",
+        "headers": {
+          "Content-Type": "application/jwt"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9\\.eyJpc3MiOiJkdW1teUFkZHJlc3NDb21wb25lbnRJZCIsInN1YiI6InRlc3Qtc3ViamVjdCIsIm5iZiI6NDA3MDkwODgwMCwiZXhwIjo0MDcwOTA5NDAwLCJ2YyI6eyJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiQWRkcmVzc0NyZWRlbnRpYWwiXSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiLCJodHRwczovL3ZvY2FiLmFjY291bnQuZ292LnVrL2NvbnRleHRzL2lkZW50aXR5LXYxLmpzb25sZCJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJhZGRyZXNzIjpbeyJhZGRyZXNzQ291bnRyeSI6IkdCIiwiYnVpbGRpbmdOYW1lIjoiIiwic3RyZWV0TmFtZSI6IkhBRExFWSBST0FEIiwicG9zdGFsQ29kZSI6IkJBMiA1QUEiLCJidWlsZGluZ051bWJlciI6IjgiLCJhZGRyZXNzTG9jYWxpdHkiOiJCQVRIIiwidmFsaWRGcm9tIjoiMjAwMC0wMS0wMSJ9XX19LCJqdGkiOiJkdW1teUp0aSJ9\\..*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "_id": "21c7482f4853e0ca7f7a97856d4464dacf56adb4",
+      "description": "Valid credential request for old single address",
+      "providerStates": [
+        {
+          "name": "dummyApiKey is a valid api key"
+        },
+        {
+          "name": "dummyAccessToken is a valid access token"
+        },
+        {
+          "name": "test-subject is a valid subject"
+        },
+        {
+          "name": "dummyAddressComponentId is a valid issuer"
+        },
+        {
+          "name": "buildingName is 221B"
+        },
+        {
+          "name": "streetName is BAKER STREET"
+        },
+        {
+          "name": "postalCode is NW1 6XE"
+        },
+        {
+          "name": "addressLocality is LONDON"
+        },
+        {
+          "name": "validFrom is 1887-01-01"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer dummyAccessToken",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "body": "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUo5LmV5SnBjM01pT2lKa2RXMXRlVUZrWkhKbGMzTkRiMjF3YjI1bGJuUkpaQ0lzSW5OMVlpSTZJblJsYzNRdGMzVmlhbVZqZENJc0ltNWlaaUk2TkRBM01Ea3dPRGd3TUN3aVpYaHdJam8wTURjd09UQTVOREF3TENKMll5STZleUowZVhCbElqcGJJbFpsY21sbWFXRmliR1ZEY21Wa1pXNTBhV0ZzSWl3aVFXUmtjbVZ6YzBOeVpXUmxiblJwWVd3aVhTd2lRR052Ym5SbGVIUWlPbHNpYUhSMGNITTZMeTkzZDNjdWR6TXViM0puTHpJd01UZ3ZZM0psWkdWdWRHbGhiSE12ZGpFaUxDSm9kSFJ3Y3pvdkwzWnZZMkZpTG1GalkyOTFiblF1WjI5MkxuVnJMMk52Ym5SbGVIUnpMMmxrWlc1MGFYUjVMWFl4TG1wemIyNXNaQ0pkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SmhaR1J5WlhOeklqcGJleUppZFdsc1pHbHVaMDVoYldVaU9pSXlNakZDSWl3aWMzUnlaV1YwVG1GdFpTSTZJa0pCUzBWU0lGTlVVa1ZGVkNJc0luQnZjM1JoYkVOdlpHVWlPaUpPVnpFZ05saEZJaXdpWVdSa2NtVnpjMHh2WTJGc2FYUjVJam9pVEU5T1JFOU9JaXdpZG1Gc2FXUkdjbTl0SWpvaU1UZzROeTB3TVMwd01TSjlYWDE5TENKcWRHa2lPaUprZFcxdGVVcDBhU0o5LnZtSnlJVl9kdHhKc21QYjNEU0ZIU2xmMkVic3J4a1ZlMUJqQ2F4Y1VHYmRVVzg0aU5raVpfaHhpYm1jY1ZHd1JUdXdnQWg5V0R3WWVRcjVMWVBoQ2JB",
+        "headers": {
+          "Content-Type": "application/jwt"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9\\.eyJpc3MiOiJkdW1teUFkZHJlc3NDb21wb25lbnRJZCIsInN1YiI6InRlc3Qtc3ViamVjdCIsIm5iZiI6NDA3MDkwODgwMCwiZXhwIjo0MDcwOTA5NDAwLCJ2YyI6eyJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiQWRkcmVzc0NyZWRlbnRpYWwiXSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiLCJodHRwczovL3ZvY2FiLmFjY291bnQuZ292LnVrL2NvbnRleHRzL2lkZW50aXR5LXYxLmpzb25sZCJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJhZGRyZXNzIjpbeyJidWlsZGluZ05hbWUiOiIyMjFCIiwic3RyZWV0TmFtZSI6IkJBS0VSIFNUUkVFVCIsInBvc3RhbENvZGUiOiJOVzEgNlhFIiwiYWRkcmVzc0xvY2FsaXR5IjoiTE9ORE9OIiwidmFsaWRGcm9tIjoiMTg4Ny0wMS0wMSJ9XX19LCJqdGkiOiJkdW1teUp0aSJ9\\..*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "_id": "103459a59ab1bf8b18a7597e40059ae05f8061b9",
+      "description": "Valid credential request for multiple addresses",
+      "providerStates": [
+        {
+          "name": "dummyApiKey is a valid api key"
+        },
+        {
+          "name": "dummyAccessToken is a valid access token"
+        },
+        {
+          "name": "test-subject is a valid subject"
+        },
+        {
+          "name": "dummyAddressComponentId is a valid issuer"
+        },
+        {
+          "name": "buildingName is 221B"
+        },
+        {
+          "name": "streetName is BAKER STREET"
+        },
+        {
+          "name": "postalCode is NW1 6XE"
+        },
+        {
+          "name": "addressLocality is LONDON"
+        },
+        {
+          "name": "validFrom is 1987-01-01"
+        },
+        {
+          "name": "second buildingName is 122"
+        },
+        {
+          "name": "second streetName is BURNS CRESCENT"
+        },
+        {
+          "name": "second postalCode is EH1 9GP"
+        },
+        {
+          "name": "second addressLocality is EDINBURGH"
+        },
+        {
+          "name": "second validFrom is 2017-01-01"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer dummyAccessToken",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "body": "ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKRlV6STFOaUo5LmV5SnBjM01pT2lKa2RXMXRlVUZrWkhKbGMzTkRiMjF3YjI1bGJuUkpaQ0lzSW5OMVlpSTZJblJsYzNRdGMzVmlhbVZqZENJc0ltNWlaaUk2TkRBM01Ea3dPRGd3TUN3aVpYaHdJam8wTURjd09UQTVOREF3TENKMll5STZleUowZVhCbElqcGJJbFpsY21sbWFXRmliR1ZEY21Wa1pXNTBhV0ZzSWl3aVFXUmtjbVZ6YzBOeVpXUmxiblJwWVd3aVhTd2lRR052Ym5SbGVIUWlPbHNpYUhSMGNITTZMeTkzZDNjdWR6TXViM0puTHpJd01UZ3ZZM0psWkdWdWRHbGhiSE12ZGpFaUxDSm9kSFJ3Y3pvdkwzWnZZMkZpTG1GalkyOTFiblF1WjI5MkxuVnJMMk52Ym5SbGVIUnpMMmxrWlc1MGFYUjVMWFl4TG1wemIyNXNaQ0pkTENKamNtVmtaVzUwYVdGc1UzVmlhbVZqZENJNmV5SmhaR1J5WlhOeklqcGJleUppZFdsc1pHbHVaMDVoYldVaU9pSXlNakZDSWl3aWMzUnlaV1YwVG1GdFpTSTZJa0pCUzBWU0lGTlVVa1ZGVkNJc0luQnZjM1JoYkVOdlpHVWlPaUpPVnpFZ05saEZJaXdpWVdSa2NtVnpjMHh2WTJGc2FYUjVJam9pVEU5T1JFOU9JaXdpZG1Gc2FXUkdjbTl0SWpvaU1UazROeTB3TVMwd01TSjlMSHNpWW5WcGJHUnBibWRPWVcxbElqb2lNVEl5SWl3aWMzUnlaV1YwVG1GdFpTSTZJa0pWVWs1VElFTlNSVk5EUlU1VUlpd2ljRzl6ZEdGc1EyOWtaU0k2SWtWSU1TQTVSMUFpTENKaFpHUnlaWE56VEc5allXeHBkSGtpT2lKRlJFbE9RbFZTUjBnaUxDSjJZV3hwWkVaeWIyMGlPaUl5TURFM0xUQXhMVEF4SW4xZGZYMHNJbXAwYVNJNkltUjFiVzE1U25ScEluMC5wdVlOOFRfZWRrbDBoX2E3azRaeTNGdGtOS0I1SjJacDBUSzdxcmFQbDFXRXd6czBlZTQ2SkFiMEFnR19sWUtIbG11M0hwNUpDRHpVX0dTUjZjS2tsQQ==",
+        "headers": {
+          "Content-Type": "application/jwt"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9\\.eyJpc3MiOiJkdW1teUFkZHJlc3NDb21wb25lbnRJZCIsInN1YiI6InRlc3Qtc3ViamVjdCIsIm5iZiI6NDA3MDkwODgwMCwiZXhwIjo0MDcwOTA5NDAwLCJ2YyI6eyJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiQWRkcmVzc0NyZWRlbnRpYWwiXSwiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiLCJodHRwczovL3ZvY2FiLmFjY291bnQuZ292LnVrL2NvbnRleHRzL2lkZW50aXR5LXYxLmpzb25sZCJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJhZGRyZXNzIjpbeyJidWlsZGluZ05hbWUiOiIyMjFCIiwic3RyZWV0TmFtZSI6IkJBS0VSIFNUUkVFVCIsInBvc3RhbENvZGUiOiJOVzEgNlhFIiwiYWRkcmVzc0xvY2FsaXR5IjoiTE9ORE9OIiwidmFsaWRGcm9tIjoiMTk4Ny0wMS0wMSJ9LHsiYnVpbGRpbmdOYW1lIjoiMTIyIiwic3RyZWV0TmFtZSI6IkJVUk5TIENSRVNDRU5UIiwicG9zdGFsQ29kZSI6IkVIMSA5R1AiLCJhZGRyZXNzTG9jYWxpdHkiOiJFRElOQlVSR0giLCJ2YWxpZEZyb20iOiIyMDE3LTAxLTAxIn1dfX0sImp0aSI6ImR1bW15SnRpIn0\\..*"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "_id": "5e325f2af10e91c72fee02aec1f4dc5163fa1055",
+      "description": "Invalid credential request",
+      "providerStates": [
+        {
+          "name": "dummyApiKey is a valid api key"
+        },
+        {
+          "name": "dummyInvalidAccessToken is an invalid access token"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer dummyInvalidAccessToken",
+          "x-api-key": "dummyApiKey"
+        },
+        "method": "POST",
+        "path": "/credential/issue"
+      },
+      "response": {
+        "status": 403
+      }
+    }
+  ],
+  "metadata": {
+    "pact-jvm": {
+      "version": "4.6.5"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "AddressCriVcProvider"
+  },
+  "createdAt": "2024-08-01T07:46:57+00:00"
+}

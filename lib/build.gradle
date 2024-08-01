@@ -14,7 +14,8 @@ dependencies {
 			configurations.nimbus,
 			configurations.powertools,
 			configurations.sqs,
-			configurations.kms
+			configurations.kms,
+			configurations.webcompere
 
 	aspect configurations.powertools
 
