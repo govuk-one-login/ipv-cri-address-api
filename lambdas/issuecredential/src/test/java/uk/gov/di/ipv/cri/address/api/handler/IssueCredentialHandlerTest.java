@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.common.contenttype.ContentType;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
@@ -17,6 +18,9 @@ import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,17 +36,34 @@ import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
+import uk.gov.di.ipv.cri.common.library.exception.AccessTokenExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
+import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
+import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
+import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
+import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.ECPrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.text.ParseException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.logging.log4j.Level.INFO;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,6 +77,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler.ADDRESS_CREDENTIAL_ISSUER;
+import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
+import static uk.gov.di.ipv.cri.address.api.service.fixtures.TestFixtures.EC_PRIVATE_KEY_1;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,14 +87,15 @@ class IssueCredentialHandlerTest {
     @Mock private Context context;
     @Mock private VerifiableCredentialService mockVerifiableCredentialService;
     @Mock private SessionService mockSessionService;
-
     @Mock private AddressService mockAddressService;
     @Mock private EventProbe mockEventProbe;
     @Mock private AuditService mockAuditService;
+
     @InjectMocks private IssueCredentialHandler handler;
 
     @Test
-    void shouldReturn200OkWhenIssueCredentialRequestIsValid() throws JOSEException, SqsException {
+    void shouldReturn200OkWhenIssueCredentialRequestIsValid()
+            throws JOSEException, SqsException, ParseException, JsonProcessingException {
         ArgumentCaptor<AuditEventContext> endEventAuditEventContextArgCaptor =
                 ArgumentCaptor.forClass(AuditEventContext.class);
         ArgumentCaptor<AuditEventContext> vcEventAuditEventContextArgCaptor =
@@ -155,8 +179,105 @@ class IssueCredentialHandlerTest {
     }
 
     @Test
+    void shouldReturn200OkWhenIssueCredentialRequestGeneratesClaimsSetJwt()
+            throws JOSEException, SqsException, InvalidKeySpecException, NoSuchAlgorithmException {
+        ArgumentCaptor<AuditEventContext> endEventAuditEventContextArgCaptor =
+                ArgumentCaptor.forClass(AuditEventContext.class);
+        ArgumentCaptor<AuditEventContext> vcEventAuditEventContextArgCaptor =
+                ArgumentCaptor.forClass(AuditEventContext.class);
+
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
+        setRequestBodyAsPlainJWT(event);
+
+        final UUID sessionId = UUID.randomUUID();
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSubject(SUBJECT);
+        sessionItem.setSessionId(sessionId);
+
+        CanonicalAddress address = new CanonicalAddress();
+        address.setBuildingNumber("114");
+        address.setStreetName("Wellington Street");
+        address.setPostalCode("LS1 1BA");
+        AddressItem addressItem = new AddressItem();
+
+        List<CanonicalAddress> canonicalAddresses = List.of(address);
+        addressItem.setAddresses(canonicalAddresses);
+        List<Address> addresses =
+                canonicalAddresses.stream().map(Address::new).collect(Collectors.toList());
+
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
+        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+
+        SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
+        ConfigurationService mockConfigurationService = mock(ConfigurationService.class);
+        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn("dummy-issuer");
+        when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
+        when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
+        ObjectMapper objectMapper = getMapperWithCustomSerializers();
+
+        Clock clock = Clock.fixed(Instant.parse("2099-01-01T00:00:00.00Z"), ZoneId.of("UTC"));
+        VerifiableCredentialService verifiableCredentialService =
+                new VerifiableCredentialService(
+                        signedJwtFactory,
+                        mockConfigurationService,
+                        objectMapper,
+                        new VerifiableCredentialClaimsSetBuilder(mockConfigurationService, clock));
+        handler =
+                new IssueCredentialHandler(
+                        verifiableCredentialService,
+                        mockAddressService,
+                        mockSessionService,
+                        mockEventProbe,
+                        mockAuditService);
+
+        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER);
+        verify(mockEventProbe).log(INFO, "found session");
+        verifyNoMoreInteractions(mockEventProbe);
+
+        verify(mockAuditService)
+                .sendAuditEvent(
+                        eq(AuditEventType.VC_ISSUED),
+                        vcEventAuditEventContextArgCaptor.capture(),
+                        endEventAuditEventContextArgCaptor.capture());
+        verify(mockAuditService)
+                .sendAuditEvent(
+                        eq(AuditEventType.END), endEventAuditEventContextArgCaptor.capture());
+
+        AuditEventContext endAuditEventContext = endEventAuditEventContextArgCaptor.getValue();
+        AuditEventContext vcAuditEventContext = vcEventAuditEventContextArgCaptor.getValue();
+
+        assertEquals(HttpStatusCode.OK, response.getStatusCode());
+        assertEquals(event.getHeaders(), endAuditEventContext.getRequestHeaders());
+        assertEquals(sessionItem, endAuditEventContext.getSessionItem());
+        assertEquals(sessionItem, endEventAuditEventContextArgCaptor.getValue().getSessionItem());
+
+        assertEquals(
+                ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
+
+        for (int i = 0; i < addresses.size(); i++) {
+            Address addressInAuditContext =
+                    vcAuditEventContext.getPersonIdentity().getAddresses().get(i);
+            assertEquals(addresses.get(i).getUprn(), addressInAuditContext.getUprn());
+            assertEquals(address.getBuildingNumber(), addressInAuditContext.getBuildingNumber());
+            assertEquals(address.getStreetName(), addressInAuditContext.getStreetName());
+            assertEquals(address.getAddressLocality(), addressInAuditContext.getAddressLocality());
+            assertEquals(address.getPostalCode(), addressInAuditContext.getPostalCode());
+            assertEquals(address.getAddressCountry(), addressInAuditContext.getAddressCountry());
+        }
+    }
+
+    @Test
     void shouldThrowJOSEExceptionWhenGenerateVerifiableCredentialIsMalformed()
-            throws JsonProcessingException, JOSEException, SqsException {
+            throws JsonProcessingException, JOSEException, SqsException, ParseException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -315,6 +436,42 @@ class IssueCredentialHandlerTest {
         verifyNoMoreInteractions(mockEventProbe);
     }
 
+    @ParameterizedTest
+    @MethodSource("exceptionProvider")
+    void shouldThrowAccessDeniedErrorWhenRetrievingASessionItemNotFoundWithAnAccessToken(
+            Class<? extends Throwable> exceptionClass)
+            throws JsonProcessingException, SqsException {
+        ArgumentCaptor<Throwable> exceptionCaptor = ArgumentCaptor.forClass(Throwable.class);
+
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
+
+        setRequestBodyAsPlainJWT(event);
+        setupEventProbeExpectedErrorBehaviour();
+
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenThrow(exceptionClass);
+
+        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        Map<String, Object> responseBody =
+                new ObjectMapper().readValue(response.getBody(), new TypeReference<>() {});
+
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+        verify(mockEventProbe).log(any(), exceptionCaptor.capture());
+        verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
+        verifyNoMoreInteractions(mockEventProbe);
+
+        assertEquals(HttpStatusCode.FORBIDDEN, response.getStatusCode());
+        assertThat(
+                responseBody.get("error_description").toString(),
+                containsString("Access denied by resource owner or authorization server"));
+        assertEquals(exceptionClass, exceptionCaptor.getValue().getClass());
+    }
+
     private void setupEventProbeExpectedErrorBehaviour() {
         when(mockEventProbe.log(eq(Level.ERROR), Mockito.any(Exception.class)))
                 .thenReturn(mockEventProbe);
@@ -331,5 +488,21 @@ class IssueCredentialHandlerTest {
                         .serialize();
 
         event.setBody(requestJWT);
+    }
+
+    static Stream<Arguments> exceptionProvider() {
+        return Stream.of(
+                Arguments.of(
+                        SessionNotFoundException.class, "no session found with that access token"),
+                Arguments.of(SessionExpiredException.class, "session expired"),
+                Arguments.of(AccessTokenExpiredException.class, "access code expired"));
+    }
+
+    private ECPrivateKey getPrivateKey() throws InvalidKeySpecException, NoSuchAlgorithmException {
+        return (ECPrivateKey)
+                KeyFactory.getInstance("EC")
+                        .generatePrivate(
+                                new PKCS8EncodedKeySpec(
+                                        Base64.getDecoder().decode(EC_PRIVATE_KEY_1)));
     }
 }
