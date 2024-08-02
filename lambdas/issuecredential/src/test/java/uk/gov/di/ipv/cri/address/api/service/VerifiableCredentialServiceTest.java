@@ -1,8 +1,7 @@
 package uk.gov.di.ipv.cri.address.api.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
@@ -42,6 +41,7 @@ import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.ADDRESS_CREDENTIAL_TYPE;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.DI_CONTEXT;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.W3_BASE_CONTEXT;
+import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 
 @ExtendWith(MockitoExtension.class)
 class VerifiableCredentialServiceTest implements TestFixtures {
@@ -51,10 +51,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     private static final String DEFAULT_JWT_TTL_UNIT = "MONTHS";
     private static final String VC_ISSUER = "vc-issuer";
     private static final String SUBJECT = "subject";
-    private final ObjectMapper objectMapper =
-            new ObjectMapper()
-                    .registerModule(new Jdk8Module())
-                    .registerModule(new JavaTimeModule());
+    private final ObjectMapper objectMapper = getMapperWithCustomSerializers();
     @Mock private ConfigurationService mockConfigurationService;
     @Mock private SignedJWTFactory mockSignedClaimSetJwt;
     @Mock private VerifiableCredentialClaimsSetBuilder mockVcClaimSetBuilder;
@@ -73,7 +70,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     }
 
     @Test
-    void shouldReturnAVerifiedCredentialWhenGivenCanonicalAddresses() throws JOSEException {
+    void shouldReturnAVerifiedCredentialWhenGivenCanonicalAddresses()
+            throws JOSEException, ParseException, JsonProcessingException {
         initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
@@ -83,13 +81,14 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                 SUBJECT, canonicalAddresses);
 
-        verify(mockSignedClaimSetJwt).createSignedJwt(TEST_CLAIMS_SET);
+        verify(mockSignedClaimSetJwt)
+                .createSignedJwt(objectMapper.writeValueAsString(TEST_CLAIMS_SET));
     }
 
     @Test
     void shouldCreateValidSignedJWT()
-            throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException,
-                    ParseException {
+            throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException, ParseException,
+                    JsonProcessingException {
         initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);

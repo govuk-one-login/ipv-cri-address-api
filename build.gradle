@@ -17,7 +17,10 @@ ext {
 		mockito                  : "4.3.1",
 		glassfish_version        : "3.0.3",
 		powertools_version       : "1.12.3",
-		cri_common_lib           : "3.0.2"
+		cri_common_lib           : "3.0.3",
+		pact_provider_version	 : "4.5.11",
+		webcompere_version       : "2.1.6",
+		slf4j_log4j12_version    : "2.0.13", // For contract test debug
 	]
 }
 
@@ -56,7 +59,9 @@ subprojects {
 		gson
 		powertools
 		mockito
+		webcompere
 		cri_common_lib
+		pact_tests
 	}
 
 	// The dynamodb enhanced package loads the apache-client as well as the spi-client, so
@@ -103,11 +108,23 @@ subprojects {
 				"org.hamcrest:hamcrest:2.2"
 
 		test_runtime "org.junit.jupiter:junit-jupiter-engine:${dependencyVersions.junit}"
+
+		webcompere "uk.org.webcompere:system-stubs-core:${dependencyVersions.webcompere_version}",
+				"uk.org.webcompere:system-stubs-jupiter:${dependencyVersions.webcompere_version}"
+
+		pact_tests "au.com.dius.pact.provider:junit5:${dependencyVersions.pact_provider_version}",
+				"au.com.dius.pact:provider:${dependencyVersions.pact_provider_version}"
 	}
 
 	test {
 		// Configures environment variable to avoid initialization of AWS X-Ray segments for each tests
 		environment "LAMBDA_TASK_ROOT", "handler"
+	}
+
+	tasks.register("pactTests", Test) {
+		useJUnitPlatform {
+			includeTags 'Pact'
+		}
 	}
 }
 

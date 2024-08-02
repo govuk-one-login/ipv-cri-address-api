@@ -1,8 +1,7 @@
 package uk.gov.di.ipv.cri.address.api.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
@@ -13,6 +12,7 @@ import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
+import java.text.ParseException;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -24,6 +24,7 @@ import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.DI_CONTEXT;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_ADDRESS_KEY;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.W3_BASE_CONTEXT;
+import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 
 public class VerifiableCredentialService {
     private final VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder;
@@ -45,10 +46,7 @@ public class VerifiableCredentialService {
                         new KMSSigner(
                                 configurationService.getCommonParameterValue(
                                         "verifiableCredentialKmsSigningKeyId")));
-        this.objectMapper =
-                new ObjectMapper()
-                        .registerModule(new Jdk8Module())
-                        .registerModule(new JavaTimeModule());
+        this.objectMapper = getMapperWithCustomSerializers();
 
         this.vcClaimsSetBuilder =
                 new VerifiableCredentialClaimsSetBuilder(
@@ -67,7 +65,8 @@ public class VerifiableCredentialService {
     }
 
     public SignedJWT generateSignedVerifiableCredentialJwt(
-            String subject, List<CanonicalAddress> canonicalAddresses) throws JOSEException {
+            String subject, List<CanonicalAddress> canonicalAddresses)
+            throws JOSEException, JsonProcessingException, ParseException {
         long jwtTtl = this.configurationService.getMaxJwtTtl();
         ChronoUnit jwtTtlUnit =
                 ChronoUnit.valueOf(this.configurationService.getParameterValue("JwtTtlUnit"));
@@ -81,7 +80,7 @@ public class VerifiableCredentialService {
                                 Map.of(VC_ADDRESS_KEY, convertAddresses(canonicalAddresses)))
                         .build();
 
-        return signedJwtFactory.createSignedJwt(claimsSet);
+        return signedJwtFactory.createSignedJwt(objectMapper.writeValueAsString(claimsSet));
     }
 
     public Map<String, Object> getAuditEventExtensions(List<CanonicalAddress> addresses) {
