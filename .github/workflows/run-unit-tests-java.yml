@@ -40,7 +40,7 @@ jobs:
           cache: gradle
 
       - name: Cache build artifacts
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-address-api-java-${{ github.head_ref || github.ref_name }}
           restore-keys: ${{ runner.os }}-address-api-java-

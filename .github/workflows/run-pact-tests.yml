@@ -1,0 +1,63 @@
+name: Unit pact tests
+
+on:
+  workflow_call:
+    secrets:
+      pact-broker-host: { required: true }
+      pact-broker-username: { required: true }
+      pact-broker-password: { required: true }
+
+concurrency:
+  group: pact-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions: {}
+
+jobs:
+  run-pact-tests:
+    name: Java
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 7.6.4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 11
+          distribution: zulu
+          cache: gradle
+
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-address-api-java-${{ github.head_ref || github.ref_name }}
+          restore-keys: ${{ runner.os }}-address-api-java-
+          path: |
+            **/*/build/
+            !**/*/build/jacoco
+            !**/*/build/reports
+
+      - name: Run pact tests
+        env:
+          PACT_BROKER_HOST: ${{ secrets.pact-broker-host }}
+          PACT_BROKER_USERNAME: ${{ secrets.pact-broker-username }}
+          PACT_BROKER_PASSWORD: ${{ secrets.pact-broker-password }}
+        run: ./gradlew :lambdas:issuecredential:pactTests -x spotlessApply -x spotlessCheck
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+          name: test-report
+          path: lambdas/issuecredential/build/reports/tests/pactTests/
+          
