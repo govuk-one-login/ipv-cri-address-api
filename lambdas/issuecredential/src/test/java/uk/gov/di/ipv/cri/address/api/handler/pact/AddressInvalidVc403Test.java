@@ -5,7 +5,9 @@ import au.com.dius.pact.provider.junit5.PactVerificationContext;
 import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvider;
 import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
-import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
+import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
+import au.com.dius.pact.provider.junitsupport.loader.PactBrokerAuth;
+import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
@@ -44,18 +46,30 @@ import static uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler.ADDRE
 
 @Tag("Pact")
 @Provider("AddressCriVcProvider")
-@PactFolder("pacts")
+@PactBroker(
+        url = "https://${PACT_BROKER_HOST}",
+        authentication =
+                @PactBrokerAuth(
+                        username = "${PACT_BROKER_USERNAME}",
+                        password = "${PACT_BROKER_PASSWORD}"))
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(SystemStubsExtension.class)
 class AddressInvalidVc403Test implements DummyStates {
     @SystemStub private EnvironmentVariables environmentVariables = new EnvironmentVariables();
     private static final int PORT = 5010;
-    private static final boolean ENABLE_FULL_DEBUG = true;
+    private static final boolean ENABLE_FULL_DEBUG = false;
     @Mock private SessionService mockSessionService;
     @Mock private EventProbe mockEventProbe;
-
     @InjectMocks private IssueCredentialHandler handler;
+
+    @au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors
+    public static SelectorBuilder consumerVersionSelectors() {
+        return new SelectorBuilder()
+                .tag("AddressCriVcProvider")
+                .branch("main", "IpvCoreBack")
+                .deployedOrReleased();
+    }
 
     @BeforeAll
     void setup() {
