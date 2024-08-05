@@ -15,11 +15,8 @@ import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.AccessTokenType;
 import org.apache.logging.log4j.Level;
-import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.http.HttpStatusCode;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -46,14 +43,17 @@ import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
+import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
+import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
+import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
 import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.logging.log4j.Level.ERROR;
+import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.ACCESS_TOKEN_EXPIRED;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_EXPIRED;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_NOT_FOUND;
@@ -96,7 +96,7 @@ public class IssueCredentialHandler
                         .registerModule(new Jdk8Module())
                         .registerModule(new JavaTimeModule());
 
-        this.verifiableCredentialService = getVerifiableCredentialService();
+        this.verifiableCredentialService = getVerifiableCredentialService(configurationService);
         this.addressService = new AddressService(configurationService, objectMapper);
         this.sessionService =
                 new SessionService(
@@ -104,11 +104,7 @@ public class IssueCredentialHandler
         this.eventProbe = new EventProbe();
         this.auditService =
                 new AuditService(
-                        SqsClient.builder()
-                                .credentialsProvider(
-                                        EnvironmentVariableCredentialsProvider.create())
-                                .region(Region.of(System.getenv("AWS_REGION")))
-                                .build(),
+                        clientProviderFactory.getSqsClient(),
                         configurationService,
                         objectMapper,
                         new AuditEventFactory(configurationService, Clock.systemUTC()));
@@ -167,6 +163,7 @@ public class IssueCredentialHandler
                             .toJSONObject());
         } catch (AccessTokenExpiredException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
                     OAuth2Error.ACCESS_DENIED
@@ -174,6 +171,7 @@ public class IssueCredentialHandler
                             .toJSONObject());
         } catch (SessionExpiredException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
                     OAuth2Error.ACCESS_DENIED
@@ -181,6 +179,7 @@ public class IssueCredentialHandler
                             .toJSONObject());
         } catch (SessionNotFoundException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+
             return ApiGatewayResponseGenerator.proxyJsonResponse(
                     OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
                     OAuth2Error.ACCESS_DENIED
@@ -233,8 +232,17 @@ public class IssueCredentialHandler
         return AccessToken.parse(token, AccessTokenType.BEARER);
     }
 
-    private VerifiableCredentialService getVerifiableCredentialService() {
-        Supplier<VerifiableCredentialService> factory = VerifiableCredentialService::new;
-        return factory.get();
+    private VerifiableCredentialService getVerifiableCredentialService(
+            ConfigurationService config) {
+
+        return new VerifiableCredentialService(
+                getSignedClaimSetJwt(config.getVerifiableCredentialKmsSigningKeyId()),
+                config,
+                getMapperWithCustomSerializers(),
+                new VerifiableCredentialClaimsSetBuilder(config, Clock.systemUTC()));
+    }
+
+    private SignedJWTFactory getSignedClaimSetJwt(String kmsSigningKeyId) {
+        return new SignedJWTFactory(new KMSSigner(kmsSigningKeyId));
     }
 }
