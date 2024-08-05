@@ -23,6 +23,14 @@ jobs:
       id-token: write
       contents: read
 
+  pact-tests:
+    name: Run Pact tests
+    uses: ./.github/workflows/run-pact-tests.yml
+    secrets:
+      pact-broker-host: ${{ secrets.PACT_BROKER_HOST }}
+      pact-broker-username: ${{ secrets.PACT_BROKER_USERNAME }}
+      pact-broker-password: ${{ secrets.PACT_BROKER_PASSWORD }}
+
   integration-tests:
     name: Run tests
     needs: deploy
