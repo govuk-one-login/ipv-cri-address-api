@@ -86,7 +86,7 @@ public class IssueCredentialHandler
     public IssueCredentialHandler() {
         ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
 
-        ConfigurationService configurationService =
+        ConfigurationService config =
                 new ConfigurationService(
                         clientProviderFactory.getSSMProvider(),
                         clientProviderFactory.getSecretsProvider());
@@ -96,18 +96,27 @@ public class IssueCredentialHandler
                         .registerModule(new Jdk8Module())
                         .registerModule(new JavaTimeModule());
 
-        this.verifiableCredentialService = getVerifiableCredentialService(configurationService);
-        this.addressService = new AddressService(configurationService, objectMapper);
+        String kmsSigningKeyId =
+                config.getCommonParameterValue("verifiableCredentialKmsSigningKeyId");
+        SignedJWTFactory signedJWTFactory = new SignedJWTFactory(new KMSSigner(kmsSigningKeyId));
+
+        this.verifiableCredentialService =
+                new VerifiableCredentialService(
+                        signedJWTFactory,
+                        config,
+                        getMapperWithCustomSerializers(),
+                        new VerifiableCredentialClaimsSetBuilder(config, Clock.systemUTC()));
+
+        this.addressService = new AddressService(config, objectMapper);
         this.sessionService =
-                new SessionService(
-                        configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
+                new SessionService(config, clientProviderFactory.getDynamoDbEnhancedClient());
         this.eventProbe = new EventProbe();
         this.auditService =
                 new AuditService(
                         clientProviderFactory.getSqsClient(),
-                        configurationService,
+                        config,
                         objectMapper,
-                        new AuditEventFactory(configurationService, Clock.systemUTC()));
+                        new AuditEventFactory(config, Clock.systemUTC()));
     }
 
     @Override
@@ -230,19 +239,5 @@ public class IssueCredentialHandler
                                                 ErrorResponse.MISSING_AUTHORIZATION_HEADER));
 
         return AccessToken.parse(token, AccessTokenType.BEARER);
-    }
-
-    private VerifiableCredentialService getVerifiableCredentialService(
-            ConfigurationService config) {
-
-        return new VerifiableCredentialService(
-                getSignedClaimSetJwt(config.getVerifiableCredentialKmsSigningKeyId()),
-                config,
-                getMapperWithCustomSerializers(),
-                new VerifiableCredentialClaimsSetBuilder(config, Clock.systemUTC()));
-    }
-
-    private SignedJWTFactory getSignedClaimSetJwt(String kmsSigningKeyId) {
-        return new SignedJWTFactory(new KMSSigner(kmsSigningKeyId));
     }
 }

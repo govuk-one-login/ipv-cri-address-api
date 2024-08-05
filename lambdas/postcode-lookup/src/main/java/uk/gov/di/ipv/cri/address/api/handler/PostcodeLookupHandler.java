@@ -78,11 +78,21 @@ public class PostcodeLookupHandler
                         clientProviderFactory.getSSMProvider(),
                         clientProviderFactory.getSecretsProvider());
 
-        this.postcodeLookupService = getPostcodeLookupService(configurationService);
+        HttpClient httpClient =
+                HttpClient.newBuilder()
+                        .version(HttpClient.Version.HTTP_2)
+                        .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                        .build();
+
+        this.postcodeLookupService =
+                new PostcodeLookupService(configurationService, httpClient, LogManager.getLogger());
+
         this.sessionService =
                 new SessionService(
                         configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
+
         this.eventProbe = new EventProbe();
+
         this.auditService =
                 new AuditService(
                         clientProviderFactory.getSqsClient(),
@@ -114,6 +124,7 @@ public class PostcodeLookupHandler
         try {
             SessionItem sessionItem = sessionService.validateSessionId(sessionId);
             eventProbe.log(Level.INFO, "found session");
+
             auditService.sendAuditEvent(
                     AuditEventType.REQUEST_SENT,
                     postcodeLookupService.getAuditEventContext(
@@ -171,18 +182,5 @@ public class PostcodeLookupHandler
                         metricErrorType,
                         POSTCODE_ERROR_MESSAGE,
                         e.getMessage()));
-    }
-
-    private PostcodeLookupService getPostcodeLookupService(
-            ConfigurationService configurationService) {
-        return new PostcodeLookupService(
-                configurationService, getHttpClient(), LogManager.getLogger());
-    }
-
-    private HttpClient getHttpClient() {
-        return HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
-                .build();
     }
 }
