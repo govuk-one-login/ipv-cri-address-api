@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
@@ -30,7 +31,9 @@ import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
+import java.net.http.HttpClient;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +67,8 @@ public class PostcodeLookupHandler
     protected static final String POSTCODE_ERROR_TYPE = "postcode_lookup_error_type";
     protected static final String POSTCODE_ERROR_MESSAGE = "postcode_lookup_error_message";
 
+    public static final long CONNECTION_TIMEOUT_SECONDS = 15;
+
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupHandler() {
         ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
@@ -73,7 +78,7 @@ public class PostcodeLookupHandler
                         clientProviderFactory.getSSMProvider(),
                         clientProviderFactory.getSecretsProvider());
 
-        this.postcodeLookupService = new PostcodeLookupService();
+        this.postcodeLookupService = getPostcodeLookupService(configurationService);
         this.sessionService =
                 new SessionService(
                         configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
@@ -166,5 +171,18 @@ public class PostcodeLookupHandler
                         metricErrorType,
                         POSTCODE_ERROR_MESSAGE,
                         e.getMessage()));
+    }
+
+    private PostcodeLookupService getPostcodeLookupService(
+            ConfigurationService configurationService) {
+        return new PostcodeLookupService(
+                configurationService, getHttpClient(), LogManager.getLogger());
+    }
+
+    private HttpClient getHttpClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                .build();
     }
 }

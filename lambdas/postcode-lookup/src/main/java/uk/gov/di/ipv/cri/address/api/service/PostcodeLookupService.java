@@ -2,7 +2,6 @@ package uk.gov.di.ipv.cri.address.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
@@ -16,14 +15,12 @@ import uk.gov.di.ipv.cri.address.api.models.Dpa;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
 import uk.gov.di.ipv.cri.address.api.models.Result;
-import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedBuilder;
-import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -44,6 +41,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
+import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.CONNECTION_TIMEOUT_SECONDS;
 
 public class PostcodeLookupService {
     private static final String POSTCODE_LOOKUP_NO_SUCH_FIELD_ERROR =
@@ -59,20 +57,6 @@ public class PostcodeLookupService {
     private final Logger log;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConfigurationService configurationService;
-    private static final long CONNECTION_TIMEOUT_SECONDS = 15;
-
-    @ExcludeFromGeneratedCoverageReport
-    public PostcodeLookupService() {
-        ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
-
-        this.configurationService =
-                new ConfigurationService(
-                        clientProviderFactory.getSSMProvider(),
-                        clientProviderFactory.getSecretsProvider());
-
-        this.client = getHttpClient();
-        this.log = LogManager.getLogger();
-    }
 
     public PostcodeLookupService(
             ConfigurationService configurationService, HttpClient client, Logger log) {
@@ -117,13 +101,6 @@ public class PostcodeLookupService {
                 PersonIdentityDetailedBuilder.builder().withAddresses(List.of(address)).build(),
                 requestHeaders,
                 sessionItem);
-    }
-
-    private static HttpClient getHttpClient() {
-        return HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
-                .build();
     }
 
     private HttpRequest createHttpRequest(String postcode)
