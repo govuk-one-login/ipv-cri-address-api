@@ -4,16 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
-import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
-import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
-import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
 import java.text.ParseException;
-import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -24,34 +20,12 @@ import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.DI_CONTEXT;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_ADDRESS_KEY;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.W3_BASE_CONTEXT;
-import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 
 public class VerifiableCredentialService {
     private final VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder;
     private final SignedJWTFactory signedJwtFactory;
     private final ConfigurationService configurationService;
     private final ObjectMapper objectMapper;
-
-    @ExcludeFromGeneratedCoverageReport
-    public VerifiableCredentialService() {
-        ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
-
-        this.configurationService =
-                new ConfigurationService(
-                        clientProviderFactory.getSSMProvider(),
-                        clientProviderFactory.getSecretsProvider());
-
-        this.signedJwtFactory =
-                new SignedJWTFactory(
-                        new KMSSigner(
-                                configurationService.getCommonParameterValue(
-                                        "verifiableCredentialKmsSigningKeyId")));
-        this.objectMapper = getMapperWithCustomSerializers();
-
-        this.vcClaimsSetBuilder =
-                new VerifiableCredentialClaimsSetBuilder(
-                        this.configurationService, Clock.systemUTC());
-    }
 
     public VerifiableCredentialService(
             SignedJWTFactory signedClaimSetJwt,
