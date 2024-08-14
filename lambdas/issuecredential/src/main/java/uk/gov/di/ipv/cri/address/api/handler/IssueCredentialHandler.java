@@ -4,7 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -47,6 +46,7 @@ import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +63,8 @@ public class IssueCredentialHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     public static final String AUTHORIZATION_HEADER_KEY = "Authorization";
     public static final String ADDRESS_CREDENTIAL_ISSUER = "address_credential_issuer";
+    public static final String NO_SUCH_ALGORITHM_ERROR =
+            "The algorithm name provided is incorrect or misspelled, should be ES256.";
     private final VerifiableCredentialService verifiableCredentialService;
     private final AddressService addressService;
     private final SessionService sessionService;
@@ -151,11 +153,7 @@ public class IssueCredentialHandler
                     OAuth2Error.SERVER_ERROR
                             .appendDescription(" - " + ex.awsErrorDetails().errorMessage())
                             .toJSONObject());
-        } catch (CredentialRequestException
-                | ParseException
-                | JOSEException
-                | JsonProcessingException
-                | java.text.ParseException e) {
+        } catch (CredentialRequestException | ParseException | JOSEException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
 
             return ApiGatewayResponseGenerator.proxyJsonResponse(
@@ -194,6 +192,11 @@ public class IssueCredentialHandler
                     OAuth2Error.ACCESS_DENIED
                             .appendDescription(" - " + SESSION_NOT_FOUND.getErrorSummary())
                             .toJSONObject());
+        } catch (NoSuchAlgorithmException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    HttpStatusCode.INTERNAL_SERVER_ERROR, NO_SUCH_ALGORITHM_ERROR);
         }
     }
 

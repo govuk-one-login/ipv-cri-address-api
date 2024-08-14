@@ -154,11 +154,12 @@ public class PreLambdaHandler implements HttpHandler {
             LOGGER.info("getting response body");
             String body = response.getBody();
             if (response.getStatusCode() == 200) {
-                body = reOrderJwt(response.getBody());
+                body = reOrderJwt(body);
             }
-            exchange.sendResponseHeaders(statusCode, response.getBody().length());
+            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(statusCode, bodyBytes.length);
             try (OutputStream os = exchange.getResponseBody()) {
-                os.write(body.getBytes());
+                os.write(bodyBytes);
             }
         }
     }

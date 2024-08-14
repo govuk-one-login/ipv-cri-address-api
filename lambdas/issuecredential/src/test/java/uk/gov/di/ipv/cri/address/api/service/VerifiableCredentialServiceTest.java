@@ -31,6 +31,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -49,7 +50,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
             new JWTClaimsSet.Builder().subject("test").issuer("test").build();
     private static final long DEFAULT_JWT_TTL = 6L;
     private static final String DEFAULT_JWT_TTL_UNIT = "MONTHS";
-    private static final String VC_ISSUER = "vc-issuer";
+    private static final String VC_ISSUER = "dummyAddressComponentId";
     private static final String SUBJECT = "subject";
     private final ObjectMapper objectMapper = getMapperWithCustomSerializers();
     @Mock private ConfigurationService mockConfigurationService;
@@ -71,18 +72,20 @@ class VerifiableCredentialServiceTest implements TestFixtures {
 
     @Test
     void shouldReturnAVerifiedCredentialWhenGivenCanonicalAddresses()
-            throws JOSEException, ParseException, JsonProcessingException {
+            throws JOSEException, NoSuchAlgorithmException {
         initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
+        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+                .thenReturn(EC_PRIVATE_KEY_1);
 
         var canonicalAddresses = List.of(mock(CanonicalAddress.class));
 
         verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                 SUBJECT, canonicalAddresses);
 
-        verify(mockSignedClaimSetJwt)
-                .createSignedJwt(objectMapper.writeValueAsString(TEST_CLAIMS_SET));
+        verify(mockSignedClaimSetJwt).createSignedJwt(TEST_CLAIMS_SET, VC_ISSUER, EC_PRIVATE_KEY_1);
     }
 
     @Test
@@ -92,6 +95,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+                .thenReturn(EC_PRIVATE_KEY_1);
 
         CanonicalAddress address = new CanonicalAddress();
         address.setUprn(72262801L);
@@ -115,6 +120,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         SignedJWT signedJWT =
                 verifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses);
+        System.out.println(objectMapper.writeValueAsString(signedJWT));
         assertTrue(signedJWT.verify(new ECDSAVerifier(ECKey.parse(TestFixtures.EC_PUBLIC_JWK_1))));
 
         verify(mockVcClaimSetBuilder).build();
@@ -148,7 +154,6 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     @Test
     void shouldGetAuditEventContext() {
         when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
-
         Map<String, Object> auditEventContext =
                 verifiableCredentialService.getAuditEventExtensions(
                         List.of(new CanonicalAddress()));
@@ -159,11 +164,47 @@ class VerifiableCredentialServiceTest implements TestFixtures {
 
     @Test
     void shouldGetAuditEventContextWithZeroAddressesEnteredWhenNullProvided() {
-        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn("vc-issuer");
-
+        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
         Map<String, Object> auditEventContext =
                 verifiableCredentialService.getAuditEventExtensions(null);
         assertEquals(0, auditEventContext.get("addressesEntered"));
+    }
+
+    @Test
+    void shouldThrowNoSuchAlgorithmExceptionWhenTheWrongKeyAlgorithmIsUsed()
+            throws NoSuchAlgorithmException, JOSEException {
+        var noSuchAlgorithmException = new NoSuchAlgorithmException("Incorrect Algorithm");
+
+        when(mockSignedClaimSetJwt.createSignedJwt(any(), any(), any()))
+                .thenThrow(noSuchAlgorithmException);
+
+        initMockConfigurationService();
+        initMockVCClaimSetBuilder();
+        when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
+
+        CanonicalAddress address = new CanonicalAddress();
+        address.setUprn(72262801L);
+        address.setBuildingNumber("8");
+        address.setStreetName("GRANGE FIELDS WAY");
+        address.setAddressLocality("LEEDS");
+        address.setPostalCode("LS10 4QL");
+        address.setAddressCountry("GB");
+        address.setValidFrom(LocalDate.of(2010, 2, 26));
+        address.setValidUntil(LocalDate.of(2021, 1, 16));
+        List<CanonicalAddress> canonicalAddresses = List.of(address);
+
+        verifiableCredentialService =
+                new VerifiableCredentialService(
+                        mockSignedClaimSetJwt,
+                        mockConfigurationService,
+                        objectMapper,
+                        mockVcClaimSetBuilder);
+
+        assertThrows(
+                NoSuchAlgorithmException.class,
+                () ->
+                        verifiableCredentialService.generateSignedVerifiableCredentialJwt(
+                                SUBJECT, canonicalAddresses));
     }
 
     private void initMockVCClaimSetBuilder() {

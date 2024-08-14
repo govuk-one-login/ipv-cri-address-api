@@ -62,6 +62,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.handler.pact.util.JwtSigner.getEcdsaSigner;
 import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
+import static uk.gov.di.ipv.cri.address.api.service.fixtures.TestFixtures.EC_PRIVATE_KEY_1;
 import static uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder.ENV_VAR_FEATURE_FLAG_VC_CONTAINS_UNIQUE_ID;
 
 @Tag("Pact")
@@ -131,6 +132,8 @@ class SingleAddressBuildingNameVcTest implements DummyStates, SingleAddressBuild
                 new VerifiableCredentialClaimsSetBuilder(mockConfigurationService, clock);
         claimsSetBuilder.overrideJti("dummyJti");
 
+        when(mockConfigurationService.getVerifiableCredentialIssuer())
+                .thenReturn("dummyAddressComponentId");
         verifiableCredentialService =
                 new VerifiableCredentialService(
                         signedJwtFactory, mockConfigurationService, objectMapper, claimsSetBuilder);
@@ -161,9 +164,9 @@ class SingleAddressBuildingNameVcTest implements DummyStates, SingleAddressBuild
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(getSessionItem());
         AddressItem addressItem = new AddressItem();
         addressItem.setAddresses(getCanonicalAddresses());
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+                .thenReturn(EC_PRIVATE_KEY_1);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
-        when(mockConfigurationService.getVerifiableCredentialIssuer())
-                .thenReturn("dummyAddressComponentId");
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
         when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
     }

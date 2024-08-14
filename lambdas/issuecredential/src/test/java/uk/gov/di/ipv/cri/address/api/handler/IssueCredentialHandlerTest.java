@@ -54,7 +54,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.text.ParseException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -77,6 +76,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler.ADDRESS_CREDENTIAL_ISSUER;
+import static uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler.NO_SUCH_ALGORITHM_ERROR;
 import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 import static uk.gov.di.ipv.cri.address.api.service.fixtures.TestFixtures.EC_PRIVATE_KEY_1;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR;
@@ -95,7 +95,7 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldReturn200OkWhenIssueCredentialRequestIsValid()
-            throws JOSEException, SqsException, ParseException, JsonProcessingException {
+            throws JOSEException, SqsException, NoSuchAlgorithmException {
         ArgumentCaptor<AuditEventContext> endEventAuditEventContextArgCaptor =
                 ArgumentCaptor.forClass(AuditEventContext.class);
         ArgumentCaptor<AuditEventContext> vcEventAuditEventContextArgCaptor =
@@ -162,7 +162,6 @@ class IssueCredentialHandlerTest {
         assertEquals(event.getHeaders(), endAuditEventContext.getRequestHeaders());
         assertEquals(sessionItem, endAuditEventContext.getSessionItem());
         assertEquals(sessionItem, endEventAuditEventContextArgCaptor.getValue().getSessionItem());
-
         assertEquals(
                 ContentType.APPLICATION_JWT.getType(), response.getHeaders().get("Content-Type"));
 
@@ -216,6 +215,8 @@ class IssueCredentialHandlerTest {
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
         ConfigurationService mockConfigurationService = mock(ConfigurationService.class);
         when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn("dummy-issuer");
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+                .thenReturn(EC_PRIVATE_KEY_1);
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
         when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
         ObjectMapper objectMapper = getMapperWithCustomSerializers();
@@ -277,7 +278,7 @@ class IssueCredentialHandlerTest {
 
     @Test
     void shouldThrowJOSEExceptionWhenGenerateVerifiableCredentialIsMalformed()
-            throws JsonProcessingException, JOSEException, SqsException, ParseException {
+            throws JOSEException, SqsException, NoSuchAlgorithmException, JsonProcessingException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         AccessToken accessToken = new BearerAccessToken();
         event.withHeaders(
@@ -323,6 +324,55 @@ class IssueCredentialHandlerTest {
         assertThat(
                 responseBody.get("error_description").toString(),
                 containsString(VERIFIABLE_CREDENTIAL_ERROR.getErrorSummary()));
+        verify(mockEventProbe).log(INFO, "found session");
+        verifyNoMoreInteractions(mockEventProbe);
+    }
+
+    @Test
+    void shouldThrowNoSuchAlgorithmExceptionWhenTheWrongKeyAlgorithmIsUsed()
+            throws JOSEException, SqsException, NoSuchAlgorithmException {
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
+        setRequestBodyAsPlainJWT(event);
+        when(mockEventProbe.log(INFO, "found session")).thenReturn(mockEventProbe);
+        setupEventProbeExpectedErrorBehaviour();
+        var noSuchAlgorithmException = new NoSuchAlgorithmException("Incorrect Algorithm");
+
+        final UUID sessionId = UUID.randomUUID();
+        CanonicalAddress address = new CanonicalAddress();
+        address.setBuildingNumber("114");
+        address.setStreetName("Wellington Street");
+        address.setPostalCode("LS1 1BA");
+        AddressItem addressItem = new AddressItem();
+        List<CanonicalAddress> canonicalAddresses = List.of(address);
+
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSubject(SUBJECT);
+        sessionItem.setSessionId(sessionId);
+        addressItem.setAddresses(canonicalAddresses);
+
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
+        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
+                        SUBJECT, canonicalAddresses))
+                .thenThrow(noSuchAlgorithmException);
+
+        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockVerifiableCredentialService)
+                .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
+        verify(mockEventProbe).log(Level.ERROR, noSuchAlgorithmException);
+        verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+        verifyNoMoreInteractions(mockVerifiableCredentialService);
+        verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
+        assertEquals(HttpStatusCode.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertThat(response.getBody(), containsString(NO_SUCH_ALGORITHM_ERROR));
         verify(mockEventProbe).log(INFO, "found session");
         verifyNoMoreInteractions(mockEventProbe);
     }
