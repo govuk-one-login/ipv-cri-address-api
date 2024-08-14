@@ -1,6 +1,6 @@
 Feature: Address API happy path test
 
-  @address_api_happy_with_header
+  @address_api_happy_with_header @test
   Scenario: Basic Address API journey with TXMA event header
     Given user has the test-identity 197 in the form of a signed JWT string
 
