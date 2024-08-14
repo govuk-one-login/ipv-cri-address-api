@@ -4,6 +4,15 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.util.Base64URL;
+import com.nimbusds.jwt.JWT;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTParser;
+import com.nimbusds.jwt.SignedJWT;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -17,12 +26,17 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
+import static uk.gov.di.ipv.cri.address.api.handler.pact.util.JwtSigner.getEcdsaSigner;
+import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 
 public class PreLambdaHandler implements HttpHandler {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -130,19 +144,41 @@ public class PreLambdaHandler implements HttpHandler {
     }
 
     private void translateResponse(APIGatewayProxyResponseEvent response, HttpExchange exchange)
-            throws IOException {
+            throws IOException, ParseException, InvalidKeySpecException, NoSuchAlgorithmException,
+                    JOSEException {
 
         Integer statusCode = response.getStatusCode();
         Headers serverResponseHeaders = exchange.getResponseHeaders();
         response.getHeaders().forEach(serverResponseHeaders::set);
         if (!response.getBody().isEmpty()) {
             LOGGER.info("getting response body");
-
             String body = response.getBody();
+            if (response.getStatusCode() == 200) {
+                body = reOrderJwt(response.getBody());
+            }
             exchange.sendResponseHeaders(statusCode, response.getBody().length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
             }
         }
+    }
+
+    public String reOrderJwt(String body)
+            throws ParseException, JOSEException, InvalidKeySpecException, NoSuchAlgorithmException,
+                    JsonProcessingException {
+        JWT jwt = JWTParser.parse(body);
+
+        ObjectMapper objectMapper = getMapperWithCustomSerializers();
+        JWSHeader jwsHeader = (JWSHeader) jwt.getHeader();
+        String headerString = objectMapper.writeValueAsString(jwsHeader);
+        String claimSetString = objectMapper.writeValueAsString(jwt.getJWTClaimsSet());
+        SignedJWT signedJWT = new SignedJWT(jwsHeader, JWTClaimsSet.parse(claimSetString));
+        signedJWT.sign(getEcdsaSigner());
+
+        Base64URL header = Base64URL.encode(headerString);
+        Base64URL payload = Base64URL.encode(claimSetString);
+        Base64URL signature = signedJWT.getSignature();
+
+        return new SignedJWT(header, payload, signature).serialize();
     }
 }

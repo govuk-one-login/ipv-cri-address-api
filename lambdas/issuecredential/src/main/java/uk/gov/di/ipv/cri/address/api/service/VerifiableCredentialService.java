@@ -54,7 +54,7 @@ public class VerifiableCredentialService {
                                 Map.of(VC_ADDRESS_KEY, convertAddresses(canonicalAddresses)))
                         .build();
 
-        return signedJwtFactory.createSignedJwt(objectMapper.writeValueAsString(claimsSet));
+        return signedJwtFactory.createSignedJwt(claimsSet);
     }
 
     public Map<String, Object> getAuditEventExtensions(List<CanonicalAddress> addresses) {
