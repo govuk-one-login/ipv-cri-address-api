@@ -95,6 +95,7 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
+        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
         when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
                 .thenReturn(EC_PRIVATE_KEY_1);
 

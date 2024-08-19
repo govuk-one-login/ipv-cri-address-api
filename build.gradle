@@ -17,7 +17,7 @@ ext {
 		mockito                  : "4.3.1",
 		glassfish_version        : "3.0.3",
 		powertools_version       : "1.12.3",
-		cri_common_lib           : "3.0.4",
+		cri_common_lib           : "3.0.5",
 		pact_provider_version	 : "4.5.11",
 		webcompere_version       : "2.1.6",
 		slf4j_log4j12_version    : "2.0.13", // For contract test debug
