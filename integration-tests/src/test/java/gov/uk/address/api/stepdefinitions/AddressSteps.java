@@ -141,7 +141,9 @@ public class AddressSteps {
         final var payloadValue = decodedJWT.getPayload().toString();
         final var payload = objectMapper.readTree(payloadValue);
 
-        assertEquals("{\"typ\":\"JWT\",\"alg\":\"ES256\"}", header);
+        assertEquals(
+                "{\"typ\":\"JWT\",\"alg\":\"ES256\",\"kid\":\"did:web:review-a.dev.account.gov.uk#1753cf0b1e3647d91719820b74cf0c4f08782d0f072ebaf5ec4ee0873436a7ab\"}",
+                header);
 
         assertNotNull(payload);
         assertNotNull(payload.get("nbf"));
