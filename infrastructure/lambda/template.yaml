@@ -274,12 +274,6 @@ Resources:
               Principal: '*'
               Resource:
                 - 'execute-api:/*'
-              Condition:
-                StringNotEquals:
-                  aws:SourceVpce: !If
-                    - IsDevEnvironment
-                    - vpce-082cab7c78139eb54
-                    - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
   DevOnlyAddressApi:
     Type: AWS::Serverless::Api
@@ -745,7 +739,6 @@ Resources:
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
       InsufficientDataActions: []
-      Dimensions: []
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
       Threshold: 1
