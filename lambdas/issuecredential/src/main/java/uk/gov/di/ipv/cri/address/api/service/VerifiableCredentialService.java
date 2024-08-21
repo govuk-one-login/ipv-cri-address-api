@@ -56,7 +56,8 @@ public class VerifiableCredentialService {
         return signedJwtFactory.createSignedJwt(
                 claimsSet,
                 configurationService.getVerifiableCredentialIssuer(),
-                configurationService.getVerifiableCredentialKmsSigningKeyId());
+                configurationService.getCommonParameterValue(
+                        "verifiableCredentialKmsSigningKeyId"));
     }
 
     public Map<String, Object> getAuditEventExtensions(List<CanonicalAddress> addresses) {

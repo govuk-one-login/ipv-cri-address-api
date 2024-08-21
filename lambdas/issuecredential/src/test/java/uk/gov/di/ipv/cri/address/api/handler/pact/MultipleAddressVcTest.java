@@ -165,7 +165,8 @@ class MultipleAddressVcTest implements DummyStates, MultipleAddressStates {
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("dummyAddressComponentId");
-        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+        when(mockConfigurationService.getCommonParameterValue(
+                        "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
         when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");

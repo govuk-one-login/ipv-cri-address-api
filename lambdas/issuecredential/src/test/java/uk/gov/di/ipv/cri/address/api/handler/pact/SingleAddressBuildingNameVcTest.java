@@ -164,7 +164,8 @@ class SingleAddressBuildingNameVcTest implements DummyStates, SingleAddressBuild
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(getSessionItem());
         AddressItem addressItem = new AddressItem();
         addressItem.setAddresses(getCanonicalAddresses());
-        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+        when(mockConfigurationService.getCommonParameterValue(
+                        "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);

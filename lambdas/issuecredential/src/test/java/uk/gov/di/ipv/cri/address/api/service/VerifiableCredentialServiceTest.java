@@ -77,7 +77,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
         when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
-        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+        when(mockConfigurationService.getCommonParameterValue(
+                        "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
 
         var canonicalAddresses = List.of(mock(CanonicalAddress.class));
@@ -96,7 +97,8 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
         when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
-        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
+        when(mockConfigurationService.getCommonParameterValue(
+                        "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
 
         CanonicalAddress address = new CanonicalAddress();
