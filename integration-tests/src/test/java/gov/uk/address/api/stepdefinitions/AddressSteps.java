@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
+import gov.uk.address.api.util.SsmParamsHelper;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -140,8 +141,16 @@ public class AddressSteps {
         final var header = decodedJWT.getHeader().toString();
         final var payloadValue = decodedJWT.getPayload().toString();
         final var payload = objectMapper.readTree(payloadValue);
+        String keyId = SsmParamsHelper.getParaValue("verifiableCredentialKmsSigningKeyId");
+        String issuer = SsmParamsHelper.getParaValue("verifiable-credential/issuer");
 
-        assertEquals("{\"typ\":\"JWT\",\"alg\":\"ES256\"}", header);
+        assertEquals(
+                "{\"typ\":\"JWT\",\"alg\":\"ES256\",\"kid\":\"did:web:"
+                        + issuer
+                        + "#"
+                        + keyId
+                        + "\"}",
+                header);
 
         assertNotNull(payload);
         assertNotNull(payload.get("nbf"));
