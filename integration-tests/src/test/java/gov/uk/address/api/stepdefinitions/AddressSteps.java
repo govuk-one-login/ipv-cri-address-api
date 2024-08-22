@@ -137,11 +137,15 @@ public class AddressSteps {
     }
 
     private void makeAssertions(SignedJWT decodedJWT) throws IOException {
-        final var header = decodedJWT.getHeader().toString();
+        final var header = objectMapper.readTree(decodedJWT.getHeader().toString());
         final var payloadValue = decodedJWT.getPayload().toString();
         final var payload = objectMapper.readTree(payloadValue);
 
-        assertEquals("{\"typ\":\"JWT\",\"alg\":\"ES256\"}", header);
+        assertEquals("JWT", header.at("/typ").asText());
+        assertEquals("ES256", header.at("/alg").asText());
+        assertEquals(
+                "did:web:review-a.dev.account.gov.uk#77618cc9ebd6909cbf0b50b00126f8e7feb5dbfdb64e6c623c01a6cafca47e41",
+                header.at("/kid").asText());
 
         assertNotNull(payload);
         assertNotNull(payload.get("nbf"));

@@ -62,6 +62,7 @@ import java.util.UUID;
 import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.handler.pact.util.JwtSigner.getEcdsaSigner;
 import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
+import static uk.gov.di.ipv.cri.address.api.service.fixtures.TestFixtures.EC_PRIVATE_KEY_1;
 import static uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder.ENV_VAR_FEATURE_FLAG_VC_CONTAINS_UNIQUE_ID;
 
 @Tag("Pact")
@@ -163,6 +164,9 @@ class SingleAddressBuildNumberVcTest implements DummyStates, SingleAddressBuildi
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("dummyAddressComponentId");
+        when(mockConfigurationService.getCommonParameterValue(
+                        "verifiableCredentialKmsSigningKeyId"))
+                .thenReturn(EC_PRIVATE_KEY_1);
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
         when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
     }

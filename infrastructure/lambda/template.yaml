@@ -745,8 +745,8 @@ Resources:
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
       InsufficientDataActions: []
-      Dimensions: []
       DatapointsToAlarm: 3
+      Dimensions: []
       EvaluationPeriods: 3
       Threshold: 1
       ComparisonOperator: GreaterThanThreshold

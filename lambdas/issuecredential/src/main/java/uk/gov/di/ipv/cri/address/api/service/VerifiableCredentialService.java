@@ -1,6 +1,5 @@
 package uk.gov.di.ipv.cri.address.api.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
@@ -9,7 +8,7 @@ import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
-import java.text.ParseException;
+import java.security.NoSuchAlgorithmException;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +39,7 @@ public class VerifiableCredentialService {
 
     public SignedJWT generateSignedVerifiableCredentialJwt(
             String subject, List<CanonicalAddress> canonicalAddresses)
-            throws JOSEException, JsonProcessingException, ParseException {
+            throws NoSuchAlgorithmException, JOSEException {
         long jwtTtl = this.configurationService.getMaxJwtTtl();
         ChronoUnit jwtTtlUnit =
                 ChronoUnit.valueOf(this.configurationService.getParameterValue("JwtTtlUnit"));
@@ -54,7 +53,11 @@ public class VerifiableCredentialService {
                                 Map.of(VC_ADDRESS_KEY, convertAddresses(canonicalAddresses)))
                         .build();
 
-        return signedJwtFactory.createSignedJwt(objectMapper.writeValueAsString(claimsSet));
+        return signedJwtFactory.createSignedJwt(
+                claimsSet,
+                configurationService.getVerifiableCredentialIssuer(),
+                configurationService.getCommonParameterValue(
+                        "verifiableCredentialKmsSigningKeyId"));
     }
 
     public Map<String, Object> getAuditEventExtensions(List<CanonicalAddress> addresses) {

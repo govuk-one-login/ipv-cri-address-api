@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jwt.JWTClaimsSet;
 import uk.gov.di.ipv.cri.address.api.objectmapper.mixin.AddressMixIn;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
@@ -27,6 +28,7 @@ public class CustomObjectMapper {
 
         SimpleModule module = new SimpleModule();
         module.addSerializer(JWTClaimsSet.class, new JWTClaimsSetSerializer());
+        module.addSerializer(JWSHeader.class, new JWSHeaderSerializer());
         objectMapper.registerModule(module);
 
         return objectMapper;
