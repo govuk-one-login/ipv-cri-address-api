@@ -84,14 +84,15 @@ public class PostcodeLookupHandler
                         .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                         .build();
 
+        this.eventProbe = new EventProbe();
+
         this.postcodeLookupService =
-                new PostcodeLookupService(configurationService, httpClient, LogManager.getLogger());
+                new PostcodeLookupService(
+                        configurationService, httpClient, LogManager.getLogger(), eventProbe);
 
         this.sessionService =
                 new SessionService(
                         configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
-
-        this.eventProbe = new EventProbe();
 
         this.auditService =
                 new AuditService(

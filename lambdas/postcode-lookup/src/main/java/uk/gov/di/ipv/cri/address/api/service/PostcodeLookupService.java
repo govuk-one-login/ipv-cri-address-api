@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.tracing.Tracing;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
@@ -21,6 +22,7 @@ import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.PersonIdentityDetailedBuilder;
+import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -57,12 +59,17 @@ public class PostcodeLookupService {
     private final Logger log;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ConfigurationService configurationService;
+    private final EventProbe eventProbe;
 
     public PostcodeLookupService(
-            ConfigurationService configurationService, HttpClient client, Logger log) {
+            ConfigurationService configurationService,
+            HttpClient client,
+            Logger log,
+            EventProbe eventProbe) {
         this.configurationService = configurationService;
         this.client = client;
         this.log = log;
+        this.eventProbe = eventProbe;
     }
 
     @Tracing
@@ -73,7 +80,19 @@ public class PostcodeLookupService {
         this.validatePostCode(postcode);
         // Create our http request
         HttpRequest request = createHttpRequest(postcode);
+        String uri = request.uri().toString();
+
+        long startTime = System.nanoTime();
         HttpResponse<String> response = sendHttpRequest(request);
+        long endTime = System.nanoTime();
+        long totalTimeInMs = (endTime - startTime) / 1000000;
+        log.info(
+                "API response received: url={}, status={}, latencyInMs={}",
+                uri,
+                response.statusCode(),
+                totalTimeInMs);
+
+        eventProbe.counterMetric("lookup_postcode_duration", totalTimeInMs, Unit.MILLISECONDS);
 
         switch (response.statusCode()) {
             case HttpStatusCode.OK:
