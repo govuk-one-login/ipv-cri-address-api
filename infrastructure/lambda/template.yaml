@@ -329,7 +329,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   PublicAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -344,7 +344,7 @@ Resources:
     Condition: IsNotDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
-      RetentionInDays: 365
+      RetentionInDays: 30
 
   DevOnlyAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
