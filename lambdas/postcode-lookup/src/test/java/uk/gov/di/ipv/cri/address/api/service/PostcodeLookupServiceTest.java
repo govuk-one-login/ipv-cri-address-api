@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
+import software.amazon.cloudwatchlogs.emf.model.Unit;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
@@ -22,6 +23,7 @@ import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeValidationException;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
 import java.io.IOException;
 import java.net.URI;
@@ -42,7 +44,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.contains;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,8 +52,29 @@ class PostcodeLookupServiceTest {
     @Mock private HttpResponse<String> mockResponse;
     @Spy private HttpClient httpClient;
     @Mock private Logger log;
+    @Mock private EventProbe eventProbe;
     @Captor private ArgumentCaptor<HttpRequest> postCodeRequest;
     @InjectMocks private PostcodeLookupService postcodeLookupService;
+
+    @Test
+    void shouldLogAPILatency() throws IOException, InterruptedException {
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+                .thenReturn("http://localhost:8080/");
+        when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
+        when(mockResponse.body())
+                .thenReturn(
+                        "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"BUILDING_NUMBER\":\"TESTADDRESS\",\"THOROUGHFARE_NAME\":\"TESTSTREET\",\"POST_TOWN\":\"TESTTOWN\",\"POSTCODE\":\"ZZ11ZZ\",\"RPC\":\"1\",\"X_COORDINATE\":123456.78,\"Y_COORDINATE\":234567.89,\"STATUS\":\"APPROVED\",\"LOGICAL_STATUS_CODE\":\"1\",\"CLASSIFICATION_CODE\":\"RD03\",\"CLASSIFICATION_CODE_DESCRIPTION\":\"Semi-Detached\",\"LOCAL_CUSTODIAN_CODE\":1234,\"LOCAL_CUSTODIAN_CODE_DESCRIPTION\":\"TESTTOWN\",\"COUNTRY_CODE\":\"E\",\"COUNTRY_CODE_DESCRIPTION\":\"ThisrecordiswithinEngland\",\"POSTAL_ADDRESS_CODE\":\"D\",\"POSTAL_ADDRESS_CODE_DESCRIPTION\":\"ArecordwhichislinkedtoPAF\",\"BLPU_STATE_CODE\":\"2\",\"BLPU_STATE_CODE_DESCRIPTION\":\"Inuse\",\"TOPOGRAPHY_LAYER_TOID\":\"osgb12345567890\",\"LAST_UPDATE_DATE\":\"10/02/2016\",\"ENTRY_DATE\":\"12/01/2000\",\"BLPU_STATE_DATE\":\"15/06/2009\",\"LANGUAGE\":\"EN\",\"MATCH\":1.0,\"MATCH_DESCRIPTION\":\"EXACT\",\"DELIVERY_POINT_SUFFIX\":\"1A\"}}]}");
+
+        when(httpClient.send(
+                        any(HttpRequest.class),
+                        ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(mockResponse);
+
+        postcodeLookupService.lookupPostcode("ZZ1 1ZZ");
+
+        verify(eventProbe, times(1))
+                .counterMetric("lookup_postcode_duration", 0, Unit.MILLISECONDS);
+    }
 
     @Nested
     class PostCodeLookUpServiceRequestExceptionTest {
@@ -275,7 +297,12 @@ class PostcodeLookupServiceTest {
                     .thenReturn(mockResponse);
 
             assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
-            verifyNoInteractions(log);
+            verify(log, times(1))
+                    .info(
+                            "API response received: url={}, status={}, latencyInMs={}",
+                            "http://localhost:8080/?postcode=ZZ1%201ZZ&key",
+                            HttpStatusCode.OK,
+                            0L);
         }
 
         @Test
