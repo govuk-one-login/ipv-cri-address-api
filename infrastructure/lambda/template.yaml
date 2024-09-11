@@ -838,6 +838,12 @@ Resources:
       Dimensions:
         - Name: ApiName
           Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+        - Name: Method
+          Value: GET
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /postcode-lookup/{postcode}
       Statistic: Sum
       Unit: Count
       Period: 60
@@ -886,6 +892,12 @@ Resources:
       Dimensions:
         - Name: ApiName
           Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+        - Name: Method
+          Value: PUT
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /address
       Statistic: Sum
       Unit: Count
       Period: 60
@@ -934,6 +946,12 @@ Resources:
       Dimensions:
         - Name: ApiName
           Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+        - Name: Method
+          Value: GET
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /addresses
       Statistic: Sum
       Unit: Count
       Period: 60
