@@ -495,6 +495,7 @@ Resources:
       DeploymentPreference:
         Alarms:
           - !Ref IssueCredentialFunctionCanaryErrors
+          - !Ref IssueCredentialFunctionCanary5xxErrors
       CodeUri: ../../lambdas/issuecredential
       Environment:
         Variables:
@@ -978,6 +979,34 @@ Resources:
         - Name: ExecutedVersion
           Value: !GetAtt IssueCredentialFunction.Version.Version
       Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  IssueCredentialFunctionCanary5xxErrors:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: false
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "IssueCredential Lambda returning 5xx response."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-PublicAddressApi"
+        - Name: Method
+          Value: POST
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /credential/issue
       Statistic: Sum
       Unit: Count
       Period: 60
