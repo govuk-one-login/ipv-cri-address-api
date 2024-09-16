@@ -802,7 +802,7 @@ Resources:
   PostcodeLookupFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
@@ -828,7 +828,7 @@ Resources:
   PostcodeLookupFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
@@ -856,7 +856,7 @@ Resources:
   AddressFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
@@ -882,7 +882,7 @@ Resources:
   AddressFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
@@ -910,7 +910,7 @@ Resources:
   GetAddressesFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
@@ -936,7 +936,7 @@ Resources:
   GetAddressesFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
@@ -964,7 +964,7 @@ Resources:
   IssueCredentialFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
@@ -990,7 +990,7 @@ Resources:
   IssueCredentialFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      ActionsEnabled: false
+      ActionsEnabled: true
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
       OKActions:
