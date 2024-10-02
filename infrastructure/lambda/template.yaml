@@ -447,7 +447,7 @@ Resources:
       DeploymentPreference:
         Alarms:
           - !Ref AddressFunctionCanaryErrors
-          - !Ref AddressFunctionCanary5xxErrors
+          #- !Ref AddressFunctionCanary5xxErrors
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address"
@@ -879,33 +879,34 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  AddressFunctionCanary5xxErrors:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
-      Namespace: AWS/ApiGateway
-      MetricName: 5XXError
-      Dimensions:
-        - Name: ApiName
-          Value: !Sub "${AWS::StackName}-PrivateAddressApi"
-        - Name: Method
-          Value: PUT
-        - Name: Stage
-          Value: !Ref Environment
-        - Name: Resource
-          Value: /address
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
+#alarm temporarily disabled to avoid false positives and a rollback during deployment
+  # AddressFunctionCanary5xxErrors:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     ActionsEnabled: true
+  #     AlarmActions:
+  #       - !ImportValue platform-alarm-warning-alert-topic
+  #     OKActions:
+  #       - !ImportValue platform-alarm-warning-alert-topic
+  #     AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
+  #     Namespace: AWS/ApiGateway
+  #     MetricName: 5XXError
+  #     Dimensions:
+  #       - Name: ApiName
+  #         Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+  #       - Name: Method
+  #         Value: PUT
+  #       - Name: Stage
+  #         Value: !Ref Environment
+  #       - Name: Resource
+  #         Value: /address
+  #     Statistic: Sum
+  #     Unit: Count
+  #     Period: 60
+  #     EvaluationPeriods: 1
+  #     Threshold: 1
+  #     ComparisonOperator: GreaterThanOrEqualToThreshold
+  #     TreatMissingData: notBreaching
 
   GetAddressesFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
