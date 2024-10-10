@@ -53,6 +53,7 @@ Conditions:
   IsDevEnvironment: !Equals [!Ref Environment, dev]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  UseCanaryDeploymentAlarms: !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
   UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
   AddProvisionedConcurrency: !Not
     - !Equals
@@ -372,9 +373,10 @@ Resources:
       CodeUri: ../../lambdas/postcode-lookup
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       DeploymentPreference:
-        Alarms:
-          - !Ref PostcodeLookupFunctionCanaryErrors
-          - !Ref PostcodeLookupFunctionCanary5xxErrors
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - [!Ref PostcodeLookupFunctionCanaryErrors, !Ref PostcodeLookupFunctionCanary5xxErrors]
+          - [!Ref AWS::NoValue]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
@@ -445,8 +447,10 @@ Resources:
       CodeUri: ../../lambdas/address
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       DeploymentPreference:
-        Alarms:
-          - !Ref AddressFunctionCanaryErrors
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - [!Ref AddressFunctionCanaryErrors]
+          - [!Ref AWS::NoValue]
           #- !Ref AddressFunctionCanary5xxErrors
       Environment:
         Variables:
@@ -493,9 +497,10 @@ Resources:
     Properties:
       Handler: uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler::handleRequest
       DeploymentPreference:
-        Alarms:
-          - !Ref IssueCredentialFunctionCanaryErrors
-          - !Ref IssueCredentialFunctionCanary5xxErrors
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunctionCanary5xxErrors]
+          - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/issuecredential
       Environment:
         Variables:
@@ -556,9 +561,10 @@ Resources:
     Properties:
       Handler: app.lambdaHandler
       DeploymentPreference:
-        Alarms:
-          - !Ref GetAddressesFunctionCanaryErrors
-          - !Ref GetAddressesFunctionCanary5xxErrors
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - [!Ref GetAddressesFunctionCanaryErrors, !Ref GetAddressesFunctionCanary5xxErrors]
+          - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs18.x
       Environment:
@@ -801,6 +807,7 @@ Resources:
 
   PostcodeLookupFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -827,6 +834,7 @@ Resources:
 
   PostcodeLookupFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -855,6 +863,7 @@ Resources:
 
   AddressFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -882,6 +891,7 @@ Resources:
 #alarm temporarily disabled to avoid false positives and a rollback during deployment
   # AddressFunctionCanary5xxErrors:
   #   Type: AWS::CloudWatch::Alarm
+  #   Condition: UseCanaryDeploymentAlarms
   #   Properties:
   #     ActionsEnabled: true
   #     AlarmActions:
@@ -910,6 +920,7 @@ Resources:
 
   GetAddressesFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -936,6 +947,7 @@ Resources:
 
   GetAddressesFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -964,6 +976,7 @@ Resources:
 
   IssueCredentialFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -990,6 +1003,7 @@ Resources:
 
   IssueCredentialFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
