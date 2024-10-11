@@ -13,6 +13,15 @@ updates:
         versions: ["17.x","18.x"]
     commit-message:
       prefix: BAU
+    groups:
+      aws:
+        patterns:
+          - "@aws-*"
+      eslint:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@typescript-eslint/*"
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
