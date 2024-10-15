@@ -26,11 +26,12 @@ sam deploy --stack-name "$stack_name" \
   --capabilities CAPABILITY_IAM \
   --tags \
   cri:component=ipv-cri-address-api \
-  cri:stack-type=dev \
+  cri:stack-type=localdev \
   cri:application=Orange \
   cri:deployment-source=manual \
   --parameter-overrides \
   Environment=dev \
   SecretPrefix=pre-merge-test \
   ${common_stack_name:+CommonStackName=$common_stack_name} \
-  ${secret_prefix:+SecretPrefix=$secret_prefix}
+  ${secret_prefix:+SecretPrefix=$secret_prefix} \
+  Environment=localdev

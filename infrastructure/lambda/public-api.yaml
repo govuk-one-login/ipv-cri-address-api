@@ -60,9 +60,9 @@ paths:
       security:
         - api_key:
             Fn::If:
-              - IsNotDevEnvironment
-              - []
+              - IsLocalDevEnvironment
               - Ref: AWS::NoValue
+              - []
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
@@ -115,9 +115,9 @@ paths:
       security:
         - api_key:
             Fn::If:
-              - IsNotDevEnvironment
-              - []
+              - IsLocalDevEnvironment
               - Ref: AWS::NoValue
+              - []
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"

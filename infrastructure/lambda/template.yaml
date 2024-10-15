@@ -12,6 +12,7 @@ Parameters:
     Description: "The environment type"
     Type: "String"
     AllowedValues:
+      - "localdev"
       - "dev"
       - "build"
       - "staging"
@@ -51,8 +52,14 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, "none"]]
   IsDevEnvironment: !Equals [!Ref Environment, dev]
+  IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsDevLikeEnvironment:
+    !Or [!Condition IsLocalDevEnvironment, !Condition IsDevEnvironment]
   IsProdEnvironment: !Equals [!Ref Environment, production]
-  IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  IsNotLocalDevEnvironment: !Not
+    - !Condition IsLocalDevEnvironment
+  IsNotDevLikeEnvironment: !Not
+    - !Condition IsDevLikeEnvironment
   UseCanaryDeploymentAlarms: !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
   UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
   AddProvisionedConcurrency: !Not
@@ -125,6 +132,7 @@ Mappings:
 
   MemorySizeMapping:
     Environment:
+      localdev: 2048
       dev: 2048
       build: 4096
       staging: 2048
@@ -133,6 +141,7 @@ Mappings:
 
   VcContainsUniqueIdMapping:
     Environment:
+      localdev: "true"
       dev: "true"
       build: "true"
       staging: "true"
@@ -140,6 +149,9 @@ Mappings:
       production: "false"
 
   EnvironmentConfiguration:
+    localdev:
+      provisionedConcurrency: 0
+      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     dev:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -158,6 +170,7 @@ Mappings:
 
   MaxJwtTtlMapping:
     Environment:
+      localdev: 2
       dev: 2
       build: 2
       staging: 6
@@ -167,6 +180,7 @@ Mappings:
   # Permitted values: SECONDS,MINUTES,HOURS,DAYS,MONTHS,YEARS
   JwtTtlUnitMapping:
     Environment:
+      localdev: HOURS
       dev: HOURS
       build: HOURS
       staging: MONTHS
@@ -175,6 +189,7 @@ Mappings:
 
   OrdnanceSurveyAPIURLMapping:
     Environment:
+      localdev: "https://api.os.uk/search/places/v1/postcode"
       dev: "https://api.os.uk/search/places/v1/postcode"
       build: "https://api.os.uk/search/places/v1/postcode"
       staging: "https://api.os.uk/search/places/v1/postcode"
@@ -228,7 +243,7 @@ Resources:
 
   PrivateAddressApi:
     Type: AWS::Serverless::Api
-    Condition: IsNotDevEnvironment
+    Condition: IsNotLocalDevEnvironment
     Properties:
       Description: Private Address CRI API
       MethodSettings:
@@ -287,9 +302,9 @@ Resources:
                 StringNotEquals:
                   aws:SourceVpce: !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
-  DevOnlyAddressApi:
+  LocalDevOnlyAddressApi:
     Type: AWS::Serverless::Api
-    Condition: IsDevEnvironment
+    Condition: IsLocalDevEnvironment
     Properties:
       Description: Dev Only Private Address CRI API
       MethodSettings:
@@ -301,7 +316,7 @@ Resources:
           ThrottlingRateLimit: 5
           ThrottlingBurstLimit: 10
       AccessLogSetting:
-        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyAddressApiAccessLogGroup}'
+        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${LocalDevOnlyAddressApiAccessLogGroup}'
         Format: >-
           {
           "requestId":"$context.requestId",
@@ -339,7 +354,7 @@ Resources:
 
   PublicAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -347,21 +362,21 @@ Resources:
 
   PrivateAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: IsNotDevEnvironment
+    Condition: IsNotLocalDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
       RetentionInDays: 30
 
-  DevOnlyAddressApiAccessLogGroup:
+  LocalDevOnlyAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: IsDevEnvironment
+    Condition: IsLocalDevEnvironment
     Properties:
-      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyAddressApi}-private-AccessLogs
+      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${LocalDevOnlyAddressApi}-private-AccessLogs
       RetentionInDays: 30
 
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -435,7 +450,7 @@ Resources:
 
   PostcodeLookupFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -486,7 +501,7 @@ Resources:
 
   AddressFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -550,7 +565,7 @@ Resources:
 
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -601,7 +616,7 @@ Resources:
 
   GetAddressesFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -621,7 +636,7 @@ Resources:
 
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     DependsOn: PublicAddressApiStage
     Properties:
       ApiStages:
@@ -636,7 +651,7 @@ Resources:
 
   PrivateAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     DependsOn: PrivateAddressApiStage
     Properties:
       ApiStages:
@@ -651,7 +666,7 @@ Resources:
 
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       KeyId: !ImportValue core-infrastructure-ApiKey1
       KeyType: API_KEY
@@ -659,7 +674,7 @@ Resources:
 
   LinkUsagePlanApiKey2:
     Type: AWS::ApiGateway::UsagePlanKey
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevLikeEnvironment
     Properties:
       KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
@@ -1063,6 +1078,6 @@ Outputs:
 
   PrivateAddressApiGatewayId:
     Description: "API GatewayID of the private Address CRI API"
-    Value: !If [IsNotDevEnvironment, !Ref PrivateAddressApi, !Ref DevOnlyAddressApi]
+    Value: !If [IsLocalDevEnvironment, !Ref LocalDevOnlyAddressApi, !Ref PrivateAddressApi]
     Export:
       Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
