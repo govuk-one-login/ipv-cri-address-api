@@ -41,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.contains;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -73,7 +75,7 @@ class PostcodeLookupServiceTest {
         postcodeLookupService.lookupPostcode("ZZ1 1ZZ");
 
         verify(eventProbe, times(1))
-                .counterMetric("lookup_postcode_duration", 0, Unit.MILLISECONDS);
+                .counterMetric(eq("lookup_postcode_duration"), anyDouble(), eq(Unit.MILLISECONDS));
     }
 
     @Nested
