@@ -98,9 +98,6 @@ public class AddressHandler
                 // Links validUntil in a PREVIOUS address to validFrom in a CURRENT
                 addressService.setAddressValidity(addresses);
 
-                // Sets missing addressCountry to be GB
-                addressService.setAddressCountryIfMissing(addresses);
-
                 // Save our addresses to the address table
                 addressService.saveAddresses(UUID.fromString(sessionId), addresses);
 

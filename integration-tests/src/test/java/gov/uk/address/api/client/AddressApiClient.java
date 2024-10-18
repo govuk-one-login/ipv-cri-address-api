@@ -45,13 +45,15 @@ public class AddressApiClient {
         return sendHttpRequest(request);
     }
 
-    public HttpResponse<String> sendAddressRequest(String sessionId, String uprn, String postcode)
+    public HttpResponse<String> sendAddressRequest(
+            String sessionId, String uprn, String postcode, String countryCode)
             throws IOException, InterruptedException {
 
         CanonicalAddress currentAddress = new CanonicalAddress();
         currentAddress.setUprn(Long.parseLong(uprn));
         currentAddress.setPostalCode(postcode);
         currentAddress.setValidFrom(LocalDate.of(2020, 1, 1));
+        currentAddress.setAddressCountry(countryCode);
 
         var requestBody = objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
 
