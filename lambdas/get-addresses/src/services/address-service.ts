@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { DynamoDBDocument, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { CanonicalAddress } from "../types/address";
+import { CanonicalAddress } from "../types/canonical-address";
 
 export class AddressService {
     constructor(
