@@ -1,26 +1,38 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import { APIGatewayProxyResult } from "aws-lambda";
+export interface ErrorResponse {
+    statusCode: number;
+    body: string;
+}
 
-export const handleError = (logger: Logger, error: unknown, functionName: string): APIGatewayProxyResult => {
+export class ApiError extends Error {
+    constructor(
+        public message: string = "Internal Server Error",
+        public statusCode: number = 500,
+    ) {
+        super(message);
+        this.name = "ApiError";
+    }
+}
+
+export const handleError = (logger: Logger, error: unknown, loggerMessage: string): ErrorResponse => {
     let statusCode = 500;
-    let body = "Internal Server Error";
+    let message = "Internal Server Error";
 
-    if (error instanceof Error) {
-        const { message, stack } = error;
-        body = (error as unknown as APIGatewayProxyResult).body || message;
-        statusCode = (error as unknown as APIGatewayProxyResult).statusCode || 500;
-        logger.error(`Error in ${functionName}: ${message}`, { stack });
-    } else if (typeof error === "object" && error !== null) {
-        const apiError = error as APIGatewayProxyResult;
-        statusCode = apiError.statusCode || 500;
-        body = apiError.body || body;
-        logger.error(`Error in ${functionName}: ${JSON.stringify(body)}`);
-    } else {
-        logger.error(`Unknown error in ${functionName}: ${String(error)}`);
+    if (error instanceof ApiError || error instanceof Error) {
+        statusCode = (error as ApiError).statusCode || 500;
+        message = error.message;
     }
 
+    const logDetails = error instanceof Error ? { stack: error.stack } : {};
+    logger.error(`${loggerMessage}: ${message}`, logDetails);
     return {
         statusCode,
-        body: JSON.stringify({ message: body }),
+        body: JSON.stringify({ message }),
     };
 };
+export class BadRequestError extends ApiError {
+    constructor(message: string = "Bad Request") {
+        super(message, 400);
+        this.name = "BadRequestError";
+    }
+}
