@@ -1,8 +1,8 @@
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { lambdaHandler } from "../../src/app";
-import { CanonicalAddress } from "../../src/types/address";
 import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
+import { CanonicalAddress } from "../../src/types/canonical-address";
 
 jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
     getParameter: jest.fn(),

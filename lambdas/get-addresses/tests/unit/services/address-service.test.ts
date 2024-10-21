@@ -6,22 +6,29 @@ jest.mock("@aws-sdk/lib-dynamodb", () => {
         GetCommand: jest.fn(),
     };
 });
+jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
+    getParameter: jest.fn(),
+}));
 
+import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
+import { CanonicalAddress } from "../../../src/types/canonical-address";
 import { AddressService } from "../../../src/services/address-service";
-import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
-import { CanonicalAddress } from "../../../src/types/address";
+import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
 
 const mockDynamoDbClient = jest.mocked(DynamoDbClient);
 const mockGetCommand = jest.mocked(GetCommand);
+const getParameterMock = jest.mocked(getParameter);
 
 describe("Address Service", () => {
     let addressService: AddressService;
-    const tableName = "MYTABLE";
-    const sessionId = "SESSID";
+    const tableName = "MY_TABLE";
+    const sessionId = "SESSION_ID";
 
     beforeEach(() => {
         jest.resetAllMocks();
+        getParameterMock.mockResolvedValue(tableName);
+
         addressService = new AddressService(tableName, DynamoDbClient);
     });
 
