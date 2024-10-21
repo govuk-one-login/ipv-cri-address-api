@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.utils.StringUtils;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
@@ -29,6 +30,8 @@ public class AddressService {
             "setAddressValidity found PREVIOUS address but validUntil was already set - automatic date linking failed.";
     private static final String ERROR_ADDRESS_DATE_IS_INVALID =
             "setAddressValidity found address where validFrom and validUntil are Equal.";
+    private static final String ERROR_COUNTRY_CODE_NOT_PRESENT =
+            "Country code not present for address";
 
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
@@ -58,6 +61,9 @@ public class AddressService {
             throw new AddressProcessingException("could not parse addresses..." + e.getMessage());
         }
 
+        if (!isCountryCodePresentForAll(addresses)) {
+            throw new AddressProcessingException(ERROR_COUNTRY_CODE_NOT_PRESENT);
+        }
         return addresses;
     }
 
@@ -83,13 +89,6 @@ public class AddressService {
                             .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         }
         return this.addressReader;
-    }
-
-    public void setAddressCountryIfMissing(List<CanonicalAddress> addresses) {
-        addresses.stream()
-                .filter(Objects::nonNull)
-                .filter(address -> Objects.isNull(address.getAddressCountry()))
-                .forEach(address -> address.setAddressCountry("GB"));
     }
 
     // See https://govukverify.atlassian.net/wiki/spaces/PYI/pages/3178004485/Decision+Log
@@ -180,5 +179,9 @@ public class AddressService {
         return ((Objects.nonNull(canonicalAddress.getValidFrom())
                         && Objects.nonNull(canonicalAddress.getValidUntil()))
                 && (canonicalAddress.getValidFrom().isEqual(canonicalAddress.getValidUntil())));
+    }
+
+    private boolean isCountryCodePresentForAll(List<CanonicalAddress> addresses) {
+        return addresses.stream().noneMatch(a -> StringUtils.isEmpty(a.getAddressCountry()));
     }
 }

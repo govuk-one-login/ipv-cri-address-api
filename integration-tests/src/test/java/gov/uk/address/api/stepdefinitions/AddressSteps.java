@@ -33,6 +33,7 @@ public class AddressSteps {
 
     private String postcode;
     private String uprn;
+    private String countryCode;
 
     private final String auditEventQueueUrl =
             CloudFormationHelper.getOutput(
@@ -67,14 +68,35 @@ public class AddressSteps {
 
     @When("the user selects address")
     public void theUserSelectsAddress() throws IOException, InterruptedException {
+        countryCode = "GB";
         this.testContext.setResponse(
                 this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(), uprn, postcode));
+                        this.testContext.getSessionId(), uprn, postcode, countryCode));
+    }
+
+    @When("the user selects international address")
+    public void theUserSelectsInternationalAddress() throws IOException, InterruptedException {
+        countryCode = "IA";
+        this.testContext.setResponse(
+                this.addressApiClient.sendAddressRequest(
+                        this.testContext.getSessionId(), uprn, postcode, countryCode));
+    }
+
+    @When("the user selects address without country code")
+    public void theUserSelectsAddressWithoutCountryCode() throws IOException, InterruptedException {
+        this.testContext.setResponse(
+                this.addressApiClient.sendAddressRequest(
+                        this.testContext.getSessionId(), uprn, postcode, null));
     }
 
     @Then("the address is saved successfully")
     public void theAddressIsSavedSuccessfully() {
         assertEquals(204, this.testContext.getResponse().statusCode());
+    }
+
+    @Then("the address is not saved")
+    public void theAddressIsNotSaved() {
+        assertEquals(500, this.testContext.getResponse().statusCode());
     }
 
     @When("user sends a POST request to Credential Issue end point with a valid access token")
@@ -153,5 +175,7 @@ public class AddressSteps {
         assertEquals("VerifiableCredential", payload.at("/vc/type/0").asText());
         assertEquals("AddressCredential", payload.at("/vc/type/1").asText());
         assertEquals(postcode, payload.at("/vc/credentialSubject/address/0/postalCode").asText());
+        assertEquals(
+                countryCode, payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
     }
 }

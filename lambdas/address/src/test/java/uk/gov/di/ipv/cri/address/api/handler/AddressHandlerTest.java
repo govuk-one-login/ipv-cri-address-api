@@ -107,7 +107,6 @@ class AddressHandlerTest {
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(mockAddressService).setAddressValidity(canonicalAddresses);
-        verify(mockAddressService).setAddressCountryIfMissing(canonicalAddresses);
         verify(eventProbe).log(Level.INFO, "found session");
         verify(eventProbe).counterMetric("address");
         verifyNoMoreInteractions(eventProbe);
@@ -128,6 +127,26 @@ class AddressHandlerTest {
         assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
 
         verifyNoInteractions(eventProbe);
+    }
+
+    @Test
+    void shouldReturn500WhenParseAddressesThrowsAddressProcessingException()
+            throws AddressProcessingException {
+        setupEventProbeExpectedErrorBehaviour();
+        AddressProcessingException addressProcessingException =
+                new AddressProcessingException("Country code not present for address");
+
+        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of("session_id", SESSION_ID));
+        when(apiGatewayProxyRequestEvent.getBody()).thenReturn("some json");
+        when(mockAddressService.parseAddresses(anyString())).thenThrow(addressProcessingException);
+
+        APIGatewayProxyResponseEvent responseEvent =
+                addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+
+        assertEquals(500, responseEvent.getStatusCode());
+        verify(eventProbe).log(Level.ERROR, addressProcessingException);
+        verify(eventProbe).counterMetric("address", 0d);
+        verifyNoMoreInteractions(eventProbe);
     }
 
     private void setupEventProbeExpectedErrorBehaviour() {
