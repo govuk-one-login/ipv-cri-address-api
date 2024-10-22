@@ -92,6 +92,13 @@ public class AddressSteps {
         makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
     }
 
+    //    @And("user sends POST request to events endpoint")
+    //    public void userSendsPostRequestToEventsEndpoint() throws ParseException, IOException {
+    //
+    //
+    //
+    //    }
+
     @Then("TXMA event is added to the SQS queue containing device information header")
     public void txmaEventIsAddedToSqsQueueContainingDeviceInformationHeader()
             throws IOException, InterruptedException {
