@@ -3,7 +3,7 @@ import { AddressesV2Handler } from "../../src/v2/get-addresses-v2-handler";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
 import { AddressServiceV2 } from "../../src/v2/services/address-service-v2";
-import { BadRequestError } from "../../src/lib/error-handler";
+import { ApiError } from "../../src/lib/error-handler";
 jest.mock("@aws-lambda-powertools/logger");
 jest.mock("../../src/v2/services/address-service-v2");
 const logger = new Logger();
@@ -65,7 +65,7 @@ describe("get-addresses-v2-handler", () => {
             },
         };
 
-        const customError: BadRequestError = new BadRequestError("Custom Error Message");
+        const customError: ApiError = new ApiError("Custom Error Message", 400);
         jest.spyOn(addressService, "getAddressesBySessionId").mockRejectedValueOnce(customError);
 
         const response = await handlerClass.handler(params as APIGatewayProxyEvent, mockContext as Context);
@@ -123,7 +123,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });
@@ -145,7 +145,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });
@@ -174,7 +174,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });
@@ -195,7 +195,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });

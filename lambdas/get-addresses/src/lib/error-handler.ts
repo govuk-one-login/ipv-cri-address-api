@@ -30,9 +30,3 @@ export const handleError = (logger: Logger, error: unknown, loggerMessage: strin
         body: JSON.stringify({ message }),
     };
 };
-export class BadRequestError extends ApiError {
-    constructor(message: string = "Bad Request") {
-        super(message, 400);
-        this.name = "BadRequestError";
-    }
-}

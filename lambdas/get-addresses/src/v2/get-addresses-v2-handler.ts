@@ -16,7 +16,7 @@ export class AddressesV2Handler implements LambdaInterface {
 
             const result = await this.addressService.getAddressesBySessionId(sessionId);
 
-            return Promise.resolve({ statusCode: 200, body: JSON.stringify({ result }) });
+            return Promise.resolve({ statusCode: 200, body: JSON.stringify(result) });
         } catch (error: unknown) {
             return handleError(logger, error as Error, `Error in ${context.functionName}`);
         }

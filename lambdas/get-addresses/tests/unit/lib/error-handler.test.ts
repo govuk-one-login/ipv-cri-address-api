@@ -1,5 +1,5 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import { ApiError, BadRequestError, handleError } from "../../../src/lib/error-handler";
+import { ApiError, handleError } from "../../../src/lib/error-handler";
 
 const mockLogger = {
     error: jest.fn(),
@@ -28,7 +28,7 @@ describe("handleError", () => {
     });
 
     it("handles Error objects and log the error with statusCode set", () => {
-        const mockError = new BadRequestError("Missing header: session_id is required");
+        const mockError = new ApiError("Missing header: session_id is required", 400);
 
         const result = handleError(mockLogger, mockError, `Error in ${functionName}`);
 

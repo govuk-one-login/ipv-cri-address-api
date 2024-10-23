@@ -43,7 +43,7 @@ describe("DynamoDbService", () => {
         );
 
         expect(mockLogger.warn).not.toHaveBeenCalled();
-        expect(result).toEqual(mockItem);
+        expect(result.Item).toEqual(mockItem);
     });
 
     it("logs a warning when no item is found", async () => {
@@ -53,7 +53,7 @@ describe("DynamoDbService", () => {
 
         expect(mockLogger.warn).toHaveBeenCalledWith(`Could not find ${tableName} item with id: ${sessionId}`);
 
-        expect(result).toBeUndefined();
+        expect(result.Item).toBeUndefined();
     });
 
     it("logs an error and throw when DynamoDB throws an error", async () => {
