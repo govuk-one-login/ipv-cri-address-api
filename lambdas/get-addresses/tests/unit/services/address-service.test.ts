@@ -15,6 +15,7 @@ import { CanonicalAddress } from "../../../src/types/canonical-address";
 import { AddressService } from "../../../src/services/address-service";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
+import { Address } from "../../../src/types/address";
 
 const mockDynamoDbClient = jest.mocked(DynamoDbClient);
 const mockGetCommand = jest.mocked(GetCommand);
@@ -33,15 +34,18 @@ describe("Address Service", () => {
     });
 
     it("Should return an address when passed a session Id", async () => {
-        const addresses: CanonicalAddress[] = [
-            {
-                streetName: "Downing street",
-                buildingNumber: "10",
-                postalCode: "SW1A 2AA",
-            },
-        ];
+        const addressResponse: Address = {
+            addresses: [
+                {
+                    streetName: "Downing street",
+                    buildingNumber: "10",
+                    postalCode: "SW1A 2AA",
+                },
+            ],
+        };
+        const canonicalAddresses: CanonicalAddress[] = addressResponse.addresses;
 
-        mockDynamoDbClient.send = jest.fn().mockResolvedValue({ Item: addresses });
+        mockDynamoDbClient.send = jest.fn().mockResolvedValue({ Item: addressResponse });
 
         const result = await addressService.getAddressesBySessionId(sessionId);
         expect(mockGetCommand).toHaveBeenCalledWith({
@@ -51,7 +55,7 @@ describe("Address Service", () => {
             },
         });
         expect(result).not.toBeNull();
-        expect(result).toEqual(addresses);
+        expect(result).toEqual(canonicalAddresses);
     });
 
     it("Should return an empty array when no address is found", async () => {

@@ -3,6 +3,7 @@ import { APIGatewayProxyEvent } from "aws-lambda";
 import { lambdaHandler } from "../../src/app";
 import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
 import { CanonicalAddress } from "../../src/types/canonical-address";
+import { Address } from "../../src/types/address";
 
 jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
     getParameter: jest.fn(),
@@ -19,15 +20,18 @@ describe("Handler", () => {
     });
 
     it("should return an address when an address is found", async () => {
-        const addresses: CanonicalAddress[] = [
-            {
-                streetName: "Downing street",
-                buildingNumber: "10",
-                postalCode: "SW1A 2AA",
-            },
-        ];
+        const addressResponse: Address = {
+            addresses: [
+                {
+                    streetName: "Downing street",
+                    buildingNumber: "10",
+                    postalCode: "SW1A 2AA",
+                },
+            ],
+        };
 
-        const savedAddress = { Item: addresses };
+        const addresses: CanonicalAddress[] = addressResponse.addresses;
+        const savedAddress = { Item: addressResponse };
 
         dynamoDbClientMock.send = jest.fn().mockResolvedValue(savedAddress);
 
@@ -38,7 +42,7 @@ describe("Handler", () => {
         } as unknown as APIGatewayProxyEvent;
 
         const result = await lambdaHandler(params);
-        const resultAddress = JSON.parse(result.body).result;
+        const resultAddress = JSON.parse(result.body);
         expect(resultAddress).toEqual(addresses);
         expect(result.statusCode).toBe(200);
     });
@@ -52,7 +56,7 @@ describe("Handler", () => {
             },
         } as unknown as APIGatewayProxyEvent;
         const result = await lambdaHandler(params);
-        const resultAddress = JSON.parse(result.body).result;
+        const resultAddress = JSON.parse(result.body);
         expect(resultAddress).toEqual([]);
         expect(result.statusCode).toBe(200);
     });
