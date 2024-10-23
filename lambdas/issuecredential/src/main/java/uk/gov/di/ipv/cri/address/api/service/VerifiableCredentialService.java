@@ -72,6 +72,7 @@ public class VerifiableCredentialService {
 
     private Object[] convertAddresses(List<CanonicalAddress> addresses) {
         return addresses.stream()
+                .map(VCAddress::new)
                 .map(address -> objectMapper.convertValue(address, Map.class))
                 .toArray();
     }

@@ -148,9 +148,9 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                     assertEquals(
                             address.getAddressCountry(), vcSubjectClaims.get("addressCountry"));
                     assertEquals(
-                            address.getValidFrom().toString(), vcSubjectClaims.get("validFrom"));
+                            "2010", vcSubjectClaims.get("validFrom"));
                     assertEquals(
-                            address.getValidUntil().toString(), vcSubjectClaims.get("validUntil"));
+                            "2021", vcSubjectClaims.get("validUntil"));
                 });
     }
 
