@@ -14,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.time.LocalDate;
 
 public class AddressApiClient {
+    public static final String SESSION_ID = "session_id";
     private final HttpClient httpClient;
     private final ClientConfigurationService clientConfigurationService;
     private final ObjectMapper objectMapper;
@@ -27,22 +28,13 @@ public class AddressApiClient {
 
     public HttpResponse<String> sendPostCodeLookUpRequest(String sessionId, String postcode)
             throws IOException, InterruptedException {
-        postcode = postcode.trim().replaceAll("\\s", "%20");
-        var request =
-                HttpRequest.newBuilder()
-                        .uri(
-                                new URIBuilder(
-                                                this.clientConfigurationService
-                                                        .getPrivateApiEndpoint())
-                                        .setPath(
-                                                this.clientConfigurationService.createUriPath(
-                                                        "postcode-lookup/" + postcode))
-                                        .build())
-                        .header(HttpHeaders.ACCEPT, JSON_MIME_MEDIA_TYPE)
-                        .header("session_id", sessionId)
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "postcode-lookup/" + postcode)
+                        .header(SESSION_ID, sessionId)
                         .GET()
-                        .build();
-        return sendHttpRequest(request);
+                        .build());
     }
 
     public HttpResponse<String> sendAddressRequest(
@@ -55,61 +47,58 @@ public class AddressApiClient {
         currentAddress.setValidFrom(LocalDate.of(2020, 1, 1));
         currentAddress.setAddressCountry(countryCode);
 
-        var requestBody = objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
+        String requestBody =
+                objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
 
-        var request =
-                HttpRequest.newBuilder()
-                        .uri(
-                                new URIBuilder(
-                                                this.clientConfigurationService
-                                                        .getPrivateApiEndpoint())
-                                        .setPath(
-                                                this.clientConfigurationService.createUriPath(
-                                                        "address"))
-                                        .build())
-                        .header("session_id", sessionId)
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "address")
+                        .header(SESSION_ID, sessionId)
                         .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
-                        .build();
-        return sendHttpRequest(request);
+                        .build());
     }
 
     public HttpResponse<String> sendCredentialIssueRequest(String accessToken)
             throws IOException, InterruptedException {
-        HttpRequest request =
-                HttpRequest.newBuilder()
-                        .uri(
-                                new URIBuilder(
-                                                this.clientConfigurationService
-                                                        .getPublicApiEndpoint())
-                                        .setPath(
-                                                this.clientConfigurationService.createUriPath(
-                                                        "/credential/issue"))
-                                        .build())
+
+        String publicApiEndpoint = this.clientConfigurationService.getPublicApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(publicApiEndpoint, "/credential/issue")
                         .header("x-api-key", this.clientConfigurationService.getPublicApiKey())
                         .header("Authorization", "Bearer " + accessToken)
                         .POST(HttpRequest.BodyPublishers.noBody())
-                        .build();
-        return sendHttpRequest(request);
+                        .build());
     }
 
     public HttpResponse<String> sendGetAddressesLookupRequest(String sessionId)
             throws IOException, InterruptedException {
-        var request =
-                HttpRequest.newBuilder()
-                        .uri(
-                                new URIBuilder(
-                                                this.clientConfigurationService
-                                                        .getPrivateApiEndpoint())
-                                        .setPath(
-                                                this.clientConfigurationService.createUriPath(
-                                                        "addresses"))
-                                        .build())
-                        .header(HttpHeaders.ACCEPT, JSON_MIME_MEDIA_TYPE)
-                        .header("session_id", sessionId)
-                        .GET()
-                        .build();
 
-        return sendHttpRequest(request);
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "addresses")
+                        .GET()
+                        .header(SESSION_ID, sessionId)
+                        .build());
+    }
+
+    public HttpResponse<String> sendGetAddressesLookupRequestV2(String sessionId)
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "addresses/v2")
+                        .GET()
+                        .header(SESSION_ID, sessionId)
+                        .build());
+    }
+
+    private HttpRequest.Builder requestBuilder(String endpointType, String path) {
+        return HttpRequest.newBuilder()
+                .uri(
+                        new URIBuilder(endpointType)
+                                .setPath(this.clientConfigurationService.createUriPath(path))
+                                .build())
+                .header(HttpHeaders.ACCEPT, JSON_MIME_MEDIA_TYPE);
     }
 
     private HttpResponse<String> sendHttpRequest(HttpRequest request)
