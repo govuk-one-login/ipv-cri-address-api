@@ -11,6 +11,10 @@ Feature: Address API happy path test
     # TXMA event
     Then TXMA event is added to the SQS queue containing device information header
 
+    # Addresses
+    When /addresses is called
+    Then response should contain addresses from the personIdentityTable
+
     # Postcode lookup
     When the user performs a postcode lookup for post code "SW1A 2AA"
     Then user receives a list of addresses containing "SW1A 2AA"
@@ -42,6 +46,10 @@ Feature: Address API happy path test
 
     # TXMA event
     Then TXMA event is added to the SQS queue not containing device information header
+
+    # Addresses
+    When /addresses is called
+    Then response should contain addresses from the personIdentityTable
 
     # Postcode lookup
     When the user performs a postcode lookup for post code "<testPostCode>"
@@ -80,6 +88,10 @@ Feature: Address API happy path test
 
     # TXMA event
     Then TXMA event is added to the SQS queue not containing device information header
+
+    # Addresses
+    When /addresses/v2 contain addresses from the shared claims in the personIdentityTable
+    Then response should contain addresses from the personIdentityTable with countryCode
 
     # Postcode lookup
     When the user performs a postcode lookup for post code "SW1A 2AA"

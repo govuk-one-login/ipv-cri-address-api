@@ -21,9 +21,10 @@ export class AddressServiceV2 {
                 getParameter(`/${commonParameterPrefix}/SessionTableName`),
             ]);
 
-            const sessionItem = (await this.dbService.getItem(sessionId, sessionTableName as string)) as SessionItem;
-            const items = await this.dbService.getItem(sessionId, addressLookupTableName as string);
-            const canonicalAddresses = items ? (items as CanonicalAddress[]) : [];
+            const sessionItem = (await this.dbService.getItem(sessionId, sessionTableName as string))
+                .Item as SessionItem;
+            const result = await this.dbService.getItem(sessionId, addressLookupTableName as string);
+            const canonicalAddresses = result?.Item?.addresses ? (result?.Item?.addresses as CanonicalAddress[]) : [];
 
             return {
                 ...(sessionItem?.context && { context: sessionItem?.context }),

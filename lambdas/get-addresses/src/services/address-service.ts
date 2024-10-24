@@ -17,7 +17,7 @@ export class AddressService {
                 },
             });
             const result = await this.dynamoDbClient.send(params);
-            return result.Item ? (result.Item as unknown as CanonicalAddress[]) : [];
+            return result.Item?.addresses ? (result.Item.addresses as CanonicalAddress[]) : [];
         } catch (e) {
             console.error("Error retrieving address item from dynamodb", e as Error);
             throw e;

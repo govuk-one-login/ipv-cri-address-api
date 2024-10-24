@@ -1,5 +1,5 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import { DynamoDBDocument, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocument, GetCommand, GetCommandOutput } from "@aws-sdk/lib-dynamodb";
 
 export class DynamoDbService {
     constructor(
@@ -7,7 +7,7 @@ export class DynamoDbService {
         private readonly logger: Logger,
     ) {}
 
-    public async getItem(sessionId: string, tableName: string): Promise<unknown> {
+    public async getItem(sessionId: string, tableName: string): Promise<GetCommandOutput> {
         try {
             const params = new GetCommand({
                 TableName: tableName,
@@ -20,7 +20,7 @@ export class DynamoDbService {
             if (!result.Item) {
                 this.logger.warn(`Could not find ${tableName} item with id: ${sessionId}`);
             }
-            return result.Item;
+            return result;
         } catch (error: unknown) {
             this.logger.error(`Error fetching item from ${tableName} for sessionId: ${sessionId}`, error as Error);
 

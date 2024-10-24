@@ -1,8 +1,9 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { AddressesV2Handler } from "../../src/v2/get-addresses-v2-handler";
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+import { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
 import { AddressServiceV2 } from "../../src/v2/services/address-service-v2";
+import { ApiError } from "../../src/lib/error-handler";
 jest.mock("@aws-lambda-powertools/logger");
 jest.mock("../../src/v2/services/address-service-v2");
 const logger = new Logger();
@@ -64,10 +65,7 @@ describe("get-addresses-v2-handler", () => {
             },
         };
 
-        const customError: APIGatewayProxyResult = {
-            statusCode: 400,
-            body: "Custom Error Message",
-        };
+        const customError: ApiError = new ApiError("Custom Error Message", 400);
         jest.spyOn(addressService, "getAddressesBySessionId").mockRejectedValueOnce(customError);
 
         const response = await handlerClass.handler(params as APIGatewayProxyEvent, mockContext as Context);
@@ -76,7 +74,9 @@ describe("get-addresses-v2-handler", () => {
             statusCode: 400,
             body: JSON.stringify({ message: "Custom Error Message" }),
         });
-        expect(loggerSpy).toHaveBeenCalledWith(`Error in testFunction: ${JSON.stringify(customError.body)}`);
+        expect(loggerSpy).toHaveBeenCalledWith("Error in testFunction: Custom Error Message", {
+            stack: customError.stack,
+        });
     });
 
     it("handles an unknown error and returns default 500 Internal Server Error", async () => {
@@ -86,7 +86,7 @@ describe("get-addresses-v2-handler", () => {
             },
         };
 
-        const unknownError = { unknownField: "unknownValue" };
+        const unknownError = new Error("Internal Server Error");
         jest.spyOn(addressService, "getAddressesBySessionId").mockRejectedValueOnce(unknownError);
 
         const response = await handlerClass.handler(params as APIGatewayProxyEvent, mockContext as Context);
@@ -95,7 +95,9 @@ describe("get-addresses-v2-handler", () => {
             statusCode: 500,
             body: JSON.stringify({ message: "Internal Server Error" }),
         });
-        expect(loggerSpy).toHaveBeenCalledWith(`Error in testFunction: ${JSON.stringify("Internal Server Error")}`);
+        expect(loggerSpy).toHaveBeenCalledWith("Error in testFunction: Internal Server Error", {
+            stack: unknownError.stack,
+        });
     });
     describe("with context", () => {
         it("returns 200 with context when getAddressesBySessionId resolves successfully", async () => {
@@ -121,7 +123,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });
@@ -143,7 +145,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });
@@ -172,7 +174,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });
@@ -193,7 +195,7 @@ describe("get-addresses-v2-handler", () => {
 
             expect(response).toEqual({
                 statusCode: 200,
-                body: JSON.stringify({ result: mockResult }),
+                body: JSON.stringify(mockResult),
             });
             expect(addressService.getAddressesBySessionId).toHaveBeenCalledWith("test-session-id");
         });
