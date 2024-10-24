@@ -92,6 +92,26 @@ public class AddressApiClient {
         return sendHttpRequest(request);
     }
 
+    public HttpResponse<String> sendGetAddressesLookupRequest(String sessionId)
+            throws IOException, InterruptedException {
+        var request =
+                HttpRequest.newBuilder()
+                        .uri(
+                                new URIBuilder(
+                                                this.clientConfigurationService
+                                                        .getPrivateApiEndpoint())
+                                        .setPath(
+                                                this.clientConfigurationService.createUriPath(
+                                                        "addresses"))
+                                        .build())
+                        .header(HttpHeaders.ACCEPT, JSON_MIME_MEDIA_TYPE)
+                        .header("session_id", sessionId)
+                        .GET()
+                        .build();
+
+        return sendHttpRequest(request);
+    }
+
     private HttpResponse<String> sendHttpRequest(HttpRequest request)
             throws IOException, InterruptedException {
         return this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());

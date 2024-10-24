@@ -178,4 +178,27 @@ public class AddressSteps {
         assertEquals(
                 countryCode, payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
     }
+
+    @When("\\/addresses contain addresses from the shared claims in the personIdentityTable")
+    public void addressesContainAddressesFromTheSharedClaimsInThePersonIdentityTable()
+            throws IOException, InterruptedException {
+        this.testContext.setResponse(
+                this.addressApiClient.sendGetAddressesLookupRequest(
+                        this.testContext.getSessionId()));
+    }
+
+    @Then("response should contain addresses from the personIdentityTable")
+    public void responseShouldContainAddressesFromThePersonIdentityTable()
+            throws JsonProcessingException {
+        JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
+        assertEquals(200, this.testContext.getResponse().statusCode());
+
+        assertNotNull(jsonNode);
+        assertTrue(jsonNode.isArray());
+
+        JsonNode firstAddress = jsonNode.get(0);
+        assertNotNull(firstAddress);
+
+        assertNotNull(firstAddress.get("postalCode").asText());
+    }
 }
