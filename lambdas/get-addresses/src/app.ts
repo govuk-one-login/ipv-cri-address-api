@@ -18,7 +18,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         const addressService = new AddressService(addressLookupTableName, DynamoDbClient);
         const result = await addressService.getAddressesBySessionId(sessionId);
 
-        return { statusCode: 200, body: JSON.stringify({ result }) };
+        return { statusCode: 200, body: JSON.stringify(result) };
     } catch (err: unknown) {
         logger.error(`An error has occurred in Addresses handler. " + ${JSON.stringify(err)}`);
         return { statusCode: 500, body: `An error has occurred. " + ${err}` };

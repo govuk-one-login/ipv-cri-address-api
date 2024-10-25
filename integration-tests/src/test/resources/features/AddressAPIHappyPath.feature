@@ -11,6 +11,10 @@ Feature: Address API happy path test
     # TXMA event
     Then TXMA event is added to the SQS queue containing device information header
 
+    # Addresses
+    When the user arrives at find your address page
+    Then enter your post code is pre-populated with response from /addresses
+
     # Postcode lookup
     When the user performs a postcode lookup for post code "SW1A 2AA"
     Then user receives a list of addresses containing "SW1A 2AA"
@@ -43,6 +47,10 @@ Feature: Address API happy path test
     # TXMA event
     Then TXMA event is added to the SQS queue not containing device information header
 
+    # Addresses
+    When the user arrives at find your address page
+    Then enter your post code is pre-populated with response from /addresses
+
     # Postcode lookup
     When the user performs a postcode lookup for post code "<testPostCode>"
     Then user receives a list of addresses containing "<testPostCode>"
@@ -72,14 +80,17 @@ Feature: Address API happy path test
 
   @international_address_api_happy
   Scenario: Temporary Country Code Only International Address API journey
-    Given user has the test-identity 197 in the form of a signed JWT string
-
+    Given user has the test-identity 197 and context of "international_user" in the form of a signed JWT string
     # Session
     When user sends a POST request to session end point
     Then user gets a session-id
 
     # TXMA event
     Then TXMA event is added to the SQS queue not containing device information header
+
+    # Addresses
+    When user requests lands on /addresses/v2
+    Then response should contain addresses and context from the personIdentityTable
 
     # Postcode lookup
     When the user performs a postcode lookup for post code "SW1A 2AA"

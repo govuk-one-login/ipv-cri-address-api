@@ -15,6 +15,8 @@ import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +55,8 @@ public class AddressSteps {
             throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendPostCodeLookUpRequest(
-                        this.testContext.getSessionId(), postcode));
+                        this.testContext.getSessionId(),
+                        URLEncoder.encode(postcode.trim(), StandardCharsets.UTF_8)));
     }
 
     @Then("user receives a list of addresses containing {string}")
@@ -177,5 +180,52 @@ public class AddressSteps {
         assertEquals(postcode, payload.at("/vc/credentialSubject/address/0/postalCode").asText());
         assertEquals(
                 countryCode, payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
+    }
+
+    @When("the user arrives at find your address page")
+    public void theUserArrivesAtFindYourAddressPage() throws IOException, InterruptedException {
+        this.testContext.setResponse(
+                this.addressApiClient.sendGetAddressesLookupRequest(
+                        this.testContext.getSessionId()));
+    }
+
+    @When("user requests lands on \\/addresses\\/v2")
+    public void userRequestsLandsOnAddressesV2() throws IOException, InterruptedException {
+        this.testContext.setResponse(
+                this.addressApiClient.sendGetAddressesLookupRequestV2(
+                        this.testContext.getSessionId()));
+    }
+
+    @Then("enter your post code is pre-populated with response from \\/addresses")
+    public void enterYourPostCodeIsPrePopulatedWithResponseFromAddresses()
+            throws JsonProcessingException {
+        JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
+        assertEquals(200, this.testContext.getResponse().statusCode());
+
+        assertNotNull(jsonNode);
+        assertTrue(jsonNode.isArray());
+
+        JsonNode firstAddress = jsonNode.get(0);
+        assertNotNull(firstAddress);
+
+        assertNotNull(firstAddress.get("postalCode").asText());
+    }
+
+    @Then("response should contain addresses and context from the personIdentityTable")
+    public void responseShouldContainAddressesFromThePersonIdentityTableWithContext()
+            throws JsonProcessingException {
+
+        JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
+        assertEquals(200, this.testContext.getResponse().statusCode());
+
+        assertNotNull(jsonNode);
+        JsonNode addresses = jsonNode.get("addresses");
+        assertTrue(addresses.isArray());
+
+        JsonNode firstAddress = addresses.get(0);
+        assertNotNull(firstAddress);
+
+        assertNotNull(firstAddress.get("postalCode").asText());
+        assertEquals("international_user", jsonNode.get("context").asText());
     }
 }
