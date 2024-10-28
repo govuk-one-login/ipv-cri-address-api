@@ -20,6 +20,7 @@ import java.util.UUID;
 
 public class AddressService {
     private static final Logger LOGGER = LogManager.getLogger();
+
     private static final String ERROR_SINGLE_ADDRESS_NOT_CURRENT =
             "setAddressValidity found a single address but is not a CURRENT address.";
     private static final String ERROR_TOO_MANY_ADDRESSES =
@@ -35,6 +36,7 @@ public class AddressService {
 
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
+
     private ObjectReader addressReader;
 
     @ExcludeFromGeneratedCoverageReport
@@ -67,10 +69,11 @@ public class AddressService {
         return addresses;
     }
 
-    public AddressItem saveAddresses(UUID sessionId, List<CanonicalAddress> addresses) {
+    public AddressItem saveAddresses(
+            UUID sessionId, List<CanonicalAddress> addresses, long ttlExpiryEpoch) {
         AddressItem addressItem = new AddressItem();
-
         addressItem.setSessionId(sessionId);
+        addressItem.setExpiryDate(ttlExpiryEpoch);
         addressItem.setAddresses(addresses);
         dataStore.create(addressItem);
 

@@ -39,6 +39,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AddressHandlerTest {
     private static final String SESSION_ID = UUID.randomUUID().toString();
+    private static final long ADDRESS_TTL = 1730197212;
+
     @Mock private SessionService mockSessionService;
     @Mock private AddressService mockAddressService;
 
@@ -50,7 +52,8 @@ class AddressHandlerTest {
 
     @BeforeEach
     void setUp() {
-        addressHandler = new AddressHandler(mockSessionService, mockAddressService, eventProbe);
+        addressHandler =
+                new AddressHandler(mockSessionService, mockAddressService, eventProbe, ADDRESS_TTL);
     }
 
     @Test
@@ -96,10 +99,12 @@ class AddressHandlerTest {
 
         AddressItem addressItem = new AddressItem();
         addressItem.setAddresses(canonicalAddresses);
+        addressItem.setExpiryDate(ADDRESS_TTL);
 
         when(mockSessionService.validateSessionId(SESSION_ID)).thenReturn(sessionItem);
         when(mockAddressService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
-        when(mockAddressService.saveAddresses(notNull(), anyList())).thenReturn(addressItem);
+        when(mockAddressService.saveAddresses(notNull(), anyList(), eq(ADDRESS_TTL)))
+                .thenReturn(addressItem);
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
