@@ -672,6 +672,9 @@ Resources:
       KeySchema:
         - AttributeName: "sessionId"
           KeyType: "HASH"
+      TimeToLiveSpecification:
+        AttributeName: expiryDate
+        Enabled: true
 
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan

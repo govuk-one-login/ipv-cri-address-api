@@ -12,6 +12,7 @@ import java.util.UUID;
 @DynamoDbBean
 public class AddressItem {
     private UUID sessionId;
+    private long expiryDate;
     private List<CanonicalAddress> addresses = new ArrayList<>();
 
     @DynamoDbPartitionKey()
@@ -21,6 +22,14 @@ public class AddressItem {
 
     public void setSessionId(UUID sessionId) {
         this.sessionId = sessionId;
+    }
+
+    public long getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(long expiryDate) {
+        this.expiryDate = expiryDate;
     }
 
     public List<CanonicalAddress> getAddresses() {

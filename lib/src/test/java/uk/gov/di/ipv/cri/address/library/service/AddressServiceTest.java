@@ -53,6 +53,8 @@ class AddressServiceTest {
             "setAddressValidity found address where validFrom and validUntil are Equal.";
     private static final String ERROR_COUNTRY_CODE_NOT_PRESENT =
             "Country code not present for address";
+    private static final long ADDRESS_TTL = 1730197212;
+
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -276,7 +278,7 @@ class AddressServiceTest {
             addresses.add(address2);
             addresses.add(address3);
 
-            addressService.saveAddresses(SESSION_ID, addresses);
+            addressService.saveAddresses(SESSION_ID, addresses, ADDRESS_TTL);
             ArgumentCaptor<AddressItem> addressItemArgumentCaptor =
                     ArgumentCaptor.forClass(AddressItem.class);
             verify(mockDataStore).create(addressItemArgumentCaptor.capture());
@@ -284,11 +286,13 @@ class AddressServiceTest {
                     addressItemArgumentCaptor.getValue().getAddresses(), equalTo(addresses));
             MatcherAssert.assertThat(
                     addressItemArgumentCaptor.getValue().getSessionId(), equalTo(SESSION_ID));
+            MatcherAssert.assertThat(
+                    addressItemArgumentCaptor.getValue().getExpiryDate(), equalTo(ADDRESS_TTL));
         }
 
         @Test
         void shouldPersistAnEmptyListOfAddressesWhenNoListOfCanonicalAddressesIsSupplied() {
-            addressService.saveAddresses(SESSION_ID, null);
+            addressService.saveAddresses(SESSION_ID, null, ADDRESS_TTL);
             ArgumentCaptor<AddressItem> addressItemArgumentCaptor =
                     ArgumentCaptor.forClass(AddressItem.class);
             verify(mockDataStore).create(addressItemArgumentCaptor.capture());
@@ -297,6 +301,8 @@ class AddressServiceTest {
                     equalTo(new ArrayList<>()));
             MatcherAssert.assertThat(
                     addressItemArgumentCaptor.getValue().getSessionId(), equalTo(SESSION_ID));
+            MatcherAssert.assertThat(
+                    addressItemArgumentCaptor.getValue().getExpiryDate(), equalTo(ADDRESS_TTL));
         }
     }
 

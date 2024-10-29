@@ -44,6 +44,7 @@ public class AddressHandler
     private final AddressService addressService;
     private final SessionService sessionService;
     private final EventProbe eventProbe;
+    private final long addressTtl;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressHandler() {
@@ -65,6 +66,8 @@ public class AddressHandler
                         clientProviderFactory.getSSMProvider(),
                         clientProviderFactory.getSecretsProvider());
 
+        addressTtl = configurationService.getSessionExpirationEpoch();
+
         this.sessionService =
                 new SessionService(
                         configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
@@ -73,10 +76,14 @@ public class AddressHandler
     }
 
     public AddressHandler(
-            SessionService sessionService, AddressService addressService, EventProbe eventProbe) {
+            SessionService sessionService,
+            AddressService addressService,
+            EventProbe eventProbe,
+            long addressTtl) {
         this.sessionService = sessionService;
         this.addressService = addressService;
         this.eventProbe = eventProbe;
+        this.addressTtl = addressTtl;
     }
 
     @Override
@@ -99,7 +106,7 @@ public class AddressHandler
                 addressService.setAddressValidity(addresses);
 
                 // Save our addresses to the address table
-                addressService.saveAddresses(UUID.fromString(sessionId), addresses);
+                addressService.saveAddresses(UUID.fromString(sessionId), addresses, addressTtl);
 
                 // Now we've saved our address, we need to create an authorization code for the
                 // session
