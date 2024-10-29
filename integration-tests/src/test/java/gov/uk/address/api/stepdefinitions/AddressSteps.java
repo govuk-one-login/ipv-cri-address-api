@@ -1,16 +1,16 @@
 package gov.uk.address.api.stepdefinitions;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
+import gov.uk.address.api.testharness.TestHarnessResponse;
+import gov.uk.address.api.testharness.TxmaEvent;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import software.amazon.awssdk.services.sqs.model.Message;
-import uk.gov.di.ipv.cri.common.library.aws.CloudFormationHelper;
-import uk.gov.di.ipv.cri.common.library.aws.SQSHelper;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
 
@@ -18,36 +18,24 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import static java.util.Map.entry;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AddressSteps {
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
-    private final SQSHelper sqs;
 
     private String postcode;
     private String uprn;
     private String countryCode;
-
-    private final String auditEventQueueUrl =
-            CloudFormationHelper.getOutput(
-                    CloudFormationHelper.getParameter(System.getenv("STACK_NAME"), "TxmaStackName"),
-                    "AuditEventQueueUrl");
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext) {
         this.objectMapper = new ObjectMapper();
         this.addressApiClient = new AddressApiClient(clientConfigurationService);
         this.testContext = testContext;
-        this.sqs = new SQSHelper(null, this.objectMapper);
     }
 
     @When("the user performs a postcode lookup for post code {string}")
@@ -117,41 +105,74 @@ public class AddressSteps {
         makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
     }
 
-    @Then("TXMA event is added to the SQS queue containing device information header")
-    public void txmaEventIsAddedToSqsQueueContainingDeviceInformationHeader()
-            throws IOException, InterruptedException {
-        assertEquals("deviceInformation", getDeviceInformationHeader());
+    @And("a valid START event is returned in the response with txma header")
+    public void aValidStartEventIsReturnedInTheResponseWithTxmaHeader() throws IOException {
+        assertEquals(200, this.testContext.getResponse().statusCode());
+        assertNotNull(this.testContext.getResponse().body());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<TestHarnessResponse> events =
+                objectMapper.readValue(
+                        this.testContext.getResponse().body(), new TypeReference<>() {});
+        assertFalse(events.isEmpty());
+
+        events.forEach(
+                e -> {
+                    try {
+                        TxmaEvent event =
+                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
+                        assertEquals("IPV_ADDRESS_CRI_START", event.getEventName());
+                    } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+
+        events.forEach(
+                e -> {
+                    try {
+                        TxmaEvent restricted =
+                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
+                        assertEquals(
+                                "deviceInformation",
+                                restricted.getRestricted().getDeviceInformation().getEncoded());
+                    } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
     }
 
-    @Then("TXMA event is added to the SQS queue not containing device information header")
-    public void txmaEventIsAddedToSqsQueueNotContainingDeviceInformationHeader()
-            throws InterruptedException, IOException {
-        assertEquals("", getDeviceInformationHeader());
-    }
+    @And("a valid START event is returned in the response without txma header")
+    public void aValidStartEventIsReturnedInTheResponseWithoutTxmaHeader() throws IOException {
+        assertEquals(200, this.testContext.getResponse().statusCode());
+        assertNotNull(this.testContext.getResponse().body());
 
-    @And("{int} events are deleted from the audit events SQS queue")
-    public void deleteEventsFromSqsQueue(int messageCount) throws InterruptedException {
-        this.sqs.deleteMatchingMessages(
-                auditEventQueueUrl,
-                messageCount,
-                Collections.singletonMap("/user/session_id", testContext.getSessionId()));
-    }
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<TestHarnessResponse> events =
+                objectMapper.readValue(
+                        this.testContext.getResponse().body(), new TypeReference<>() {});
+        assertFalse(events.isEmpty());
 
-    private String getDeviceInformationHeader() throws InterruptedException, IOException {
-        final List<Message> startEventMessages =
-                this.sqs.receiveMatchingMessages(
-                        auditEventQueueUrl,
-                        1,
-                        Map.ofEntries(
-                                entry("/event_name", "IPV_ADDRESS_CRI_START"),
-                                entry("/user/session_id", testContext.getSessionId())));
+        events.forEach(
+                e -> {
+                    try {
+                        TxmaEvent event =
+                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
+                        assertEquals("IPV_ADDRESS_CRI_START", event.getEventName());
+                    } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
 
-        assertEquals(1, startEventMessages.size());
-
-        return objectMapper
-                .readTree(startEventMessages.get(0).body())
-                .at("/restricted/device_information/encoded")
-                .asText();
+        events.forEach(
+                e -> {
+                    try {
+                        TxmaEvent restricted =
+                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
+                        assertNull(restricted.getRestricted());
+                    } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
     }
 
     @Then("user does not get any address")

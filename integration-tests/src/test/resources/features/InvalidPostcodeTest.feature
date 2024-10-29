@@ -12,9 +12,6 @@ Feature: Invalid postcode test
     When the user performs a postcode lookup for post code "<testPostCode>"
     Then user does not get any address
 
-    # TxMA events
-    And 3 events are deleted from the audit events SQS queue
-
     Examples:
       | testUserDataSheetRowNumber | testPostCode |
       | 197                        | XX12 12XX    |

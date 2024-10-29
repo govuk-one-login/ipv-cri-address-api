@@ -9,7 +9,8 @@ Feature: Address API happy path test
     Then user gets a session-id
 
     # TXMA event
-    Then TXMA event is added to the SQS queue containing device information header
+    When user sends a GET request to events end point
+    And a valid START event is returned in the response with txma header
 
     # Addresses
     When the user arrives at find your address page
@@ -34,7 +35,6 @@ Feature: Address API happy path test
     #Credential issued
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
-    And 5 events are deleted from the audit events SQS queue
 
   @address_api_happy
   Scenario Outline: Basic Address API journey
@@ -45,7 +45,8 @@ Feature: Address API happy path test
     Then user gets a session-id
 
     # TXMA event
-    Then TXMA event is added to the SQS queue not containing device information header
+    When user sends a GET request to events end point
+    And a valid START event is returned in the response without txma header
 
     # Addresses
     When the user arrives at find your address page
@@ -70,7 +71,6 @@ Feature: Address API happy path test
     # Credential Issued
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
-    And 5 events are deleted from the audit events SQS queue
 
     Examples:
       | testUserDataSheetRowNumber | testPostCode |

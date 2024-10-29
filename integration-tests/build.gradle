@@ -15,6 +15,10 @@ dependencies {
 	testImplementation "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}"
 	testImplementation(testFixtures("uk.gov.account:cri-common-lib:${dependencyVersions.cri_common_lib}"))
 	testImplementation "io.cucumber:cucumber-junit:7.9.0"
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.0'
+	implementation 'com.fasterxml.jackson.core:jackson-core:2.18.0'
+	implementation 'com.fasterxml.jackson.core:jackson-annotations:2.18.0'
+	implementation 'com.github.erosb:everit-json-schema:1.14.4'
 }
 
 configurations {
