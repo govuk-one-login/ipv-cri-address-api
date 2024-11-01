@@ -396,6 +396,10 @@ components:
           type: "string"
           example: "GB"
           description: "ISO 2-Letter Country Code"
+        addressRegion:
+          type: "string"
+          example: "IL"
+          description: "The state, district, county, parish or province"
         validFrom:
           description: "Date in ISO 8601 format"
           type: "string"

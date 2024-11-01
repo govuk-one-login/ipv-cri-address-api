@@ -46,6 +46,7 @@ public class AddressApiClient {
         currentAddress.setPostalCode(postcode);
         currentAddress.setValidFrom(LocalDate.of(2020, 1, 1));
         currentAddress.setAddressCountry(countryCode);
+        currentAddress.setAddressRegion("DummyRegion");
 
         String requestBody =
                 objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});

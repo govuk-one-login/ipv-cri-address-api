@@ -45,6 +45,7 @@ describe("Address Service V2 Test", () => {
                         streetName: "Downing street",
                         buildingNumber: "10",
                         postalCode: "SW1A 2AA",
+                        addressRegion: "Greater London Authority",
                     },
                 ],
             };

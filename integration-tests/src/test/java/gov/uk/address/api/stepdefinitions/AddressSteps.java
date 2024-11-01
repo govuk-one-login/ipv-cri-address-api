@@ -180,6 +180,9 @@ public class AddressSteps {
         assertEquals(postcode, payload.at("/vc/credentialSubject/address/0/postalCode").asText());
         assertEquals(
                 countryCode, payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
+        assertEquals(
+                "DummyRegion",
+                payload.at("/vc/credentialSubject/address/0/addressRegion").asText());
     }
 
     @When("the user arrives at find your address page")
