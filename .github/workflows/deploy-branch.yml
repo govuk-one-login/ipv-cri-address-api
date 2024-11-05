@@ -23,6 +23,9 @@ jobs:
     name: Build SAM app
     runs-on: ubuntu-latest
     permissions: {}
+    outputs:
+      cache-key: ${{ steps.build.outputs.cache-key }}
+      cache-restore-keys: ${{ steps.build.outputs.cache-restore-keys }}
     steps:
       - name: Pull repository
         uses: actions/checkout@v4
@@ -40,12 +43,13 @@ jobs:
           cache: gradle
 
       - name: Build SAM application
-        uses: govuk-one-login/github-actions/sam/build-application@cd7d35dde348251237efbbaee5345e95adef0321
+        uses: govuk-one-login/github-actions/sam/build-application@d201191485b645ec856a34e5ca48636cf97b2574
         id: build
         with:
           template: infrastructure/lambda/template.yaml
-          cache-key: address-api
-          pull-repository: false
+          cache-name: address-api
+          pull-repository: true
+          source-dir: lambdas
 
   deploy:
     name: Deploy stack
@@ -63,16 +67,17 @@ jobs:
       stack-outputs: ${{ steps.deploy.outputs.stack-outputs }}
     steps:
       - name: Deploy stack
-        uses: govuk-one-login/github-actions/sam/deploy-stack@cd7d35dde348251237efbbaee5345e95adef0321
+        uses: govuk-one-login/github-actions/sam/deploy-stack@d201191485b645ec856a34e5ca48636cf97b2574
         id: deploy
         with:
           sam-deployment-bucket: ${{ vars.DEPLOYMENT_ARTIFACTS_BUCKET }}
           aws-role-arn: ${{ vars.DEPLOYMENT_ROLE_ARN }}
           stack-name-prefix: preview-address-api
-          cache-key: address-api
+          cache-key: ${{ needs.build.outputs.cache-key }}
+          cache-restore-keys: ${{ needs.build.outputs.cache-restore-keys }}
           s3-prefix: preview
           pull-repository: true
-          delete-failed-stack: true
+          disable-rollback: true
           tags: |
             cri:component=ipv-cri-address-api
             cri:stack-type=preview
