@@ -40,6 +40,7 @@ describe("Address Service", () => {
                     streetName: "Downing street",
                     buildingNumber: "10",
                     postalCode: "SW1A 2AA",
+                    addressRegion: "Greater London Authority",
                 },
             ],
         };

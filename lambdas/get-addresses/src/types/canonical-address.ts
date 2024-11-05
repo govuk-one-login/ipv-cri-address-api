@@ -14,4 +14,5 @@ export type CanonicalAddress = {
     addressLocality?: string;
     postalCode?: string;
     addressCountry?: string;
+    addressRegion?: string;
 };

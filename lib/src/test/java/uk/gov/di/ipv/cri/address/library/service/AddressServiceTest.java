@@ -84,6 +84,7 @@ class AddressServiceTest {
                             + "      \"addressLocality\": \"LEEDS\",\n"
                             + "      \"postalCode\": \"LS10 4QL\",\n"
                             + "      \"addressCountry\": \"GB\",\n"
+                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
                             + "      \"validFrom\": \"2010-02-26\",\n"
                             + "      \"validUntil\": \"2021-01-16\"\n"
                             + "   },\n"
@@ -112,6 +113,7 @@ class AddressServiceTest {
             List<CanonicalAddress> parsedAddresses = addressService.parseAddresses(addresses);
 
             assertThat(parsedAddresses.size(), equalTo(3));
+            assertEquals("YORKSHIRE", parsedAddresses.get(0).getAddressRegion());
         }
 
         @Test
@@ -125,6 +127,7 @@ class AddressServiceTest {
                             + "      \"addressLocality\": \"LEEDS\",\n"
                             + "      \"postalCode\": \"LS10 4QL\",\n"
                             + "      \"addressCountry\": \"GB\",\n"
+                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
                             + "      \"validFrom\": \"2010-00-00\",\n"
                             + "      \"validUntil\": \"2021-01-16\"\n"
                             + "   },\n"
@@ -139,12 +142,13 @@ class AddressServiceTest {
                     addressProcessingException.getMessage(),
                     containsString(
                             String.format(
-                                    "could not parse addresses...Error while deserializing object. Some PII fields were redacted. {\"uprn\":\"%s\",\"buildingNumber\":\"*\",\"streetName\":\"%s\",\"addressLocality\":\"%s\",\"postalCode\":\"%s\",\"addressCountry\":\"%s\",\"validFrom\":\"**********\",\"validUntil\":\"**********\"}",
+                                    "could not parse addresses...Error while deserializing object. Some PII fields were redacted. {\"uprn\":\"%s\",\"buildingNumber\":\"*\",\"streetName\":\"%s\",\"addressLocality\":\"%s\",\"postalCode\":\"%s\",\"addressCountry\":\"%s\",\"addressRegion\":\"%s\",\"validFrom\":\"**********\",\"validUntil\":\"**********\"}",
                                     "*".repeat("72262801".length()),
                                     "*".repeat("GRANGE FIELDS WAY".length()),
                                     "*".repeat("LEEDS".length()),
                                     "*".repeat("LS10 4QL".length()),
                                     "*".repeat("GB".length()),
+                                    "*".repeat("YORKSHIRE".length()),
                                     "*".repeat("2010-00-00".length()),
                                     "*".repeat("2021-01-16".length()))));
         }
@@ -159,6 +163,7 @@ class AddressServiceTest {
                             + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
                             + "      \"addressLocality\": \"LEEDS\",\n"
                             + "      \"postalCode\": \"LS10 4QL\",\n"
+                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
                             + "      \"validFrom\": \"2010-02-26\",\n"
                             + "      \"validUntil\": \"2021-01-16\"\n"
                             + "   },\n"
@@ -200,6 +205,7 @@ class AddressServiceTest {
                             + "      \"addressLocality\": \"LEEDS\",\n"
                             + "      \"postalCode\": \"LS10 4QL\",\n"
                             + "      \"addressCountry\": \"GB\",\n"
+                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
                             + "      \"validFrom\": \"2010-02-26\",\n"
                             + "      \"validUntil\": \"2021-01-16\"\n"
                             + "   },\n"
@@ -251,6 +257,7 @@ class AddressServiceTest {
             address1.setAddressLocality("LEEDS");
             address1.setPostalCode("LS10 4QL");
             address1.setAddressCountry("GB");
+            address1.setAddressRegion("YORKSHIRE");
             address1.setValidFrom(LocalDate.of(2010, 2, 26));
             address1.setValidUntil(LocalDate.of(2021, 1, 16));
 
