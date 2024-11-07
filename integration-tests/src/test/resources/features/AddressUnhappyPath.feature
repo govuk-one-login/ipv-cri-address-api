@@ -9,7 +9,8 @@ Feature: Address API unhappy path test
     Then user gets a session-id
 
     # TXMA event
-    Then TXMA event is added to the SQS queue not containing device information header
+    When user sends a GET request to events end point
+    And a valid START event is returned in the response without txma header
 
     # Postcode lookup
     When the user performs a postcode lookup for post code "SW1A 2AA"
@@ -18,6 +19,3 @@ Feature: Address API unhappy path test
     # Address
     When the user selects address without country code
     Then the address is not saved
-
-    # TxMA events
-    And 3 events are deleted from the audit events SQS queue
