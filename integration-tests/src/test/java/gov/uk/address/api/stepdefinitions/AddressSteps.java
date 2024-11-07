@@ -34,6 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AddressSteps {
+    private static final String ADDRESS_START_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_START.json";
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
@@ -42,8 +43,6 @@ public class AddressSteps {
     private String postcode;
     private String uprn;
     private String countryCode;
-
-    private static final String ADDRESS_START_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_START.json";
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext)
