@@ -118,6 +118,7 @@ class IssueCredentialHandlerTest {
         address.setBuildingNumber("114");
         address.setStreetName("Wellington Street");
         address.setPostalCode("LS1 1BA");
+        address.setAddressRegion("Dummy Region");
         AddressItem addressItem = new AddressItem();
 
         List<CanonicalAddress> canonicalAddresses = List.of(address);
@@ -174,6 +175,7 @@ class IssueCredentialHandlerTest {
             assertEquals(address.getAddressLocality(), addressInAuditContext.getAddressLocality());
             assertEquals(address.getPostalCode(), addressInAuditContext.getPostalCode());
             assertEquals(address.getAddressCountry(), addressInAuditContext.getAddressCountry());
+            assertEquals(address.getAddressRegion(), addressInAuditContext.getAddressRegion());
         }
     }
 
@@ -202,6 +204,7 @@ class IssueCredentialHandlerTest {
         address.setBuildingNumber("114");
         address.setStreetName("Wellington Street");
         address.setPostalCode("LS1 1BA");
+        address.setAddressRegion("Dummy Region");
         AddressItem addressItem = new AddressItem();
 
         List<CanonicalAddress> canonicalAddresses = List.of(address);
@@ -274,6 +277,7 @@ class IssueCredentialHandlerTest {
             assertEquals(address.getAddressLocality(), addressInAuditContext.getAddressLocality());
             assertEquals(address.getPostalCode(), addressInAuditContext.getPostalCode());
             assertEquals(address.getAddressCountry(), addressInAuditContext.getAddressCountry());
+            assertEquals(address.getAddressRegion(), addressInAuditContext.getAddressRegion());
         }
     }
 
