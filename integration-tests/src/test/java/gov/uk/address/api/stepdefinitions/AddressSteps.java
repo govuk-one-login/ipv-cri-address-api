@@ -26,6 +26,7 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -133,10 +134,12 @@ public class AddressSteps {
                 objectMapper.readValue(responseBody, new TypeReference<>() {});
 
         assertFalse(events.isEmpty());
+        assertEquals(1, events.size());
 
         for (TestHarnessResponse<AuditEvent<Map<String, Object>>> response : events) {
             AuditEvent<?> event = response.readAuditEvent();
             assertEquals("IPV_ADDRESS_CRI_START", event.getEvent());
+            assertEquals(this.testContext.getSessionId(), event.getUser().getSessionId());
             assertEquals(
                     "deviceInformation", event.getRestricted().getDeviceInformation().getEncoded());
         }
@@ -152,10 +155,12 @@ public class AddressSteps {
                 objectMapper.readValue(responseBody, new TypeReference<>() {});
 
         assertFalse(events.isEmpty());
+        assertEquals(1, events.size());
 
         for (TestHarnessResponse<AuditEvent<Map<String, Object>>> response : events) {
             AuditEvent<?> event = response.readAuditEvent();
             assertEquals("IPV_ADDRESS_CRI_START", event.getEvent());
+            assertEquals(this.testContext.getSessionId(), event.getUser().getSessionId());
             assertTrue(
                     JsonSchemaValidator.validateJsonAgainstSchema(
                             response.getEvent().getData(), addressStartJsonSchema));
@@ -167,23 +172,27 @@ public class AddressSteps {
     public void startTxmaEventValidatedAgainstSchema() throws IOException {
         String responseBody = testContext.getTestHarnessResponseBody();
 
-        List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> events =
+        List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> testHarnessResponses =
                 objectMapper.readValue(responseBody, new TypeReference<>() {});
-        assertFalse(events.isEmpty());
 
-        boolean checked = false;
+        var events =
+                testHarnessResponses.stream()
+                        .filter(
+                                event ->
+                                        event.getEvent().toString().equals("IPV_ADDRESS_CRI_START"))
+                        .collect(Collectors.toList());
+
+        assertNotNull(events);
         for (TestHarnessResponse<AuditEvent<Map<String, Object>>> testHarnessResponse : events) {
             AuditEvent<?> event =
                     objectMapper.readValue(
                             testHarnessResponse.getEvent().getData(), AuditEvent.class);
-            if (event.getEvent().equalsIgnoreCase("IPV_ADDRESS_CRI_START")) {
-                checked = true;
-                assertTrue(
-                        JsonSchemaValidator.validateJsonAgainstSchema(
-                                testHarnessResponse.getEvent().getData(), addressStartJsonSchema));
-            }
+            assertEquals(1, events.size());
+            assertEquals(this.testContext.getSessionId(), event.getUser().getSessionId());
+            assertTrue(
+                    JsonSchemaValidator.validateJsonAgainstSchema(
+                            testHarnessResponse.getEvent().getData(), addressStartJsonSchema));
         }
-        assertTrue(checked);
     }
 
     @Then("user does not get any address")
