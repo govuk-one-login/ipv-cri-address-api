@@ -11,6 +11,7 @@ Feature: Address API happy path test
     # TXMA event
     When user sends a GET request to events end point
     And a valid START event is returned in the response with txma header
+    Then START TxMA event is validated against schema
 
     # Addresses
     When the user arrives at find your address page
@@ -47,6 +48,7 @@ Feature: Address API happy path test
     # TXMA event
     When user sends a GET request to events end point
     And a valid START event is returned in the response without txma header
+    Then START TxMA event is validated against schema
 
     # Addresses
     When the user arrives at find your address page
@@ -86,7 +88,9 @@ Feature: Address API happy path test
     Then user gets a session-id
 
     # TXMA event
-    Then TXMA event is added to the SQS queue not containing device information header
+    When user sends a GET request to events end point
+    And a valid START event is returned in the response without txma header
+    Then START TxMA event is validated against schema
 
     # Addresses
     When user requests lands on /addresses/v2
@@ -111,4 +115,3 @@ Feature: Address API happy path test
     # Credential Issued
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
-    And 5 events are deleted from the audit events SQS queue

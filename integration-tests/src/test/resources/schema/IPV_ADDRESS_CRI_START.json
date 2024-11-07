@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "properties": {
+    "event_name": {
+      "type": "string"
+    },
+    "user": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "govuk_signin_journey_id": {
+          "type": "string"
+        },
+        "ip_address": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "user_id",
+        "session_id",
+        "govuk_signin_journey_id",
+        "ip_address"
+      ]
+    },
+    "timestamp": {
+      "type": "integer"
+    },
+    "event_timestamp_ms": {
+      "type": "integer"
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "restricted": {
+      "type": "object",
+      "properties": {
+        "device_information": {
+          "type": "object",
+          "properties": {
+            "encoded": {
+              "type": "string"
+            }
+          },
+          "required": ["encoded"]
+        }
+      },
+      "required": ["device_information"]
+    }
+  },
+  "required": [
+    "event_name",
+    "user",
+    "timestamp",
+    "event_timestamp_ms",
+    "component_id"
+  ],
+  "additionalProperties": false
+}

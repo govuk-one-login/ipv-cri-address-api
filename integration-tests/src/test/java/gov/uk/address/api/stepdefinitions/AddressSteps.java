@@ -6,36 +6,58 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
-import gov.uk.address.api.testharness.TestHarnessResponse;
-import gov.uk.address.api.testharness.TxmaEvent;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
+import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
+import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
 import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
+import uk.gov.di.ipv.cri.common.library.util.JsonSchemaValidator;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class AddressSteps {
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
+    private final String addressStartJsonSchema;
 
     private String postcode;
     private String uprn;
     private String countryCode;
 
+    private static final String ADDRESS_START_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_START.json";
+
     public AddressSteps(
-            ClientConfigurationService clientConfigurationService, CriTestContext testContext) {
+            ClientConfigurationService clientConfigurationService, CriTestContext testContext)
+            throws IOException, URISyntaxException {
         this.objectMapper = new ObjectMapper();
         this.addressApiClient = new AddressApiClient(clientConfigurationService);
         this.testContext = testContext;
+
+        Path schemaPath =
+                Paths.get(
+                        Objects.requireNonNull(
+                                        AddressSteps.class.getResource(ADDRESS_START_SCHEMA_FILE))
+                                .toURI());
+        this.addressStartJsonSchema = Files.readString(schemaPath);
     }
 
     @When("the user performs a postcode lookup for post code {string}")
@@ -107,72 +129,62 @@ public class AddressSteps {
 
     @And("a valid START event is returned in the response with txma header")
     public void aValidStartEventIsReturnedInTheResponseWithTxmaHeader() throws IOException {
-        assertEquals(200, this.testContext.getResponse().statusCode());
-        assertNotNull(this.testContext.getResponse().body());
+        String responseBody = testContext.getTestHarnessResponseBody();
+        List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> events =
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        List<TestHarnessResponse> events =
-                objectMapper.readValue(
-                        this.testContext.getResponse().body(), new TypeReference<>() {});
         assertFalse(events.isEmpty());
 
-        events.forEach(
-                e -> {
-                    try {
-                        TxmaEvent event =
-                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
-                        assertEquals("IPV_ADDRESS_CRI_START", event.getEventName());
-                    } catch (JsonProcessingException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                });
-
-        events.forEach(
-                e -> {
-                    try {
-                        TxmaEvent restricted =
-                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
-                        assertEquals(
-                                "deviceInformation",
-                                restricted.getRestricted().getDeviceInformation().getEncoded());
-                    } catch (JsonProcessingException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                });
+        for (TestHarnessResponse<AuditEvent<Map<String, Object>>> response : events) {
+            AuditEvent<?> event = response.readAuditEvent();
+            assertEquals("IPV_ADDRESS_CRI_START", event.getEvent());
+            assertEquals(
+                    "deviceInformation", event.getRestricted().getDeviceInformation().getEncoded());
+        }
     }
 
     @And("a valid START event is returned in the response without txma header")
     public void aValidStartEventIsReturnedInTheResponseWithoutTxmaHeader() throws IOException {
-        assertEquals(200, this.testContext.getResponse().statusCode());
-        assertNotNull(this.testContext.getResponse().body());
+        String responseBody = testContext.getTestHarnessResponseBody();
+        assertEquals(200, testContext.getTestHarnessResponse().httpResponse().statusCode());
+        assertNotNull(responseBody);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        List<TestHarnessResponse> events =
-                objectMapper.readValue(
-                        this.testContext.getResponse().body(), new TypeReference<>() {});
+        List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> events =
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
+
         assertFalse(events.isEmpty());
 
-        events.forEach(
-                e -> {
-                    try {
-                        TxmaEvent event =
-                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
-                        assertEquals("IPV_ADDRESS_CRI_START", event.getEventName());
-                    } catch (JsonProcessingException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                });
+        for (TestHarnessResponse<AuditEvent<Map<String, Object>>> response : events) {
+            AuditEvent<?> event = response.readAuditEvent();
+            assertEquals("IPV_ADDRESS_CRI_START", event.getEvent());
+            assertTrue(
+                    JsonSchemaValidator.validateJsonAgainstSchema(
+                            response.getEvent().getData(), addressStartJsonSchema));
+            assertNull(event.getRestricted());
+        }
+    }
 
-        events.forEach(
-                e -> {
-                    try {
-                        TxmaEvent restricted =
-                                objectMapper.readValue(e.getEvent().getData(), TxmaEvent.class);
-                        assertNull(restricted.getRestricted());
-                    } catch (JsonProcessingException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                });
+    @Then("START TxMA event is validated against schema")
+    public void startTxmaEventValidatedAgainstSchema() throws IOException {
+        String responseBody = testContext.getTestHarnessResponseBody();
+
+        List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> events =
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
+        assertFalse(events.isEmpty());
+
+        boolean checked = false;
+        for (TestHarnessResponse<AuditEvent<Map<String, Object>>> testHarnessResponse : events) {
+            AuditEvent<?> event =
+                    objectMapper.readValue(
+                            testHarnessResponse.getEvent().getData(), AuditEvent.class);
+            if (event.getEvent().equalsIgnoreCase("IPV_ADDRESS_CRI_START")) {
+                checked = true;
+                assertTrue(
+                        JsonSchemaValidator.validateJsonAgainstSchema(
+                                testHarnessResponse.getEvent().getData(), addressStartJsonSchema));
+            }
+        }
+        assertTrue(checked);
     }
 
     @Then("user does not get any address")
