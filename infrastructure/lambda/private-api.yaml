@@ -188,33 +188,6 @@ paths:
           Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${CommonStackName}-AuthorizationFunction/invocations
         passthroughBehavior: "when_no_match"
 
-  /addresses:
-    get:
-      parameters:
-        - $ref: "#/components/parameters/SessionIdHeaderWithUnderscore"
-      responses:
-        "400":
-          $ref: "#/components/responses/Error400"
-        "500":
-          $ref: "#/components/responses/Error500"
-        "200":
-          description: "200 response"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PostcodeLookupResponse"
-      x-amazon-apigateway-request-validator: "Validate both"
-      x-amazon-apigateway-integration:
-        httpMethod: "POST"
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAddressesFunction.Arn}:live/invocations
-        responses:
-          default:
-            statusCode: "200"
-        passthroughBehavior: "when_no_match"
-        contentHandling: "CONVERT_TO_TEXT"
-        type: "aws_proxy"
-
   /addresses/v2:
     get:
       parameters:
