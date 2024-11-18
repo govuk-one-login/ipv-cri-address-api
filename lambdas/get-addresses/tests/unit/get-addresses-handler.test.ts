@@ -1,22 +1,22 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import { AddressesV2Handler } from "../../src/v2/get-addresses-v2-handler";
+import { AddressesHandler } from "../../src/get-addresses-handler";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
-import { AddressServiceV2 } from "../../src/v2/services/address-service-v2";
+import { AddressService } from "../../src/services/address-service";
 import { ApiError } from "../../src/lib/error-handler";
 jest.mock("@aws-lambda-powertools/logger");
-jest.mock("../../src/v2/services/address-service-v2");
+jest.mock("../../src/services/address-service");
 const logger = new Logger();
 const mockedLogger = jest.mocked(Logger);
 const dynamoDbClientMock = jest.mocked(DynamoDbClient);
-const addressService = new AddressServiceV2(dynamoDbClientMock, logger);
+const addressService = new AddressService(dynamoDbClientMock, logger);
 const mockContext: Partial<Context> = {
     functionName: "testFunction",
 };
 
-describe("get-addresses-v2-handler", () => {
+describe("get-addresses-handler", () => {
     let loggerSpy: jest.SpyInstance<unknown, never, unknown>;
-    const handlerClass = new AddressesV2Handler(addressService);
+    const handlerClass = new AddressesHandler(addressService);
 
     beforeEach(() => {
         jest.clearAllMocks();
