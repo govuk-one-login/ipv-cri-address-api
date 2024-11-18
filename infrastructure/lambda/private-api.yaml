@@ -202,7 +202,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PostcodeLookupResponse"
+                $ref: "#/components/schemas/AddressesLookupResponse"
       x-amazon-apigateway-request-validator: "Validate both"
       x-amazon-apigateway-integration:
         httpMethod: "POST"
@@ -313,6 +313,16 @@ components:
       properties:
         session_id:
           type: "string"
+    AddressesLookupResponse:
+      title: "/addresses Response"
+      type: "object"
+      properties:
+        context:
+          type: "string"
+        addresses:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/CanonicalAddress"
     PostcodeLookupResponse:
       title: "Postcode Lookup Response"
       type: "array"
