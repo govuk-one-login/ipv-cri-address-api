@@ -233,10 +233,10 @@ public class AddressSteps {
                         this.testContext.getSessionId()));
     }
 
-    @When("user requests lands on \\/addresses\\/v2")
-    public void userRequestsLandsOnAddressesV2() throws IOException, InterruptedException {
+    @When("user requests lands on \\/addresses")
+    public void userRequestsLandsOnAddresses() throws IOException, InterruptedException {
         this.testContext.setResponse(
-                this.addressApiClient.sendGetAddressesLookupRequestV2(
+                this.addressApiClient.sendGetAddressesLookupRequest(
                         this.testContext.getSessionId()));
     }
 
