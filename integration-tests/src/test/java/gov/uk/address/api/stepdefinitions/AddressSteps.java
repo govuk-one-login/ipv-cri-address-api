@@ -247,9 +247,9 @@ public class AddressSteps {
         assertEquals(200, this.testContext.getResponse().statusCode());
 
         assertNotNull(jsonNode);
-        assertTrue(jsonNode.isArray());
+        assertTrue(jsonNode.get("addresses").isArray());
 
-        JsonNode firstAddress = jsonNode.get(0);
+        JsonNode firstAddress = jsonNode.get("addresses").get(0);
         assertNotNull(firstAddress);
 
         assertNotNull(firstAddress.get("postalCode").asText());
