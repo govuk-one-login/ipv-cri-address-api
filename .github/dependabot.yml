@@ -1,40 +1,41 @@
 version: 2
 updates:
-  - package-ecosystem: 'npm'
-    directory: '/lambdas/get-addresses'
-    schedule:
-      interval: daily
-      time: "03:00"
+  - package-ecosystem: npm
     target-branch: main
+    directory: /lambdas/get-addresses
+    schedule:
+      interval: weekly
     labels:
-    - dependabot
-    ignore:
-      - dependency-name: "node"
-        versions: ["17.x","18.x"]
+      - dependabot
     commit-message:
-      prefix: BAU
+      prefix: DEP
+    ignore:
+      - dependency-name: node
+        versions: [17.x, 18.x]
     groups:
       aws:
         patterns:
-          - "@aws-*"
+          - @aws-*
       eslint:
         patterns:
-          - "eslint"
-          - "eslint-*"
-          - "@typescript-eslint/*"
-  - package-ecosystem: 'github-actions'
-    directory: '/'
-    schedule:
-      interval: 'weekly'
+          - eslint
+          - eslint-*
+          - @typescript-eslint/*
+  - package-ecosystem: github-actions
     target-branch: main
+    directory: /
+    schedule:
+      interval: weekly
     labels:
-    - dependabot
-  - package-ecosystem: "gradle"
-    directory: "/"
+      - dependabot
     commit-message:
-      prefix: BAU
-    schedule:
-      interval: "weekly"
+      prefix: DEP
+  - package-ecosystem: gradle
     target-branch: main
+    directory: /
+    schedule:
+      interval: weekly
     labels:
-    - dependabot
+      - dependabot
+    commit-message:
+      prefix: DEP
