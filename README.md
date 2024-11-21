@@ -81,19 +81,18 @@ The public keys need to be published so that clients:
 
 The environment variable `IPV_CORE_STUB_CRI_ID` with value `address-cri-dev` allows the command below to use keys in `ipv-config` pointing to keys in `di-ipv-cri-address-dev` for the deployed stack in that account.
 
-## Run all tests
-Make sure you have deployed a stack on AWS and provide that `STACK_NAME` below with corresponding `API_GATEWAY_ID_PRIVATE` and `API_GATEWAY_ID_PUBLIC` endpoints
+## Integration tests
 
+Make sure you have deployed a stack to AWS and provide its name in the `STACK_NAME` variable below with the corresponding values for `API_GATEWAY_ID_PRIVATE` and `API_GATEWAY_ID_PUBLIC`.
 
-Below runs by overriding the stub client to `https://cri.core.build.stubs.account.gov.uk` in AWS with stub a client_id ipv-core-stub-aws-stub using DEFAULT_CLIENT_ID env variable
+To initiate journeys for the tests we use the IPV Core Stub, which runs in AWS and is accessible at `https://cri.core.build.stubs.account.gov.uk`.
 
-Use the default `test-resources` stack in TEST_RESOURCES_STACK_NAME unless you have deployed a local test-resources stack 
+The command below overrides the client ID used by the Core Stub to `ipv-core-stub-aws-prod` by setting the `DEFAULT_CLIENT_ID` environment variable.
+
+Optionally set a value for `TEST_RESOURCES_STACK_NAME` if you have deployed a local test resources stack and want to override the default stack named `test-resources`.
 
 ```
-ENVIRONMENT=dev STACK_NAME=xxxx IPV_CORE_STUB_CRI_ID=address-cri-dev  API_GATEWAY_ID_PRIVATE=xxxx API_GATEWAY_ID_PUBLIC=xxxx IPV_CORE_STUB_BASIC_AUTH_USER=xxxx IPV_CORE_STUB_BASIC_AUTH_PASSWORD=xxxx IPV_CORE_STUB_URL="https://cri.core.build.stubs.account.gov.uk" DEFAULT_CLIENT_ID=ipv-core-stub-aws-build APIGW_API_KEY=xxxx TEST_RESOURCES_STACK_NAME=xxxx gradle integration-tests:cucumber
+ENVIRONMENT=localdev STACK_NAME=<your-stack> API_GATEWAY_ID_PRIVATE=<from-your-stack> API_GATEWAY_ID_PUBLIC=<from-your-stack> IPV_CORE_STUB_CRI_ID=address-cri-dev IPV_CORE_STUB_BASIC_AUTH_USER=xxxx IPV_CORE_STUB_BASIC_AUTH_PASSWORD=xxxx IPV_CORE_STUB_URL=https://cri.core.build.stubs.account.gov.uk DEFAULT_CLIENT_ID=ipv-core-stub-aws-build APIGW_API_KEY=xxxx TEST_RESOURCES_STACK_NAME= gradle integration-tests:cucumber
 ```
 
-## Run a particular test
-````
-STACK_NAME=xxxx IPV_CORE_STUB_CRI_ID=address-cri-dev ENVIRONMENT=dev API_GATEWAY_ID_PRIVATE=xxxx  API_GATEWAY_ID_PUBLIC=xxxx IPV_CORE_STUB_BASIC_AUTH_USER=xxxx IPV_CORE_STUB_BASIC_AUTH_PASSWORD=xxxx IPV_CORE_STUB_URL="https://di-ipv-core-stub.london.cloudapps.digital" APIGW_API_KEY=xxxx TEST_RESOURCES_STACK_NAME=xxxx gradle cucumber -P tags=@tag-name
-````
+To run a particular test append `-P tags=@tag-name` to the command above specifying the tag you want to select.

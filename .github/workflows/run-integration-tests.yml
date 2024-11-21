@@ -44,7 +44,7 @@ jobs:
 
       - name: Run tests
         env:
-          ENVIRONMENT: dev
+          ENVIRONMENT: localdev
           AWS_REGION: ${{ inputs.aws-region }}
           STACK_NAME: ${{ inputs.stack-name }}
           API_GATEWAY_ID_PUBLIC: ${{ fromJson(inputs.stack-outputs).PublicAddressApiGatewayId }}

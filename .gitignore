@@ -36,8 +36,7 @@ hs_err_pid*
 # Ignore Gradle build output directory
 build
 
-# aws sam deploy ignores
-infrastructure/lambda/samconfig.toml
+# SAM/CloudFormation
 .aws-sam
 
 # mac

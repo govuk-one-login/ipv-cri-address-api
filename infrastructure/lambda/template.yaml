@@ -1,27 +1,21 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Transform: "AWS::Serverless-2016-10-31"
-Description: "Digital Identity IPV CRI Address API"
+Description: Digital Identity IPV CRI Address API
+Transform: AWS::Serverless-2016-10-31 #TODO: Cannot add the LanguageExtensions transform due to a bug in SAM/CF
 
 Parameters:
-  CodeSigningConfigArn:
-    Type: String
-    Default: "none"
-    Description: >
-      The ARN of the Code Signing Config to use, provided by the deployment pipeline
   Environment:
-    Description: "The environment type"
-    Type: "String"
-    AllowedValues:
-      - "dev"
-      - "build"
-      - "staging"
-      - "integration"
-      - "production"
-    ConstraintDescription: must be dev, build, staging, integration or production
+    Type: String
+    Default: dev
+    AllowedValues: [dev, localdev, build, staging, integration, production]
+    ConstraintDescription: Must be dev, localdev, build, staging, integration or production
   LambdaDeploymentPreference:
     Description: "Specifies the configuration to enable gradual Lambda deployments"
     Type: String
     Default: AllAtOnce
+  CodeSigningConfigArn:
+    Description: "The ARN of the Code Signing Config to use, provided by the deployment pipeline"
+    Type: String
+    Default: "none"
   PermissionsBoundary:
     Description: "The ARN of the permissions boundary to apply when creating IAM roles"
     Type: String
@@ -48,17 +42,16 @@ Parameters:
     Default: txma-infrastructure
 
 Conditions:
-  UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
+  UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, "none"]]
-  IsDevEnvironment: !Equals [!Ref Environment, dev]
+  UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
+  UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  IsDevEnvironment: !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
+  IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
-  UseCanaryDeploymentAlarms: !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ]]
-  UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
-  AddProvisionedConcurrency: !Not
-    - !Equals
-      - !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ]
-      - 0
+  AddProvisionedConcurrency:
+    !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
 
 Globals:
   Function:
@@ -122,7 +115,6 @@ Globals:
       - !Ref AWS::NoValue
 
 Mappings:
-
   MemorySizeMapping:
     Environment:
       dev: 2048
@@ -130,17 +122,22 @@ Mappings:
       staging: 2048
       integration: 2048
       production: 4096
+      localdev: 2048
 
   VcContainsUniqueIdMapping:
     Environment:
-      dev: "true"
-      build: "true"
-      staging: "true"
-      integration: "false"
-      production: "false"
+      dev: true
+      build: true
+      staging: true
+      integration: false
+      production: false
+      localdev: true
 
   EnvironmentConfiguration:
     dev:
+      provisionedConcurrency: 0
+      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+    localdev:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     build:
@@ -163,6 +160,7 @@ Mappings:
       staging: 6
       integration: 6
       production: 6
+      localdev: 2
 
   # Permitted values: SECONDS,MINUTES,HOURS,DAYS,MONTHS,YEARS
   JwtTtlUnitMapping:
@@ -172,6 +170,7 @@ Mappings:
       staging: MONTHS
       integration: MONTHS
       production: MONTHS
+      localdev: HOURS
 
   OrdnanceSurveyAPIURLMapping:
     Environment:
@@ -180,6 +179,7 @@ Mappings:
       staging: "https://api.os.uk/search/places/v1/postcode"
       integration: "https://api.os.uk/search/places/v1/postcode"
       production: "https://api.os.uk/search/places/v1/postcode"
+      localdev: "https://api.os.uk/search/places/v1/postcode"
 
 Resources:
   PublicAddressApi:
@@ -228,7 +228,6 @@ Resources:
 
   PrivateAddressApi:
     Type: AWS::Serverless::Api
-    Condition: IsNotDevEnvironment
     Properties:
       Description: Private Address CRI API
       MethodSettings:
@@ -269,67 +268,25 @@ Resources:
             Location: './private-api.yaml'
       OpenApiVersion: 3.0.1
       EndpointConfiguration:
-        Type: PRIVATE
+        Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
       Auth:
         ResourcePolicy:
           CustomStatements:
-            - Action: 'execute-api:Invoke'
-              Effect: Allow
-              Principal: '*'
-              Resource:
-                - 'execute-api:/*'
-            - Action: 'execute-api:Invoke'
-              Effect: Deny
-              Principal: '*'
-              Resource:
-                - 'execute-api:/*'
-              Condition:
-                StringNotEquals:
-                  aws:SourceVpce: !ImportValue cri-vpc-ApiGatewayVpcEndpointId
-
-  DevOnlyAddressApi:
-    Type: AWS::Serverless::Api
-    Condition: IsDevEnvironment
-    Properties:
-      Description: Dev Only Private Address CRI API
-      MethodSettings:
-        - LoggingLevel: INFO
-          ResourcePath: '/*'
-          HttpMethod: '*'
-          DataTraceEnabled: !If [IsProdEnvironment, false, true]
-          MetricsEnabled: true
-          ThrottlingRateLimit: 5
-          ThrottlingBurstLimit: 10
-      AccessLogSetting:
-        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${DevOnlyAddressApiAccessLogGroup}'
-        Format: >-
-          {
-          "requestId":"$context.requestId",
-          "ip":"$context.identity.sourceIp",
-          "requestTime":"$context.requestTime",
-          "httpMethod":"$context.httpMethod",
-          "path":"$context.path",
-          "routeKey":"$context.routeKey",
-          "status":"$context.status",
-          "protocol":"$context.protocol",
-          "responseLatency":"$context.responseLatency",
-          "responseLength":"$context.responseLength"
-          }
-      TracingEnabled: true
-      Name: !Sub "${AWS::StackName}-PrivateAddressApi"
-      StageName: !Ref Environment
-      DefinitionBody:
-        openapi: "3.0.1" # workaround to get `sam validate` to work
-        paths: # workaround to get `sam validate` to work
-          /never-created:
-            options: { } # workaround to get `sam validate` to work
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: './private-api.yaml'
-      OpenApiVersion: 3.0.1
-      EndpointConfiguration:
-        Type: REGIONAL
+            #FIXME: Workaround for lack of the LanguageExtensions transform - need at least one policy in the list
+            - Effect: Allow
+              Resource: execute-api:/*
+              Action: execute-api:Invoke
+              Principal: "*"
+            - !If
+              - IsLocalDevEnvironment
+              - !Ref AWS::NoValue
+              - Effect: Deny
+                Resource: execute-api:/*
+                Action: execute-api:Invoke
+                Principal: "*"
+                Condition:
+                  StringNotEquals:
+                    aws:SourceVpce: !ImportValue cri-vpc-ApiGatewayVpcEndpointId
 
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -347,16 +304,8 @@ Resources:
 
   PrivateAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: IsNotDevEnvironment
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
-      RetentionInDays: 30
-
-  DevOnlyAddressApiAccessLogGroup:
-    Type: AWS::Logs::LogGroup
-    Condition: IsDevEnvironment
-    Properties:
-      LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${DevOnlyAddressApi}-private-AccessLogs
       RetentionInDays: 30
 
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
@@ -628,11 +577,10 @@ Resources:
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     Condition: IsNotDevEnvironment
-    DependsOn: PublicAddressApiStage
     Properties:
       ApiStages:
         - ApiId: !Ref PublicAddressApi
-          Stage: !Ref Environment
+          Stage: !Ref PublicAddressApi.Stage
       Quota:
         Limit: 500000
         Period: DAY
@@ -643,11 +591,10 @@ Resources:
   PrivateAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     Condition: IsNotDevEnvironment
-    DependsOn: PrivateAddressApiStage
     Properties:
       ApiStages:
         - ApiId: !Ref PrivateAddressApi
-          Stage: !Ref Environment
+          Stage: !Ref PrivateAddressApi.Stage
       Quota:
         Limit: 500000
         Period: DAY
@@ -894,7 +841,7 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-#alarm temporarily disabled to avoid false positives and a rollback during deployment
+  ### Alarm temporarily disabled to avoid false positives and a rollback during deployment
   # AddressFunctionCanary5xxErrors:
   #   Type: AWS::CloudWatch::Alarm
   #   Condition: UseCanaryDeploymentAlarms
@@ -1036,8 +983,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-# Code Deploy Service Role
-
   CodeDeployServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1069,6 +1014,6 @@ Outputs:
 
   PrivateAddressApiGatewayId:
     Description: "API GatewayID of the private Address CRI API"
-    Value: !If [IsNotDevEnvironment, !Ref PrivateAddressApi, !Ref DevOnlyAddressApi]
+    Value: !Ref PrivateAddressApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
