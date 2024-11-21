@@ -1,8 +1,18 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        exclude: package-lock.json
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: no-commit-to-branch
+      - id: trailing-whitespace
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
@@ -18,7 +28,7 @@ repos:
       - id: prettier
         types_or: ["javascript", "ts", "json"]
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v0.83.5
+    rev: v1.20.0
     hooks:
       - id: cfn-lint
         files: .template\.ya?ml$
