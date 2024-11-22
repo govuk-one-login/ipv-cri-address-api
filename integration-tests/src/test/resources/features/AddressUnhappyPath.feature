@@ -9,7 +9,7 @@ Feature: Address API unhappy path test
     Then user gets a session-id
 
     # TXMA event
-    When user sends a GET request to events end point
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_START"
     And a valid START event is returned in the response without txma header
 
     # Postcode lookup
