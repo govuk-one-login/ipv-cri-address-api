@@ -76,7 +76,7 @@ public class AddressApiClient {
 
         String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
         return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "addresses")
+                requestBuilder(privateApiEndpoint, "addresses/v2")
                         .GET()
                         .header(SESSION_ID, sessionId)
                         .build());

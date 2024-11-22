@@ -188,7 +188,7 @@ paths:
           Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${CommonStackName}-AuthorizationFunction/invocations
         passthroughBehavior: "when_no_match"
 
-  /addresses:
+  /addresses/v2:
     get:
       parameters:
         - $ref: "#/components/parameters/SessionIdHeaderWithUnderscore"
