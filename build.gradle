@@ -1,7 +1,7 @@
 plugins {
 	id "java"
 	id "org.sonarqube" version "4.4.+"
-	id "com.diffplug.spotless" version "6.23.+"
+	id "com.diffplug.spotless" version "6.25.+"
 }
 
 defaultTasks 'clean', 'spotlessApply', 'build'
