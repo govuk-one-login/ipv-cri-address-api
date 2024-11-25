@@ -76,17 +76,6 @@ public class AddressApiClient {
 
         String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
         return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "addresses")
-                        .GET()
-                        .header(SESSION_ID, sessionId)
-                        .build());
-    }
-
-    public HttpResponse<String> sendGetAddressesLookupRequestV2(String sessionId)
-            throws IOException, InterruptedException {
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        return sendHttpRequest(
                 requestBuilder(privateApiEndpoint, "addresses/v2")
                         .GET()
                         .header(SESSION_ID, sessionId)

@@ -559,7 +559,7 @@ Resources:
   GetAddressesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: app.lambdaHandler
+      Handler: get-addresses-handler.lambdaHandler
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
@@ -570,57 +570,6 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - AWSXrayWriteOnlyAccess
-        - DynamoDBReadPolicy:
-            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-        - Statement:
-            - Sid: ReadParametersPolicy
-              Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
-    Metadata: # Manage esbuild properties
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: "es2020"
-        Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
-        EntryPoints:
-          - src/app.ts
-        External:
-          - "@aws-sdk/*"
-
-  GetAddressesFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/lambda/${GetAddressesFunction}"
-      RetentionInDays: 30
-
-  GetAddressesFunctionLogsSubscriptionFilterCSLS:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
-    Properties:
-      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
-      FilterPattern: ""
-      LogGroupName: !Ref GetAddressesFunctionLogGroup
-
-  GetAddressesFunctionV2:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: get-addresses-v2-handler.lambdaHandler
-      DeploymentPreference:
-        Alarms: !If
-          - UseCanaryDeploymentAlarms
-          - [!Ref GetAddressesFunctionV2CanaryErrors, !Ref GetAddressesFunctionV2Canary5xxErrors]
-          - [!Ref AWS::NoValue]
-      CodeUri: ../../lambdas/get-addresses/
-      Runtime: nodejs18.x
-      Environment:
-        Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses-v2"
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -643,23 +592,23 @@ Resources:
         Target: "es2020"
         Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
         EntryPoints:
-          - src/v2/get-addresses-v2-handler.ts
+          - src/get-addresses-handler.ts
         External:
           - "@aws-sdk/*"
 
-  GetAddressesFunctionV2LogGroup:
+  GetAddressesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${GetAddressesFunctionV2}"
+      LogGroupName: !Sub "/aws/lambda/${GetAddressesFunction}"
       RetentionInDays: 30
 
-  GetAddressesFunctionV2LogsSubscriptionFilterCSLS:
+  GetAddressesFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
-      LogGroupName: !Ref GetAddressesFunctionV2LogGroup
+      LogGroupName: !Ref GetAddressesFunctionLogGroup
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"
@@ -796,13 +745,6 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref GetAddressesFunction.Alias
-      Principal: apigateway.amazonaws.com
-
-  GetAddressesFunctionV2Permission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref GetAddressesFunctionV2.Alias
       Principal: apigateway.amazonaws.com
 
   AddressLambdaErrors:
@@ -1030,62 +972,6 @@ Resources:
           Value: !Ref Environment
         - Name: Resource
           Value: /addresses
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  GetAddressesFunctionV2CanaryErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "Errors returned from the GetAddressesFunctionV2 Lambda."
-      MetricName: Errors
-      Dimensions:
-        - Name: Resource
-          Value: !Sub "${AWS::StackName}-GetAddressesFunctionV2:live"
-        - Name: FunctionName
-          Value: !Ref GetAddressesFunctionV2
-        - Name: ExecutedVersion
-          Value: !GetAtt GetAddressesFunctionV2.Version.Version
-      Namespace: AWS/Lambda
-      Statistic: Sum
-      Unit: Count
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-
-  GetAddressesFunctionV2Canary5xxErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-      ActionsEnabled: true
-      AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
-      AlarmDescription: !Sub "GetAddressesFunctionV2 Lambda returning 5xx response."
-      Namespace: AWS/ApiGateway
-      MetricName: 5XXError
-      Dimensions:
-        - Name: ApiName
-          Value: !Sub "${AWS::StackName}-PrivateAddressApi"
-        - Name: Method
-          Value: GET
-        - Name: Stage
-          Value: !Ref Environment
-        - Name: Resource
-          Value: /addresses/v2
       Statistic: Sum
       Unit: Count
       Period: 60

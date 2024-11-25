@@ -93,7 +93,7 @@ Feature: Address API happy path test
     Then START TxMA event is validated against schema
 
     # Addresses
-    When user requests lands on /addresses/v2
+    When user requests lands on /addresses
     Then response should contain addresses and context from the personIdentityTable
 
     # Postcode lookup

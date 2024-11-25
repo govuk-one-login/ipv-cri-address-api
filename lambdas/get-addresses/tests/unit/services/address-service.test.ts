@@ -11,86 +11,203 @@ jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
 }));
 
 import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
-import { CanonicalAddress } from "../../../src/types/canonical-address";
+import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
+import { Logger } from "@aws-lambda-powertools/logger";
 import { AddressService } from "../../../src/services/address-service";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
-import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
 import { Address } from "../../../src/types/address";
-
 const mockDynamoDbClient = jest.mocked(DynamoDbClient);
+const mockLogger = jest.mocked(Logger);
 const mockGetCommand = jest.mocked(GetCommand);
 const getParameterMock = jest.mocked(getParameter);
 
-describe("Address Service", () => {
+describe("Address Service Test", () => {
     let addressService: AddressService;
-    const tableName = "MY_TABLE";
+    const addressTableName = "ADDRESS_TABLE";
+    const sessionTable = "SESSION_TABLE";
     const sessionId = "SESSION_ID";
 
     beforeEach(() => {
         jest.resetAllMocks();
-        getParameterMock.mockResolvedValue(tableName);
+        getParameterMock.mockResolvedValueOnce(addressTableName);
+        getParameterMock.mockResolvedValueOnce(sessionTable);
 
-        addressService = new AddressService(tableName, DynamoDbClient);
+        addressService = new AddressService(DynamoDbClient, mockLogger.prototype);
     });
 
-    it("Should return an address when passed a session Id", async () => {
-        const addressResponse: Address = {
-            addresses: [
-                {
-                    streetName: "Downing street",
-                    buildingNumber: "10",
-                    postalCode: "SW1A 2AA",
-                    addressRegion: "Greater London Authority",
-                },
-            ],
-        };
-        const canonicalAddresses: CanonicalAddress[] = addressResponse.addresses;
+    describe("with context", () => {
+        const sessionItem = { context: "new-context" };
 
-        mockDynamoDbClient.send = jest.fn().mockResolvedValue({ Item: addressResponse });
+        it("returns an address when passed a session Id", async () => {
+            const addressResponse: Address = {
+                addresses: [
+                    {
+                        streetName: "Downing street",
+                        buildingNumber: "10",
+                        postalCode: "SW1A 2AA",
+                        addressRegion: "Greater London Authority",
+                    },
+                ],
+            };
 
-        const result = await addressService.getAddressesBySessionId(sessionId);
-        expect(mockGetCommand).toHaveBeenCalledWith({
-            TableName: tableName,
-            Key: {
-                sessionId,
-            },
-        });
-        expect(result).not.toBeNull();
-        expect(result).toEqual(canonicalAddresses);
-    });
+            mockDynamoDbClient.send = jest
+                .fn()
+                .mockResolvedValueOnce({ Item: sessionItem })
+                .mockResolvedValueOnce({ Item: addressResponse });
 
-    it("Should return an empty array when no address is found", async () => {
-        mockDynamoDbClient.send = jest.fn().mockResolvedValue({ Item: undefined });
+            const result = await addressService.getAddressesBySessionId(sessionId);
 
-        const result = await addressService.getAddressesBySessionId(sessionId);
-        expect(mockGetCommand).toHaveBeenCalledWith({
-            TableName: tableName,
-            Key: {
-                sessionId,
-            },
-        });
-        expect(result).not.toBeNull();
-        expect(result).toEqual([]);
-    });
-
-    it("Should return an error when dynamoDB throws an error", async () => {
-        try {
-            expect.assertions(4);
-            mockDynamoDbClient.send = jest.fn().mockRejectedValue(new Error("DynamoDB Error"));
-
-            await addressService.getAddressesBySessionId(sessionId);
-        } catch (err) {
-            expect(mockGetCommand).toHaveBeenCalledWith({
-                TableName: tableName,
-                Key: {
-                    sessionId,
-                },
+            expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
+                TableName: sessionTable,
+                Key: { sessionId },
             });
-            expect(err).toBeDefined();
-            expect(typeof err).toBe("object");
+            expect(mockGetCommand).toHaveBeenNthCalledWith(2, {
+                TableName: addressTableName,
+                Key: { sessionId },
+            });
+            expect(result).not.toBeNull();
+            expect(result).toEqual({
+                context: sessionItem.context,
+                addresses: addressResponse.addresses,
+            });
+        });
 
-            const errorObj = err as Error;
-            expect(errorObj.message).toContain("DynamoDB Error");
-        }
+        it("returns an empty array when no address is found", async () => {
+            mockDynamoDbClient.send = jest
+                .fn()
+                .mockResolvedValueOnce({ Item: sessionItem })
+                .mockResolvedValueOnce({ Item: undefined });
+
+            const result = await addressService.getAddressesBySessionId(sessionId);
+
+            expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
+                TableName: sessionTable,
+                Key: { sessionId },
+            });
+            expect(mockGetCommand).toHaveBeenNthCalledWith(2, {
+                TableName: addressTableName,
+                Key: { sessionId },
+            });
+
+            expect(result).not.toBeNull();
+            expect(result).toEqual({
+                context: sessionItem.context,
+                addresses: [],
+            });
+        });
+
+        it("returns an error when dynamoDB throws an error", async () => {
+            try {
+                expect.assertions(5);
+                mockDynamoDbClient.send = jest
+                    .fn()
+                    .mockResolvedValueOnce({ Item: sessionItem })
+                    .mockRejectedValueOnce(new Error("DynamoDB Error"));
+
+                await addressService.getAddressesBySessionId(sessionId);
+            } catch (err) {
+                expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
+                    TableName: sessionTable,
+                    Key: { sessionId },
+                });
+                expect(mockGetCommand).toHaveBeenNthCalledWith(2, {
+                    TableName: addressTableName,
+                    Key: { sessionId },
+                });
+
+                expect(err).toBeDefined();
+                expect(typeof err).toBe("object");
+
+                const errorObj = err as Error;
+                expect(errorObj.message).toContain("DynamoDB Error");
+            }
+        });
+    });
+
+    describe("without context", () => {
+        const sessionItem = undefined;
+
+        it("returns an address when passed a session Id", async () => {
+            const addressResponse: Address = {
+                addresses: [
+                    {
+                        streetName: "Downing street",
+                        buildingNumber: "10",
+                        postalCode: "SW1A 2AA",
+                    },
+                ],
+            };
+
+            mockDynamoDbClient.send = jest
+                .fn()
+                .mockResolvedValueOnce({ Item: sessionItem })
+                .mockResolvedValueOnce({ Item: addressResponse });
+
+            const result = await addressService.getAddressesBySessionId(sessionId);
+
+            expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
+                TableName: sessionTable,
+                Key: { sessionId },
+            });
+            expect(mockGetCommand).toHaveBeenNthCalledWith(2, {
+                TableName: addressTableName,
+                Key: { sessionId },
+            });
+            expect(result).not.toBeNull();
+            expect(result).toEqual({
+                context: undefined,
+                addresses: addressResponse.addresses,
+            });
+        });
+
+        it("returns an empty array when no address is found", async () => {
+            mockDynamoDbClient.send = jest
+                .fn()
+                .mockResolvedValueOnce({ Item: sessionItem })
+                .mockResolvedValueOnce({ Item: undefined });
+
+            const result = await addressService.getAddressesBySessionId(sessionId);
+
+            expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
+                TableName: sessionTable,
+                Key: { sessionId },
+            });
+            expect(mockGetCommand).toHaveBeenNthCalledWith(2, {
+                TableName: addressTableName,
+                Key: { sessionId },
+            });
+
+            expect(result).not.toBeNull();
+            expect(result).toEqual({
+                addresses: [],
+            });
+        });
+
+        it("returns an error when dynamoDB throws an error", async () => {
+            try {
+                expect.assertions(5);
+                mockDynamoDbClient.send = jest
+                    .fn()
+                    .mockResolvedValueOnce({ Item: sessionItem })
+                    .mockRejectedValueOnce(new Error("DynamoDB Error"));
+
+                await addressService.getAddressesBySessionId(sessionId);
+            } catch (err) {
+                expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
+                    TableName: sessionTable,
+                    Key: { sessionId },
+                });
+                expect(mockGetCommand).toHaveBeenNthCalledWith(2, {
+                    TableName: addressTableName,
+                    Key: { sessionId },
+                });
+
+                expect(err).toBeDefined();
+                expect(typeof err).toBe("object");
+
+                const errorObj = err as Error;
+                expect(errorObj.message).toContain("DynamoDB Error");
+            }
+        });
     });
 });

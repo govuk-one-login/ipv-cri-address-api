@@ -233,10 +233,10 @@ public class AddressSteps {
                         this.testContext.getSessionId()));
     }
 
-    @When("user requests lands on \\/addresses\\/v2")
-    public void userRequestsLandsOnAddressesV2() throws IOException, InterruptedException {
+    @When("user requests lands on \\/addresses")
+    public void userRequestsLandsOnAddresses() throws IOException, InterruptedException {
         this.testContext.setResponse(
-                this.addressApiClient.sendGetAddressesLookupRequestV2(
+                this.addressApiClient.sendGetAddressesLookupRequest(
                         this.testContext.getSessionId()));
     }
 
@@ -247,9 +247,9 @@ public class AddressSteps {
         assertEquals(200, this.testContext.getResponse().statusCode());
 
         assertNotNull(jsonNode);
-        assertTrue(jsonNode.isArray());
+        assertTrue(jsonNode.get("addresses").isArray());
 
-        JsonNode firstAddress = jsonNode.get(0);
+        JsonNode firstAddress = jsonNode.get("addresses").get(0);
         assertNotNull(firstAddress);
 
         assertNotNull(firstAddress.get("postalCode").asText());
