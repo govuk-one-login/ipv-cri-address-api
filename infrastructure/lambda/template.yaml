@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Digital Identity IPV CRI Address API
-Transform: AWS::Serverless-2016-10-31 #TODO: Cannot add the LanguageExtensions transform due to a bug in SAM/CF
+Transform: [AWS::LanguageExtensions, AWS::Serverless-2016-10-31]
 
 Parameters:
   Environment:
@@ -120,19 +120,18 @@ Globals:
         ThrottlingRateLimit: 200
         ThrottlingBurstLimit: 400
     AccessLogSetting:
-      Format: >-
-        {
-        "requestId":"$context.requestId",
-        "ip":"$context.identity.sourceIp",
-        "requestTime":"$context.requestTime",
-        "httpMethod":"$context.httpMethod",
-        "path":"$context.path",
-        "routeKey":"$context.routeKey",
-        "status":"$context.status",
-        "protocol":"$context.protocol",
-        "responseLatency":"$context.responseLatency",
-        "responseLength":"$context.responseLength"
-        }
+      Format:
+        Fn::ToJsonString:
+          requestId: $context.requestId
+          ip: $context.identity.sourceIp
+          requestTime: $context.requestTime
+          httpMethod: $context.httpMethod
+          path: $context.path
+          routeKey: $context.routeKey
+          status: $context.status
+          protocol: $context.protocol
+          responseLatency: $context.responseLatency
+          responseLength: $context.responseLength
 
 Mappings:
   MemorySizeMapping:
@@ -242,16 +241,14 @@ Resources:
       EndpointConfiguration:
         Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
       Auth:
-        ResourcePolicy:
-          CustomStatements:
-            #FIXME: Workaround for lack of the LanguageExtensions transform - need at least one policy in the list
-            - Effect: Allow
-              Resource: execute-api:/*
-              Action: execute-api:Invoke
-              Principal: "*"
-            - !If
-              - IsLocalDevEnvironment
-              - !Ref AWS::NoValue
+        ResourcePolicy: !If
+          - IsLocalDevEnvironment
+          - !Ref AWS::NoValue
+          - CustomStatements:
+              - Effect: Allow
+                Resource: execute-api:/*
+                Action: execute-api:Invoke
+                Principal: "*"
               - Effect: Deny
                 Resource: execute-api:/*
                 Action: execute-api:Invoke
