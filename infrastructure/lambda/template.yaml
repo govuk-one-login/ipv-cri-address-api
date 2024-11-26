@@ -9,42 +9,42 @@ Parameters:
     AllowedValues: [dev, localdev, build, staging, integration, production]
     ConstraintDescription: Must be dev, localdev, build, staging, integration or production
   LambdaDeploymentPreference:
-    Description: "Specifies the configuration to enable gradual Lambda deployments"
     Type: String
     Default: AllAtOnce
+    Description: Specifies the configuration to enable gradual Lambda deployments
   CodeSigningConfigArn:
-    Description: "The ARN of the Code Signing Config to use, provided by the deployment pipeline"
     Type: String
-    Default: "none"
+    Default: none
+    Description: The ARN of the Code Signing Config to use, provided by the deployment pipeline
   PermissionsBoundary:
-    Description: "The ARN of the permissions boundary to apply when creating IAM roles"
     Type: String
-    Default: "none"
+    Default: none
+    Description: The ARN of the permissions boundary to apply when creating IAM roles
   SecretPrefix:
-    Description: Secrets name prefix
     Type: String
-    Default: "none"
+    Default: none
+    Description: Secrets name prefix
   AuditEventNamePrefix:
-    Description: "The audit event name prefix"
     Type: AWS::SSM::Parameter::Value<String>
-    Default: "/common-cri-parameters/AuditEventNamePrefix"
+    Default: /common-cri-parameters/AuditEventNamePrefix
+    Description: The audit event name prefix
   CriIdentifier:
-    Description: "The unique credential issuer identifier"
     Type: AWS::SSM::Parameter::Value<String>
-    Default: "/common-cri-parameters/CriIdentifier"
+    Default: /common-cri-parameters/CriIdentifier
+    Description: The unique credential issuer identifier
   CommonStackName:
-    Description: "The name of the stack containing the common CRI lambdas/infra"
     Type: String
     Default: common-cri-api
+    Description: The name of the stack containing the common CRI lambdas/infra
   TxmaStackName:
-    Description: "The stack containing the TXMA infrastructure"
     Type: String
     Default: txma-infrastructure
+    Description: The stack containing the TXMA infrastructure
 
 Conditions:
-  UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
-  UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, "none"]]
-  UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
+  UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, none]]
+  UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, none]]
+  EnforceCodeSigning: !Not [!Equals [!Ref CodeSigningConfigArn, none]]
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   IsDevEnvironment: !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
@@ -60,8 +60,6 @@ Globals:
       SubnetIds: !Split [",", !ImportValue cri-vpc-PrivateSubnets]
     PermissionsBoundary:
       !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
-    CodeSigningConfigArn:
-      !If [UseCodeSigningConfig, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
     Tracing: Active
     Timeout: 30 # seconds
     Runtime: java11
@@ -214,7 +212,7 @@ Resources:
         openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
           /never-created:
-            options: { }
+            options: {}
         Fn::Transform:
           Name: AWS::Include
           Parameters:
@@ -234,7 +232,7 @@ Resources:
         openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
           /never-created:
-            options: { }
+            options: {}
         Fn::Transform:
           Name: AWS::Include
           Parameters:
@@ -293,14 +291,18 @@ Resources:
     Properties:
       CodeUri: ../../lambdas/postcode-lookup
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
+      LoggingConfig:
+        LogGroup: !Ref PostcodeLookupFunctionLogGroup
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - [!Ref PostcodeLookupFunctionCanaryErrors, !Ref PostcodeLookupFunctionCanary5xxErrors]
-          - [!Ref AWS::NoValue]
+          - []
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
+          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-postcode-lookup
           SQS_AUDIT_EVENT_QUEUE_URL:
             Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
       Policies:
@@ -311,31 +313,25 @@ Resources:
         - Statement:
             - Sid: ReadSecretsPolicy
               Effect: Allow
-              Action:
-                - 'secretsmanager:*'
+              Action: secretsmanager:*
               Resource: !Sub
                 - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${Prefix}/OrdnanceSurveyAPIKey*"
                 - Prefix: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
             - Sid: ReadParametersPolicy
               Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIURL"
+              Action: ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIURL"
         - Statement:
             - Effect: Allow
-              Action:
-                - ssm:GetParameter
+              Action: ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
         - Statement:
             - Effect: Allow
-              Action:
-                - ssm:GetParametersByPath
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+              Action: ssm:GetParametersByPath
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
@@ -351,7 +347,7 @@ Resources:
   PostcodeLookupFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/PostcodeLookupFunction
       RetentionInDays: 30
 
   PostcodeLookupFunctionLogsSubscriptionFilterCSLS:
@@ -367,15 +363,19 @@ Resources:
     Properties:
       CodeUri: ../../lambdas/address
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
+      LoggingConfig:
+        LogGroup: !Ref AddressFunctionLogGroup
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - [!Ref AddressFunctionCanaryErrors]
-          - [!Ref AWS::NoValue]
+          - []
           #- !Ref AddressFunctionCanary5xxErrors
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address"
+          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-address
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -385,8 +385,7 @@ Resources:
             TableName: !Ref AddressTable
         - Statement:
             - Effect: Allow
-              Action:
-                - ssm:GetParameter
+              Action: ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
@@ -394,15 +393,13 @@ Resources:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
         - Statement:
             - Effect: Allow
-              Action:
-                - ssm:GetParametersByPath
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+              Action: ssm:GetParametersByPath
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
   AddressFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/AddressFunction
       RetentionInDays: 30
 
   AddressFunctionLogsSubscriptionFilterCSLS:
@@ -417,15 +414,19 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler::handleRequest
+      LoggingConfig:
+        LogGroup: !Ref IssueCredentialFunctionLogGroup
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunctionCanary5xxErrors]
-          - [!Ref AWS::NoValue]
+          - []
       CodeUri: ../../lambdas/issuecredential
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
+          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-issuecredential
           SQS_AUDIT_EVENT_QUEUE_URL:
             Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
       Policies:
@@ -437,16 +438,14 @@ Resources:
             TableName: !Ref AddressTable
         - Statement:
             Effect: Allow
-            Action:
-              - "kms:Sign"
+            Action: kms:Sign
             Resource: !ImportValue core-infrastructure-CriVcSigningKey1Arn
         - SQSSendMessagePolicy:
             QueueName:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
         - Statement:
             Effect: Allow
-            Action:
-              - ssm:GetParameter
+            Action: ssm:GetParameter
             Resource:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
@@ -463,10 +462,11 @@ Resources:
               - kms:GenerateDataKey
             Resource:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/IssueCredentialFunction
       RetentionInDays: 30
 
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
@@ -479,18 +479,28 @@ Resources:
 
   GetAddressesFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+        External: ["@aws-sdk/*"]
     Properties:
+      CodeUri: ../../lambdas/get-addresses/
       Handler: get-addresses-handler.lambdaHandler
+      Runtime: nodejs18.x
+      LoggingConfig:
+        LogGroup: !Ref GetAddressesFunctionLogGroup
+      CodeSigningConfigArn:
+        !If [EnforceCodeSigning, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
           - [!Ref GetAddressesFunctionCanaryErrors, !Ref GetAddressesFunctionCanary5xxErrors]
-          - [!Ref AWS::NoValue]
-      CodeUri: ../../lambdas/get-addresses/
-      Runtime: nodejs18.x
+          - []
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
+          NODE_OPTIONS: --enable-source-maps
+          POWERTOOLS_SERVICE_NAME: !Sub ${CriIdentifier}-get-addresses
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -501,26 +511,15 @@ Resources:
         - Statement:
             - Sid: ReadParametersPolicy
               Effect: Allow
-              Action:
-                - ssm:GetParameter
+              Action: ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
-    Metadata: # Manage esbuild properties
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: "es2020"
-        Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
-        EntryPoints:
-          - src/get-addresses-handler.ts
-        External:
-          - "@aws-sdk/*"
 
   GetAddressesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${GetAddressesFunction}"
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/GetAddressesFunction
       RetentionInDays: 30
 
   GetAddressesFunctionLogsSubscriptionFilterCSLS:
@@ -532,16 +531,16 @@ Resources:
       LogGroupName: !Ref GetAddressesFunctionLogGroup
 
   AddressTable:
-    Type: "AWS::DynamoDB::Table"
+    Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "address-${AWS::StackName}"
-      BillingMode: "PAY_PER_REQUEST"
+      TableName: !Sub address-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: "sessionId"
-          AttributeType: "S"
+        - AttributeName: sessionId
+          AttributeType: S
       KeySchema:
-        - AttributeName: "sessionId"
-          KeyType: "HASH"
+        - AttributeName: sessionId
+          KeyType: HASH
       TimeToLiveSpecification:
         AttributeName: expiryDate
         Enabled: true
@@ -715,7 +714,7 @@ Resources:
               MetricName: 5XXError
               Dimensions:
                 - Name: ApiName
-                  Value: !Sub "${AWS::StackName}-PublicAddressApi"
+                  Value: !Sub ${AWS::StackName}-PublicAddressApi
             Period: 300
             Stat: Sum
         - Id: m2
@@ -726,7 +725,7 @@ Resources:
               MetricName: 5XXError
               Dimensions:
                 - Name: ApiName
-                  Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+                  Value: !Sub ${AWS::StackName}-PrivateAddressApi
             Period: 300
             Stat: Sum
 
@@ -972,15 +971,9 @@ Resources:
       PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
 
 Outputs:
-  AddressApiGatewayId:
-    Description: "API GatewayID of the Address CRI API"
-    Value: !Sub "${PublicAddressApi}"
-    Export:
-      Name: !Sub ${AWS::StackName}-AddressApiGatewayId
-
   PublicAddressApiGatewayId:
     Description: "API GatewayID of the public Address CRI API"
-    Value: !Sub "${PublicAddressApi}"
+    Value: !Ref PublicAddressApi
     Export:
       Name: !Sub ${AWS::StackName}-PublicAddressApiGatewayId
 
