@@ -56,63 +56,83 @@ Conditions:
 Globals:
   Function:
     VpcConfig:
-      SecurityGroupIds:
-        - !ImportValue cri-vpc-LambdaSecurityGroup
-      SubnetIds: !Split [ ",", !ImportValue cri-vpc-PrivateSubnets ]
-    PermissionsBoundary: !If
-      - UsePermissionsBoundary
-      - !Ref PermissionsBoundary
-      - !Ref AWS::NoValue
-    CodeSigningConfigArn: !If
-      - UseCodeSigningConfig
-      - !Ref CodeSigningConfigArn
-      - !Ref AWS::NoValue
+      SecurityGroupIds: [!ImportValue cri-vpc-LambdaSecurityGroup]
+      SubnetIds: !Split [",", !ImportValue cri-vpc-PrivateSubnets]
+    PermissionsBoundary:
+      !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+    CodeSigningConfigArn:
+      !If [UseCodeSigningConfig, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+    Tracing: Active
     Timeout: 30 # seconds
     Runtime: java11
-    Tracing: Active
-    MemorySize: !FindInMap [ MemorySizeMapping, Environment, !Ref 'Environment' ]
-    Architectures:
-      - arm64
-    Environment:
-      Variables:
-        AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
-        DT_CONNECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
-        DT_CONNECTION_BASE_URL: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
-        DT_CLUSTER_ID: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
-        DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
-        DT_TENANT: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
-        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: "true"
-        JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
-        AWS_STACK_NAME: !Sub ${AWS::StackName}
-        SECRET_PREFIX: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
-        POWERTOOLS_LOG_LEVEL: INFO
-        SQS_AUDIT_EVENT_PREFIX: !Ref AuditEventNamePrefix
-        POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
-        COMMON_PARAMETER_NAME_PREFIX: !Ref CommonStackName
-    Layers:
-      - !Sub
-        - '{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}' # or NODEJS_LAYER or PYTHON_LAYER
-        - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+    Architectures: [arm64]
     AutoPublishAlias: live
     DeploymentPreference:
       Enabled: true
       Type: !Ref LambdaDeploymentPreference
       Role: !GetAtt CodeDeployServiceRole.Arn
+    MemorySize: !FindInMap [MemorySizeMapping, Environment, !Ref Environment]
+    Environment:
+      Variables:
+        AWS_STACK_NAME: !Sub ${AWS::StackName}
+        SECRET_PREFIX: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
+        SQS_AUDIT_EVENT_PREFIX: !Ref AuditEventNamePrefix
+        COMMON_PARAMETER_NAME_PREFIX: !Ref CommonStackName
+        POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
+        POWERTOOLS_LOG_LEVEL: INFO
+        AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
+        JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+        DT_CONNECTION_AUTH_TOKEN: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
+          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+        DT_CONNECTION_BASE_URL: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
+          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+        DT_CLUSTER_ID: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+        DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
+          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+        DT_TENANT: !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
+          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
+    Layers:
+      - !Sub
+        - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
+        - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
     ProvisionedConcurrencyConfig:
       !If
       - AddProvisionedConcurrency
-      - ProvisionedConcurrentExecutions: !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ]
+      - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
       - !Ref AWS::NoValue
+  Api:
+    TracingEnabled: true
+    OpenApiVersion: 3.0.1
+    MethodSettings:
+      - LoggingLevel: INFO
+        ResourcePath: /*
+        HttpMethod: "*"
+        # Disable data trace in production to avoid logging customer sensitive information
+        DataTraceEnabled: !If [IsProdEnvironment, false, true]
+        MetricsEnabled: true
+        ThrottlingRateLimit: 200
+        ThrottlingBurstLimit: 400
+    AccessLogSetting:
+      Format: >-
+        {
+        "requestId":"$context.requestId",
+        "ip":"$context.identity.sourceIp",
+        "requestTime":"$context.requestTime",
+        "httpMethod":"$context.httpMethod",
+        "path":"$context.path",
+        "routeKey":"$context.routeKey",
+        "status":"$context.status",
+        "protocol":"$context.protocol",
+        "responseLatency":"$context.responseLatency",
+        "responseLength":"$context.responseLength"
+        }
 
 Mappings:
   MemorySizeMapping:
@@ -185,88 +205,40 @@ Resources:
   PublicAddressApi:
     Type: AWS::Serverless::Api
     Properties:
+      Name: !Sub ${AWS::StackName}-PublicAddressApi
       Description: Public Address CRI API
-      MethodSettings:
-        - LoggingLevel: INFO
-          ResourcePath: '/*'
-          HttpMethod: '*'
-          # Disable data trace in production to avoid logging customer sensitive information
-          DataTraceEnabled: !If [IsProdEnvironment, false, true]
-          MetricsEnabled: true
-          ThrottlingRateLimit: 200
-          ThrottlingBurstLimit: 400
-      AccessLogSetting:
-        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PublicAddressApiAccessLogGroup}'
-        Format: >-
-          {
-          "requestId":"$context.requestId",
-          "ip":"$context.identity.sourceIp",
-          "requestTime":"$context.requestTime",
-          "httpMethod":"$context.httpMethod",
-          "path":"$context.path",
-          "routeKey":"$context.routeKey",
-          "status":"$context.status",
-          "protocol":"$context.protocol",
-          "responseLatency":"$context.responseLatency",
-          "responseLength":"$context.responseLength"
-          }
-      TracingEnabled: true
-      Name: !Sub "${AWS::StackName}-PublicAddressApi"
       StageName: !Ref Environment
+      AccessLogSetting:
+        DestinationArn: !GetAtt PublicAddressApiAccessLogGroup.Arn
       DefinitionBody:
-        openapi: "3.0.1" # workaround to get `sam validate` to work
+        openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
           /never-created:
-            options: { } # workaround to get `sam validate` to work
+            options: { }
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: './public-api.yaml'
-      OpenApiVersion: 3.0.1
+            Location: ./public-api.yaml
       EndpointConfiguration:
         Type: REGIONAL
 
   PrivateAddressApi:
     Type: AWS::Serverless::Api
     Properties:
+      Name: !Sub ${AWS::StackName}-PrivateAddressApi
       Description: Private Address CRI API
-      MethodSettings:
-        - LoggingLevel: INFO
-          ResourcePath: '/*'
-          HttpMethod: '*'
-          # Disable data trace in production to avoid logging customer sensitive information
-          DataTraceEnabled: !If [IsProdEnvironment, false, true]
-          MetricsEnabled: true
-          ThrottlingRateLimit: 200
-          ThrottlingBurstLimit: 400
-      AccessLogSetting:
-        DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${PrivateAddressApiAccessLogGroup}'
-        Format: >-
-          {
-          "requestId":"$context.requestId",
-          "ip":"$context.identity.sourceIp",
-          "requestTime":"$context.requestTime",
-          "httpMethod":"$context.httpMethod",
-          "path":"$context.path",
-          "routeKey":"$context.routeKey",
-          "status":"$context.status",
-          "protocol":"$context.protocol",
-          "responseLatency":"$context.responseLatency",
-          "responseLength":"$context.responseLength"
-          }
-      TracingEnabled: true
-      Name: !Sub "${AWS::StackName}-PrivateAddressApi"
       StageName: !Ref Environment
+      AccessLogSetting:
+        DestinationArn: !GetAtt PrivateAddressApiAccessLogGroup.Arn
       DefinitionBody:
-        openapi: "3.0.1" # workaround to get `sam validate` to work
+        openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
           /never-created:
-            options: { } # workaround to get `sam validate` to work
+            options: { }
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: './private-api.yaml'
-      OpenApiVersion: 3.0.1
+            Location: ./private-api.yaml
       EndpointConfiguration:
         Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
       Auth:
@@ -639,7 +611,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
       Type: String
-      Value: !FindInMap [ JwtTtlUnitMapping, Environment, !Ref Environment ]
+      Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
       Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
 
   OrdnanceSurveyAPIURLParameter:
@@ -663,7 +635,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/release-flags/vc-contains-unique-id"
       Type: String
-      Value: !FindInMap [ VcContainsUniqueIdMapping, Environment, !Ref Environment ]
+      Value: !FindInMap [VcContainsUniqueIdMapping, Environment, !Ref Environment]
       Description: Verifiable Credential Contains UniqueId Mapping
 
   PostcodeLookupFunctionPermission:
@@ -997,7 +969,7 @@ Resources:
                 - codedeploy.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
-      PermissionsBoundary: !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
+      PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
 
 Outputs:
   AddressApiGatewayId:
