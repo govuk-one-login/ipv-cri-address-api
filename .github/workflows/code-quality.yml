@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Run pre-commit
-        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@cd7d35dde348251237efbbaee5345e95adef0321
+        uses: govuk-one-login/github-actions/code-quality/run-pre-commit@d201191485b645ec856a34e5ca48636cf97b2574
         with:
           all-files: true
           pull-repository: false

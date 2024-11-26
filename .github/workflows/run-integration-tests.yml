@@ -15,8 +15,8 @@ on:
 permissions: {}
 
 concurrency:
-  group: integration-tests
-  cancel-in-progress: false
+  group: integration-tests-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   run-tests:
@@ -44,7 +44,7 @@ jobs:
 
       - name: Run tests
         env:
-          ENVIRONMENT: dev
+          ENVIRONMENT: localdev
           AWS_REGION: ${{ inputs.aws-region }}
           STACK_NAME: ${{ inputs.stack-name }}
           API_GATEWAY_ID_PUBLIC: ${{ fromJson(inputs.stack-outputs).PublicAddressApiGatewayId }}

@@ -1,4 +1,4 @@
-rootProject.name = "di-ipv-cri-address-api"
+rootProject.name = "ipv-cri-address-api"
 
 // CRI specific lib
 include 'lib'

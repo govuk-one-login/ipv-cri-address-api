@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run SonarCloud scan
-        uses: govuk-one-login/github-actions/code-quality/sonarcloud@0739d7e7a19bae3177cf851ae51944bb4dd53565 #30th Jan 2024
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@d201191485b645ec856a34e5ca48636cf97b2574
         with:
           projectBaseDir: lambdas/get-addresses
           coverage-location: lambdas/get-addresses/coverage
@@ -98,6 +98,6 @@ jobs:
       security-events: write
     steps:
       - name: Run CodeQL scan
-        uses: govuk-one-login/github-actions/code-quality/codeql@cd7d35dde348251237efbbaee5345e95adef0321
+        uses: govuk-one-login/github-actions/code-quality/codeql@d201191485b645ec856a34e5ca48636cf97b2574
         with:
           languages: javascript-typescript

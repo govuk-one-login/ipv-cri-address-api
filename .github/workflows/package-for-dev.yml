@@ -1,9 +1,9 @@
-name: Deploy to dev
+name: Package for Dev
+
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-  workflow_dispatch: # deploy manually
+    branches: [main]
 
 jobs:
   deploy:

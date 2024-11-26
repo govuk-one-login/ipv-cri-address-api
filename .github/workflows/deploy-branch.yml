@@ -1,4 +1,4 @@
-name: Preview
+name: Deploy preview
 
 on:
   workflow_dispatch:
@@ -48,7 +48,7 @@ jobs:
         with:
           template: infrastructure/lambda/template.yaml
           cache-name: address-api
-          pull-repository: true
+          pull-repository: false
           source-dir: lambdas
 
   deploy:
@@ -77,13 +77,12 @@ jobs:
           cache-restore-keys: ${{ needs.build.outputs.cache-restore-keys }}
           s3-prefix: preview
           pull-repository: true
-          disable-rollback: true
+          delete-failed-stack: true
           tags: |
             cri:component=ipv-cri-address-api
             cri:stack-type=preview
             cri:application=Orange
             cri:deployment-source=github-actions
           parameters: |
-            Environment=dev
-            CodeSigningEnabled=false
+            Environment=localdev
             SecretPrefix=pre-merge-test
