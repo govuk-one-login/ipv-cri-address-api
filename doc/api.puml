@@ -30,8 +30,15 @@ api -> db: write session
 return session-id
 
 == Postcode start ==
-
-fe-[#blue]>fe: display post code page
+fe -> fe: if international_address
+alt International Address
+    fe -> fe: if countryCode in [GB, GG, JE, IM],
+        fe -> fe: display UK address screen
+    else
+        fe -> fe: display international address screen
+else
+    fe -> fe: display UK address screen
+end
 
 fe -> api: GET /postcode-lookup
 activate api
