@@ -2,6 +2,8 @@ package gov.uk.address.api.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import gov.uk.address.api.util.AddressContext;
+import gov.uk.address.api.util.AddressContextMapper;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.client.HttpHeaders;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
@@ -46,7 +48,23 @@ public class AddressApiClient {
         currentAddress.setPostalCode(postcode);
         currentAddress.setValidFrom(LocalDate.of(2020, 1, 1));
         currentAddress.setAddressCountry(countryCode);
-        currentAddress.setAddressRegion("DummyRegion");
+
+        String requestBody =
+                objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "address")
+                        .header(SESSION_ID, sessionId)
+                        .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
+                        .build());
+    }
+
+    public HttpResponse<String> sendAddressRequest(String sessionId, AddressContext addressContext)
+            throws IOException, InterruptedException {
+
+        CanonicalAddress currentAddress =
+                AddressContextMapper.mapToCanonicalAddress(addressContext);
 
         String requestBody =
                 objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
