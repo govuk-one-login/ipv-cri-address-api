@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
+import gov.uk.address.api.util.AddressContext;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -40,10 +42,7 @@ public class AddressSteps {
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
     private final String addressStartJsonSchema;
-
-    private String postcode;
-    private String uprn;
-    private String countryCode;
+    private AddressContext addressContext;
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext)
@@ -58,6 +57,7 @@ public class AddressSteps {
                                         AddressSteps.class.getResource(ADDRESS_START_SCHEMA_FILE))
                                 .toURI());
         this.addressStartJsonSchema = Files.readString(schemaPath);
+        this.addressContext = new AddressContext();
     }
 
     @When("the user performs a postcode lookup for post code {string}")
@@ -74,32 +74,60 @@ public class AddressSteps {
         JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
         assertEquals(200, this.testContext.getResponse().statusCode());
         assertNotNull(jsonNode.get(0).get("uprn").asText());
-        uprn = jsonNode.get(0).get("uprn").asText();
         assertEquals(postcode, jsonNode.get(0).get("postalCode").asText());
-        this.postcode = jsonNode.get(0).get("postalCode").asText();
+        addressContext.setUprn(jsonNode.get(0).get("uprn").asText());
+        addressContext.setPostcode(jsonNode.get(0).get("postalCode").asText());
     }
 
     @When("the user selects address")
     public void theUserSelectsAddress() throws IOException, InterruptedException {
-        countryCode = "GB";
+        addressContext.setCountryCode("GB");
         this.testContext.setResponse(
                 this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(), uprn, postcode, countryCode));
+                        this.testContext.getSessionId(),
+                        addressContext.getUprn(),
+                        addressContext.getPostcode(),
+                        addressContext.getCountryCode()));
+    }
+
+    @When("the user enters international address successfully")
+    public void theUserEntersInternationalAddressSuccessfully(DataTable dataTable)
+            throws IOException, InterruptedException {
+        Map<String, String> addressData = dataTable.asMap(String.class, String.class);
+        this.addressContext.setCountryCode(addressData.get("apartmentNumber"));
+        this.addressContext.setRegion(addressData.get("region"));
+        this.addressContext.setLocality(addressData.get("locality"));
+        this.addressContext.setStreetName(addressData.get("streetName"));
+        this.addressContext.setPostcode(addressData.get("postalCode"));
+        this.addressContext.setBuildingName(addressData.get("buildingName"));
+        this.addressContext.setBuildingNumber(addressData.get("buildingNumber"));
+        this.addressContext.setYearFrom(Integer.parseInt(addressData.get("yearFrom")));
+        this.addressContext.setCountryCode(addressData.get("country"));
+        this.testContext.setResponse(
+                this.addressApiClient.sendAddressRequest(
+                        this.testContext.getSessionId(), this.addressContext));
     }
 
     @When("the user selects international address")
     public void theUserSelectsInternationalAddress() throws IOException, InterruptedException {
-        countryCode = "IA";
+        addressContext.setCountryCode("KE");
         this.testContext.setResponse(
                 this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(), uprn, postcode, countryCode));
+                        this.testContext.getSessionId(),
+                        addressContext.getUprn(),
+                        addressContext.getPostcode(),
+                        addressContext.getCountryCode()));
     }
 
     @When("the user selects address without country code")
     public void theUserSelectsAddressWithoutCountryCode() throws IOException, InterruptedException {
+        addressContext.setCountryCode(null);
         this.testContext.setResponse(
                 this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(), uprn, postcode, null));
+                        this.testContext.getSessionId(),
+                        addressContext.getUprn(),
+                        addressContext.getPostcode(),
+                        addressContext.getCountryCode()));
     }
 
     @Then("the address is saved successfully")
@@ -218,11 +246,14 @@ public class AddressSteps {
 
         assertEquals("VerifiableCredential", payload.at("/vc/type/0").asText());
         assertEquals("AddressCredential", payload.at("/vc/type/1").asText());
-        assertEquals(postcode, payload.at("/vc/credentialSubject/address/0/postalCode").asText());
         assertEquals(
-                countryCode, payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
+                addressContext.getPostcode(),
+                payload.at("/vc/credentialSubject/address/0/postalCode").asText());
         assertEquals(
-                "DummyRegion",
+                addressContext.getCountryCode(),
+                payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
+        assertEquals(
+                addressContext.getRegion(),
                 payload.at("/vc/credentialSubject/address/0/addressRegion").asText());
     }
 
