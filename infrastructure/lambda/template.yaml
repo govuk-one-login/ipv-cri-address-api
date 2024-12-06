@@ -48,8 +48,13 @@ Conditions:
   UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
   IsDevEnvironment: !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  IsBuildEnvironment: !Equals [ !Ref Environment, build ]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  IsDevLikeOrBuild: !Or
+    - !Condition IsDevEnvironment
+    - !Condition IsLocalDevEnvironment
+    - !Condition IsBuildEnvironment
   AddProvisionedConcurrency:
     !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
 
@@ -191,15 +196,6 @@ Mappings:
       integration: MONTHS
       production: MONTHS
       localdev: HOURS
-
-  OrdnanceSurveyAPIURLMapping:
-    Environment:
-      dev: "https://api.os.uk/search/places/v1/postcode"
-      build: "https://api.os.uk/search/places/v1/postcode"
-      staging: "https://api.os.uk/search/places/v1/postcode"
-      integration: "https://api.os.uk/search/places/v1/postcode"
-      production: "https://api.os.uk/search/places/v1/postcode"
-      localdev: "https://api.os.uk/search/places/v1/postcode"
 
 Resources:
   PublicAddressApi:
@@ -619,7 +615,9 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIURL"
       Type: String
-      Value: !FindInMap [OrdnanceSurveyAPIURLMapping, Environment, !Ref 'Environment']
+      Value: !Sub
+        - "${Domain}/search/places/v1/postcode"
+        - Domain: !If [IsDevLikeOrBuild, !ImportValue third-party-stubs-ImposterStubApiUrl, "https://api.os.uk"]
       Description: Ordnance Survey Postcode Lookup API URL
 
   AddressLookupTableNameParameter:
