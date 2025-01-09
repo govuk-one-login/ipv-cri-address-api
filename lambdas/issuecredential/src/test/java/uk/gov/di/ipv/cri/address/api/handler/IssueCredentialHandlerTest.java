@@ -127,7 +127,7 @@ class IssueCredentialHandlerTest {
                 canonicalAddresses.stream().map(Address::new).collect(Collectors.toList());
 
         Map<String, Object> auditEventExtensions =
-                Map.of("iss", "issuer", "addressesEntered", addresses.size());
+                Map.of("iss", "issuer", "addressesEntered", addresses.size(), "isUkAddress", true);
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
@@ -151,7 +151,7 @@ class IssueCredentialHandlerTest {
                 .sendAuditEvent(
                         eq(AuditEventType.VC_ISSUED),
                         vcEventAuditEventContextArgCaptor.capture(),
-                        endEventAuditEventContextArgCaptor.capture());
+                        eq(auditEventExtensions));
         verify(mockAuditService)
                 .sendAuditEvent(
                         eq(AuditEventType.END), endEventAuditEventContextArgCaptor.capture());
@@ -205,6 +205,7 @@ class IssueCredentialHandlerTest {
         address.setStreetName("Wellington Street");
         address.setPostalCode("LS1 1BA");
         address.setAddressRegion("Dummy Region");
+        address.setAddressCountry("GB");
         AddressItem addressItem = new AddressItem();
 
         List<CanonicalAddress> canonicalAddresses = List.of(address);
@@ -217,7 +218,7 @@ class IssueCredentialHandlerTest {
 
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
         ConfigurationService mockConfigurationService = mock(ConfigurationService.class);
-        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn("dummy-issuer");
+        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn("issuer");
         when(mockConfigurationService.getCommonParameterValue(
                         "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
@@ -248,11 +249,14 @@ class IssueCredentialHandlerTest {
         verify(mockEventProbe).log(INFO, "found session");
         verifyNoMoreInteractions(mockEventProbe);
 
+        Map<String, Object> auditEventExtensions =
+                Map.of("iss", "issuer", "addressesEntered", addresses.size(), "isUkAddress", true);
         verify(mockAuditService)
                 .sendAuditEvent(
                         eq(AuditEventType.VC_ISSUED),
                         vcEventAuditEventContextArgCaptor.capture(),
-                        endEventAuditEventContextArgCaptor.capture());
+                        eq(auditEventExtensions));
+
         verify(mockAuditService)
                 .sendAuditEvent(
                         eq(AuditEventType.END), endEventAuditEventContextArgCaptor.capture());

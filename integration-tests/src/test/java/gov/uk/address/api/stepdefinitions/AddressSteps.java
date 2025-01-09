@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
 import gov.uk.address.api.util.AddressContext;
@@ -38,25 +39,37 @@ import static org.junit.Assert.assertTrue;
 
 public class AddressSteps {
     private static final String ADDRESS_START_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_START.json";
+    private static final String ADDRESS_VC_ISSUED_SCHEMA_FILE =
+            "/schema/IPV_ADDRESS_CRI_VC_ISSUED.json";
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
     private final String addressStartJsonSchema;
+    private final String addressVCIssuedJsonSchema;
     private AddressContext addressContext;
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext)
             throws IOException, URISyntaxException {
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         this.addressApiClient = new AddressApiClient(clientConfigurationService);
         this.testContext = testContext;
 
-        Path schemaPath =
+        Path startSchemaPath =
                 Paths.get(
                         Objects.requireNonNull(
                                         AddressSteps.class.getResource(ADDRESS_START_SCHEMA_FILE))
                                 .toURI());
-        this.addressStartJsonSchema = Files.readString(schemaPath);
+        this.addressStartJsonSchema = Files.readString(startSchemaPath);
+
+        Path vcIssuedSchemaPath =
+                Paths.get(
+                        Objects.requireNonNull(
+                                        AddressSteps.class.getResource(
+                                                ADDRESS_VC_ISSUED_SCHEMA_FILE))
+                                .toURI());
+        this.addressVCIssuedJsonSchema = Files.readString(vcIssuedSchemaPath);
+
         this.addressContext = new AddressContext();
     }
 
@@ -220,6 +233,38 @@ public class AddressSteps {
             assertTrue(
                     JsonSchemaValidator.validateJsonAgainstSchema(
                             testHarnessResponse.getEvent().getData(), addressStartJsonSchema));
+        }
+    }
+
+    @Then("VC_ISSUED TxMA event is validated against schema with isUkAddress {string}")
+    public void vcIssuedTxmaEventValidatedAgainstSchema(String isUkAddress) throws IOException {
+        String responseBody = testContext.getTestHarnessResponseBody();
+
+        List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> testHarnessResponses =
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
+
+        var events =
+                testHarnessResponses.stream()
+                        .filter(
+                                event ->
+                                        event.getEvent()
+                                                .getData()
+                                                .contains("IPV_ADDRESS_CRI_VC_ISSUED"))
+                        .collect(Collectors.toList());
+
+        assertNotNull(events);
+        assertEquals(1, events.size());
+        for (TestHarnessResponse<AuditEvent<Map<String, Object>>> testHarnessResponse : events) {
+            AuditEvent<?> event =
+                    objectMapper.readValue(
+                            testHarnessResponse.getEvent().getData(), AuditEvent.class);
+            assertEquals(this.testContext.getSessionId(), event.getUser().getSessionId());
+            assertEquals(
+                    Boolean.valueOf(isUkAddress),
+                    ((Map<String, Object>) event.getExtensions()).get("isUkAddress"));
+            assertTrue(
+                    JsonSchemaValidator.validateJsonAgainstSchema(
+                            testHarnessResponse.getEvent().getData(), addressVCIssuedJsonSchema));
         }
     }
 
