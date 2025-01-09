@@ -50,6 +50,22 @@
         }
       },
       "required": ["device_information"]
+    },
+    "extensions": {
+      "type": "object",
+      "properties": {
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "context": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "required": [
