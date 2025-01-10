@@ -9,6 +9,7 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,6 +27,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -155,25 +157,6 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     }
 
     @Test
-    void shouldGetAuditEventContext() {
-        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
-        Map<String, Object> auditEventContext =
-                verifiableCredentialService.getAuditEventExtensions(
-                        List.of(new CanonicalAddress()));
-
-        assertEquals(VC_ISSUER, auditEventContext.get("iss"));
-        assertEquals(1, auditEventContext.get("addressesEntered"));
-    }
-
-    @Test
-    void shouldGetAuditEventContextWithZeroAddressesEnteredWhenNullProvided() {
-        when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
-        Map<String, Object> auditEventContext =
-                verifiableCredentialService.getAuditEventExtensions(null);
-        assertEquals(0, auditEventContext.get("addressesEntered"));
-    }
-
-    @Test
     void shouldThrowNoSuchAlgorithmExceptionWhenTheWrongKeyAlgorithmIsUsed()
             throws NoSuchAlgorithmException, JOSEException {
         var noSuchAlgorithmException = new NoSuchAlgorithmException("Incorrect Algorithm");
@@ -226,5 +209,125 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(DEFAULT_JWT_TTL);
         when(mockConfigurationService.getParameterValue("JwtTtlUnit"))
                 .thenReturn(DEFAULT_JWT_TTL_UNIT);
+    }
+
+    @Nested
+    class GetAuditEventExtensions {
+
+        @BeforeEach
+        void setUp() {
+            when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
+        }
+
+        @Test
+        void shouldGetExtensions() {
+            Map<String, Object> auditEventContext =
+                    verifiableCredentialService.getAuditEventExtensions(
+                            List.of(new CanonicalAddress()));
+
+            Map<String, Object> expectedExtensions =
+                    Map.of("iss", VC_ISSUER, "addressesEntered", 1, "isUkAddress", false);
+
+            assertEquals(expectedExtensions, auditEventContext);
+        }
+
+        @Test
+        void shouldGetExtensionsWithZeroAddresses() {
+            Map<String, Object> auditEventContext =
+                    verifiableCredentialService.getAuditEventExtensions(null);
+
+            Map<String, Object> expectedExtensions =
+                    Map.of("iss", VC_ISSUER, "addressesEntered", 0, "isUkAddress", false);
+
+            assertEquals(expectedExtensions, auditEventContext);
+        }
+
+        @Test
+        void shouldGetExtensionsAndNotErrorWhenAddressIsNull() {
+            List<CanonicalAddress> addresses = new ArrayList<>();
+            addresses.add(null);
+            Map<String, Object> auditEventContext =
+                    verifiableCredentialService.getAuditEventExtensions(addresses);
+
+            Map<String, Object> expectedExtensions =
+                    Map.of("iss", VC_ISSUER, "addressesEntered", 1, "isUkAddress", false);
+
+            assertEquals(expectedExtensions, auditEventContext);
+        }
+
+        @Test
+        void shouldGetExtensionsWithUkAddress() {
+            CanonicalAddress address = new CanonicalAddress();
+
+            Map<String, Object> expectedExtensions =
+                    Map.of("iss", VC_ISSUER, "addressesEntered", 1, "isUkAddress", true);
+
+            address.setAddressCountry("GB");
+            Map<String, Object> auditEventContextGB =
+                    verifiableCredentialService.getAuditEventExtensions(List.of(address));
+
+            assertEquals(expectedExtensions, auditEventContextGB);
+
+            address.setAddressCountry("GG");
+            Map<String, Object> auditEventContextGG =
+                    verifiableCredentialService.getAuditEventExtensions(List.of(address));
+
+            assertEquals(expectedExtensions, auditEventContextGG);
+
+            address.setAddressCountry("JE");
+            Map<String, Object> auditEventContextJE =
+                    verifiableCredentialService.getAuditEventExtensions(List.of(address));
+
+            assertEquals(expectedExtensions, auditEventContextJE);
+
+            address.setAddressCountry("IM");
+            Map<String, Object> auditEventContextIM =
+                    verifiableCredentialService.getAuditEventExtensions(List.of(address));
+
+            assertEquals(expectedExtensions, auditEventContextIM);
+        }
+
+        @Test
+        void shouldGetExtensionsWithNonUkAddress() {
+            CanonicalAddress address = new CanonicalAddress();
+            address.setAddressCountry("FR");
+
+            Map<String, Object> auditEventContext =
+                    verifiableCredentialService.getAuditEventExtensions(List.of(address));
+
+            Map<String, Object> expectedExtensions =
+                    Map.of("iss", VC_ISSUER, "addressesEntered", 1, "isUkAddress", false);
+
+            assertEquals(expectedExtensions, auditEventContext);
+        }
+
+        @Test
+        void shouldGetExtensionsWithMultipleAddresses() {
+            CanonicalAddress address = new CanonicalAddress();
+            address.setAddressCountry("GB");
+
+            Map<String, Object> auditEventContext =
+                    verifiableCredentialService.getAuditEventExtensions(
+                            List.of(address, new CanonicalAddress()));
+
+            Map<String, Object> expectedExtensions =
+                    Map.of("iss", VC_ISSUER, "addressesEntered", 2, "isUkAddress", true);
+
+            assertEquals(expectedExtensions, auditEventContext);
+        }
+
+        @Test
+        void shouldGetExtensionsIgnoringCountryCodeCase() {
+            CanonicalAddress address = new CanonicalAddress();
+            address.setAddressCountry("gb");
+
+            Map<String, Object> auditEventContext =
+                    verifiableCredentialService.getAuditEventExtensions(List.of(address));
+
+            Map<String, Object> expectedExtensions =
+                    Map.of("iss", VC_ISSUER, "addressesEntered", 1, "isUkAddress", true);
+
+            assertEquals(expectedExtensions, auditEventContext);
+        }
     }
 }

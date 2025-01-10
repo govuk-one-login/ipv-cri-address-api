@@ -13,6 +13,9 @@
         "session_id": {
           "type": "string"
         },
+        "persistent_session_id": {
+          "type": "string"
+        },
         "govuk_signin_journey_id": {
           "type": "string"
         },
@@ -23,6 +26,7 @@
       "required": [
         "user_id",
         "session_id",
+        "persistent_session_id",
         "govuk_signin_journey_id",
         "ip_address"
       ]
@@ -39,33 +43,34 @@
     "restricted": {
       "type": "object",
       "properties": {
-        "device_information": {
-          "type": "object",
-          "properties": {
-            "encoded": {
-              "type": "string"
-            }
-          },
-          "required": ["encoded"]
-        }
-      },
-      "required": ["device_information"]
-    },
-    "extensions": {
-      "type": "object",
-      "properties": {
-        "evidence": {
+        "address": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "context": {
+              "addressCountry": {
                 "type": "string"
               }
-            }
+            },
+            "additionalProperties": true
           }
         }
       }
+    },
+    "extensions": {
+      "type": "object",
+      "properties": {
+        "addressesEntered": {
+          "type": "integer"
+        },
+        "iss": {
+          "type": "string"
+        },
+        "isUkAddress": {
+          "type": "boolean"
+        }
+      },
+      "required": ["addressesEntered", "iss", "isUkAddress"]
     }
   },
   "required": [
@@ -73,7 +78,8 @@
     "user",
     "timestamp",
     "event_timestamp_ms",
-    "component_id"
+    "component_id",
+    "extensions"
   ],
   "additionalProperties": false
 }

@@ -37,6 +37,10 @@ Feature: Address API happy path test
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
 
+    # TXMA event
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
+    Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
+
   @address_api_happy
   Scenario Outline: Basic Address API journey
     Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
@@ -73,6 +77,10 @@ Feature: Address API happy path test
     # Credential Issued
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
+
+    # TXMA event
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
+    Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
 
     Examples:
       | testUserDataSheetRowNumber | testPostCode |
@@ -123,6 +131,10 @@ Feature: Address API happy path test
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
 
+    # TXMA event
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
+    Then VC_ISSUED TxMA event is validated against schema with isUkAddress "false"
+
   @international_address_api_happy
   Scenario: International Address API journey
     Given user has the test-identity 197 and context of "international_user" in the form of a signed JWT string
@@ -165,3 +177,7 @@ Feature: Address API happy path test
     # Credential Issued
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the response
+
+    # TXMA event
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
+    Then VC_ISSUED TxMA event is validated against schema with isUkAddress "false"
