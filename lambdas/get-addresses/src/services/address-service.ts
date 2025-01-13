@@ -10,8 +10,11 @@ const parameterPrefix = process.env.AWS_STACK_NAME || "";
 const commonParameterPrefix = process.env.COMMON_PARAMETER_NAME_PREFIX || "";
 export class AddressService {
     private readonly dbService: DynamoDbService;
+    private readonly logger: Logger;
+
     constructor(dynamoDbClient: DynamoDBDocument, logger: Logger) {
         this.dbService = new DynamoDbService(dynamoDbClient, logger);
+        this.logger = logger;
     }
 
     public async getAddressesBySessionId(sessionId: string): Promise<Address> {
@@ -23,6 +26,10 @@ export class AddressService {
 
             const sessionItem = (await this.dbService.getItem(sessionId, sessionTableName as string))
                 .Item as SessionItem;
+
+            this.logger.appendKeys({ govuk_signin_journey_id: sessionItem?.clientSessionId });
+            this.logger.info(`Found session with context: ${sessionItem?.context}`);
+
             const result = await this.dbService.getItem(sessionId, addressLookupTableName as string);
             const canonicalAddresses = result?.Item?.addresses ? (result?.Item?.addresses as CanonicalAddress[]) : [];
 
@@ -31,9 +38,7 @@ export class AddressService {
                 addresses: canonicalAddresses,
             };
         } catch (error: unknown) {
-            this.dbService
-                .getLogger()
-                .error(`Failed to retrieve addresses for session ID: ${sessionId}`, error as Error);
+            this.logger.error(`Failed to retrieve addresses for session ID: ${sessionId}`, error as Error);
             throw error;
         }
     }
