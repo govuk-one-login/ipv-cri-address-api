@@ -16,10 +16,14 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { AddressService } from "../../../src/services/address-service";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { Address } from "../../../src/types/address";
+
 const mockDynamoDbClient = jest.mocked(DynamoDbClient);
 const mockLogger = jest.mocked(Logger);
 const mockGetCommand = jest.mocked(GetCommand);
 const getParameterMock = jest.mocked(getParameter);
+
+const infoLoggerSpy = jest.spyOn(mockLogger.prototype, "info");
+const appendKeysLoggerSpy = jest.spyOn(mockLogger.prototype, "appendKeys").mockImplementation((args) => args);
 
 describe("Address Service Test", () => {
     let addressService: AddressService;
@@ -36,7 +40,7 @@ describe("Address Service Test", () => {
     });
 
     describe("with context", () => {
-        const sessionItem = { context: "new-context" };
+        const sessionItem = { context: "new-context", clientSessionId: "1234567" };
 
         it("returns an address when passed a session Id", async () => {
             const addressResponse: Address = {
@@ -57,6 +61,8 @@ describe("Address Service Test", () => {
 
             const result = await addressService.getAddressesBySessionId(sessionId);
 
+            expect(infoLoggerSpy).toHaveBeenCalledWith("Found session with context: new-context");
+            expect(appendKeysLoggerSpy).toHaveBeenCalledWith({ govuk_signin_journey_id: "1234567" });
             expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
                 TableName: sessionTable,
                 Key: { sessionId },
