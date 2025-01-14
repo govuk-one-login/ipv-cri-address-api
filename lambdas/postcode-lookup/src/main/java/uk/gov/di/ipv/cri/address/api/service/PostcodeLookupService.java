@@ -80,15 +80,13 @@ public class PostcodeLookupService {
         this.validatePostCode(postcode);
         // Create our http request
         HttpRequest request = createHttpRequest(postcode);
-        String uri = request.uri().toString();
 
         long startTime = System.nanoTime();
         HttpResponse<String> response = sendHttpRequest(request);
         long endTime = System.nanoTime();
         long totalTimeInMs = (endTime - startTime) / 1000000;
         log.info(
-                "API response received: url={}, status={}, latencyInMs={}",
-                uri,
+                "API response received from OS API: status={}, latencyInMs={}",
                 response.statusCode(),
                 totalTimeInMs);
 
