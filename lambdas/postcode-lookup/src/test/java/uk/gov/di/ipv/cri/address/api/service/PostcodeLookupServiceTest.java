@@ -301,8 +301,7 @@ class PostcodeLookupServiceTest {
             assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
             verify(log, times(1))
                     .info(
-                            "API response received: url={}, status={}, latencyInMs={}",
-                            "http://localhost:8080/?postcode=ZZ1%201ZZ&key",
+                            "API response received from OS API: status={}, latencyInMs={}",
                             HttpStatusCode.OK,
                             0L);
         }
