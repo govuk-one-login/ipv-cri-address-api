@@ -103,10 +103,6 @@ Globals:
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
           - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
-    Layers:
-      - !Sub
-        - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
-        - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
     ProvisionedConcurrencyConfig:
       !If
       - AddProvisionedConcurrency
@@ -294,6 +290,10 @@ Resources:
           - UseCanaryDeploymentAlarms
           - [!Ref PostcodeLookupFunctionCanaryErrors, !Ref PostcodeLookupFunctionCanary5xxErrors]
           - [!Ref AWS::NoValue]
+      Layers:
+        - !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
@@ -369,6 +369,10 @@ Resources:
           - [!Ref AddressFunctionCanaryErrors]
           - [!Ref AWS::NoValue]
           #- !Ref AddressFunctionCanary5xxErrors
+      Layers:
+        - !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address"
@@ -419,6 +423,10 @@ Resources:
           - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunctionCanary5xxErrors]
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/issuecredential
+      Layers:
+        - !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
@@ -484,6 +492,10 @@ Resources:
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs18.x
+      Layers:
+        - !Sub
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
