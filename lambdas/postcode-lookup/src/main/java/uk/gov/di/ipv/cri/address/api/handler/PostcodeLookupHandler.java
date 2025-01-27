@@ -56,6 +56,7 @@ import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.INVALID_POSTC
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_EXPIRED;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_NOT_FOUND;
 
+@SuppressWarnings("javaarchitecture:S7091")
 public class PostcodeLookupHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
