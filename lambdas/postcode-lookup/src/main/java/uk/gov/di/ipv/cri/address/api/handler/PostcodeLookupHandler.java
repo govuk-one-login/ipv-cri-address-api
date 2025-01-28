@@ -6,6 +6,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.ErrorObject;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.instrumentation.httpclient.JavaHttpClientTelemetry;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
@@ -54,6 +56,7 @@ import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.INVALID_POSTC
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_EXPIRED;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.SESSION_NOT_FOUND;
 
+@SuppressWarnings("javaarchitecture:S7091")
 public class PostcodeLookupHandler
         implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
@@ -79,10 +82,14 @@ public class PostcodeLookupHandler
                         clientProviderFactory.getSecretsProvider());
 
         HttpClient httpClient =
-                HttpClient.newBuilder()
-                        .version(HttpClient.Version.HTTP_2)
-                        .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
-                        .build();
+                JavaHttpClientTelemetry.builder(GlobalOpenTelemetry.get())
+                        .build()
+                        .newHttpClient(
+                                HttpClient.newBuilder()
+                                        .version(HttpClient.Version.HTTP_2)
+                                        .connectTimeout(
+                                                Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+                                        .build());
 
         this.eventProbe = new EventProbe();
 
