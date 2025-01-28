@@ -6,6 +6,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.ErrorObject;
+//import io.opentelemetry.api.GlobalOpenTelemetry;
+//import io.opentelemetry.instrumentation.httpclient.JavaHttpClientTelemetry;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
@@ -77,6 +79,16 @@ public class PostcodeLookupHandler
                 new ConfigurationService(
                         clientProviderFactory.getSSMProvider(),
                         clientProviderFactory.getSecretsProvider());
+
+//        HttpClient httpClient =
+//                JavaHttpClientTelemetry.builder(GlobalOpenTelemetry.get())
+//                        .build()
+//                        .newHttpClient(
+//                                HttpClient.newBuilder()
+//                                        .version(HttpClient.Version.HTTP_2)
+//                                        .connectTimeout(
+//                                                Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
+//                                        .build());
 
         HttpClient httpClient =
                 HttpClient.newBuilder()
