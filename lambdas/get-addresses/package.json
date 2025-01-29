@@ -12,11 +12,11 @@
         "compile": "tsc"
     },
     "dependencies": {
-        "@aws-lambda-powertools/logger": "^2.10.0",
-        "@aws-lambda-powertools/parameters": "2.10.0",
-        "@aws-sdk/client-dynamodb": "3.686.0",
-        "@aws-sdk/client-ssm": "^3.686.0",
-        "@aws-sdk/lib-dynamodb": "3.686.0",
+        "@aws-lambda-powertools/logger": "^2.13.1",
+        "@aws-lambda-powertools/parameters": "2.13.1",
+        "@aws-sdk/client-dynamodb": "3.734.0",
+        "@aws-sdk/client-ssm": "^3.735.0",
+        "@aws-sdk/lib-dynamodb": "3.734.0",
         "esbuild": "0.24.0"
     },
     "devDependencies": {
