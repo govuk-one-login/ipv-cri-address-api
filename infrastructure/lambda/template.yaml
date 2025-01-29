@@ -275,6 +275,28 @@ Resources:
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
       RetentionInDays: 30
+      DataProtectionPolicy:
+        Name: uk_postcode_data_protection_policy
+        Description: ""
+        Version: "2021-06-01"
+        Statement:
+          - Sid: audit-policy
+            DataIdentifier:
+              - postcode
+            Operation:
+              Audit:
+                FindingsDestination: { }
+          - Sid: redact-policy
+            DataIdentifier:
+              - postcode
+            Operation:
+              Deidentify:
+                MaskConfig: { }
+        Configuration:
+          CustomDataIdentifier:
+            - Name: postcode
+              Regex: "/(integration|production)\\/postcode-lookup\\/([A-Z]{1,2}[0-9][A-Z0-9]?)[:+%20]?([0-9][A-Z]{2})"
+
 
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
