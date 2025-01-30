@@ -95,7 +95,6 @@ subprojects {
 
 		powertools "software.amazon.lambda:powertools-logging:${dependencyVersions.powertools_version}",
 				"software.amazon.lambda:powertools-metrics:${dependencyVersions.powertools_version}",
-				"software.amazon.lambda:powertools-tracing:${dependencyVersions.powertools_version}",
 				"software.amazon.lambda:powertools-parameters:${dependencyVersions.powertools_version}"
 
 		nimbus "com.nimbusds:oauth2-oidc-sdk:${dependencyVersions.nimbusds_oauth_version}",
@@ -114,11 +113,6 @@ subprojects {
 
 		pact_tests "au.com.dius.pact.provider:junit5:${dependencyVersions.pact_provider_version}",
 				"au.com.dius.pact:provider:${dependencyVersions.pact_provider_version}"
-	}
-
-	test {
-		// Configures environment variable to avoid initialization of AWS X-Ray segments for each tests
-		environment "LAMBDA_TASK_ROOT", "handler"
 	}
 
 	tasks.register("pactTests", Test) {
