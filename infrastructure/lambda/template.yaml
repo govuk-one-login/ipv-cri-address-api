@@ -85,8 +85,6 @@ Globals:
         COMMON_PARAMETER_NAME_PREFIX: !Ref CommonStackName
         POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
         POWERTOOLS_LOG_LEVEL: INFO
-        POWERTOOLS_TRACER_CAPTURE_RESPONSE: false
-        POWERTOOLS_TRACER_CAPTURE_ERROR: false
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
         DT_CONNECTION_AUTH_TOKEN: !Sub
@@ -115,7 +113,7 @@ Globals:
       - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
       - !Ref AWS::NoValue
   Api:
-    TracingEnabled: true
+    TracingEnabled: false
     OpenApiVersion: 3.0.1
     MethodSettings:
       - LoggingLevel: INFO
