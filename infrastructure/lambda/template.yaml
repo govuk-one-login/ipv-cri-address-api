@@ -113,7 +113,7 @@ Globals:
       - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
       - !Ref AWS::NoValue
   Api:
-    TracingEnabled: true
+    TracingEnabled: false
     OpenApiVersion: 3.0.1
     MethodSettings:
       - LoggingLevel: INFO
