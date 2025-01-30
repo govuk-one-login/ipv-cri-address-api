@@ -295,7 +295,7 @@ Resources:
         Configuration:
           CustomDataIdentifier:
             - Name: postcode
-              Regex: "/(integration|production)\\/postcode-lookup\\/([A-Z]{1,2}[0-9][A-Z0-9]?)[:+%20]?([0-9][A-Z]{2})"
+              Regex: "/(integration|production)\\/postcode-lookup\\/.*"
 
 
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
