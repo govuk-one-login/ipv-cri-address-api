@@ -5,8 +5,10 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda
 import { handleError } from "./lib/error-handler";
 import { getSessionId } from "./lib/session-header";
 import { AddressService } from "./services/address-service";
+import { initOpenTelemetry } from "./lib/tracer";
 
 const logger = new Logger();
+initOpenTelemetry();
 export class AddressesHandler implements LambdaInterface {
     public constructor(private readonly addressService: AddressService) {}
 
