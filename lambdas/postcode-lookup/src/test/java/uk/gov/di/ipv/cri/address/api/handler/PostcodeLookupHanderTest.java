@@ -4,6 +4,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.Level;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -12,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
+import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeValidationException;
@@ -20,8 +23,8 @@ import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
 import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
-import uk.gov.di.ipv.cri.common.library.exception.SessionValidationException;
 import uk.gov.di.ipv.cri.common.library.exception.SqsException;
+import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.AuditService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
@@ -39,7 +42,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,6 +55,14 @@ import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.SESSIO
 
 @ExtendWith(MockitoExtension.class)
 class PostcodeLookupHanderTest {
+    private static final String POST = "POST";
+    private static final String GET = "GET";
+    private static final String TEST_POSTCODE = "LS1 1BA";
+    private static final String TEST_POSTCODE_BODY = "{ \"postcode\": \"" + TEST_POSTCODE + "\" }";
+    private static final String TEST_SESSION_ID = String.valueOf(UUID.randomUUID());
+    private static final Map<String, String> TEST_REQUEST_HEADERS =
+            Map.of(SESSION_ID, TEST_SESSION_ID);
+
     @Mock private PostcodeLookupService postcodeLookupService;
     @Mock private SessionService sessionService;
     @Mock private APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent;
@@ -62,223 +72,401 @@ class PostcodeLookupHanderTest {
     private ArgumentCaptor<Map<String, String>> argumentCaptorDimension =
             ArgumentCaptor.forClass(Map.class);
 
-    @Test
-    void postcodeLookupValidationExceptionReturns400()
-            throws JsonProcessingException, PostcodeValidationException,
-                    PostcodeLookupProcessingException {
+    @Nested
+    class ValidRequests {
 
-        PostcodeValidationException exception =
-                new PostcodeValidationException("Postcode is empty");
+        @Mock private SessionItem mockSessionItem;
+        @Mock private AuditEventContext mockAuditEventContext;
 
-        when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
-        setupEventProbeExpectedErrorBehaviour();
-        doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
-        when(apiGatewayProxyRequestEvent.getHeaders())
-                .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
-        when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(new HashMap<>());
-        when(postcodeLookupService.lookupPostcode(isNull())).thenThrow(exception);
+        @BeforeEach
+        void setup() {
+            when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+            when(eventProbe.counterMetric(LAMBDA_NAME)).thenReturn(eventProbe);
+            when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(TEST_REQUEST_HEADERS);
+            when(sessionService.validateSessionId(TEST_SESSION_ID)).thenReturn(mockSessionItem);
+            when(postcodeLookupService.getAuditEventContext(
+                            TEST_POSTCODE, TEST_REQUEST_HEADERS, mockSessionItem))
+                    .thenReturn(mockAuditEventContext);
+        }
 
-        APIGatewayProxyResponseEvent responseEvent =
-                postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        var capturedDimension = argumentCaptorDimension.getValue();
+        @Test
+        void postReturns200WithNoAddresses() throws JsonProcessingException {
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn(TEST_POSTCODE_BODY);
 
-        verifyErrorsLoggedByEventProbe(exception);
-        verifyNoMoreInteractions(eventProbe);
+            when(postcodeLookupService.lookupPostcode(TEST_POSTCODE))
+                    .thenReturn(Collections.emptyList());
 
-        assertEquals(
-                Map.of(
-                        POSTCODE_ERROR_TYPE,
-                        "invalid_postcode_param",
-                        POSTCODE_ERROR_MESSAGE,
-                        "Postcode is empty"),
-                capturedDimension);
-        assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
-        assertEquals("\"Postcode is empty\"", responseEvent.getBody());
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+
+            assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
+            assertEquals("[]", responseEvent.getBody());
+        }
+
+        @Test
+        void postReturns200WithAddresses() throws JsonProcessingException {
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn(TEST_POSTCODE_BODY);
+
+            CanonicalAddress address = new CanonicalAddress();
+            address.setPostalCode(TEST_POSTCODE);
+            address.setBuildingName("Test Address");
+            when(postcodeLookupService.lookupPostcode(TEST_POSTCODE))
+                    .thenReturn(Collections.singletonList(address));
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+
+            assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
+            assertEquals(
+                    "[{\"buildingName\":\"Test Address\",\"postalCode\":\"LS1 1BA\"}]",
+                    responseEvent.getBody());
+        }
+
+        @Test
+        void getReturns200() throws JsonProcessingException {
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(GET);
+            when(apiGatewayProxyRequestEvent.getPathParameters())
+                    .thenReturn(Map.of("postcode", TEST_POSTCODE));
+
+            when(postcodeLookupService.lookupPostcode(TEST_POSTCODE))
+                    .thenReturn(Collections.emptyList());
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+
+            assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
+            assertEquals("[]", responseEvent.getBody());
+        }
+
+        @Test
+        void returns200AndCallsServices() throws JsonProcessingException {
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getBody())
+                    .thenReturn("{ \"postcode\": \"" + TEST_POSTCODE + "\" }");
+
+            when(postcodeLookupService.lookupPostcode(isNotNull()))
+                    .thenReturn(Collections.emptyList());
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+
+            verify(sessionService).validateSessionId(TEST_SESSION_ID);
+            verify(postcodeLookupService, times(2))
+                    .getAuditEventContext(TEST_POSTCODE, TEST_REQUEST_HEADERS, mockSessionItem);
+
+            verify(postcodeLookupService).lookupPostcode(TEST_POSTCODE);
+
+            assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
+            assertEquals("[]", responseEvent.getBody());
+        }
+
+        @Test
+        void returns200AndAuditsEvents() throws SqsException, JsonProcessingException {
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn(TEST_POSTCODE_BODY);
+
+            when(postcodeLookupService.lookupPostcode(TEST_POSTCODE))
+                    .thenReturn(Collections.emptyList());
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+
+            verify(auditService).sendAuditEvent(AuditEventType.REQUEST_SENT, mockAuditEventContext);
+            verify(auditService)
+                    .sendAuditEvent(AuditEventType.RESPONSE_RECEIVED, mockAuditEventContext);
+            verify(eventProbe).counterMetric(LAMBDA_NAME);
+            verifyNoMoreInteractions(eventProbe);
+
+            assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
+            assertEquals("[]", responseEvent.getBody());
+        }
     }
 
-    @Test
-    void sessionErrorThrows403()
-            throws PostcodeValidationException, PostcodeLookupProcessingException,
-                    SessionExpiredException, SessionNotFoundException {
+    @Nested
+    class BadRequests {
 
-        String sessionId = UUID.randomUUID().toString();
-        SessionNotFoundException sessionNotFoundException =
-                new SessionNotFoundException("Session not found");
+        @Test
+        void postReturns400WhenPostcodeBodyEmpty() throws JsonProcessingException {
+            when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
 
-        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of(SESSION_ID, sessionId));
-        when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(Map.of("postcode", ""));
-        when(sessionService.validateSessionId(sessionId)).thenThrow(sessionNotFoundException);
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(TEST_REQUEST_HEADERS);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn("{ \"postcode\": \"\" }");
 
-        setupEventProbeExpectedErrorBehaviour();
-        doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
+            PostcodeValidationException exception =
+                    new PostcodeValidationException("Postcode is empty");
+            when(postcodeLookupService.lookupPostcode("")).thenThrow(exception);
 
-        APIGatewayProxyResponseEvent responseEvent =
-                postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        var capturedDimension = argumentCaptorDimension.getValue();
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var capturedDimension = argumentCaptorDimension.getValue();
 
-        verify(eventProbe).addDimensions(capturedDimension);
-        verifyErrorsLoggedByEventProbe(sessionNotFoundException);
-        verifyNoMoreInteractions(eventProbe);
+            verifyErrorsLoggedByEventProbe(exception);
+            verifyNoMoreInteractions(eventProbe);
 
-        assertEquals(
-                Map.of(
-                        POSTCODE_ERROR_TYPE,
-                        "session_not_found",
-                        POSTCODE_ERROR_MESSAGE,
-                        "Session not found"),
-                capturedDimension);
-        assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
-        assertEquals(
-                "{\"error_description\":\"Access denied by resource owner or authorization server - Session not found\",\"error\":\"access_denied\"}",
-                responseEvent.getBody());
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "invalid_postcode_param",
+                            POSTCODE_ERROR_MESSAGE,
+                            "Postcode is empty"),
+                    capturedDimension);
+            assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
+            assertEquals("\"Postcode is empty\"", responseEvent.getBody());
+        }
+
+        @Test
+        void postReturns400WhenPostcodeBodyInvalid() {
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
+
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(TEST_REQUEST_HEADERS);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn("{ }");
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var capturedDimension = argumentCaptorDimension.getValue();
+
+            verify(eventProbe)
+                    .log(eq(Level.ERROR), Mockito.any(PostcodeLookupBadRequestException.class));
+            verify(eventProbe).counterMetric(POSTCODE_ERROR);
+            verifyNoMoreInteractions(eventProbe);
+
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "invalid_postcode_param",
+                            POSTCODE_ERROR_MESSAGE,
+                            "Failed to parse postcode from request body"),
+                    capturedDimension);
+            assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
+            assertEquals("\"Failed to parse postcode from request body\"", responseEvent.getBody());
+        }
+
+        @Test
+        void getReturns400WhenPostcodeParamEmpty() throws JsonProcessingException {
+            when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
+
+            PostcodeValidationException exception =
+                    new PostcodeValidationException("Postcode is empty");
+
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(GET);
+            when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(TEST_REQUEST_HEADERS);
+            when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(new HashMap<>());
+
+            when(postcodeLookupService.lookupPostcode(isNull())).thenThrow(exception);
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var capturedDimension = argumentCaptorDimension.getValue();
+
+            verifyErrorsLoggedByEventProbe(exception);
+            verifyNoMoreInteractions(eventProbe);
+
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "invalid_postcode_param",
+                            POSTCODE_ERROR_MESSAGE,
+                            "Postcode is empty"),
+                    capturedDimension);
+            assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
+            assertEquals("\"Postcode is empty\"", responseEvent.getBody());
+        }
+
+        @Test
+        void sessionNotFoundReturns403() {
+
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getHeaders())
+                    .thenReturn(Map.of(SESSION_ID, TEST_SESSION_ID));
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn(TEST_POSTCODE_BODY);
+
+            SessionNotFoundException sessionNotFoundException =
+                    new SessionNotFoundException("Session not found");
+            when(sessionService.validateSessionId(TEST_SESSION_ID))
+                    .thenThrow(sessionNotFoundException);
+
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var capturedDimension = argumentCaptorDimension.getValue();
+
+            verify(eventProbe).addDimensions(capturedDimension);
+            verifyErrorsLoggedByEventProbe(sessionNotFoundException);
+            verifyNoMoreInteractions(eventProbe);
+
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "session_not_found",
+                            POSTCODE_ERROR_MESSAGE,
+                            "Session not found"),
+                    capturedDimension);
+            assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
+            assertEquals(
+                    "{\"error_description\":\"Access denied by resource owner or authorization server - Session not found\",\"error\":\"access_denied\"}",
+                    responseEvent.getBody());
+        }
+
+        @Test
+        void sessionExpiredReturns403() {
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(TEST_REQUEST_HEADERS);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn(TEST_POSTCODE_BODY);
+
+            SessionExpiredException sessionExpiredException =
+                    new SessionExpiredException("session expired");
+            when(sessionService.validateSessionId(TEST_SESSION_ID))
+                    .thenThrow(sessionExpiredException);
+
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var capturedDimension = argumentCaptorDimension.getValue();
+
+            verify(eventProbe).addDimensions(argumentCaptorDimension.getValue());
+            verifyErrorsLoggedByEventProbe(sessionExpiredException);
+            verifyNoMoreInteractions(eventProbe);
+
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "session_expired",
+                            POSTCODE_ERROR_MESSAGE,
+                            "session expired"),
+                    capturedDimension);
+            assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
+            assertEquals(
+                    "{\"error_description\":\"Access denied by resource owner or authorization server - Session expired\",\"error\":\"access_denied\"}",
+                    responseEvent.getBody());
+        }
     }
 
-    @Test
-    void sessionExpiredErrorThrows403()
-            throws PostcodeValidationException, PostcodeLookupProcessingException,
-                    SessionExpiredException, SessionNotFoundException {
+    @Nested
+    class ServiceErrors {
 
-        String sessionId = UUID.randomUUID().toString();
-        SessionExpiredException sessionExpiredException =
-                new SessionExpiredException("session expired");
+        @BeforeEach
+        void setup() {
+            when(apiGatewayProxyRequestEvent.getHttpMethod()).thenReturn(POST);
+            when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(TEST_REQUEST_HEADERS);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn(TEST_POSTCODE_BODY);
+        }
 
-        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(Map.of(SESSION_ID, sessionId));
-        when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(Map.of("postcode", ""));
-        when(sessionService.validateSessionId(sessionId)).thenThrow(sessionExpiredException);
+        @Test
+        void runtimeSessionServiceExceptionReturns401() {
 
-        setupEventProbeExpectedErrorBehaviour();
-        doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
+            RuntimeException exception = new RuntimeException("Any other exception");
 
-        APIGatewayProxyResponseEvent responseEvent =
-                postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        var capturedDimension = argumentCaptorDimension.getValue();
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
 
-        verify(eventProbe).addDimensions(argumentCaptorDimension.getValue());
-        verifyErrorsLoggedByEventProbe(sessionExpiredException);
-        verifyNoMoreInteractions(eventProbe);
+            when(sessionService.validateSessionId(anyString())).thenThrow(exception);
 
-        assertEquals(
-                Map.of(
-                        POSTCODE_ERROR_TYPE,
-                        "session_expired",
-                        POSTCODE_ERROR_MESSAGE,
-                        "session expired"),
-                capturedDimension);
-        assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
-        assertEquals(
-                "{\"error_description\":\"Access denied by resource owner or authorization server - Session expired\",\"error\":\"access_denied\"}",
-                responseEvent.getBody());
-    }
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var dimension = argumentCaptorDimension.getValue();
 
-    @Test
-    void anyOtherExceptionThrows401()
-            throws PostcodeValidationException, PostcodeLookupProcessingException,
-                    SessionExpiredException, SessionValidationException, SessionNotFoundException {
-        String sessionId = String.valueOf(UUID.randomUUID());
-        Map<String, String> requestHeaders = Map.of("session_id", sessionId);
-        RuntimeException exception = new RuntimeException("Any other exception");
+            verifyErrorsLoggedByEventProbe(exception);
+            verifyNoMoreInteractions(eventProbe);
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "lookup_server",
+                            POSTCODE_ERROR_MESSAGE,
+                            "Any other exception"),
+                    dimension);
+            assertEquals(HttpStatusCode.UNAUTHORIZED, responseEvent.getStatusCode());
+            assertEquals("\"Any other exception\"", responseEvent.getBody().toString());
+        }
 
-        setupEventProbeExpectedErrorBehaviour();
-        doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
-        when(apiGatewayProxyRequestEvent.getHeaders())
-                .thenReturn(Map.of("session_id", UUID.randomUUID().toString()));
-        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(requestHeaders);
-        when(apiGatewayProxyRequestEvent.getPathParameters()).thenReturn(Map.of("postcode", ""));
-        when(sessionService.validateSessionId(anyString())).thenThrow(exception);
+        @Test
+        void postcodeLookupServiceTimeoutReturns408() throws JsonProcessingException {
 
-        APIGatewayProxyResponseEvent responseEvent =
-                postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        var dimension = argumentCaptorDimension.getValue();
+            SessionItem sessionItem = mock(SessionItem.class);
+            AuditEventContext testAuditEventContext = mock(AuditEventContext.class);
 
-        verifyErrorsLoggedByEventProbe(exception);
-        verifyNoMoreInteractions(eventProbe);
-        assertEquals(
-                Map.of(
-                        POSTCODE_ERROR_TYPE,
-                        "lookup_server",
-                        POSTCODE_ERROR_MESSAGE,
-                        "Any other exception"),
-                dimension);
-        assertEquals(HttpStatusCode.UNAUTHORIZED, responseEvent.getStatusCode());
-        assertEquals("\"Any other exception\"", responseEvent.getBody().toString());
-    }
+            when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
 
-    @Test
-    void postcodeLookupTimeoutExceptionThrowsRequestTimeOut()
-            throws PostcodeValidationException, PostcodeLookupProcessingException,
-                    SessionExpiredException, SessionValidationException, SessionNotFoundException,
-                    JsonProcessingException {
-        String testPostcode = "LS1 1BA";
-        String sessionId = String.valueOf(UUID.randomUUID());
-        Map<String, String> requestHeaders = Map.of("session_id", sessionId);
-        SessionItem sessionItem = mock(SessionItem.class);
-        AuditEventContext testAuditEventContext = mock(AuditEventContext.class);
+            when(sessionService.validateSessionId(TEST_SESSION_ID)).thenReturn(sessionItem);
+            when(postcodeLookupService.getAuditEventContext(
+                            TEST_POSTCODE, TEST_REQUEST_HEADERS, sessionItem))
+                    .thenReturn(testAuditEventContext);
 
-        PostcodeLookupTimeoutException exception =
-                new PostcodeLookupTimeoutException("Error Connection Timeout");
+            PostcodeLookupTimeoutException exception =
+                    new PostcodeLookupTimeoutException("Error Connection Timeout");
+            when(postcodeLookupService.lookupPostcode(TEST_POSTCODE)).thenThrow(exception);
 
-        when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
-        setupEventProbeExpectedErrorBehaviour();
-        doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
-        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(requestHeaders);
-        when(apiGatewayProxyRequestEvent.getPathParameters())
-                .thenReturn(Map.of("postcode", testPostcode));
-        when(sessionService.validateSessionId(sessionId)).thenReturn(sessionItem);
-        when(postcodeLookupService.getAuditEventContext(testPostcode, requestHeaders, sessionItem))
-                .thenReturn(testAuditEventContext);
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var dimension = argumentCaptorDimension.getValue();
 
-        doThrow(exception).when(postcodeLookupService).lookupPostcode(anyString());
-        APIGatewayProxyResponseEvent responseEvent =
-                postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        var dimension = argumentCaptorDimension.getValue();
+            verify(eventProbe).addDimensions(dimension);
+            verifyErrorsLoggedByEventProbe(exception);
+            verifyNoMoreInteractions(eventProbe);
 
-        verify(eventProbe).addDimensions(dimension);
-        verifyErrorsLoggedByEventProbe(exception);
-        verifyNoMoreInteractions(eventProbe);
+            assertEquals(HttpStatusCode.REQUEST_TIMEOUT, responseEvent.getStatusCode());
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "time_out_error",
+                            POSTCODE_ERROR_MESSAGE,
+                            "Error Connection Timeout"),
+                    dimension);
+            assertEquals("\"Error Connection Timeout\"", responseEvent.getBody().toString());
+        }
 
-        assertEquals(HttpStatusCode.REQUEST_TIMEOUT, responseEvent.getStatusCode());
-        assertEquals(
-                Map.of(
-                        POSTCODE_ERROR_TYPE,
-                        "time_out_error",
-                        POSTCODE_ERROR_MESSAGE,
-                        "Error Connection Timeout"),
-                dimension);
-        assertEquals("\"Error Connection Timeout\"", responseEvent.getBody().toString());
-    }
+        @Test
+        void postcodeLookupServiceProcessingExceptionReturns404() throws JsonProcessingException {
 
-    @Test
-    void validLookupReturns200() throws JsonProcessingException, SqsException {
-        String testPostcode = "LS1 1BA";
-        String sessionId = String.valueOf(UUID.randomUUID());
-        SessionItem sessionItem = mock(SessionItem.class);
-        Map<String, String> requestHeaders = Map.of("session_id", sessionId);
-        AuditEventContext testAuditEventContext = mock(AuditEventContext.class);
+            SessionItem sessionItem = mock(SessionItem.class);
+            AuditEventContext testAuditEventContext = mock(AuditEventContext.class);
 
-        when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
-        when(eventProbe.counterMetric(LAMBDA_NAME)).thenReturn(eventProbe);
-        when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(requestHeaders);
-        when(apiGatewayProxyRequestEvent.getPathParameters())
-                .thenReturn(Map.of("postcode", testPostcode));
-        when(postcodeLookupService.lookupPostcode(isNotNull())).thenReturn(Collections.emptyList());
-        when(sessionService.validateSessionId(sessionId)).thenReturn(sessionItem);
-        when(postcodeLookupService.getAuditEventContext(testPostcode, requestHeaders, sessionItem))
-                .thenReturn(testAuditEventContext);
+            when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+            setupEventProbeExpectedErrorBehaviour();
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
 
-        APIGatewayProxyResponseEvent responseEvent =
-                postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
-        verify(sessionService).validateSessionId(sessionId);
-        verify(postcodeLookupService, times(2))
-                .getAuditEventContext(testPostcode, requestHeaders, sessionItem);
-        verify(postcodeLookupService).lookupPostcode(testPostcode);
-        verify(auditService).sendAuditEvent(AuditEventType.REQUEST_SENT, testAuditEventContext);
-        verify(auditService)
-                .sendAuditEvent(AuditEventType.RESPONSE_RECEIVED, testAuditEventContext);
-        verify(eventProbe).counterMetric(LAMBDA_NAME);
-        verifyNoMoreInteractions(eventProbe);
+            when(sessionService.validateSessionId(TEST_SESSION_ID)).thenReturn(sessionItem);
+            when(postcodeLookupService.getAuditEventContext(
+                            TEST_POSTCODE, TEST_REQUEST_HEADERS, sessionItem))
+                    .thenReturn(testAuditEventContext);
 
-        assertEquals(HttpStatusCode.OK, responseEvent.getStatusCode());
-        assertEquals("[]", responseEvent.getBody());
+            PostcodeLookupProcessingException exception =
+                    new PostcodeLookupProcessingException(
+                            "Error sending request for postcode lookup");
+            when(postcodeLookupService.lookupPostcode(TEST_POSTCODE)).thenThrow(exception);
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+            var dimension = argumentCaptorDimension.getValue();
+
+            verify(eventProbe).addDimensions(dimension);
+            verifyErrorsLoggedByEventProbe(exception);
+            verifyNoMoreInteractions(eventProbe);
+
+            assertEquals(HttpStatusCode.NOT_FOUND, responseEvent.getStatusCode());
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "lookup_processing",
+                            POSTCODE_ERROR_MESSAGE,
+                            "Error sending request for postcode lookup"),
+                    dimension);
+            assertEquals("\"Error sending request for postcode lookup\"", responseEvent.getBody());
+        }
     }
 
     private void setupEventProbeExpectedErrorBehaviour() {

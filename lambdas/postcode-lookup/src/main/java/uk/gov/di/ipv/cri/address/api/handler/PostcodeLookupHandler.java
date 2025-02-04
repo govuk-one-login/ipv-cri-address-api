@@ -4,6 +4,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import org.apache.logging.log4j.Level;
@@ -61,6 +63,7 @@ public class PostcodeLookupHandler
     private final SessionService sessionService;
     private final EventProbe eventProbe;
     private final AuditService auditService;
+    private final ObjectMapper objectMapper;
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "postcode_lookup";
     protected static final String POSTCODE_ERROR = "postcode_lookup_error";
@@ -94,11 +97,13 @@ public class PostcodeLookupHandler
                 new SessionService(
                         configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
 
+        this.objectMapper = new ObjectMapper();
+
         this.auditService =
                 new AuditService(
                         clientProviderFactory.getSqsClient(),
                         configurationService,
-                        new ObjectMapper(),
+                        objectMapper,
                         new AuditEventFactory(configurationService, Clock.systemDefaultZone()));
     }
 
@@ -111,6 +116,7 @@ public class PostcodeLookupHandler
         this.sessionService = sessionService;
         this.eventProbe = eventProbe;
         this.auditService = auditService;
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
@@ -119,9 +125,10 @@ public class PostcodeLookupHandler
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         String sessionId = input.getHeaders().get(SESSION_ID);
-        String postcode = input.getPathParameters().get("postcode");
 
         try {
+            String postcode = getPostcodeFromRequest(input);
+
             SessionItem sessionItem = sessionService.validateSessionId(sessionId);
             eventProbe.log(Level.INFO, "found session");
 
@@ -152,6 +159,20 @@ public class PostcodeLookupHandler
         } catch (Exception e) {
             return handleException(e, LOOKUP_SERVER.getMessage(), UNAUTHORIZED);
         }
+    }
+
+    private String getPostcodeFromRequest(APIGatewayProxyRequestEvent input)
+            throws PostcodeLookupBadRequestException {
+        if (input.getHttpMethod().equalsIgnoreCase("POST")) {
+            try {
+                JsonNode requestBody = objectMapper.readTree(input.getBody());
+                return requestBody.get("postcode").asText();
+            } catch (JsonProcessingException | NullPointerException e) {
+                throw new PostcodeLookupBadRequestException(
+                        "Failed to parse postcode from request body", e);
+            }
+        }
+        return input.getPathParameters().get("postcode");
     }
 
     private APIGatewayProxyResponseEvent handleException(
