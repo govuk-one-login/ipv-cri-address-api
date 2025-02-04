@@ -82,6 +82,15 @@ public class AddressSteps {
                         URLEncoder.encode(postcode.trim(), StandardCharsets.UTF_8)));
     }
 
+    @When("the user performs a GET postcode lookup for post code {string}")
+    public void theUserPerformsAGETPostcodeLookupForPostCode(String postcode)
+            throws IOException, InterruptedException {
+        this.testContext.setResponse(
+                this.addressApiClient.sendPostCodeLookUpGETRequest(
+                        this.testContext.getSessionId(),
+                        URLEncoder.encode(postcode.trim(), StandardCharsets.UTF_8)));
+    }
+
     @Then("user receives a list of addresses containing {string}")
     public void userReceivesAListOfAddressesContaining(String postcode) throws IOException {
         JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
