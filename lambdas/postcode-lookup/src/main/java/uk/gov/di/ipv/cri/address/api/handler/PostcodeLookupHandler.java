@@ -63,7 +63,7 @@ public class PostcodeLookupHandler
     private final SessionService sessionService;
     private final EventProbe eventProbe;
     private final AuditService auditService;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "postcode_lookup";
     protected static final String POSTCODE_ERROR = "postcode_lookup_error";
@@ -160,16 +160,19 @@ public class PostcodeLookupHandler
 
     private String getPostcodeFromRequest(APIGatewayProxyRequestEvent input)
             throws PostcodeLookupBadRequestException {
-        if (input.getHttpMethod().equalsIgnoreCase("POST")) {
-            try {
-                JsonNode requestBody = objectMapper.readTree(input.getBody());
-                return requestBody.get("postcode").asText();
-            } catch (JsonProcessingException | NullPointerException e) {
-                throw new PostcodeLookupBadRequestException(
-                        "Failed to parse postcode from request body", e);
+        try {
+            JsonNode requestBody = objectMapper.readTree(input.getBody());
+            JsonNode postcodeNode = requestBody.get("postcode");
+
+            if (postcodeNode == null || postcodeNode.isNull()) {
+                throw new PostcodeLookupBadRequestException("Missing postcode in request body.");
             }
+
+            return postcodeNode.asText();
+        } catch (JsonProcessingException e) {
+            throw new PostcodeLookupBadRequestException(
+                    "Failed to parse postcode from request body", e);
         }
-        return input.getPathParameters().get("postcode");
     }
 
     private APIGatewayProxyResponseEvent handleException(
