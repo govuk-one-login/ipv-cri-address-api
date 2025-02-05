@@ -1,7 +1,7 @@
-Feature: Invalid postcode test
+Feature: valid postcode test
 
-  @postcode_lookup_GET_test
-  Scenario Outline: Postcode GET lookup
+  @postcode_lookup_test
+  Scenario Outline: Postcode lookup
     Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
 
     # Session
@@ -16,8 +16,8 @@ Feature: Invalid postcode test
       | testUserDataSheetRowNumber | testPostCode |
       | 197                        | SW1A 2AA     |
 
-  @invalid_postcode_GET_test
-  Scenario Outline: Invalid postcode GET lookup
+  @postcode_lookup_on_removed_get_request
+  Scenario Outline: postcode lookup with get a bad Request
     Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
 
     # Session
@@ -25,9 +25,9 @@ Feature: Invalid postcode test
     Then user gets a session-id
 
     # Postcode lookup
-    When the user performs a postcode lookup for post code "<testPostCode>"
-    Then user does not get any address
+    When the user performs a GET postcode lookup for post code "<testPostCode>"
+    Then responds with missing authentication
 
     Examples:
       | testUserDataSheetRowNumber | testPostCode |
-      | 197                        | XX12 12XX    |
+      | 197                        | SW1A 2AA     |

@@ -357,4 +357,9 @@ public class AddressSteps {
         assertNotNull(firstAddress.get("postalCode").asText());
         assertEquals("international_user", jsonNode.get("context").asText());
     }
+
+    @Then("responds with missing authentication")
+    public void respondsMissingAuthentication() {
+        assertEquals(403, this.testContext.getResponse().statusCode());
+    }
 }
