@@ -33,6 +33,19 @@ public class AddressApiClient {
 
         String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
         return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "postcode-lookup")
+                        .header(SESSION_ID, sessionId)
+                        .POST(
+                                HttpRequest.BodyPublishers.ofString(
+                                        "{\"postcode\": \"" + postcode + "\"}"))
+                        .build());
+    }
+
+    public HttpResponse<String> sendPostCodeLookUpGETRequest(String sessionId, String postcode)
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
                 requestBuilder(privateApiEndpoint, "postcode-lookup/" + postcode)
                         .header(SESSION_ID, sessionId)
                         .GET()
