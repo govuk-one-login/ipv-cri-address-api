@@ -65,7 +65,7 @@ public class PostcodeLookupHandler
     private final SessionService sessionService;
     private final EventProbe eventProbe;
     private final AuditService auditService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "postcode_lookup";
     protected static final String POSTCODE_ERROR = "postcode_lookup_error";
