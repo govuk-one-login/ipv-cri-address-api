@@ -5,7 +5,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -19,6 +18,7 @@ import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestExceptio
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeValidationException;
+import uk.gov.di.ipv.cri.address.api.models.Postcode;
 import uk.gov.di.ipv.cri.address.api.service.PostcodeLookupService;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventType;
@@ -167,14 +167,12 @@ public class PostcodeLookupHandler
     private String getPostcodeFromRequest(APIGatewayProxyRequestEvent input)
             throws PostcodeLookupBadRequestException {
         try {
-            JsonNode requestBody = objectMapper.readTree(input.getBody());
-            JsonNode postcodeNode = requestBody.get("postcode");
+            Postcode postcode = objectMapper.readValue(input.getBody(), Postcode.class);
 
-            if (postcodeNode == null || postcodeNode.isNull()) {
-                throw new PostcodeLookupBadRequestException("Missing postcode in request body.");
+            if (postcode != null && postcode.getValue() != null) {
+                return postcode.getValue();
             }
-
-            return postcodeNode.asText();
+            throw new PostcodeLookupBadRequestException("Missing postcode in request body.");
         } catch (JsonProcessingException e) {
             throw new PostcodeLookupBadRequestException(
                     "Failed to parse postcode from request body", e);
