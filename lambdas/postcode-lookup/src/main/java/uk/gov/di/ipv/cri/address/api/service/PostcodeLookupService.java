@@ -226,7 +226,7 @@ public class PostcodeLookupService {
                                         .collect(Collectors.toList()))
                 .orElseGet(
                         () -> {
-                            log.warn("PostCode lookup returned no results");
+                            log.warn("Postcode lookup returned no results");
                             return Collections.emptyList();
                         });
     }

@@ -276,7 +276,7 @@ class PostcodeLookupServiceTest {
                     .thenReturn(mockResponse);
 
             assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
-            verify(log).warn(contains("PostCode lookup returned no results"));
+            verify(log).warn(contains("Postcode lookup returned no results"));
         }
 
         @Test
