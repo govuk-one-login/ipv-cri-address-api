@@ -65,7 +65,6 @@ public class PostcodeLookupHandler
     private final SessionService sessionService;
     private final EventProbe eventProbe;
     private final AuditService auditService;
-    private static final ObjectMapper objectMapper = new ObjectMapper();
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "postcode_lookup";
     protected static final String POSTCODE_ERROR = "postcode_lookup_error";
@@ -73,6 +72,7 @@ public class PostcodeLookupHandler
     protected static final String POSTCODE_ERROR_MESSAGE = "postcode_lookup_error_message";
 
     public static final long CONNECTION_TIMEOUT_SECONDS = 15;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupHandler() {
@@ -97,7 +97,11 @@ public class PostcodeLookupHandler
 
         this.postcodeLookupService =
                 new PostcodeLookupService(
-                        configurationService, httpClient, LogManager.getLogger(), eventProbe);
+                        configurationService,
+                        httpClient,
+                        LogManager.getLogger(),
+                        eventProbe,
+                        OBJECT_MAPPER);
 
         this.sessionService =
                 new SessionService(
@@ -107,7 +111,7 @@ public class PostcodeLookupHandler
                 new AuditService(
                         clientProviderFactory.getSqsClient(),
                         configurationService,
-                        objectMapper,
+                        OBJECT_MAPPER,
                         new AuditEventFactory(configurationService, Clock.systemDefaultZone()));
     }
 
@@ -167,7 +171,7 @@ public class PostcodeLookupHandler
     private String getPostcodeFromRequest(APIGatewayProxyRequestEvent input)
             throws PostcodeLookupBadRequestException {
         try {
-            Postcode postcode = objectMapper.readValue(input.getBody(), Postcode.class);
+            Postcode postcode = OBJECT_MAPPER.readValue(input.getBody(), Postcode.class);
 
             if (postcode != null && postcode.getValue() != null) {
                 return postcode.getValue();

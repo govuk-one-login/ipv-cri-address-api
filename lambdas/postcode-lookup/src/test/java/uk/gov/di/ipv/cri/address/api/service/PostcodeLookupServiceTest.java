@@ -1,6 +1,8 @@
 package uk.gov.di.ipv.cri.address.api.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,7 +12,6 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -56,7 +57,17 @@ class PostcodeLookupServiceTest {
     @Mock private Logger log;
     @Mock private EventProbe eventProbe;
     @Captor private ArgumentCaptor<HttpRequest> postCodeRequest;
-    @InjectMocks private PostcodeLookupService postcodeLookupService;
+    private PostcodeLookupService postcodeLookupService;
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        this.objectMapper = new ObjectMapper();
+
+        postcodeLookupService =
+                new PostcodeLookupService(
+                        mockConfigurationService, httpClient, log, eventProbe, objectMapper);
+    }
 
     @Test
     void shouldLogAPILatency() throws IOException, InterruptedException {

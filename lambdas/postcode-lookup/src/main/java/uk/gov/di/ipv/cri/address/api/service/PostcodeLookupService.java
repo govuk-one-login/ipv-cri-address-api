@@ -56,7 +56,7 @@ public class PostcodeLookupService {
     // Create our http client to enable asynchronous requests
     private final HttpClient client;
     private final Logger log;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final ConfigurationService configurationService;
     private final EventProbe eventProbe;
 
@@ -64,11 +64,13 @@ public class PostcodeLookupService {
             ConfigurationService configurationService,
             HttpClient client,
             Logger log,
-            EventProbe eventProbe) {
+            EventProbe eventProbe,
+            ObjectMapper objectMapper) {
         this.configurationService = configurationService;
         this.client = client;
         this.log = log;
         this.eventProbe = eventProbe;
+        this.objectMapper = objectMapper;
     }
 
     public List<CanonicalAddress> lookupPostcode(String postcode)
