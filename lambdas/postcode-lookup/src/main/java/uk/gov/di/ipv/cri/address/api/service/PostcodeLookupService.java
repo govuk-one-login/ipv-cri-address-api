@@ -15,6 +15,7 @@ import uk.gov.di.ipv.cri.address.api.models.Dpa;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
 import uk.gov.di.ipv.cri.address.api.models.Result;
+import uk.gov.di.ipv.cri.address.api.pii.PiiPostcodeMasker;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
@@ -56,7 +57,7 @@ public class PostcodeLookupService {
     // Create our http client to enable asynchronous requests
     private final HttpClient client;
     private final Logger log;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
     private final ConfigurationService configurationService;
     private final EventProbe eventProbe;
 
@@ -64,11 +65,13 @@ public class PostcodeLookupService {
             ConfigurationService configurationService,
             HttpClient client,
             Logger log,
-            EventProbe eventProbe) {
+            EventProbe eventProbe,
+            ObjectMapper objectMapper) {
         this.configurationService = configurationService;
         this.client = client;
         this.log = log;
         this.eventProbe = eventProbe;
+        this.objectMapper = objectMapper;
     }
 
     public List<CanonicalAddress> lookupPostcode(String postcode)
@@ -177,20 +180,24 @@ public class PostcodeLookupService {
         try {
             OrdnanceSurveyPostcodeError error =
                     objectMapper.readValue(response, OrdnanceSurveyPostcodeError.class);
+            String sanitizedMessage = PiiPostcodeMasker.sanitize(error.getError().getMessage());
             log.error(
                     "{} status {}: {}",
                     LOG_RESPONSE_PREFIX,
                     error.getError().getStatuscode(),
-                    error.getError().getMessage());
+                    sanitizedMessage);
             throw new PostcodeLookupProcessingException(
                     LOG_RESPONSE_PREFIX
                             + error.getError().getStatuscode()
                             + ": "
-                            + error.getError().getMessage());
+                            + sanitizedMessage);
         } catch (Exception e) {
-            log.error("{}unknown error: {}", LOG_RESPONSE_PREFIX, response);
+            log.error(
+                    "{}unknown error: {}",
+                    LOG_RESPONSE_PREFIX,
+                    PiiPostcodeMasker.sanitize(response));
             throw new PostcodeLookupProcessingException(
-                    "Error processing postcode lookup: " + response);
+                    "Error processing postcode lookup: " + PiiPostcodeMasker.sanitize(response));
         }
     }
 
@@ -198,13 +205,17 @@ public class PostcodeLookupService {
         try {
             OrdnanceSurveyPostcodeError error =
                     objectMapper.readValue(response, OrdnanceSurveyPostcodeError.class);
+            String sanitizedMessage = PiiPostcodeMasker.sanitize(error.getError().getMessage());
             log.error(
                     "{} status {}: {}",
                     LOG_RESPONSE_PREFIX,
                     error.getError().getStatuscode(),
-                    error.getError().getMessage());
+                    sanitizedMessage);
         } catch (Exception e) {
-            log.error("{} unknown error: {}", LOG_RESPONSE_PREFIX, response);
+            log.error(
+                    "{} unknown error: {}",
+                    LOG_RESPONSE_PREFIX,
+                    PiiPostcodeMasker.sanitize(response));
         }
         return Collections.emptyList();
     }
