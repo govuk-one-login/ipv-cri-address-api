@@ -27,15 +27,13 @@ import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Collections;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -76,8 +74,7 @@ class PostcodeLookupServiceTest {
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
         when(mockResponse.body())
                 .thenReturn(
-                        "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"BUILDING_NUMBER\":\"TESTADDRESS\",\"THOROUGHFARE_NAME\":\"TESTSTREET\",\"POST_TOWN\":\"TESTTOWN\",\"POSTCODE\":\"ZZ11ZZ\",\"RPC\":\"1\",\"X_COORDINATE\":123456.78,\"Y_COORDINATE\":234567.89,\"STATUS\":\"APPROVED\",\"LOGICAL_STATUS_CODE\":\"1\",\"CLASSIFICATION_CODE\":\"RD03\",\"CLASSIFICATION_CODE_DESCRIPTION\":\"Semi-Detached\",\"LOCAL_CUSTODIAN_CODE\":1234,\"LOCAL_CUSTODIAN_CODE_DESCRIPTION\":\"TESTTOWN\",\"COUNTRY_CODE\":\"E\",\"COUNTRY_CODE_DESCRIPTION\":\"ThisrecordiswithinEngland\",\"POSTAL_ADDRESS_CODE\":\"D\",\"POSTAL_ADDRESS_CODE_DESCRIPTION\":\"ArecordwhichislinkedtoPAF\",\"BLPU_STATE_CODE\":\"2\",\"BLPU_STATE_CODE_DESCRIPTION\":\"Inuse\",\"TOPOGRAPHY_LAYER_TOID\":\"osgb12345567890\",\"LAST_UPDATE_DATE\":\"10/02/2016\",\"ENTRY_DATE\":\"12/01/2000\",\"BLPU_STATE_DATE\":\"15/06/2009\",\"LANGUAGE\":\"EN\",\"MATCH\":1.0,\"MATCH_DESCRIPTION\":\"EXACT\",\"DELIVERY_POINT_SUFFIX\":\"1A\"}}]}");
-
+                        "{\"header\":{\"uri\":\"http://localhost:8080/postcode\",\"body\":\"{\\\"postcode\\\":\\\"ZZ1 1ZZ\\\"}\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"POSTCODE\":\"ZZ11ZZ\"}}]}");
         when(httpClient.send(
                         any(HttpRequest.class),
                         ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
@@ -212,8 +209,10 @@ class PostcodeLookupServiceTest {
                             any(HttpRequest.class),
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
-            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
-            verify(log, times(1)).error(contains("unknown error"), any(String.class), any());
+
+            assertEquals(Collections.emptyList(), postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+
+            verify(log, times(1)).error(eq("{} unknown error: {}"), any(String.class), any());
         }
 
         @Test
@@ -237,13 +236,16 @@ class PostcodeLookupServiceTest {
                             any(HttpRequest.class),
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
-            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+
+            assertEquals(Collections.emptyList(), postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+
             verify(log, times(1))
                     .error(
                             any(String.class),
                             any(String.class),
                             any(int.class),
-                            contains("Requested postcode must contain a minimum of the sector"));
+                            eq(
+                                    "Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was *******"));
         }
     }
 
@@ -258,27 +260,27 @@ class PostcodeLookupServiceTest {
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
             when(mockResponse.body())
                     .thenReturn(
-                            "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"BUILDING_NUMBER\":\"TESTADDRESS\",\"THOROUGHFARE_NAME\":\"TESTSTREET\",\"POST_TOWN\":\"TESTTOWN\",\"POSTCODE\":\"ZZ11ZZ\",\"RPC\":\"1\",\"X_COORDINATE\":123456.78,\"Y_COORDINATE\":234567.89,\"STATUS\":\"APPROVED\",\"LOGICAL_STATUS_CODE\":\"1\",\"CLASSIFICATION_CODE\":\"RD03\",\"CLASSIFICATION_CODE_DESCRIPTION\":\"Semi-Detached\",\"LOCAL_CUSTODIAN_CODE\":1234,\"LOCAL_CUSTODIAN_CODE_DESCRIPTION\":\"TESTTOWN\",\"COUNTRY_CODE\":\"E\",\"COUNTRY_CODE_DESCRIPTION\":\"ThisrecordiswithinEngland\",\"POSTAL_ADDRESS_CODE\":\"D\",\"POSTAL_ADDRESS_CODE_DESCRIPTION\":\"ArecordwhichislinkedtoPAF\",\"BLPU_STATE_CODE\":\"2\",\"BLPU_STATE_CODE_DESCRIPTION\":\"Inuse\",\"TOPOGRAPHY_LAYER_TOID\":\"osgb12345567890\",\"LAST_UPDATE_DATE\":\"10/02/2016\",\"ENTRY_DATE\":\"12/01/2000\",\"BLPU_STATE_DATE\":\"15/06/2009\",\"LANGUAGE\":\"EN\",\"MATCH\":1.0,\"MATCH_DESCRIPTION\":\"EXACT\",\"DELIVERY_POINT_SUFFIX\":\"1A\"}}]}");
+                            "{\"header\":{\"uri\":\"http://localhost:8080/postcode\",\"body\":\"{\\\"postcode\\\":\\\"ZZ1 1ZZ\\\"}\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"BUILDING_NUMBER\":\"TESTADDRESS\",\"THOROUGHFARE_NAME\":\"TESTSTREET\",\"POST_TOWN\":\"TESTTOWN\",\"POSTCODE\":\"ZZ11ZZ\",\"RPC\":\"1\",\"X_COORDINATE\":123456.78,\"Y_COORDINATE\":234567.89,\"STATUS\":\"APPROVED\",\"LOGICAL_STATUS_CODE\":\"1\",\"CLASSIFICATION_CODE\":\"RD03\",\"CLASSIFICATION_CODE_DESCRIPTION\":\"Semi-Detached\",\"LOCAL_CUSTODIAN_CODE\":1234,\"LOCAL_CUSTODIAN_CODE_DESCRIPTION\":\"TESTTOWN\",\"COUNTRY_CODE\":\"E\",\"COUNTRY_CODE_DESCRIPTION\":\"ThisrecordiswithinEngland\",\"POSTAL_ADDRESS_CODE\":\"D\",\"POSTAL_ADDRESS_CODE_DESCRIPTION\":\"ArecordwhichislinkedtoPAF\",\"BLPU_STATE_CODE\":\"2\",\"BLPU_STATE_CODE_DESCRIPTION\":\"Inuse\",\"TOPOGRAPHY_LAYER_TOID\":\"osgb12345567890\",\"LAST_UPDATE_DATE\":\"10/02/2016\",\"ENTRY_DATE\":\"12/01/2000\",\"BLPU_STATE_DATE\":\"15/06/2009\",\"LANGUAGE\":\"EN\",\"MATCH\":1.0,\"MATCH_DESCRIPTION\":\"EXACT\",\"DELIVERY_POINT_SUFFIX\":\"1A\"}}]}");
 
             when(httpClient.send(
                             any(HttpRequest.class),
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
+
             assertFalse(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
         }
 
         @Test
         @DisplayName(
-                "it should return empty when response from Ordnance Survey is a 200 and results contains object with Dpa")
-        void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIsA200WithoutResults()
+                "Should return empty when response from Ordnance Survey is 200 but results contain an empty DPA object")
+        void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIs200WithEmptyDPA()
                 throws IOException, InterruptedException {
-            // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
                     .thenReturn("http://localhost:8080/");
-            // Simulate a 200 response
+
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
             String ok200payloadWithoutResults =
-                    "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"}},\"results\":[{\"DPA\"}]";
+                    "{\"header\":{\"uri\":\"http://localhost:8080/postcode\",\"body\":\"{\\\"postcode\\\":\\\"ZZ1 1ZZ\\\"}\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\": null}]}";
             when(mockResponse.body()).thenReturn(ok200payloadWithoutResults);
 
             when(httpClient.send(
@@ -287,7 +289,9 @@ class PostcodeLookupServiceTest {
                     .thenReturn(mockResponse);
 
             assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
-            verify(log).warn(contains("Postcode lookup returned no results"));
+
+            verify(log)
+                    .info("API response received from OS API: status={}, latencyInMs={}", 200, 0L);
         }
 
         @Test
@@ -300,8 +304,9 @@ class PostcodeLookupServiceTest {
                     .thenReturn("http://localhost:8080/");
             // Simulate a 200 response
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
+
             String ok200PayloadResultsEmpty =
-                    "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[]}";
+                    "{\"header\":{\"uri\":\"http://localhost:8080/postcode\",\"body\":\"{\\\"postcode\\\":\\\"ZZ1 1ZZ\\\"}\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[]}";
             when(mockResponse.body()).thenReturn(ok200PayloadResultsEmpty);
 
             when(httpClient.send(
@@ -315,29 +320,6 @@ class PostcodeLookupServiceTest {
                             "API response received from OS API: status={}, latencyInMs={}",
                             HttpStatusCode.OK,
                             0L);
-        }
-
-        @Test
-        void shouldUrlDecodePost() throws IOException, InterruptedException {
-            String urlEncodedPostcode = "ZZ1%201ZZ";
-            // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
-                    .thenReturn("http://localhost:8080/");
-            // Simulate a 200 response
-            when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
-            when(mockResponse.body())
-                    .thenReturn(
-                            "{\"header\":{\"uri\":\"http://localhost:8080/postcode?postcode=ZZ1+1ZZ\",\"query\":\"postcode=ZZ11ZZ\",\"offset\":0,\"totalresults\":32,\"format\":\"JSON\",\"dataset\":\"DPA\",\"lr\":\"EN,CY\",\"maxresults\":1000,\"epoch\":\"90\",\"output_srs\":\"EPSG:27700\"},\"results\":[{\"DPA\":{\"UPRN\":\"12345567\",\"UDPRN\":\"12345678\",\"ADDRESS\":\"TESTADDRESS,TESTSTREET,TESTTOWN,ZZ11ZZ\",\"BUILDING_NUMBER\":\"TESTADDRESS\",\"THOROUGHFARE_NAME\":\"TESTSTREET\",\"POST_TOWN\":\"TESTTOWN\",\"POSTCODE\":\"ZZ11ZZ\",\"RPC\":\"1\",\"X_COORDINATE\":123456.78,\"Y_COORDINATE\":234567.89,\"STATUS\":\"APPROVED\",\"LOGICAL_STATUS_CODE\":\"1\",\"CLASSIFICATION_CODE\":\"RD03\",\"CLASSIFICATION_CODE_DESCRIPTION\":\"Semi-Detached\",\"LOCAL_CUSTODIAN_CODE\":1234,\"LOCAL_CUSTODIAN_CODE_DESCRIPTION\":\"TESTTOWN\",\"COUNTRY_CODE\":\"E\",\"COUNTRY_CODE_DESCRIPTION\":\"ThisrecordiswithinEngland\",\"POSTAL_ADDRESS_CODE\":\"D\",\"POSTAL_ADDRESS_CODE_DESCRIPTION\":\"ArecordwhichislinkedtoPAF\",\"BLPU_STATE_CODE\":\"2\",\"BLPU_STATE_CODE_DESCRIPTION\":\"Inuse\",\"TOPOGRAPHY_LAYER_TOID\":\"osgb12345567890\",\"LAST_UPDATE_DATE\":\"10/02/2016\",\"ENTRY_DATE\":\"12/01/2000\",\"BLPU_STATE_DATE\":\"15/06/2009\",\"LANGUAGE\":\"EN\",\"MATCH\":1.0,\"MATCH_DESCRIPTION\":\"EXACT\",\"DELIVERY_POINT_SUFFIX\":\"1A\"}}]}");
-
-            when(httpClient.send(
-                            postCodeRequest.capture(),
-                            ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
-                    .thenReturn(mockResponse);
-            assertFalse(postcodeLookupService.lookupPostcode(urlEncodedPostcode).isEmpty());
-
-            HttpRequest postCodeRequestValue = postCodeRequest.getValue();
-            URI uri = postCodeRequestValue.uri();
-            assertThat(uri.toString(), containsString("postcode=ZZ1%201ZZ"));
         }
     }
 
