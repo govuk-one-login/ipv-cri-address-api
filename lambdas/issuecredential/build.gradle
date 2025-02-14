@@ -2,18 +2,9 @@ plugins {
 	id "java"
 	id "jacoco"
 	id "io.freefair.aspectj.post-compile-weaving" version "6.3.0"
-	id "com.github.spotbugs" version "6.1.5"
-}
-
-spotbugs {
-	ignoreFailures.set(false)
-	showStackTraces.set(true)
 }
 
 dependencies {
-	spotbugs("com.github.spotbugs:spotbugs:4.7.3")
-	spotbugsPlugins("software.amazon.lambda.snapstart:aws-lambda-snapstart-java-rules:0.2.1")
-
 	runtimeOnly configurations.otel
 
 	implementation configurations.cri_common_lib,
