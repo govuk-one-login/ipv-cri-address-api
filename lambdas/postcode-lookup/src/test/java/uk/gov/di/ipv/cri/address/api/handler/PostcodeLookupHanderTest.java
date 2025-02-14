@@ -52,7 +52,7 @@ import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.POSTCO
 import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.SESSION_ID;
 
 @ExtendWith(MockitoExtension.class)
-class PostcodeLookupHanderTest {
+class PostcodeLookupHandlerTest {
     private static final String TEST_POSTCODE = "LS1 1BA";
     private static final String TEST_POSTCODE_BODY = "{ \"postcode\": \"" + TEST_POSTCODE + "\" }";
     private static final String TEST_SESSION_ID = String.valueOf(UUID.randomUUID());
