@@ -6,7 +6,7 @@ Parameters:
   Environment:
     Type: String
     Default: dev
-    AllowedValues: [dev, localdev, build, staging, integration, production]
+    AllowedValues: [ dev, localdev, build, staging, integration, production ]
     ConstraintDescription: Must be dev, localdev, build, staging, integration or production
   LambdaDeploymentPreference:
     Description: "Specifies the configuration to enable gradual Lambda deployments"
@@ -42,45 +42,45 @@ Parameters:
     Default: txma-infrastructure
 
 Conditions:
-  UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
-  UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, "none"]]
-  UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
-  UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  IsDevEnvironment: !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
-  IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
+  UseSecretPrefix: !Not [ !Equals [ !Ref SecretPrefix, "none" ] ]
+  UsePermissionsBoundary: !Not [ !Equals [ !Ref PermissionsBoundary, "none" ] ]
+  UseCodeSigningConfig: !Not [ !Equals [ !Ref CodeSigningConfigArn, "none" ] ]
+  UseCanaryDeploymentAlarms: !Not [ !Equals [ !Ref LambdaDeploymentPreference, AllAtOnce ] ]
+  IsDevEnvironment: !Or [ !Equals [ !Ref Environment, dev ], !Condition IsLocalDevEnvironment ]
+  IsLocalDevEnvironment: !Equals [ !Ref Environment, localdev ]
   IsBuildEnvironment: !Equals [ !Ref Environment, build ]
-  IsProdEnvironment: !Equals [!Ref Environment, production]
-  IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  IsProdEnvironment: !Equals [ !Ref Environment, production ]
+  IsNotDevEnvironment: !Not [ !Condition IsDevEnvironment ]
   IsDevLikeOrBuild: !Or
     - !Condition IsDevEnvironment
     - !Condition IsLocalDevEnvironment
     - !Condition IsBuildEnvironment
   AddProvisionedConcurrency:
-    !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
+    !Not [ !Equals [ !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ], 0 ] ]
 
 Globals:
   Function:
     VpcConfig:
-      SecurityGroupIds: [!ImportValue cri-vpc-LambdaSecurityGroup]
-      SubnetIds: !Split [",", !ImportValue cri-vpc-PrivateSubnets]
+      SecurityGroupIds: [ !ImportValue cri-vpc-LambdaSecurityGroup ]
+      SubnetIds: !Split [ ",", !ImportValue cri-vpc-PrivateSubnets ]
     PermissionsBoundary:
-      !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+      !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
     CodeSigningConfigArn:
-      !If [UseCodeSigningConfig, !Ref CodeSigningConfigArn, !Ref AWS::NoValue]
+      !If [ UseCodeSigningConfig, !Ref CodeSigningConfigArn, !Ref AWS::NoValue ]
     Tracing: Active
     Timeout: 30 # seconds
     Runtime: java11
-    Architectures: [arm64]
+    Architectures: [ arm64 ]
     AutoPublishAlias: live
     DeploymentPreference:
       Enabled: true
       Type: !Ref LambdaDeploymentPreference
       Role: !GetAtt CodeDeployServiceRole.Arn
-    MemorySize: !FindInMap [MemorySizeMapping, Environment, !Ref Environment]
+    MemorySize: !FindInMap [ MemorySizeMapping, Environment, !Ref Environment ]
     Environment:
       Variables:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
-        SECRET_PREFIX: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
+        SECRET_PREFIX: !If [ UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName ]
         SQS_AUDIT_EVENT_PREFIX: !Ref AuditEventNamePrefix
         COMMON_PARAMETER_NAME_PREFIX: !Ref CommonStackName
         POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
@@ -89,19 +89,19 @@ Globals:
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
         DT_CONNECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
         DT_CONNECTION_BASE_URL: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
         DT_CLUSTER_ID: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
         DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
         DT_TENANT: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
         OTEL_INSTRUMENTATION_AWS_SDK_EXPERIMENTAL_USE_PROPAGATOR_FOR_MESSAGING: "true"
     ProvisionedConcurrencyConfig:
@@ -117,7 +117,7 @@ Globals:
         ResourcePath: /*
         HttpMethod: "*"
         # Disable data trace in production to avoid logging customer sensitive information
-        DataTraceEnabled: !If [IsProdEnvironment, false, true]
+        DataTraceEnabled: !If [ IsProdEnvironment, false, true ]
         MetricsEnabled: true
         ThrottlingRateLimit: 200
         ThrottlingBurstLimit: 400
@@ -233,7 +233,7 @@ Resources:
           Parameters:
             Location: ./private-api.yaml
       EndpointConfiguration:
-        Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
+        Type: !If [ IsLocalDevEnvironment, REGIONAL, PRIVATE ]
       Auth:
         ResourcePolicy:
           CustomStatements:
@@ -289,8 +289,8 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref PostcodeLookupFunctionCanaryErrors, !Ref PostcodeLookupFunctionCanary5xxErrors]
-          - [!Ref AWS::NoValue]
+          - [ !Ref PostcodeLookupFunctionCanaryErrors, !Ref PostcodeLookupFunctionCanary5xxErrors ]
+          - [ !Ref AWS::NoValue ]
       Layers:
         - !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
@@ -312,7 +312,7 @@ Resources:
                 - 'secretsmanager:*'
               Resource: !Sub
                 - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${Prefix}/OrdnanceSurveyAPIKey*"
-                - Prefix: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
+                - Prefix: !If [ UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName ]
             - Sid: ReadParametersPolicy
               Effect: Allow
               Action:
@@ -367,8 +367,8 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref AddressFunctionCanaryErrors]
-          - [!Ref AWS::NoValue]
+          - [ !Ref AddressFunctionCanaryErrors ]
+          - [ !Ref AWS::NoValue ]
           #- !Ref AddressFunctionCanary5xxErrors
       Layers:
         - !Sub
@@ -421,8 +421,8 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunctionCanary5xxErrors]
-          - [!Ref AWS::NoValue]
+          - [ !Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunctionCanary5xxErrors ]
+          - [ !Ref AWS::NoValue ]
       CodeUri: ../../lambdas/issuecredential
       Layers:
         - !Sub
@@ -489,8 +489,8 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref GetAddressesFunctionCanaryErrors, !Ref GetAddressesFunctionCanary5xxErrors]
-          - [!Ref AWS::NoValue]
+          - [ !Ref GetAddressesFunctionCanaryErrors, !Ref GetAddressesFunctionCanary5xxErrors ]
+          - [ !Ref AWS::NoValue ]
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs18.x
       Layers:
@@ -612,7 +612,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
       Type: String
-      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
+      Value: !FindInMap [ MaxJwtTtlMapping, Environment, !Ref Environment ]
       Description: default time to live for an JWT in (seconds)
 
   JwtTtlUnitParameter:
@@ -620,7 +620,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
       Type: String
-      Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
+      Value: !FindInMap [ JwtTtlUnitMapping, Environment, !Ref Environment ]
       Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
 
   OrdnanceSurveyAPIURLParameter:
@@ -630,7 +630,7 @@ Resources:
       Type: String
       Value: !Sub
         - "${Domain}/search/places/v1/postcode"
-        - Domain: !If [IsDevLikeOrBuild, !ImportValue third-party-stubs-ImposterStubApiUrl, "https://api.os.uk"]
+        - Domain: !If [ IsDevLikeOrBuild, !ImportValue third-party-stubs-ImposterStubApiUrl, "https://api.os.uk" ]
       Description: Ordnance Survey Postcode Lookup API URL
 
   AddressLookupTableNameParameter:
@@ -646,7 +646,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/release-flags/vc-contains-unique-id"
       Type: String
-      Value: !FindInMap [VcContainsUniqueIdMapping, Environment, !Ref Environment]
+      Value: !FindInMap [ VcContainsUniqueIdMapping, Environment, !Ref Environment ]
       Description: Verifiable Credential Contains UniqueId Mapping
 
   PostcodeLookupFunctionPermission:
@@ -686,11 +686,11 @@ Resources:
         - !ImportValue core-infrastructure-AlarmTopic
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
-      InsufficientDataActions: []
+      InsufficientDataActions: [ ]
       MetricName: Errors
       Namespace: AWS/Lambda
       Statistic: Sum
-      Dimensions: []
+      Dimensions: [ ]
       Period: 300
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
@@ -707,7 +707,7 @@ Resources:
         - !ImportValue core-infrastructure-AlarmTopic
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
-      InsufficientDataActions: []
+      InsufficientDataActions: [ ]
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
       Threshold: 1
@@ -980,7 +980,7 @@ Resources:
                 - codedeploy.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
-      PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+      PermissionsBoundary: !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
 
 Outputs:
   AddressApiGatewayId:
