@@ -55,8 +55,6 @@ Conditions:
     - !Condition IsDevEnvironment
     - !Condition IsLocalDevEnvironment
     - !Condition IsBuildEnvironment
-  AddProvisionedConcurrency:
-    !Not [ !Equals [ !FindInMap [ EnvironmentConfiguration, !Ref Environment, provisionedConcurrency ], 0 ] ]
 
 Globals:
   Function:
@@ -104,11 +102,6 @@ Globals:
           - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
         OTEL_INSTRUMENTATION_AWS_SDK_EXPERIMENTAL_USE_PROPAGATOR_FOR_MESSAGING: "true"
-    ProvisionedConcurrencyConfig:
-      !If
-      - AddProvisionedConcurrency
-      - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
-      - !Ref AWS::NoValue
   Api:
     TracingEnabled: false
     OpenApiVersion: 3.0.1
@@ -157,22 +150,16 @@ Mappings:
 
   EnvironmentConfiguration:
     dev:
-      provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     localdev:
-      provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     build:
-      provisionedConcurrency: 1
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     staging:
-      provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     integration:
-      provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     production:
-      provisionedConcurrency: 1
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
 
   MaxJwtTtlMapping:
