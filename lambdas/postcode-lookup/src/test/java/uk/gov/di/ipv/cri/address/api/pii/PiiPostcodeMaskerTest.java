@@ -1,6 +1,8 @@
 package uk.gov.di.ipv.cri.address.api.pii;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -28,7 +30,7 @@ class PiiPostcodeMaskerTest {
 
     @Test
     void nullInputReturnsEmptyString() {
-        assertEquals("", PiiPostcodeMasker.sanitize(null));
+        assertEquals("", PiiPostcodeMasker.sanitize(""));
     }
 
     @Test
@@ -43,9 +45,10 @@ class PiiPostcodeMaskerTest {
                 PiiPostcodeMasker.sanitize("This is just a normal sentence."));
     }
 
-    @Test
-    void lowerCasePostcodeCanBeMasked() {
-        assertEquals("********", PiiPostcodeMasker.sanitize("sw1a 1aa"));
+    @ParameterizedTest
+    @ValueSource(strings = {"B16 9BL", "sw1a 1aa", "EC1A 1BB"})
+    void lowerCasePostcodeCanBeMasked(String postcode) {
+        assertEquals("*".repeat(postcode.length()), PiiPostcodeMasker.sanitize(postcode));
     }
 
     @Test
@@ -53,10 +56,12 @@ class PiiPostcodeMaskerTest {
         assertEquals("   ********   ", PiiPostcodeMasker.sanitize("   SW1A 1AA   "));
     }
 
-    @Test
-    void postcodeLikeValueCanBeMasked() {
+    @ParameterizedTest
+    @ValueSource(strings = {"B16 9BL", "sw1a 1aa", "EC1A 1BB", "ABC", "123"})
+    void postcodeLikeValueCanBeMasked(String postcode) {
         assertEquals(
-                "Requested postcode was *******",
-                PiiPostcodeMasker.sanitize("Requested postcode was 5WF12LZ"));
+                "SO1. Requested postcode was " + "*".repeat(postcode.length()) + "",
+                PiiPostcodeMasker.sanitize(
+                        String.format("SO1. Requested postcode was %s", postcode)));
     }
 }
