@@ -14,7 +14,8 @@ dependencies {
 			configurations.nimbus,
 			configurations.dynamodb,
 			configurations.jackson,
-			configurations.sqs
+			configurations.sqs,
+			configurations.kms
 
 	aspect configurations.powertools
 
