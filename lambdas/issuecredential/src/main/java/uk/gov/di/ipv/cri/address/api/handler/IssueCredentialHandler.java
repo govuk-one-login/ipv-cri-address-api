@@ -99,7 +99,10 @@ public class IssueCredentialHandler
 
         String kmsSigningKeyId =
                 config.getCommonParameterValue("verifiableCredentialKmsSigningKeyId");
-        SignedJWTFactory signedJWTFactory = new SignedJWTFactory(new KMSSigner(kmsSigningKeyId));
+
+        SignedJWTFactory signedJWTFactory =
+                new SignedJWTFactory(
+                        new KMSSigner(kmsSigningKeyId, clientProviderFactory.getKMSClient()));
 
         this.verifiableCredentialService =
                 new VerifiableCredentialService(
