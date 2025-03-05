@@ -492,7 +492,7 @@ Resources:
           - [!Ref GetAddressesFunctionCanaryErrors, !Ref GetAddressesFunctionCanary5xxErrors]
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/get-addresses/
-      Runtime: nodejs18.x
+      Runtime: nodejs22.x
       Layers:
         - !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
