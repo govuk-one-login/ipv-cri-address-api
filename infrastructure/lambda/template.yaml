@@ -485,6 +485,8 @@ Resources:
   GetAddressesFunction:
     Type: AWS::Serverless::Function
     Properties:
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Handler: get-addresses-handler.lambdaHandler
       DeploymentPreference:
         Alarms: !If
