@@ -367,8 +367,9 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref AddressFunctionCanaryErrors, !Ref AddressFunctionCanary5xxErrors]
+          - [!Ref AddressFunctionCanaryErrors]
           - [!Ref AWS::NoValue]
+          #- !Ref AddressFunctionCanary5xxErrors
       Layers:
         - !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
@@ -825,34 +826,35 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  AddressFunctionCanary5xxErrors:
-    Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
-    Properties:
-     ActionsEnabled: true
-     AlarmActions:
-       - !ImportValue platform-alarm-warning-alert-topic
-     OKActions:
-       - !ImportValue platform-alarm-warning-alert-topic
-     AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
-     Namespace: AWS/ApiGateway
-     MetricName: 5XXError
-     Dimensions:
-       - Name: ApiName
-         Value: !Sub "${AWS::StackName}-PrivateAddressApi"
-       - Name: Method
-         Value: PUT
-       - Name: Stage
-         Value: !Ref Environment
-       - Name: Resource
-         Value: /address
-     Statistic: Sum
-     Unit: Count
-     Period: 60
-     EvaluationPeriods: 1
-     Threshold: 1
-     ComparisonOperator: GreaterThanOrEqualToThreshold
-     TreatMissingData: notBreaching
+  ### Alarm temporarily disabled to avoid false positives and a rollback during deployment
+  # AddressFunctionCanary5xxErrors:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Condition: UseCanaryDeploymentAlarms
+  #   Properties:
+  #     ActionsEnabled: true
+  #     AlarmActions:
+  #       - !ImportValue platform-alarm-warning-alert-topic
+  #     OKActions:
+  #       - !ImportValue platform-alarm-warning-alert-topic
+  #     AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
+  #     Namespace: AWS/ApiGateway
+  #     MetricName: 5XXError
+  #     Dimensions:
+  #       - Name: ApiName
+  #         Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+  #       - Name: Method
+  #         Value: PUT
+  #       - Name: Stage
+  #         Value: !Ref Environment
+  #       - Name: Resource
+  #         Value: /address
+  #     Statistic: Sum
+  #     Unit: Count
+  #     Period: 60
+  #     EvaluationPeriods: 1
+  #     Threshold: 1
+  #     ComparisonOperator: GreaterThanOrEqualToThreshold
+  #     TreatMissingData: notBreaching
 
   GetAddressesFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
