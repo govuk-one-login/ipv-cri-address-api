@@ -163,7 +163,7 @@ Mappings:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     build:
-      provisionedConcurrency: 1
+      provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
     staging:
       provisionedConcurrency: 0
@@ -484,6 +484,8 @@ Resources:
   GetAddressesFunction:
     Type: AWS::Serverless::Function
     Properties:
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Handler: get-addresses-handler.lambdaHandler
       DeploymentPreference:
         Alarms: !If
