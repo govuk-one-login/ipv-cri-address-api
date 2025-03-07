@@ -46,7 +46,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-      x-amazon-apigateway-request-validator: "Validate both"
+      x-amazon-apigateway-request-validator: "Validate body" ## todo this validator doesn't exist
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
