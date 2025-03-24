@@ -205,7 +205,7 @@ Feature: Address API happy path test
 
     # Address for previous address
     When the user selects previous address
-    Then the previous address is saved successfully
+    Then the address is saved successfully
 
     # Authorization
     When user sends a GET request to authorization end point

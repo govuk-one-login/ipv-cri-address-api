@@ -375,11 +375,6 @@ public class AddressSteps {
                         addressContext.getCountryCode()));
     }
 
-    @Then("the previous address is saved successfully")
-    public void the_previous_address_is_saved_successfully() {
-        assertEquals(204, this.testContext.getResponse().statusCode());
-    }
-
     @When("a valid JWT is returned in the multiple addresses response")
     public void a_valid_jwt_is_returned_in_the_multiple_addresses_response()
             throws ParseException, IOException {
