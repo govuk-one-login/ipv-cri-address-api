@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -361,5 +362,33 @@ public class AddressSteps {
     @Then("responds with missing authentication")
     public void respondsMissingAuthentication() {
         assertEquals(403, this.testContext.getResponse().statusCode());
+    }
+
+    @When("the user selects previous address")
+    public void the_user_selects_previous_address() throws IOException, InterruptedException {
+        addressContext.setCountryCode("GB");
+        this.testContext.setResponse(
+                this.addressApiClient.sendPreviousAddressRequest(
+                        this.testContext.getSessionId(),
+                        addressContext.getUprn(),
+                        addressContext.getPostcode(),
+                        addressContext.getCountryCode()));
+    }
+
+    @When("a valid JWT is returned in the multiple addresses response")
+    public void a_valid_jwt_is_returned_in_the_multiple_addresses_response()
+            throws ParseException, IOException {
+        assertEquals(200, this.testContext.getResponse().statusCode());
+        assertNotNull(this.testContext.getResponse().body());
+        makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
+        final SignedJWT decodedJWT = SignedJWT.parse(this.testContext.getResponse().body());
+        final var payload = objectMapper.readTree(decodedJWT.getPayload().toString());
+
+        assertEquals(
+                LocalDate.now().minusMonths(3).toString(),
+                payload.at("/vc/credentialSubject/address/0/validUntil").asText());
+        assertEquals(
+                LocalDate.now().minusMonths(3).toString(),
+                payload.at("/vc/credentialSubject/address/1/validFrom").asText());
     }
 }

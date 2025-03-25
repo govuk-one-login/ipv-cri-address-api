@@ -73,6 +73,33 @@ public class AddressApiClient {
                         .build());
     }
 
+    public HttpResponse<String> sendPreviousAddressRequest(
+            String sessionId, String uprn, String postcode, String countryCode)
+            throws IOException, InterruptedException {
+
+        CanonicalAddress previousAddress = new CanonicalAddress();
+        previousAddress.setUprn(Long.parseLong(uprn));
+        previousAddress.setPostalCode(postcode);
+        previousAddress.setAddressCountry(countryCode);
+
+        CanonicalAddress newAddress = new CanonicalAddress();
+        newAddress.setUprn(Long.parseLong(uprn));
+        newAddress.setPostalCode(postcode);
+        newAddress.setValidFrom(LocalDate.now().minusMonths(3));
+        newAddress.setAddressCountry(countryCode);
+
+        String previousAddressRequestBody =
+                objectMapper.writeValueAsString(
+                        new CanonicalAddress[] {previousAddress, newAddress});
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "address")
+                        .header(SESSION_ID, sessionId)
+                        .PUT(HttpRequest.BodyPublishers.ofString(previousAddressRequestBody))
+                        .build());
+    }
+
     public HttpResponse<String> sendAddressRequest(String sessionId, AddressContext addressContext)
             throws IOException, InterruptedException {
 
