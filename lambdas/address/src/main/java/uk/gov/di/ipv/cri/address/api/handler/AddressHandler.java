@@ -70,7 +70,11 @@ public class AddressHandler
         this.sessionService =
                 new SessionService(
                         configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
-        this.addressService = new AddressService(configurationService, objectMapper);
+        this.addressService =
+                new AddressService(
+                        configurationService,
+                        objectMapper,
+                        clientProviderFactory.getDynamoDbEnhancedClient());
         this.eventProbe = new EventProbe();
     }
 
