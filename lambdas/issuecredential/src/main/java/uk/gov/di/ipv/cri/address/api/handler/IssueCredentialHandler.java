@@ -111,7 +111,9 @@ public class IssueCredentialHandler
                         getMapperWithCustomSerializers(),
                         new VerifiableCredentialClaimsSetBuilder(config, Clock.systemUTC()));
 
-        this.addressService = new AddressService(config, objectMapper);
+        this.addressService =
+                new AddressService(
+                        config, objectMapper, clientProviderFactory.getDynamoDbEnhancedClient());
         this.sessionService =
                 new SessionService(config, clientProviderFactory.getDynamoDbEnhancedClient());
         this.eventProbe = new EventProbe();

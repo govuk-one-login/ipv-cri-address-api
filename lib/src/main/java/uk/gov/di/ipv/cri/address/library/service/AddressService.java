@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.utils.StringUtils;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
@@ -40,12 +41,15 @@ public class AddressService {
     private ObjectReader addressReader;
 
     @ExcludeFromGeneratedCoverageReport
-    public AddressService(ConfigurationService configurationService, ObjectMapper objectMapper) {
+    public AddressService(
+            ConfigurationService configurationService,
+            ObjectMapper objectMapper,
+            DynamoDbEnhancedClient dynamoDbEnhancedClient) {
         this(
                 new DataStore<>(
                         configurationService.getParameterValue("AddressTableName"),
                         AddressItem.class,
-                        DataStore.getClient()),
+                        dynamoDbEnhancedClient),
                 objectMapper);
     }
 
@@ -76,6 +80,8 @@ public class AddressService {
         addressItem.setExpiryDate(ttlExpiryEpoch);
         addressItem.setAddresses(addresses);
         dataStore.create(addressItem);
+
+        LOGGER.info("Saved address");
 
         return addressItem;
     }
