@@ -27,10 +27,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -52,8 +50,7 @@ class AddressHandlerTest {
 
     @BeforeEach
     void setUp() {
-        addressHandler =
-                new AddressHandler(mockSessionService, mockAddressService, eventProbe, ADDRESS_TTL);
+        addressHandler = new AddressHandler(mockSessionService, mockAddressService, eventProbe);
     }
 
     @Test
@@ -103,8 +100,6 @@ class AddressHandlerTest {
 
         when(mockSessionService.validateSessionId(SESSION_ID)).thenReturn(sessionItem);
         when(mockAddressService.parseAddresses(anyString())).thenReturn(canonicalAddresses);
-        when(mockAddressService.saveAddresses(notNull(), anyList(), eq(ADDRESS_TTL)))
-                .thenReturn(addressItem);
 
         APIGatewayProxyResponseEvent responseEvent =
                 addressHandler.handleRequest(apiGatewayProxyRequestEvent, null);
