@@ -28,6 +28,7 @@ import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,7 +44,6 @@ public class AddressHandler
     private final AddressService addressService;
     private final SessionService sessionService;
     private final EventProbe eventProbe;
-    private final long addressTtl;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressHandler() {
@@ -65,8 +65,6 @@ public class AddressHandler
                         clientProviderFactory.getSSMProvider(),
                         clientProviderFactory.getSecretsProvider());
 
-        addressTtl = configurationService.getSessionExpirationEpoch();
-
         this.sessionService =
                 new SessionService(
                         configurationService, clientProviderFactory.getDynamoDbEnhancedClient());
@@ -79,14 +77,10 @@ public class AddressHandler
     }
 
     public AddressHandler(
-            SessionService sessionService,
-            AddressService addressService,
-            EventProbe eventProbe,
-            long addressTtl) {
+            SessionService sessionService, AddressService addressService, EventProbe eventProbe) {
         this.sessionService = sessionService;
         this.addressService = addressService;
         this.eventProbe = eventProbe;
-        this.addressTtl = addressTtl;
     }
 
     @Override
@@ -106,6 +100,7 @@ public class AddressHandler
 
                 // Links validUntil in a PREVIOUS address to validFrom in a CURRENT
                 addressService.setAddressValidity(addresses);
+                long addressTtl = Instant.now().plusSeconds(7200).getEpochSecond();
 
                 // Save our addresses to the address table
                 addressService.saveAddresses(UUID.fromString(sessionId), addresses, addressTtl);
