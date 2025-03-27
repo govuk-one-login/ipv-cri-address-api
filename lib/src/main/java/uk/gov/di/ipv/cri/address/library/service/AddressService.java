@@ -82,7 +82,7 @@ public class AddressService {
         dataStore.create(addressItem);
 
         LOGGER.info(
-                "Saved address with TTL:{} and length: {}",
+                "Saved address with TTL: {} and length: {}",
                 ttlExpiryEpoch,
                 addressItem.getAddresses().size());
 

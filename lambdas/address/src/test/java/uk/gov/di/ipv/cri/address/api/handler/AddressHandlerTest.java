@@ -17,6 +17,7 @@ import uk.gov.di.ipv.cri.common.library.exception.SessionExpiredException;
 import uk.gov.di.ipv.cri.common.library.exception.SessionNotFoundException;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
+import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 
@@ -41,6 +42,7 @@ class AddressHandlerTest {
 
     @Mock private SessionService mockSessionService;
     @Mock private AddressService mockAddressService;
+    @Mock private ConfigurationService mockConfigurationService;
 
     @Mock private APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent;
 
@@ -50,7 +52,12 @@ class AddressHandlerTest {
 
     @BeforeEach
     void setUp() {
-        addressHandler = new AddressHandler(mockSessionService, mockAddressService, eventProbe);
+        addressHandler =
+                new AddressHandler(
+                        mockSessionService,
+                        mockAddressService,
+                        eventProbe,
+                        mockConfigurationService);
     }
 
     @Test
