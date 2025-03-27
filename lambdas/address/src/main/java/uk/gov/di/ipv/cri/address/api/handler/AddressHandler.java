@@ -28,7 +28,6 @@ import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +42,7 @@ public class AddressHandler
 
     private final AddressService addressService;
     private final SessionService sessionService;
+    private final ConfigurationService configurationService;
     private final EventProbe eventProbe;
 
     @ExcludeFromGeneratedCoverageReport
@@ -60,7 +60,7 @@ public class AddressHandler
                                                 new PiiRedactingDeserializer<>(
                                                         CanonicalAddress.class)));
 
-        ConfigurationService configurationService =
+        this.configurationService =
                 new ConfigurationService(
                         clientProviderFactory.getSSMProvider(),
                         clientProviderFactory.getSecretsProvider());
@@ -77,10 +77,14 @@ public class AddressHandler
     }
 
     public AddressHandler(
-            SessionService sessionService, AddressService addressService, EventProbe eventProbe) {
+            SessionService sessionService,
+            AddressService addressService,
+            EventProbe eventProbe,
+            ConfigurationService configurationService) {
         this.sessionService = sessionService;
         this.addressService = addressService;
         this.eventProbe = eventProbe;
+        this.configurationService = configurationService;
     }
 
     @Override
@@ -100,7 +104,7 @@ public class AddressHandler
 
                 // Links validUntil in a PREVIOUS address to validFrom in a CURRENT
                 addressService.setAddressValidity(addresses);
-                long addressTtl = Instant.now().plusSeconds(7200).getEpochSecond();
+                long addressTtl = configurationService.getSessionExpirationEpoch();
 
                 // Save our addresses to the address table
                 addressService.saveAddresses(UUID.fromString(sessionId), addresses, addressTtl);
