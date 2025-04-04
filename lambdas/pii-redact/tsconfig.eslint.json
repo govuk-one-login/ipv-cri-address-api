@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "noEmit": true
+    },
+    // Additional paths to lint not included by other tsconfig.json files
+    "include": ["./.*.js", "./*.js", "./*.ts"]
+}
