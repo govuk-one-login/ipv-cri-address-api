@@ -8,21 +8,16 @@
         {
           "Variable": "$.LastEvaluatedKey",
           "IsPresent": false,
-          "Next": "Scan for expiryDate of 7200 without LastEvaluatedKey"
+          "Next": "Scan for records with no TTL"
         }
       ],
-      "Default": "Scan for expiryDate of 7200 with LastEvaluatedKey"
+      "Default": "Scan using LastEvaluatedKey"
     },
-    "Scan for expiryDate of 7200 without LastEvaluatedKey": {
+    "Scan for records with no TTL": {
       "Type": "Task",
       "Parameters": {
         "TableName": "${SessionTable}",
-        "FilterExpression": "expiryDate > :expiryDate",
-        "ExpressionAttributeValues": {
-          ":expiryDate": {
-            "N": "1753879270"
-          }
-        },
+        "FilterExpression": "attribute_not_exists(expiryDate)",
         "Limit": 100
       },
       "Resource": "arn:aws:states:::aws-sdk:dynamodb:scan",
@@ -37,28 +32,23 @@
       },
       "ResultPath": "$.counter"
     },
-    "Scan for expiryDate of 7200 with LastEvaluatedKey": {
+    "Scan using LastEvaluatedKey": {
       "Type": "Task",
       "Parameters": {
         "TableName": "${SessionTable}",
-        "FilterExpression": "expiryDate > :expiryDate",
-        "ExpressionAttributeValues": {
-          ":expiryDate": {
-            "N": "1753879270"
-          }
-        },
+        "FilterExpression": "attribute_not_exists(expiryDate)",
         "ExclusiveStartKey": {
           "sessionId": {
             "S.$": "$.LastEvaluatedKey"
           }
         },
-        "Limit": 200
+        "Limit": 100
       },
       "Resource": "arn:aws:states:::aws-sdk:dynamodb:scan",
       "ResultPath": "$.scan",
-      "Next": "Create counter to track updates (1)"
+      "Next": "Fetch current counter"
     },
-    "Create counter to track updates (1)": {
+    "Fetch current counter": {
       "Type": "Pass",
       "Next": "Are there any records?",
       "Parameters": {
@@ -128,7 +118,9 @@
             "Next": "Record updated",
             "Retry": [
               {
-                "ErrorEquals": ["States.ALL"],
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
                 "BackoffRate": 2,
                 "IntervalSeconds": 1,
                 "MaxAttempts": 3
