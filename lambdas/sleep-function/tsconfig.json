@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "target": "es2022",
+        "strict": true,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "module": "es2022",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "types": ["jest", "node", "aws-lambda"],
+        "outDir": "./build/",
+        "noImplicitAny": true
+    },
+    "exclude": ["node_modules", "build", "coverage"],
+    "include": ["src", "tests"]
+}

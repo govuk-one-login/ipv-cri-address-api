@@ -195,6 +195,189 @@ Mappings:
       localdev: HOURS
 
 Resources:
+  #################
+  # START OJ-2862 #
+  #################
+  FixSessionTTLStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub ${AWS::StackName}-FixSessionTTLStateMachine
+      Type: EXPRESS
+      DefinitionUri: ../../step-functions/fix-session-ttl.asl.json
+      DefinitionSubstitutions:
+        TimeFunction: !Ref TimeFunction
+        SessionTable: !Ref AddressTable
+        StateMachineArn: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-FixSessionTTLStateMachine
+        SleepFunction: !Ref SleepFunction
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt FixSessionTTLStateMachineLogGroup.Arn
+        IncludeExecutionData: True
+        Level: ALL
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SleepFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref TimeFunction
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AddressTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - states:StartExecution
+              - states:StartSyncExecution
+            Resource: !Sub arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-FixSessionTTLStateMachine
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+  FixSessionTTLStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-FixSessionTTLStateMachine
+      RetentionInDays: 30
+
+  TimeFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Runtime: nodejs18.x
+      CodeUri: ../../
+      Handler: lambdas/time-function/src/time-function.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
+
+  TimeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/TimeFunction
+      RetentionInDays: 30
+
+  SleepFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Runtime: nodejs18.x
+      CodeUri: ../../
+      Handler: lambdas/sleep-function/src/sleep-function.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/SleepFunction
+
+  SleepFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/SleepFunction
+      RetentionInDays: 30
+
+  #######################
+  # START PII Redaction #
+  ######################
+
+  # PII Redacted Log Groups
+  PIIRedactedFixSessionTTLStateMachineLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/vendedlogs/states/${AWS::StackName}-FixSessionTTLStateMachine-pii-redacted
+      RetentionInDays: 30
+
+  # Lambda
+  InvokeLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary:
+        !If [ UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue ]
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+
+  PIIRedactFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Sourcemap: true
+    Properties:
+      Runtime: nodejs18.x
+      CodeUri: ../../
+      Handler: lambdas/pii-redact/src/pii-redact-handler.lambdaHandler
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: logs:*
+            Resource: "*"
+        - Statement:
+            Effect: Allow
+            Action: lambda:*
+            Resource: "*"
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-PIIRedact"
+
+  PIIRedactFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/PIIRedactFunction
+      RetentionInDays: 30
+
+  PIIRedactFunctionCloudWatchPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PIIRedactFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: !Join [ ".", [ "logs", !Ref "AWS::Region", "amazonaws.com" ] ]
+      SourceAccount: !Ref AWS::AccountId
+
+  # SubscriptionFilter on original log groups to Lambda
+  FixSessionTTLStateMachineLogGroupSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: PIIRedactFunctionCloudWatchPermissions
+    Properties:
+      FilterName: "PII Redaction"
+      DestinationArn: !GetAtt PIIRedactFunction.Arn
+      FilterPattern: ""
+      LogGroupName: !Ref FixSessionTTLStateMachineLogGroup
+
+  # SubscriptionFilter on PII Redacted logs to Splunk
+  PIIRedactedFixSessionTTLStateMachineLogGroupSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevEnvironment
+    Properties:
+      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
+      FilterPattern: ""
+      LogGroupName: !Ref PIIRedactedFixSessionTTLStateMachineLogGroup
+
+  #################
+  # END OJ-2862   #
+  #################
+
   PublicAddressApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -1006,3 +1189,6 @@ Outputs:
     Value: !Ref PrivateAddressApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
+
+  FixSessionTTLStateMachineArn:
+    Value: !Ref FixSessionTTLStateMachine
