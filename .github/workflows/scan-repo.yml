@@ -1,6 +1,7 @@
 name: Scan repository
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
@@ -16,7 +17,8 @@ permissions: read-all
 
 jobs:
   unit-tests-ts:
-    name: Test coverage
+    name: Collect coverage
+    if: ${{ github.event_name != 'pull_request' }}
     uses: ./.github/workflows/run-unit-tests-ts.yml
     with:
       coverage-report: true
@@ -81,15 +83,17 @@ jobs:
     name: SonarCloud / TypeScript
     needs: unit-tests-ts
     runs-on: ubuntu-latest
+    if: ${{ success() || needs.unit-tests-ts.result == 'skipped' }}
     steps:
       - name: Run SonarCloud scan
         uses: govuk-one-login/github-actions/code-quality/sonarcloud@5480cced560e896dea12c47ea33e548a4d093e65
         with:
           projectBaseDir: lambdas/get-addresses
           coverage-location: lambdas/get-addresses/coverage
-          coverage-artifact: ${{ needs.unit-tests-ts.outputs.coverage-artifact }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           sonar-token: ${{ secrets.SONAR_TOKEN_TS }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          coverage-artifact: ${{ needs.unit-tests-ts.outputs.coverage-artifact || 'coverage-ts' }}
+          coverage-run-id: ${{ github.event_name != 'pull_request' && github.run_id || null }}
 
   codeql:
     name: CodeQL
