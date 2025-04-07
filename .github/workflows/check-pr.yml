@@ -14,6 +14,8 @@ jobs:
   unit-tests-ts:
     name: Unit tests
     uses: ./.github/workflows/run-unit-tests-ts.yml
+    with:
+      coverage-report: true
 
   unit-tests-java:
     name: Unit tests
