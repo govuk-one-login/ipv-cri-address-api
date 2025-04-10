@@ -412,7 +412,6 @@ public class AddressSteps {
             a_request_is_made_to_the_postcode_lookup_endpoint_without_a_postcode_in_the_request_body()
                     throws IOException, InterruptedException {
         this.testContext.setResponse(this.addressApiClient.sendNoPostCodeLookUpRequest());
-        //   this.testContext.getSessionId()));
 
     }
 
