@@ -23,7 +23,7 @@ export class PiiRedactHandler implements LambdaInterface {
             const logDataBuffer = Buffer.from(logDataBase64, "base64");
             const decompressedData = zlib.unzipSync(logDataBuffer).toString("utf-8");
             const logEvents: CloudWatchLogsDecodedData = JSON.parse(decompressedData);
-            const piiRedactLogGroup = logEvents.logGroup + "-pii-redacted";
+            const piiRedactLogGroup = logEvents.logGroup + "-redacted";
             const logStream = logEvents.logStream;
 
             try {
