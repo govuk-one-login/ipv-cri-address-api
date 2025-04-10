@@ -13,7 +13,6 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import org.junit.jupiter.api.Assertions;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
@@ -184,8 +183,7 @@ public class AddressSteps {
     public void aValidStartEventIsReturnedInTheResponseWithTxmaHeader() throws IOException {
         String responseBody = testContext.getTestHarnessResponseBody();
         List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> events =
-                objectMapper.readValue(responseBody, new TypeReference<>() {
-                });
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
 
         assertFalse(events.isEmpty());
         assertEquals(1, events.size());
@@ -206,8 +204,7 @@ public class AddressSteps {
         assertNotNull(responseBody);
 
         List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> events =
-                objectMapper.readValue(responseBody, new TypeReference<>() {
-                });
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
 
         assertFalse(events.isEmpty());
         assertEquals(1, events.size());
@@ -228,8 +225,7 @@ public class AddressSteps {
         String responseBody = testContext.getTestHarnessResponseBody();
 
         List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> testHarnessResponses =
-                objectMapper.readValue(responseBody, new TypeReference<>() {
-                });
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
 
         var events =
                 testHarnessResponses.stream()
@@ -256,8 +252,7 @@ public class AddressSteps {
         String responseBody = testContext.getTestHarnessResponseBody();
 
         List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> testHarnessResponses =
-                objectMapper.readValue(responseBody, new TypeReference<>() {
-                });
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
 
         var events =
                 testHarnessResponses.stream()
@@ -399,7 +394,9 @@ public class AddressSteps {
     }
 
     @Given("a request is made to the addresses endpoint and it doesn’t include a session_id header")
-    public void a_request_is_made_to_the_addresses_endpoint_and_it_doesn_t_include_a_session_id_header() throws IOException, InterruptedException {
+    public void
+            a_request_is_made_to_the_addresses_endpoint_and_it_doesn_t_include_a_session_id_header()
+                    throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendGetAddressesLookupRequestWithOutSessionId());
     }
@@ -409,18 +406,18 @@ public class AddressSteps {
         assertEquals(400, this.testContext.getResponse().statusCode());
     }
 
-    @Given("a request is made to the postcode-lookup endpoint without a postcode in the request body")
-    public void a_request_is_made_to_the_postcode_lookup_endpoint_without_a_postcode_in_the_request_body() throws IOException, InterruptedException {
-        this.testContext.setResponse(
-                this.addressApiClient.sendNoPostCodeLookUpRequest());
-                     //   this.testContext.getSessionId()));
-
+    @Given(
+            "a request is made to the postcode-lookup endpoint without a postcode in the request body")
+    public void
+            a_request_is_made_to_the_postcode_lookup_endpoint_without_a_postcode_in_the_request_body()
+                    throws IOException, InterruptedException {
+        this.testContext.setResponse(this.addressApiClient.sendNoPostCodeLookUpRequest());
+        //   this.testContext.getSessionId()));
 
     }
+
     @Then("the endpoint should return a 403 HTTP status code")
     public void the_endpoint_should_return_a_403_http_status_code() {
         assertEquals(403, this.testContext.getResponse().statusCode());
     }
-
-
 }
