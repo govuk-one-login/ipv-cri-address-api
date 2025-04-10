@@ -19,3 +19,17 @@ Feature: Address API unhappy path test
     # Address
     When the user selects address without country code
     Then the address is not saved
+
+
+
+    @no_session_id
+  Scenario: No session_id header
+  Given a request is made to the addresses endpoint and it doesn’t include a session_id header
+  Then the endpoint should return a 400 HTTP status code
+
+
+  @no_postcode
+   Scenario:No postcode in the request body
+   Given  a request is made to the postcode-lookup endpoint without a postcode in the request body
+   Then the endpoint should return a 400 HTTP status code
+

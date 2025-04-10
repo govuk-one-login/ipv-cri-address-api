@@ -22,6 +22,7 @@ public class AddressApiClient {
     private final ObjectMapper objectMapper;
     private static final String JSON_MIME_MEDIA_TYPE = "application/json";
 
+
     public AddressApiClient(ClientConfigurationService clientConfigurationService) {
         this.clientConfigurationService = clientConfigurationService;
         this.httpClient = HttpClient.newBuilder().build();
@@ -153,4 +154,32 @@ public class AddressApiClient {
             throws IOException, InterruptedException {
         return this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
+
+    public HttpResponse<String> sendGetAddressesLookupRequestWithOutSessionId()
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        System.out.println(clientConfigurationService.createUriPath("addresses/v2"));
+        System.out.println(privateApiEndpoint);
+        return sendHttpRequest(
+
+                requestBuilder(privateApiEndpoint, "addresses/v2")
+                        .GET()
+                        .build());
+
+    }
+
+
+    public HttpResponse<String> sendNoPostCodeLookUpRequest()
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "postcode-lookup")
+
+                       // .header(SESSION_ID, sessionId)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build());
+    }
+
 }
