@@ -402,7 +402,7 @@ public class AddressSteps {
     }
 
     @Then("the endpoint should return a 400 HTTP status code")
-    public void theEndpointShouldReturnA400HttpStatusCode() throws ParseException, IOException {
+    public void theEndpointShouldReturnA400HttpStatusCode() {
         assertEquals(400, this.testContext.getResponse().statusCode());
     }
 
