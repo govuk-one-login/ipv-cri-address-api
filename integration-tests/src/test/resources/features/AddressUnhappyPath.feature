@@ -21,12 +21,23 @@ Feature: Address API unhappy path test
     Then the address is not saved
 
 
-    @no_session_id
+  @no_session_id
   Scenario: No session_id header
-  Given a request is made to the addresses endpoint and it doesn’t include a session_id header
-  Then the endpoint should return a 400 HTTP status code
+    Given a request is made to the addresses endpoint and it does not include a session_id header
+    Then the endpoint should return a 400 HTTP status code
+    And the response body contains no session id error
 
-  @no_postcode
-   Scenario:No postcode in the request body
-   Given  a request is made to the postcode-lookup endpoint without a postcode in the request body
-   Then the endpoint should return a 400 HTTP status code
+  @with_postcode @with_no_session_id
+  Scenario: With postcode and no session_id in the request body
+    Given a request is made to the postcode-lookup endpoint with postcode and no session id in the request body
+    Then the endpoint should return a 400 HTTP status code
+    And the response body contains no session id error
+
+  @no_postcode @with_session_id
+  Scenario: No postcode and with session_id in the request body
+    Given user has the test-identity 197 in the form of a signed JWT string
+    When user sends a POST request to session end point
+    Then user gets a session-id
+    Given a request is made to the postcode-lookup endpoint without a postcode and with session id in the request body
+    Then the endpoint should return a 400 HTTP status code
+    And the response body contains no postcode error

@@ -158,20 +158,30 @@ public class AddressApiClient {
             throws IOException, InterruptedException {
 
         String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        System.out.println(clientConfigurationService.createUriPath("addresses/v2"));
-        System.out.println(privateApiEndpoint);
         return sendHttpRequest(requestBuilder(privateApiEndpoint, "addresses/v2").GET().build());
     }
 
-    public HttpResponse<String> sendNoPostCodeLookUpRequest()
+    public HttpResponse<String> sendNoPostCodeNoSessionIdLookUpRequest(String postcode)
             throws IOException, InterruptedException {
 
         String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
         return sendHttpRequest(
                 requestBuilder(privateApiEndpoint, "postcode-lookup")
-
-                        // .header(SESSION_ID, sessionId)
-                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .POST(
+                                HttpRequest.BodyPublishers.ofString(
+                                        "{\"postcode\": \"" + postcode + "\"}"))
                         .build());
     }
+    public HttpResponse<String> sendNoPostCodeWithSessionIdLookUpRequest(String sessionId)
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "postcode-lookup")
+                        .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                        .header(SESSION_ID, sessionId)
+                        .build());
+
+    }
+
 }
