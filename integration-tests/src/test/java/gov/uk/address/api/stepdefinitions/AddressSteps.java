@@ -13,7 +13,6 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import software.amazon.awssdk.awscore.util.SignerOverrideUtils;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
@@ -394,9 +393,10 @@ public class AddressSteps {
                 payload.at("/vc/credentialSubject/address/1/validFrom").asText());
     }
 
-    @Given("a request is made to the addresses endpoint and it does not include a session_id header")
+    @Given(
+            "a request is made to the addresses endpoint and it does not include a session_id header")
     public void aRequestIsMadeToTheAddressesEndpointWithoutSessionIdHeader()
-                    throws IOException, InterruptedException {
+            throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendGetAddressesLookupRequestWithOutSessionId());
     }
@@ -405,27 +405,39 @@ public class AddressSteps {
     public void theEndpointShouldReturnA400HttpStatusCode() throws ParseException, IOException {
         assertEquals(400, this.testContext.getResponse().statusCode());
     }
-    @Given("a request is made to the postcode-lookup endpoint with postcode and no session id in the request body")
-    public void aRequestIsMadeToThePostcodeLookupEndpointWithPostcodeAndNoSessionIdInTheRequestBody()
+
+    @Given(
+            "a request is made to the postcode-lookup endpoint with postcode and no session id in the request body")
+    public void
+            aRequestIsMadeToThePostcodeLookupEndpointWithPostcodeAndNoSessionIdInTheRequestBody()
                     throws IOException, InterruptedException {
-        this.testContext.setResponse(this.addressApiClient.sendNoPostCodeNoSessionIdLookUpRequest("TEST"));
+        this.testContext.setResponse(
+                this.addressApiClient.sendNoPostCodeNoSessionIdLookUpRequest("TEST"));
     }
-    @Given("a request is made to the postcode-lookup endpoint without a postcode and with session id in the request body")
-    public void aRequestIsMadeToThePostcodeLookupEndpointWithoutPostcodeAndWithSessionIdInTheRequestBody()
-            throws IOException, InterruptedException {
-        this.testContext.setResponse(this.addressApiClient.sendNoPostCodeWithSessionIdLookUpRequest(this.testContext.getSessionId()));
+
+    @Given(
+            "a request is made to the postcode-lookup endpoint without a postcode and with session id in the request body")
+    public void
+            aRequestIsMadeToThePostcodeLookupEndpointWithoutPostcodeAndWithSessionIdInTheRequestBody()
+                    throws IOException, InterruptedException {
+        this.testContext.setResponse(
+                this.addressApiClient.sendNoPostCodeWithSessionIdLookUpRequest(
+                        this.testContext.getSessionId()));
     }
+
     @Then("the response body contains no session id error")
     public void theResponseBodyContainsNoSessionIdError() {
         var responseBody = this.testContext.getResponse().body();
         assertNotNull(responseBody);
-        assertEquals("{\"message\": \"Missing required request parameters: [session_id]\"}",responseBody );
+        assertEquals(
+                "{\"message\": \"Missing required request parameters: [session_id]\"}",
+                responseBody);
     }
+
     @Then("the response body contains no postcode error")
     public void theResponseBodyContainsNoPostcodeError() {
         var responseBody = this.testContext.getResponse().body();
         assertNotNull(responseBody);
-        assertEquals("\"Missing postcode in request body.\"",responseBody );
-
+        assertEquals("\"Missing postcode in request body.\"", responseBody);
     }
 }

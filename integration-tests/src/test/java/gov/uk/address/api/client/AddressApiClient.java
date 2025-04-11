@@ -172,6 +172,7 @@ public class AddressApiClient {
                                         "{\"postcode\": \"" + postcode + "\"}"))
                         .build());
     }
+
     public HttpResponse<String> sendNoPostCodeWithSessionIdLookUpRequest(String sessionId)
             throws IOException, InterruptedException {
 
@@ -181,7 +182,5 @@ public class AddressApiClient {
                         .POST(HttpRequest.BodyPublishers.ofString("{}"))
                         .header(SESSION_ID, sessionId)
                         .build());
-
     }
-
 }
