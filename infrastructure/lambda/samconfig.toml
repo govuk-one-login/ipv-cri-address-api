@@ -5,7 +5,7 @@ cached = true
 parallel = true
 
 [default.deploy.parameters]
-stack_name = "<your-name>-address-api"
+stack_name = "femi2-address-api"
 
 capabilities = ["CAPABILITY_IAM"]
 fail_on_empty_changeset = false
@@ -15,7 +15,8 @@ region = "eu-west-2"
 resolve_s3 = true
 
 parameter_overrides = [
-    "Environment=localdev"
+    "Environment=localdev",
+    "SecretPrefix=pre-merge-test"
 ]
 
 tags = [
