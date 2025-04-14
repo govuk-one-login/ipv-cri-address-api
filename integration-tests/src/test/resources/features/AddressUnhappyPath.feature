@@ -29,7 +29,7 @@ Feature: Address API unhappy path test
 
   @with_postcode @with_no_session_id
   Scenario: With postcode and no session_id in the request body
-    Given a request is made to the postcode-lookup endpoint with postcode and no session id in the request body
+    Given a request is made to the postcode-lookup endpoint with postcode in the request body with no session id header
     Then the endpoint should return a 400 HTTP status code
     And the response body contains no session id error
 
