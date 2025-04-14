@@ -161,7 +161,7 @@ public class AddressApiClient {
         return sendHttpRequest(requestBuilder(privateApiEndpoint, "addresses/v2").GET().build());
     }
 
-    public HttpResponse<String> sendNoPostCodeNoSessionIdLookUpRequest(String postcode)
+    public HttpResponse<String> sendPostCodeLookupRequestWithNoSessionId(String postcode)
             throws IOException, InterruptedException {
 
         String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();

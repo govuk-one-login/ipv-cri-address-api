@@ -13,6 +13,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import org.junit.jupiter.api.Assertions;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
@@ -412,7 +413,7 @@ public class AddressSteps {
             aRequestIsMadeToThePostcodeLookupEndpointWithPostcodeAndNoSessionIdInTheRequestBody()
                     throws IOException, InterruptedException {
         this.testContext.setResponse(
-                this.addressApiClient.sendNoPostCodeNoSessionIdLookUpRequest("TEST"));
+                this.addressApiClient.sendPostCodeLookupRequestWithNoSessionId("TEST"));
     }
 
     @Given(
