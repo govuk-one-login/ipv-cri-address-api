@@ -153,4 +153,34 @@ public class AddressApiClient {
             throws IOException, InterruptedException {
         return this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
+
+    public HttpResponse<String> sendGetAddressesLookupRequestWithOutSessionId()
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(requestBuilder(privateApiEndpoint, "addresses/v2").GET().build());
+    }
+
+    public HttpResponse<String> sendPostCodeLookupRequestWithNoSessionId(String postcode)
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "postcode-lookup")
+                        .POST(
+                                HttpRequest.BodyPublishers.ofString(
+                                        "{\"postcode\": \"" + postcode + "\"}"))
+                        .build());
+    }
+
+    public HttpResponse<String> sendNoPostCodeWithSessionIdLookUpRequest(String sessionId)
+            throws IOException, InterruptedException {
+
+        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
+        return sendHttpRequest(
+                requestBuilder(privateApiEndpoint, "postcode-lookup")
+                        .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                        .header(SESSION_ID, sessionId)
+                        .build());
+    }
 }
