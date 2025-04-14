@@ -38,6 +38,6 @@ Feature: Address API unhappy path test
     Given user has the test-identity 197 in the form of a signed JWT string
     When user sends a POST request to session end point
     Then user gets a session-id
-    Given a request is made to the postcode-lookup endpoint without a postcode and with session id in the request body
+    Given a request is made to the postcode-lookup endpoint without a postcode in the body and with session id in the header
     Then the endpoint should return a 400 HTTP status code
     And the response body contains no postcode error

@@ -416,9 +416,9 @@ public class AddressSteps {
     }
 
     @Given(
-            "a request is made to the postcode-lookup endpoint without a postcode and with session id in the request body")
+            "a request is made to the postcode-lookup endpoint without a postcode in the body and with session id in the header")
     public void
-            aRequestIsMadeToThePostcodeLookupEndpointWithoutPostcodeAndWithSessionIdInTheRequestBody()
+            aRequestIsMadeToThePostcodeLookupEndpointWithoutaPostcodeInTheBodyAndWithSessionIdInTheHeader()
                     throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendNoPostCodeWithSessionIdLookUpRequest(
