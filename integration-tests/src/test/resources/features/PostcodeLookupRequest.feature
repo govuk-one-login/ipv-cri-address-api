@@ -40,6 +40,6 @@ Feature: valid postcode test
     And the response HTTP status code is 404
     Then the response body is Error processing postcode lookup
 
-      Examples:
-        | testUserDataSheetRowNumber | testPostCode |
-        | 197                        | E11 3BW      |
+    Examples:
+      | testUserDataSheetRowNumber | testPostCode |
+      | 197                        | E11 3BW      |
