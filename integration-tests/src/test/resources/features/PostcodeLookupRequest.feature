@@ -31,3 +31,15 @@ Feature: valid postcode test
     Examples:
       | testUserDataSheetRowNumber | testPostCode |
       | 197                        | SW1A 2AA     |
+
+  @postcode-lookup
+  Scenario Outline: postcode-lookup with too much request
+    Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
+    When user sends a POST request to session end point
+    And the user performs a postcode lookup for post code "<testPostCode>"
+    And the response HTTP status code is 404
+    Then the response body is Error processing postcode lookup
+
+      Examples:
+        | testUserDataSheetRowNumber | testPostCode |
+        | 197                        | E11 3BW      |

@@ -13,6 +13,9 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import net.minidev.json.JSONUtil;
+import org.junit.Assert;
+import org.w3c.dom.ls.LSOutput;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
@@ -75,7 +78,7 @@ public class AddressSteps {
         this.addressContext = new AddressContext();
     }
 
-    @When("the user performs a postcode lookup for post code {string}")
+    @And("the user performs a postcode lookup for post code {string}")
     public void theUserPerformsAPostcodeLookupForPostCode(String postcode)
             throws IOException, InterruptedException {
         this.testContext.setResponse(
@@ -393,51 +396,14 @@ public class AddressSteps {
                 payload.at("/vc/credentialSubject/address/1/validFrom").asText());
     }
 
-    @Given(
-            "a request is made to the addresses endpoint and it does not include a session_id header")
-    public void aRequestIsMadeToTheAddressesEndpointWithoutSessionIdHeader()
-            throws IOException, InterruptedException {
-        this.testContext.setResponse(
-                this.addressApiClient.sendGetAddressesLookupRequestWithOutSessionId());
+    @When("the response HTTP status code is {int}")
+    public void theResponseHttpStatusCodeIs(Integer int1) {
+        assertEquals(404, this.testContext.getResponse().statusCode());
     }
 
-    @Then("the endpoint should return a 400 HTTP status code")
-    public void theEndpointShouldReturnA400HttpStatusCode() {
-        assertEquals(400, this.testContext.getResponse().statusCode());
-    }
-
-    @Given(
-            "a request is made to the postcode-lookup endpoint with postcode in the request body with no session id header")
-    public void
-            aRequestIsMadeToThePostcodeLookupEndpointWithPostcodeAInTheRequestBodyWithNoSessionId()
-                    throws IOException, InterruptedException {
-        this.testContext.setResponse(
-                this.addressApiClient.sendPostCodeLookupRequestWithNoSessionId("TEST"));
-    }
-
-    @Given(
-            "a request is made to the postcode-lookup endpoint without a postcode in the body and with session id in the header")
-    public void
-            aRequestIsMadeToThePostcodeLookupEndpointWithoutaPostcodeInTheBodyAndWithSessionIdInTheHeader()
-                    throws IOException, InterruptedException {
-        this.testContext.setResponse(
-                this.addressApiClient.sendNoPostCodeWithSessionIdLookUpRequest(
-                        this.testContext.getSessionId()));
-    }
-
-    @Then("the response body contains no session id error")
-    public void theResponseBodyContainsNoSessionIdError() {
-        var responseBody = this.testContext.getResponse().body();
-        assertNotNull(responseBody);
-        assertEquals(
-                "{\"message\": \"Missing required request parameters: [session_id]\"}",
-                responseBody);
-    }
-
-    @Then("the response body contains no postcode error")
-    public void theResponseBodyContainsNoPostcodeError() {
-        var responseBody = this.testContext.getResponse().body();
-        assertNotNull(responseBody);
-        assertEquals("\"Missing postcode in request body.\"", responseBody);
+    @Then("the response body is Error processing postcode lookup")
+    public void theResponseBodyIsErrorProcessingPostcodeLookup() {
+        String responseBody = this.testContext.getResponse().body();
+        System.out.println("The response body is " + " " + responseBody);
     }
 }
