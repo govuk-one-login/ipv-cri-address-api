@@ -10,12 +10,8 @@ import gov.uk.address.api.client.AddressApiClient;
 import gov.uk.address.api.util.AddressContext;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
-import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import net.minidev.json.JSONUtil;
-import org.junit.Assert;
-import org.w3c.dom.ls.LSOutput;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
@@ -404,6 +400,5 @@ public class AddressSteps {
     @Then("the response body is Error processing postcode lookup")
     public void theResponseBodyIsErrorProcessingPostcodeLookup() {
         String responseBody = this.testContext.getResponse().body();
-        // System.out.println("The response body is " + " " + responseBody);
     }
 }
