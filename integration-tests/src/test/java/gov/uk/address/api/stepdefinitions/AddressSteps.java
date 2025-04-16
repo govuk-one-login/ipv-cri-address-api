@@ -403,6 +403,7 @@ public class AddressSteps {
         String responseBody = this.testContext.getResponse().body();
         assertEquals("\"Error processing postcode lookup: \"", responseBody);
     }
+
     @Given(
             "a request is made to the addresses endpoint and it does not include a session_id header")
     public void aRequestIsMadeToTheAddressesEndpointWithoutSessionIdHeader()
@@ -419,8 +420,8 @@ public class AddressSteps {
     @Given(
             "a request is made to the postcode-lookup endpoint with postcode in the request body with no session id header")
     public void
-    aRequestIsMadeToThePostcodeLookupEndpointWithPostcodeAInTheRequestBodyWithNoSessionId()
-            throws IOException, InterruptedException {
+            aRequestIsMadeToThePostcodeLookupEndpointWithPostcodeAInTheRequestBodyWithNoSessionId()
+                    throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendPostCodeLookupRequestWithNoSessionId("TEST"));
     }
@@ -428,8 +429,8 @@ public class AddressSteps {
     @Given(
             "a request is made to the postcode-lookup endpoint without a postcode in the body and with session id in the header")
     public void
-    aRequestIsMadeToThePostcodeLookupEndpointWithoutaPostcodeInTheBodyAndWithSessionIdInTheHeader()
-            throws IOException, InterruptedException {
+            aRequestIsMadeToThePostcodeLookupEndpointWithoutaPostcodeInTheBodyAndWithSessionIdInTheHeader()
+                    throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendNoPostCodeWithSessionIdLookUpRequest(
                         this.testContext.getSessionId()));
@@ -444,17 +445,10 @@ public class AddressSteps {
                 responseBody);
     }
 
-
     @Then("the response body contains no postcode error")
     public void theResponseBodyContainsNoPostcodeError() {
         var responseBody = this.testContext.getResponse().body();
         assertNotNull(responseBody);
         assertEquals("\"Missing postcode in request body.\"", responseBody);
     }
-
-
-
-
-
-
 }
