@@ -404,6 +404,6 @@ public class AddressSteps {
     @Then("the response body is Error processing postcode lookup")
     public void theResponseBodyIsErrorProcessingPostcodeLookup() {
         String responseBody = this.testContext.getResponse().body();
-        System.out.println("The response body is " + " " + responseBody);
+        // System.out.println("The response body is " + " " + responseBody);
     }
 }
