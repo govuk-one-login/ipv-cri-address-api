@@ -33,7 +33,7 @@ Feature: valid postcode test
       | 197                        | SW1A 2AA     |
 
   @postcode-lookup
-  Scenario Outline: postcode-lookup with too much request
+  Scenario Outline: Rate limit Is returned by OS API?
     Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
     When user sends a POST request to session end point
     And the user performs a postcode lookup for post code "<testPostCode>"

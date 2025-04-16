@@ -75,7 +75,7 @@ public class AddressSteps {
         this.addressContext = new AddressContext();
     }
 
-    @And("the user performs a postcode lookup for post code {string}")
+    @When("the user performs a postcode lookup for post code {string}")
     public void theUserPerformsAPostcodeLookupForPostCode(String postcode)
             throws IOException, InterruptedException {
         this.testContext.setResponse(
@@ -393,8 +393,8 @@ public class AddressSteps {
                 payload.at("/vc/credentialSubject/address/1/validFrom").asText());
     }
 
-    @When("the response HTTP status code is {int}")
-    public void theResponseHttpStatusCodeIs(Integer int1) {
+    @When("the response HTTP status code is 404")
+    public void theResponseHttpStatusCodeIs() {
         assertEquals(404, this.testContext.getResponse().statusCode());
     }
 
