@@ -2,7 +2,7 @@ Feature: Invalid postcode test
 
   @invalid_postcode_test
   Scenario Outline: Invalid postcode
-    Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
+    Given user has a default signed JWT
 
     # Session
     When user sends a POST request to session end point
