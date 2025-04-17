@@ -393,6 +393,17 @@ public class AddressSteps {
                 payload.at("/vc/credentialSubject/address/1/validFrom").asText());
     }
 
+    @Then("the response HTTP status code is 404")
+    public void theResponseHttpStatusCodeIs() {
+        assertEquals(404, this.testContext.getResponse().statusCode());
+    }
+
+    @Then("the response body is Error processing postcode lookup")
+    public void theResponseBodyIsErrorProcessingPostcodeLookup() {
+        String responseBody = this.testContext.getResponse().body();
+        assertEquals("\"Error processing postcode lookup: \"", responseBody);
+    }
+
     @Given(
             "a request is made to the addresses endpoint and it does not include a session_id header")
     public void aRequestIsMadeToTheAddressesEndpointWithoutSessionIdHeader()
