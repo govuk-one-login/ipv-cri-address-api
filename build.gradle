@@ -105,7 +105,7 @@ subprojects {
 				"org.junit.jupiter:junit-jupiter-params:${dependencyVersions.junit}",
 				"org.mockito:mockito-junit-jupiter:${dependencyVersions.mockito}",
 				"org.mockito:mockito-inline:${dependencyVersions.mockito}",
-				"org.hamcrest:hamcrest:2.2"
+				"org.hamcrest:hamcrest:3.0"
 
 		test_runtime "org.junit.jupiter:junit-jupiter-engine:${dependencyVersions.junit}"
 
