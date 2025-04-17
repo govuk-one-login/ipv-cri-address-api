@@ -61,3 +61,13 @@ pact-provider = { module = "au.com.dius.pact:provider", version.ref = "pact-prov
 # OpenTelemetry
 otel-aws-autoconfigure = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version = "2.12.0-alpha" }
 otel-http-client = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version = "2.12.0-alpha" }
+
+[bundles]
+jackson = [ "jackson-core", "jackson-annotations", "jackson-databind", "jackson-jdk8", "jackson-jsr310" ]
+nimbus = [ "nimbusds-jwt", "nimbusds-oauth" ]
+otel = [ "otel-aws-autoconfigure", "otel-http-client" ]
+test_runtime = [ "junit-engine" ]
+tests = [ "junit-api", "junit-params", "mockito-junit", "mockito-inline" ]
+powertools = [ "powertools-logging", "powertools-metrics", "powertools-parameters" ]
+webcompere = [ "system-stubs-core", "system-stubs-jupiter" ]
+pact = [ "pact-junit5", "pact-provider" ]

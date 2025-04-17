@@ -7,27 +7,19 @@ plugins {
 dependencies {
 	implementation project(":lib")
 
-	runtimeOnly libs.otel.aws.autoconfigure
-	runtimeOnly libs.otel.http.client
+	runtimeOnly libs.bundles.otel
 
-	aspect libs.powertools.parameters
-	aspect libs.powertools.metrics
-	aspect libs.powertools.logging
+	aspect libs.bundles.powertools
 
 	testImplementation "org.slf4j:slf4j-log4j12:2.0.13"
 
-	testImplementation libs.junit.api
-	testImplementation libs.junit.params
-	testImplementation libs.mockito.junit
-	testImplementation libs.mockito.inline
+	testImplementation libs.bundles.tests
 	testImplementation libs.hamcrest
-	testImplementation libs.pact.junit5
-	testImplementation libs.pact.provider
+	testImplementation libs.bundles.pact
 
-	testImplementation libs.system.stubs.core
-	testImplementation libs.system.stubs.jupiter
+	testImplementation libs.bundles.webcompere
 
-	testRuntimeOnly libs.junit.engine
+	testRuntimeOnly libs.bundles.test.runtime
 }
 
 test {

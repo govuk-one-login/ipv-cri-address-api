@@ -7,19 +7,13 @@ plugins {
 dependencies {
 	implementation platform("software.amazon.awssdk:bom:2.26.20")
 
-	aspect libs.powertools.parameters
-	aspect libs.powertools.metrics
-	aspect libs.powertools.logging
+	aspect libs.bundles.powertools
 
-	testImplementation libs.junit.api
-	testImplementation libs.junit.params
-	testImplementation libs.mockito.junit
-	testImplementation libs.mockito.inline
+	testImplementation libs.bundles.tests
 	testImplementation libs.hamcrest
-
 	testImplementation libs.lambda.tests
 
-	testRuntimeOnly libs.junit.engine
+	testRuntimeOnly libs.bundles.test.runtime
 }
 
 tasks.named("jar") {

@@ -9,15 +9,8 @@ ext {
 }
 
 dependencies {
-	testImplementation libs.nimbusds.oauth
-	testImplementation libs.nimbusds.jwt
-
-	testImplementation libs.jackson.core
-	testImplementation libs.jackson.databind
-	testImplementation libs.jackson.annotations
-	testImplementation libs.jackson.jsr310
-	testImplementation libs.jackson.jdk8
-
+	testImplementation libs.bundles.nimbus
+	testImplementation libs.bundles.jackson
 	testImplementation libs.junit.api
 
 	testImplementation "org.apache.commons:commons-lang3:${apache_common_lang_version}"

@@ -5,22 +5,16 @@ plugins {
 }
 
 dependencies {
-	runtimeOnly libs.otel.aws.autoconfigure
-	runtimeOnly libs.otel.http.client
+	runtimeOnly libs.bundles.otel
 
 	implementation project(":lib")
 
-	aspect libs.powertools.parameters
-	aspect libs.powertools.metrics
-	aspect libs.powertools.logging
+	aspect libs.bundles.powertools
 
-	testImplementation libs.junit.api
-	testImplementation libs.junit.params
-	testImplementation libs.mockito.junit
-	testImplementation libs.mockito.inline
+	testImplementation libs.bundles.tests
 	testImplementation libs.hamcrest
 
-	testRuntimeOnly libs.junit.engine
+	testRuntimeOnly libs.bundles.test.runtime
 }
 
 test {
