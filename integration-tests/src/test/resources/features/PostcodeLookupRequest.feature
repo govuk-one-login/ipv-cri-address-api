@@ -33,11 +33,11 @@ Feature: valid postcode test
       | 197                        | SW1A 2AA     |
 
   @postcode-lookup
-  Scenario Outline: Rate limit Is returned by OS API?
+  Scenario Outline: Rate limit Is returned by OS API
     Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
     When user sends a POST request to session end point
     And the user performs a postcode lookup for post code "<testPostCode>"
-    And the response HTTP status code is 404
+    Then the response HTTP status code is 404
     Then the response body is Error processing postcode lookup
 
     Examples:
