@@ -1,0 +1,63 @@
+[versions]
+jackson = "2.13.1"
+aws-lambda-events = "3.11.0"
+nimbusds-oauth = "11.2"
+nimbusds-jwt = "9.40"
+protobuf = "3.19.4"
+junit = "5.10.3"
+mockito = "4.3.1"
+glassfish = "3.0.3"
+powertools = "1.18.0"
+cri-common-lib = "4.2.0"
+pact-provider = "4.5.11"
+webcompere = "2.1.6"
+slf4j-log4j12 = "2.0.13"
+
+[libraries]
+# AWS SDK
+dynamodb = { module = "software.amazon.awssdk:dynamodb" }
+dynamodb-enhanced = { module = "software.amazon.awssdk:dynamodb-enhanced" }
+lambda = { module = "software.amazon.awssdk:lambda" }
+aws-lambda-events = { module = "com.amazonaws:aws-lambda-java-events", version.ref = "aws-lambda-events" }
+sqs = { module = "software.amazon.awssdk:sqs" }
+kms = { module = "software.amazon.awssdk:kms" }
+lambda-tests = { module = "com.amazonaws:aws-lambda-java-tests", version = "1.1.1" }
+
+# CRI
+cri-common-lib = { module = "uk.gov.account:cri-common-lib", version.ref = "cri-common-lib" }
+
+# Jackson
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
+
+# Powertools
+powertools-logging = { module = "software.amazon.lambda:powertools-logging", version.ref = "powertools" }
+powertools-metrics = { module = "software.amazon.lambda:powertools-metrics", version.ref = "powertools" }
+powertools-parameters = { module = "software.amazon.lambda:powertools-parameters", version.ref = "powertools" }
+
+# Nimbus
+nimbusds-oauth = { module = "com.nimbusds:oauth2-oidc-sdk", version.ref = "nimbusds-oauth" }
+nimbusds-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbusds-jwt" }
+
+# JUnit & Mockito
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
+hamcrest = { module = "org.hamcrest:hamcrest", version = "2.2" }
+
+# WebCompere
+system-stubs-core = { module = "uk.org.webcompere:system-stubs-core", version.ref = "webcompere" }
+system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
+
+# Pact
+pact-junit5 = { module = "au.com.dius.pact.provider:junit5", version.ref = "pact-provider" }
+pact-provider = { module = "au.com.dius.pact:provider", version.ref = "pact-provider" }
+
+# OpenTelemetry
+otel-aws-autoconfigure = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version = "2.12.0-alpha" }
+otel-http-client = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version = "2.12.0-alpha" }
