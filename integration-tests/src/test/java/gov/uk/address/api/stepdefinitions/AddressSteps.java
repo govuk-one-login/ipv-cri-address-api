@@ -75,7 +75,7 @@ public class AddressSteps {
         this.addressContext = new AddressContext();
     }
 
-    @And("the user performs a postcode lookup for post code {string}")
+    @When("the user performs a postcode lookup for post code {string}")
     public void theUserPerformsAPostcodeLookupForPostCode(String postcode)
             throws IOException, InterruptedException {
         this.testContext.setResponse(
