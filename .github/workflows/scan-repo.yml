@@ -41,8 +41,6 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 7.6.4
 
       - name: Set up JDK
         uses: actions/setup-java@v4

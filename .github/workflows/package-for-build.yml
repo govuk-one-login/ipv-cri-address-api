@@ -32,8 +32,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: 7.6.4
 
       - name: Assume temporary AWS role
         uses: aws-actions/configure-aws-credentials@v2

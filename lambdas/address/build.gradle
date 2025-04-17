@@ -5,22 +5,16 @@ plugins {
 }
 
 dependencies {
-	runtimeOnly configurations.otel
+	runtimeOnly libs.bundles.otel
 
-	implementation configurations.cri_common_lib,
-			project(":lib"),
-			configurations.aws,
-			configurations.lambda,
-			configurations.nimbus,
-			configurations.jackson,
-			configurations.dynamodb,
-			configurations.sqs
+	implementation project(":lib")
 
-	aspect configurations.powertools
+	aspect libs.bundles.powertools
 
-	testImplementation configurations.tests
+	testImplementation libs.bundles.tests
+	testImplementation libs.hamcrest
 
-	testRuntimeOnly configurations.test_runtime
+	testRuntimeOnly libs.bundles.test.runtime
 }
 
 test {
