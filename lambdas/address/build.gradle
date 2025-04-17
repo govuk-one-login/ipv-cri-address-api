@@ -5,22 +5,22 @@ plugins {
 }
 
 dependencies {
-	runtimeOnly configurations.otel
+	runtimeOnly libs.otel.aws.autoconfigure
+	runtimeOnly libs.otel.http.client
 
-	implementation configurations.cri_common_lib,
-			project(":lib"),
-			configurations.aws,
-			configurations.lambda,
-			configurations.nimbus,
-			configurations.jackson,
-			configurations.dynamodb,
-			configurations.sqs
+	implementation project(":lib")
 
-	aspect configurations.powertools
+	aspect libs.powertools.parameters
+	aspect libs.powertools.metrics
+	aspect libs.powertools.logging
 
-	testImplementation configurations.tests
+	testImplementation libs.junit.api
+	testImplementation libs.junit.params
+	testImplementation libs.mockito.junit
+	testImplementation libs.mockito.inline
+	testImplementation libs.hamcrest
 
-	testRuntimeOnly configurations.test_runtime
+	testRuntimeOnly libs.junit.engine
 }
 
 test {

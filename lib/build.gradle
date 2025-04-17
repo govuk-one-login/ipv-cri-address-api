@@ -5,23 +5,21 @@ plugins {
 }
 
 dependencies {
+	implementation platform("software.amazon.awssdk:bom:2.26.20")
 
-	implementation configurations.cri_common_lib,
-			configurations.aws,
-			configurations.lambda,
-			configurations.jackson,
-			configurations.dynamodb,
-			configurations.nimbus,
-			configurations.powertools,
-			configurations.sqs,
-			configurations.kms,
-			configurations.webcompere
+	aspect libs.powertools.parameters
+	aspect libs.powertools.metrics
+	aspect libs.powertools.logging
 
-	aspect configurations.powertools
+	testImplementation libs.junit.api
+	testImplementation libs.junit.params
+	testImplementation libs.mockito.junit
+	testImplementation libs.mockito.inline
+	testImplementation libs.hamcrest
 
-	testImplementation configurations.tests
+	testImplementation libs.lambda.tests
 
-	testRuntimeOnly configurations.test_runtime
+	testRuntimeOnly libs.junit.engine
 }
 
 tasks.named("jar") {

@@ -9,11 +9,19 @@ ext {
 }
 
 dependencies {
-	testImplementation configurations.nimbus
-	testImplementation configurations.jackson
+	testImplementation libs.nimbusds.oauth
+	testImplementation libs.nimbusds.jwt
+
+	testImplementation libs.jackson.core
+	testImplementation libs.jackson.databind
+	testImplementation libs.jackson.annotations
+	testImplementation libs.jackson.jsr310
+	testImplementation libs.jackson.jdk8
+
+	testImplementation libs.junit.api
+
 	testImplementation "org.apache.commons:commons-lang3:${apache_common_lang_version}"
-	testImplementation "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}"
-	testImplementation(testFixtures("uk.gov.account:cri-common-lib:${dependencyVersions.cri_common_lib}"))
+	testImplementation(testFixtures(libs.cri.common.lib))
 	testImplementation "io.cucumber:cucumber-junit:7.9.0"
 }
 
