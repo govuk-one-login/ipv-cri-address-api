@@ -1,7 +1,7 @@
 plugins {
-	id "java"
-	id "jacoco"
-	id 'io.freefair.aspectj.post-compile-weaving' version '6.3.0'
+	alias(libs.plugins.java)
+	alias(libs.plugins.jacoco)
+	alias(libs.plugins.post.compile.weaving)
 }
 
 dependencies {

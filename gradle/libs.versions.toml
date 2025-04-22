@@ -10,6 +10,11 @@ pact-provider = "4.5.11"
 webcompere = "2.1.6"
 open-telemetry = "2.12.0-alpha"
 
+# Plugins
+spotless = "6.23.+"
+sonarqube = "4.4.+"
+post-compile-weaving = "6.3.0"
+
 [libraries]
 # AWS SDK
 dynamodb = { module = "software.amazon.awssdk:dynamodb" }
@@ -68,3 +73,10 @@ tests = [ "junit-api", "junit-params", "mockito-junit", "mockito-inline" ]
 powertools = [ "powertools-logging", "powertools-metrics", "powertools-parameters" ]
 webcompere = [ "system-stubs-core", "system-stubs-jupiter" ]
 pact = [ "pact-junit5", "pact-provider" ]
+
+[plugins]
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+java = { id = "java" }
+jacoco = { id = "jacoco" }
+post-compile-weaving = { id = "io.freefair.aspectj.post-compile-weaving", version.ref = "post-compile-weaving" }
