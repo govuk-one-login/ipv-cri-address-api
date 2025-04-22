@@ -27,7 +27,7 @@ subprojects {
 
 	// The dynamodb enhanced package loads the apache-client as well as the spi-client, so
 	// we need to add the apache-client to the dependencies exclusion to not get a mismatch
-	configurations.all {
+	configurations.configureEach {
 		exclude group: "software.amazon.awssdk", module: "apache-client"
 	}
 
@@ -101,7 +101,9 @@ clean.doFirst {
 }
 
 gradle.projectsEvaluated {
-	tasks.withType(JavaCompile) {
-		options.compilerArgs << "-Xlint:unchecked"
+	tasks.withType(JavaCompile).tap {
+		configureEach {
+			options.compilerArgs << "-Xlint:unchecked"
+		}
 	}
 }
