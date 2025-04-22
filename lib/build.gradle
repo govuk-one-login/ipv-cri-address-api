@@ -5,8 +5,6 @@ plugins {
 }
 
 dependencies {
-	implementation platform("software.amazon.awssdk:bom:2.26.20")
-
 	aspect libs.bundles.powertools
 
 	testImplementation libs.bundles.tests

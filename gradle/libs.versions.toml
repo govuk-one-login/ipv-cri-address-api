@@ -2,15 +2,13 @@
 aws-lambda-events = "3.11.0"
 nimbusds-oauth = "11.2"
 nimbusds-jwt = "9.40"
-protobuf = "3.19.4"
 junit = "5.10.3"
 mockito = "4.3.1"
-glassfish = "3.0.3"
 powertools = "1.18.0"
 cri-common-lib = "4.2.0"
 pact-provider = "4.5.11"
 webcompere = "2.1.6"
-slf4j-log4j12 = "2.0.13"
+open-telemetry = "2.12.0-alpha"
 
 [libraries]
 # AWS SDK
@@ -58,8 +56,8 @@ pact-junit5 = { module = "au.com.dius.pact.provider:junit5", version.ref = "pact
 pact-provider = { module = "au.com.dius.pact:provider", version.ref = "pact-provider" }
 
 # OpenTelemetry
-otel-aws-autoconfigure = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version = "2.12.0-alpha" }
-otel-http-client = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version = "2.12.0-alpha" }
+otel-aws-autoconfigure = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version.ref = "open-telemetry" }
+otel-http-client = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version.ref = "open-telemetry" }
 
 [bundles]
 jackson = [ "jackson-core", "jackson-annotations", "jackson-databind", "jackson-jdk8", "jackson-jsr310" ]

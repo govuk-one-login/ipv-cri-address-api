@@ -42,7 +42,6 @@ subprojects {
 		implementation(libs.cri.common.lib)
 		implementation(libs.sqs)
 		implementation(libs.kms)
-		implementation(libs.lambda.tests)
 
 		implementation(libs.bundles.jackson)
 		implementation(libs.bundles.powertools)
@@ -50,7 +49,6 @@ subprojects {
 		implementation(libs.nimbusds.oauth)
 		implementation(libs.nimbusds.jwt)
 
-		implementation(libs.bundles.tests)
 		implementation(libs.hamcrest)
 
 		implementation(libs.junit.engine)
@@ -58,10 +56,12 @@ subprojects {
 		implementation(libs.system.stubs.core)
 		implementation(libs.system.stubs.jupiter)
 
-		implementation(libs.pact.junit5)
-		implementation(libs.pact.provider)
-
 		implementation(libs.bundles.otel)
+
+		testImplementation(libs.bundles.tests)
+		testImplementation(libs.pact.junit5)
+		testImplementation(libs.pact.provider)
+		testImplementation(libs.lambda.tests)
 	}
 
 	tasks.register("pactTests", Test) {
