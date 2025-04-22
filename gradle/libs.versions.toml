@@ -1,5 +1,4 @@
 [versions]
-jackson = "2.13.1"
 aws-lambda-events = "3.11.0"
 nimbusds-oauth = "11.2"
 nimbusds-jwt = "9.40"
@@ -27,11 +26,11 @@ lambda-tests = { module = "com.amazonaws:aws-lambda-java-tests", version = "1.1.
 cri-common-lib = { module = "uk.gov.account:cri-common-lib", version.ref = "cri-common-lib" }
 
 # Jackson
-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
-jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-jackson-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
+jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
+jackson-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8" }
 
 # Powertools
 powertools-logging = { module = "software.amazon.lambda:powertools-logging", version.ref = "powertools" }
