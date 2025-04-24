@@ -5,23 +5,13 @@ plugins {
 }
 
 dependencies {
+	aspect libs.bundles.powertools
 
-	implementation configurations.cri_common_lib,
-			configurations.aws,
-			configurations.lambda,
-			configurations.jackson,
-			configurations.dynamodb,
-			configurations.nimbus,
-			configurations.powertools,
-			configurations.sqs,
-			configurations.kms,
-			configurations.webcompere
+	testImplementation libs.bundles.tests
+	testImplementation libs.hamcrest
+	testImplementation libs.lambda.tests
 
-	aspect configurations.powertools
-
-	testImplementation configurations.tests
-
-	testRuntimeOnly configurations.test_runtime
+	testRuntimeOnly libs.bundles.test.runtime
 }
 
 tasks.named("jar") {

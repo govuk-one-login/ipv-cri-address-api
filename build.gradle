@@ -1,28 +1,10 @@
 plugins {
-	id "java"
-	id "org.sonarqube" version "4.4.+"
-	id "com.diffplug.spotless" version "6.23.+"
+	alias(libs.plugins.java)
+	alias(libs.plugins.spotless)
+	alias(libs.plugins.sonarqube)
 }
 
 defaultTasks 'clean', 'spotlessApply', 'build'
-
-ext {
-	dependencyVersions = [
-		jackson_version          : "2.13.1",
-		aws_lambda_events_version: "3.11.0",
-		nimbusds_oauth_version   :  "11.2",
-		nimbusds_jwt_version	 : 	"9.40",
-		protobuf_version         : "3.19.4",
-		junit                    : "5.10.3",
-		mockito                  : "4.3.1",
-		glassfish_version        : "3.0.3",
-		powertools_version       : "1.18.0",
-		cri_common_lib           : "4.2.0",
-		pact_provider_version	 : "4.5.11",
-		webcompere_version       : "2.1.6",
-		slf4j_log4j12_version    : "2.0.13", // For contract test debug
-	]
-}
 
 repositories {
 	maven {
@@ -43,80 +25,43 @@ subprojects {
 		}
 	}
 
-	configurations {
-		aws
-		dynamodb
-		jackson
-		lambda
-		sqs
-		kms
-		lambda_tests
-		lettuce
-		nimbus
-		ssm
-		tests
-		test_runtime
-		gson
-		powertools
-		mockito
-		webcompere
-		cri_common_lib
-		pact_tests
-		otel
-	}
-
 	// The dynamodb enhanced package loads the apache-client as well as the spi-client, so
 	// we need to add the apache-client to the dependencies exclusion to not get a mismatch
-	configurations.all {
+	configurations.configureEach {
 		exclude group: "software.amazon.awssdk", module: "apache-client"
 	}
 
 	dependencies {
-		aws platform('software.amazon.awssdk:bom:2.26.20')
+		implementation platform("software.amazon.awssdk:bom:2.26.20")
+		implementation platform("com.fasterxml.jackson:jackson-bom:2.18.3")
 
-		dynamodb "software.amazon.awssdk:dynamodb",
-				"software.amazon.awssdk:dynamodb-enhanced"
+		implementation(libs.dynamodb)
+		implementation(libs.dynamodb.enhanced)
+		implementation(libs.lambda)
+		implementation(libs.aws.lambda.events)
+		implementation(libs.cri.common.lib)
+		implementation(libs.sqs)
+		implementation(libs.kms)
 
-		lambda "software.amazon.awssdk:lambda",
-				"com.amazonaws:aws-lambda-java-events:${dependencyVersions.aws_lambda_events_version}"
+		implementation(libs.bundles.jackson)
+		implementation(libs.bundles.powertools)
 
-		cri_common_lib "uk.gov.account:cri-common-lib:${dependencyVersions.cri_common_lib}"
+		implementation(libs.nimbusds.oauth)
+		implementation(libs.nimbusds.jwt)
 
-		sqs "software.amazon.awssdk:sqs"
+		implementation(libs.hamcrest)
 
-		kms "software.amazon.awssdk:kms"
+		implementation(libs.junit.engine)
 
-		lambda_tests "software.amazon.awssdk:aws-lambda-java-tests:1.1.1"
+		implementation(libs.system.stubs.core)
+		implementation(libs.system.stubs.jupiter)
 
-		jackson "com.fasterxml.jackson.core:jackson-core:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.core:jackson-databind:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.core:jackson-annotations:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${dependencyVersions.jackson_version}",
-				"com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${dependencyVersions.jackson_version}"
+		implementation(libs.bundles.otel)
 
-		powertools "software.amazon.lambda:powertools-logging:${dependencyVersions.powertools_version}",
-				"software.amazon.lambda:powertools-metrics:${dependencyVersions.powertools_version}",
-				"software.amazon.lambda:powertools-parameters:${dependencyVersions.powertools_version}"
-
-		nimbus "com.nimbusds:oauth2-oidc-sdk:${dependencyVersions.nimbusds_oauth_version}",
-				"com.nimbusds:nimbus-jose-jwt:${dependencyVersions.nimbusds_jwt_version}"
-
-		tests "org.junit.jupiter:junit-jupiter-api:${dependencyVersions.junit}",
-				"org.junit.jupiter:junit-jupiter-params:${dependencyVersions.junit}",
-				"org.mockito:mockito-junit-jupiter:${dependencyVersions.mockito}",
-				"org.mockito:mockito-inline:${dependencyVersions.mockito}",
-				"org.hamcrest:hamcrest:2.2"
-
-		test_runtime "org.junit.jupiter:junit-jupiter-engine:${dependencyVersions.junit}"
-
-		webcompere "uk.org.webcompere:system-stubs-core:${dependencyVersions.webcompere_version}",
-				"uk.org.webcompere:system-stubs-jupiter:${dependencyVersions.webcompere_version}"
-
-		pact_tests "au.com.dius.pact.provider:junit5:${dependencyVersions.pact_provider_version}",
-				"au.com.dius.pact:provider:${dependencyVersions.pact_provider_version}"
-
-		otel "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure:2.12.0-alpha",
-				"io.opentelemetry.instrumentation:opentelemetry-java-http-client:2.12.0-alpha"
+		testImplementation(libs.bundles.tests)
+		testImplementation(libs.pact.junit5)
+		testImplementation(libs.pact.provider)
+		testImplementation(libs.lambda.tests)
 	}
 
 	tasks.register("pactTests", Test) {
@@ -156,7 +101,9 @@ clean.doFirst {
 }
 
 gradle.projectsEvaluated {
-	tasks.withType(JavaCompile) {
-		options.compilerArgs << "-Xlint:unchecked"
+	tasks.withType(JavaCompile).tap {
+		configureEach {
+			options.compilerArgs << "-Xlint:unchecked"
+		}
 	}
 }
