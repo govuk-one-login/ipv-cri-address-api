@@ -9,14 +9,21 @@ dependencies {
 
 	runtimeOnly libs.bundles.otel
 
+	implementation(libs.lambda)
+	implementation(libs.aws.lambda.events)
+	implementation(libs.cri.common.lib)
+	implementation(libs.kms)
+	implementation(libs.sqs)
+	implementation(libs.bundles.nimbus)
+	implementation(libs.bundles.jackson)
+	implementation(libs.bundles.dynamodb)
+
 	aspect libs.bundles.powertools
 
-	testImplementation "org.slf4j:slf4j-log4j12:2.0.13"
-
+	testImplementation libs.slf4j
 	testImplementation libs.bundles.tests
 	testImplementation libs.hamcrest
 	testImplementation libs.bundles.pact
-
 	testImplementation libs.bundles.webcompere
 
 	testRuntimeOnly libs.bundles.test.runtime
@@ -27,11 +34,4 @@ test {
 		excludeTags 'Pact'
 	}
 	finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required.set(true)
-	}
 }
