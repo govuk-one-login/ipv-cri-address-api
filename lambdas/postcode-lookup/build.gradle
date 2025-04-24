@@ -1,6 +1,5 @@
 plugins {
 	alias(libs.plugins.java)
-	alias(libs.plugins.jacoco)
 	alias(libs.plugins.post.compile.weaving)
 }
 
@@ -8,23 +7,18 @@ dependencies {
 	runtimeOnly libs.bundles.otel
 
 	implementation project(":lib")
+	implementation(libs.cri.common.lib)
+	implementation(libs.aws.lambda.events)
+	implementation(libs.lambda)
+	implementation(libs.sqs)
+	implementation libs.bundles.nimbus
+	implementation libs.bundles.dynamodb
+	implementation libs.bundles.jackson
 
 	aspect libs.bundles.powertools
 
-	testImplementation libs.bundles.jackson
 	testImplementation libs.junit.api
+	testImplementation libs.bundles.tests
 
 	testRuntimeOnly libs.bundles.test.runtime
-}
-
-test {
-	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required.set(true)
-	}
 }

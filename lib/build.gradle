@@ -1,10 +1,14 @@
 plugins {
-	id "jacoco"
-	id "java-library"
-	id "io.freefair.aspectj.post-compile-weaving" version "6.3.0"
+	alias(libs.plugins.post.compile.weaving)
 }
 
 dependencies {
+	implementation(libs.lambda)
+	implementation(libs.dynamodb)
+	implementation(libs.dynamodb.enhanced)
+	implementation(libs.cri.common.lib)
+	implementation(libs.bundles.jackson)
+
 	aspect libs.bundles.powertools
 
 	testImplementation libs.bundles.tests
@@ -12,23 +16,4 @@ dependencies {
 	testImplementation libs.lambda.tests
 
 	testRuntimeOnly libs.bundles.test.runtime
-}
-
-tasks.named("jar") {
-	manifest {
-		attributes("Implementation-Title": project.name,
-		"Implementation-Version": project.version)
-	}
-}
-
-test {
-	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required.set(true)
-	}
 }
