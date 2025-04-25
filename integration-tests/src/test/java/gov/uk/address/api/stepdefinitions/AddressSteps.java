@@ -41,12 +41,15 @@ import static org.junit.Assert.assertTrue;
 
 public class AddressSteps {
     private static final String ADDRESS_START_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_START.json";
+    private static final String ADDRESS_END_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_END.json";
+
     private static final String ADDRESS_VC_ISSUED_SCHEMA_FILE =
             "/schema/IPV_ADDRESS_CRI_VC_ISSUED.json";
     private final ObjectMapper objectMapper;
     private final AddressApiClient addressApiClient;
     private final CriTestContext testContext;
     private final String addressStartJsonSchema;
+    private final String addressEndJsonSchema;
     private final String addressVCIssuedJsonSchema;
     private AddressContext addressContext;
 
@@ -62,7 +65,14 @@ public class AddressSteps {
                         Objects.requireNonNull(
                                         AddressSteps.class.getResource(ADDRESS_START_SCHEMA_FILE))
                                 .toURI());
+        Path endSchemaPath =
+                Paths.get(
+                        Objects.requireNonNull(
+                                        AddressSteps.class.getResource(ADDRESS_END_SCHEMA_FILE))
+                                .toURI());
+
         this.addressStartJsonSchema = Files.readString(startSchemaPath);
+        this.addressEndJsonSchema = Files.readString(endSchemaPath);
 
         Path vcIssuedSchemaPath =
                 Paths.get(
@@ -227,19 +237,14 @@ public class AddressSteps {
         List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> testHarnessResponses =
                 objectMapper.readValue(responseBody, new TypeReference<>() {});
 
-        var events =
-                testHarnessResponses.stream()
-                        .filter(
-                                event ->
-                                        event.getEvent().toString().equals("IPV_ADDRESS_CRI_START"))
-                        .collect(Collectors.toList());
-
-        assertNotNull(events);
-        for (TestHarnessResponse<AuditEvent<Map<String, Object>>> testHarnessResponse : events) {
+        assertNotNull(testHarnessResponses);
+        assertEquals(1, testHarnessResponses.size());
+        for (TestHarnessResponse<AuditEvent<Map<String, Object>>> testHarnessResponse :
+                testHarnessResponses) {
             AuditEvent<?> event =
                     objectMapper.readValue(
                             testHarnessResponse.getEvent().getData(), AuditEvent.class);
-            assertEquals(1, events.size());
+            assertEquals("IPV_ADDRESS_CRI_START", event.getEvent());
             assertEquals(this.testContext.getSessionId(), event.getUser().getSessionId());
             assertTrue(
                     JsonSchemaValidator.validateJsonAgainstSchema(
@@ -380,6 +385,7 @@ public class AddressSteps {
     public void a_valid_jwt_is_returned_in_the_multiple_addresses_response()
             throws ParseException, IOException {
         assertEquals(200, this.testContext.getResponse().statusCode());
+
         assertNotNull(this.testContext.getResponse().body());
         makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
         final SignedJWT decodedJWT = SignedJWT.parse(this.testContext.getResponse().body());
@@ -450,5 +456,25 @@ public class AddressSteps {
         var responseBody = this.testContext.getResponse().body();
         assertNotNull(responseBody);
         assertEquals("\"Missing postcode in request body.\"", responseBody);
+    }
+
+    @Then("the IPV_ADDRESS_CRI_END event is emitted and validated against schema")
+    public void verifyIpvAddressCriEndEventIsEmitted() throws IOException {
+        String responseBody = testContext.getTestHarnessResponseBody();
+        List<TestHarnessResponse<AuditEvent<Map<String, Object>>>> testHarnessResponses =
+                objectMapper.readValue(responseBody, new TypeReference<>() {});
+        assertNotNull(testHarnessResponses);
+        assertEquals(1, testHarnessResponses.size());
+        for (TestHarnessResponse<AuditEvent<Map<String, Object>>> testHarnessResponse :
+                testHarnessResponses) {
+            AuditEvent<?> event =
+                    objectMapper.readValue(
+                            testHarnessResponse.getEvent().getData(), AuditEvent.class);
+            assertEquals(this.testContext.getSessionId(), event.getUser().getSessionId());
+            assertEquals("IPV_ADDRESS_CRI_END", event.getEvent());
+            assertTrue(
+                    JsonSchemaValidator.validateJsonAgainstSchema(
+                            testHarnessResponse.getEvent().getData(), addressEndJsonSchema));
+        }
     }
 }
