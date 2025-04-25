@@ -226,6 +226,3 @@ Feature: Address API happy path test
     # schema validation
     Then user sends a GET request to events end point for "IPV_ADDRESS_CRI_END"
     Then the IPV_ADDRESS_CRI_END event is emitted and validated against schema
-
-
-
