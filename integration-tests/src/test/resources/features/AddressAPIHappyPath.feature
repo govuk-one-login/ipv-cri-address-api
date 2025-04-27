@@ -222,3 +222,7 @@ Feature: Address API happy path test
     # TXMA event
     When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
     Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
+
+    # schema validation
+    Then user sends a GET request to events end point for "IPV_ADDRESS_CRI_END"
+    Then the IPV_ADDRESS_CRI_END event is emitted and validated against schema

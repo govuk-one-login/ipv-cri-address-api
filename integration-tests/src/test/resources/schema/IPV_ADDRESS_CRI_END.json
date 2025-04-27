@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "client_id": {
+      "type": "string"
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "event_name": {
+      "type": "string"
+    },
+    "event_timestamp_ms": {
+      "type": "integer"
+    },
+    "timestamp": {
+      "type": "integer"
+    },
+    "user": {
+      "properties": {
+        "govuk_signin_journey_id": {
+          "type": "string"
+        },
+        "ip_address": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "user_id": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": ["timestamp", "event_name", "component_id", "event_timestamp_ms"],
+  "title": "IPV_ADDRESS_CRI_END",
+  "type": "object"
+}
