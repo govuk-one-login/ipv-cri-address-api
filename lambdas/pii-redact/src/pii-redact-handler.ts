@@ -27,6 +27,8 @@ export class PiiRedactHandler implements LambdaInterface {
             const logStream = logEvents.logStream;
 
             try {
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+
                 await cloudwatch.send(
                     new CreateLogStreamCommand({
                         logGroupName: piiRedactLogGroup,
