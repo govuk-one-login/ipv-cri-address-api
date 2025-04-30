@@ -147,7 +147,7 @@
         {
           "Variable": "$.scan.LastEvaluatedKey.sessionId.S",
           "IsPresent": true,
-          "Next": "Pause for 10 second"
+          "Next": "Pause for 1 second"
         }
       ],
       "Default": "Total records processed"
@@ -159,13 +159,13 @@
         "Total Records Updated.$": "States.MathAdd($.counter.value, $.scan.Count)"
       }
     },
-    "Pause for 10 second": {
+    "Pause for 1 second": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "Parameters": {
         "FunctionName": "${SleepFunction}",
         "Payload": {
-          "ms": "10000"
+          "ms": "1000"
         }
       },
       "Retry": [
