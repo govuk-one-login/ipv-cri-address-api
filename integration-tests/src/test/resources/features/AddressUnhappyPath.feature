@@ -2,7 +2,7 @@ Feature: Address API unhappy path test
 
   @no_country_code
   Scenario: No country code sent for address
-    Given user has the test-identity 197 in the form of a signed JWT string
+    Given user has a default signed JWT
 
     # Session
     When user sends a POST request to session end point
