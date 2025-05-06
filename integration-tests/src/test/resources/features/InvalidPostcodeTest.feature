@@ -13,5 +13,5 @@ Feature: Invalid postcode test
     Then user does not get any address
 
     Examples:
-   | testPostCode |
-  | XX12 12XX    |
+      | testPostCode |
+      | XX12 12XX    |
