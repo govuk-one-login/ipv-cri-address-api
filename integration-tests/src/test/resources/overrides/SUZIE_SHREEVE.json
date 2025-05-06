@@ -1,0 +1,31 @@
+{
+    "name": [
+      {
+        "nameParts": [
+          {
+            "type": "GivenName",
+            "value": "SUZIE"
+          },
+          {
+            "type": "FamilyName",
+            "value": "SHREEVE"
+          }
+        ]
+      }
+    ],
+    "birthDate": [
+      {
+        "value": "1991-06-25"
+      }
+    ],
+    "address": [
+      {
+        "buildingNumber": "10",
+        "buildingName": "A",
+        "streetName": "DALE ROAD",
+        "addressLocality": "ROTHERHAM",
+        "postalCode": "S62 5AB",
+        "validFrom": "2021-01-01"
+      }
+    ]
+}
