@@ -3,7 +3,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 set -eu
 
 stack_name="${1:-}"
-common_stack_name="${2:-}"
+common_stack_name="caitlin-common-lambdas"
 secret_prefix="${3:-}"
 
 if ! [[ "$stack_name" ]]; then
