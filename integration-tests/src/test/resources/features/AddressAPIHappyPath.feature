@@ -43,8 +43,7 @@ Feature: Address API happy path test
 
   @address_api_happy
   Scenario Outline: Basic Address API journey
-    Given user has an overridden signed JWT using "<sharedClaims>" and "":
-      |  |  |
+    Given user has an overridden signed JWT using "<sharedClaims>"
 
     # Session
     When user sends a POST request to session end point
@@ -90,8 +89,7 @@ Feature: Address API happy path test
 
   @international_address_api_happy_with_header
   Scenario: International Address API journey
-    Given user has an overridden signed JWT using "" and "":
-      | context | international_user |
+    Given user has an overridden signed JWT using "INTERNATIONAL.json"
 
     # Session
     When user sends a POST request to session end point with txma header
@@ -139,8 +137,7 @@ Feature: Address API happy path test
 
   @international_address_api_happy
   Scenario: International Address API journey
-    Given user has an overridden signed JWT using "" and "":
-      | context | international_user |
+    Given user has an overridden signed JWT using "INTERNATIONAL.json"
     # Session
     When user sends a POST request to session end point
     Then user gets a session-id
