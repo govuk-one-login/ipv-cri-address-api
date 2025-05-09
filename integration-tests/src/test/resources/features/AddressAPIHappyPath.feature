@@ -26,11 +26,11 @@ Feature: Address API happy path test
     Then the address is saved successfully
 
     # Authorization
-    When user sends a GET request to authorization end point with test resource client
+    When user sends a GET request to authorization end point
     And a valid authorization code is returned in the response
 
     # Access Token
-    When user sends a POST request to token end point with "ipv-core-stub-aws-headless" and "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
     And a valid access token code is returned in the response
 
     #Credential issued
@@ -67,11 +67,11 @@ Feature: Address API happy path test
     Then the address is saved successfully
 
     # Authorization
-    When user sends a GET request to authorization end point with test resource client
+    When user sends a GET request to authorization end point
     And a valid authorization code is returned in the response
 
     # Access token
-    When user sends a POST request to token end point with "ipv-core-stub-aws-headless" and "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
     And a valid access token code is returned in the response
 
     # Credential Issued
@@ -120,11 +120,11 @@ Feature: Address API happy path test
     Then the address is saved successfully
 
     # Authorization
-    When user sends a GET request to authorization end point with test resource client
+    When user sends a GET request to authorization end point
     And a valid authorization code is returned in the response
 
     # Access token
-    When user sends a POST request to token end point with "ipv-core-stub-aws-headless" and "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
     And a valid access token code is returned in the response
 
     # Credential Issued
@@ -167,11 +167,11 @@ Feature: Address API happy path test
     Then the address is saved successfully
 
     # Authorization
-    When user sends a GET request to authorization end point with test resource client
+    When user sends a GET request to authorization end point
     And a valid authorization code is returned in the response
 
     # Access token
-    When user sends a POST request to token end point with "ipv-core-stub-aws-headless" and "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
     And a valid access token code is returned in the response
 
     # Credential Issued
@@ -208,11 +208,11 @@ Feature: Address API happy path test
     Then the address is saved successfully
 
     # Authorization
-    When user sends a GET request to authorization end point with test resource client
+    When user sends a GET request to authorization end point
     And a valid authorization code is returned in the response
 
     # Access Token
-    When user sends a POST request to token end point with "ipv-core-stub-aws-headless" and "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
     And a valid access token code is returned in the response
 
     #Credential issued

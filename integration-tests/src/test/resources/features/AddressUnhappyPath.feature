@@ -35,7 +35,7 @@ Feature: Address API unhappy path test
 
   @no_postcode @with_session_id
   Scenario: No postcode and with session_id in the request body
-    Given user has the test-identity 197 in the form of a signed JWT string
+    Given user has a default signed JWT
     When user sends a POST request to session end point
     Then user gets a session-id
     Given a request is made to the postcode-lookup endpoint without a postcode in the body and with session id in the header
