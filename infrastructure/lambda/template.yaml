@@ -40,6 +40,10 @@ Parameters:
     Description: "The stack containing the TXMA infrastructure"
     Type: String
     Default: txma-infrastructure
+  SupportManualURL:
+    Type: String
+    Default: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/address-credential-issuer-runbook"
+    Description: The support manual URL to be provided in alarm messages.
 
 Conditions:
   UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
@@ -987,6 +991,220 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
       PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+
+  JWKSBucketRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+        Version: 2012-10-17
+      Policies:
+        - PolicyName: AccessJWKSJson
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                Resource:
+                  Fn::Sub:
+                    - "arn:aws:s3:::${s3bucket}/jwks.json"
+                    - s3bucket:
+                        Fn::ImportValue: core-infrastructure-PublishedKeysS3BucketName
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: "key_consumer_type"
+          Value: "use"
+
+  JsonWebKeys5XXApiGwErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-JsonWebKeys5XXApiGwErrorAlarm"
+      AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 5XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: [ ]
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: errorThreshold
+          Label: errorThreshold
+          ReturnData: true
+          Expression: IF(invocations<4 || error<2,0,errorPercentage)
+        - Id: invocations
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: Count
+              Dimensions:
+                - Name: Method
+                  Value: GET
+                - Name: ApiName
+                  Value: !Sub "${PublicAddressApi} - Address Credential Issuer Public API"
+                - Name: Stage
+                  Value: !Ref Environment
+                - Name: Resource
+                  Value: /.well-known/jwks.json
+            Period: 60
+            Stat: Sum
+        - Id: errorPercentage
+          Label: errorPercentage
+          ReturnData: false
+          Expression: (error/invocations)*100
+        - Id: error
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 5XXError
+              Dimensions:
+                - Name: Method
+                  Value: GET
+                - Name: ApiName
+                  Value: !Sub "${PublicAddressApi} - Address Credential Issuer Public API"
+                - Name: Stage
+                  Value: !Ref Environment
+                - Name: Resource
+                  Value: /.well-known/jwks.json
+            Period: 60
+            Stat: Sum
+
+  JsonWebKeys5XXApiGwErrorCriticalAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-JsonWebKeys5XXApiGwErrorCriticalAlarm"
+      AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a significant proportion of 5XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
+      ActionsEnabled: true
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+      AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+      InsufficientDataActions: [ ]
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: errorThreshold
+          Label: errorThreshold
+          ReturnData: true
+          Expression: IF(invocations<10,0,errorPercentage)
+        - Id: invocations
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: Count
+              Dimensions:
+                - Name: Method
+                  Value: GET
+                - Name: ApiName
+                  Value: !Sub "${PublicAddressApi} - Address Credential Issuer Public API"
+                - Name: Stage
+                  Value: !Ref Environment
+                - Name: Resource
+                  Value: /.well-known/jwks.json
+            Period: 60
+            Stat: Sum
+        - Id: errorPercentage
+          Label: errorPercentage
+          ReturnData: false
+          Expression: (error/invocations)*100
+        - Id: error
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 5XXError
+              Dimensions:
+                - Name: Method
+                  Value: GET
+                - Name: ApiName
+                  Value: !Sub "${PublicAddressApi} - Address Credential Issuer Public API"
+                - Name: Stage
+                  Value: !Ref Environment
+                - Name: Resource
+                  Value: /.well-known/jwks.json
+            Period: 60
+            Stat: Sum
+
+  JsonWebKeys4XXApiGwErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseCanaryDeploymentAlarms
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-JsonWebKeys4XXApiGwErrorAlarm"
+      AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 4XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
+      ActionsEnabled: false   # alarm reviewed in production and decision made to disable
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      InsufficientDataActions: [ ]
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Metrics:
+        - Id: errorThreshold
+          Label: errorThreshold
+          ReturnData: true
+          Expression: IF(invocations<3 || error<2,0,errorPercentage)
+        - Id: invocations
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: Count
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "${PublicAddressApi} - Address Credential Issuer Public API"
+                - Name: Resource
+                  Value: /.well-known/jwks.json
+                - Name: Stage
+                  Value: !Ref Environment
+                - Name: Method
+                  Value: GET
+            Period: 60
+            Stat: Sum
+        - Id: errorPercentage
+          Label: errorPercentage
+          ReturnData: false
+          Expression: (error/invocations)*100
+        - Id: error
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 4XXError
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "${PublicAddressApi} - Address Credential Issuer Public API"
+                - Name: Resource
+                  Value: /.well-known/jwks.json
+                - Name: Stage
+                  Value: !Ref Environment
+                - Name: Method
+                  Value: GET
+            Period: 60
+            Stat: Sum
 
 Outputs:
   AddressApiGatewayId:
