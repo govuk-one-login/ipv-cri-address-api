@@ -8,6 +8,10 @@ Parameters:
     Default: dev
     AllowedValues: [dev, localdev, build, staging, integration, production]
     ConstraintDescription: Must be dev, localdev, build, staging, integration or production
+  DeployAlarmsInDevEnvironment:
+    Description: "Set to the string value `true` to deploy alarms in a DEV environment"
+    Type: String
+    Default: false
   LambdaDeploymentPreference:
     Description: "Specifies the configuration to enable gradual Lambda deployments"
     Type: String
@@ -61,6 +65,7 @@ Conditions:
     - !Condition IsBuildEnvironment
   AddProvisionedConcurrency:
     !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
+  DeployAlarms: !Or [ !Condition IsNotDevEnvironment, !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]]
 
 Globals:
   Function:
@@ -1025,7 +1030,7 @@ Resources:
 
   JsonWebKeys5XXApiGwErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-JsonWebKeys5XXApiGwErrorAlarm"
       AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 5XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
@@ -1086,7 +1091,7 @@ Resources:
 
   JsonWebKeys5XXApiGwErrorCriticalAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-JsonWebKeys5XXApiGwErrorCriticalAlarm"
       AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a significant proportion of 5XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
@@ -1147,7 +1152,7 @@ Resources:
 
   JsonWebKeys4XXApiGwErrorAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
+    Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-JsonWebKeys4XXApiGwErrorAlarm"
       AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 4XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
