@@ -30,7 +30,7 @@ Feature: Address API happy path test
     And a valid authorization code is returned in the response
 
     # Access Token
-    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point
     And a valid access token code is returned in the response
 
     #Credential issued
@@ -71,7 +71,7 @@ Feature: Address API happy path test
     And a valid authorization code is returned in the response
 
     # Access token
-    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point
     And a valid access token code is returned in the response
 
     # Credential Issued
@@ -124,7 +124,7 @@ Feature: Address API happy path test
     And a valid authorization code is returned in the response
 
     # Access token
-    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point
     And a valid access token code is returned in the response
 
     # Credential Issued
@@ -171,7 +171,7 @@ Feature: Address API happy path test
     And a valid authorization code is returned in the response
 
     # Access token
-    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point
     And a valid access token code is returned in the response
 
     # Credential Issued
@@ -212,7 +212,7 @@ Feature: Address API happy path test
     And a valid authorization code is returned in the response
 
     # Access Token
-    When user sends a POST request to token end point with "https://review-a.dev.account.gov.uk"
+    When user sends a POST request to token end point
     And a valid access token code is returned in the response
 
     #Credential issued
