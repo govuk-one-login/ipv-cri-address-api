@@ -51,6 +51,6 @@ jobs:
           IPV_CORE_STUB_BASIC_AUTH_USER: ${{ secrets.ipv-core-stub-basic-auth-user }}
           IPV_CORE_STUB_URL: https://cri.core.build.stubs.account.gov.uk
           IPV_CORE_STUB_CRI_ID: address-cri-dev
-          DEFAULT_CLIENT_ID: ipv-core-stub-aws-build
+          DEFAULT_CLIENT_ID: ipv-core-stub-aws-headless
           APIGW_API_KEY: ${{ secrets.api-gateway-api-key }}
         run: ./gradlew --no-daemon integration-tests:cucumber

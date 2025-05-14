@@ -2,7 +2,7 @@ Feature: Address API happy path test
 
   @address_api_happy_with_header
   Scenario: Basic Address API journey with TXMA event header
-    Given user has the test-identity 197 in the form of a signed JWT string
+    Given user has a default signed JWT
 
     # Session
     When user sends a POST request to session end point with txma header
@@ -43,7 +43,7 @@ Feature: Address API happy path test
 
   @address_api_happy
   Scenario Outline: Basic Address API journey
-    Given user has the test-identity <testUserDataSheetRowNumber> in the form of a signed JWT string
+    Given user has an overridden signed JWT using "<sharedClaims>"
 
     # Session
     When user sends a POST request to session end point
@@ -83,14 +83,14 @@ Feature: Address API happy path test
     Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
 
     Examples:
-      | testUserDataSheetRowNumber | testPostCode |
-      | 197                        | SW1A 2AA     |
-      | 23                         | CA14 5PH     |
-      | 1000                       | S62 5AB      |
+      | sharedClaims       | testPostCode |
+      | ALBERT_AKRIL.json  | CA14 5PH     |
+      | SUZIE_SHREEVE.json | S62 5AB      |
 
   @international_address_api_happy_with_header
   Scenario: International Address API journey
-    Given user has the test-identity 197 and context of "international_user" in the form of a signed JWT string
+    Given user has an overridden signed JWT using "INTERNATIONAL.json"
+
     # Session
     When user sends a POST request to session end point with txma header
     Then user gets a session-id
@@ -106,16 +106,16 @@ Feature: Address API happy path test
 
     # Address
     When the user enters international address successfully
-      | Field                     | Value                     |
-      | apartmentNumber           | 4                         |
-      | buildingNumber            | 10                        |
-      | buildingName              | Kilimanjaro Apartments    |
-      | streetName                | Ngong Road                |
-      | country                   | KE                        |
-      | region                    | Nairobi County            |
-      | locality                  | Nairobi                   |
-      | postalCode                | 00100                     |
-      | yearFrom                  | 2020                      |
+      | Field           | Value                  |
+      | apartmentNumber | 4                      |
+      | buildingNumber  | 10                     |
+      | buildingName    | Kilimanjaro Apartments |
+      | streetName      | Ngong Road             |
+      | country         | KE                     |
+      | region          | Nairobi County         |
+      | locality        | Nairobi                |
+      | postalCode      | 00100                  |
+      | yearFrom        | 2020                   |
 
     Then the address is saved successfully
 
@@ -137,7 +137,7 @@ Feature: Address API happy path test
 
   @international_address_api_happy
   Scenario: International Address API journey
-    Given user has the test-identity 197 and context of "international_user" in the form of a signed JWT string
+    Given user has an overridden signed JWT using "INTERNATIONAL.json"
     # Session
     When user sends a POST request to session end point
     Then user gets a session-id
@@ -153,16 +153,16 @@ Feature: Address API happy path test
 
     # Address
     When the user enters international address successfully
-      | Field                     | Value                     |
-      | apartmentNumber           | 4                         |
-      | buildingNumber            | 10                        |
-      | buildingName              | Kilimanjaro Apartments    |
-      | streetName                | Ngong Road                |
-      | country                   | KE                        |
-      | region                    | Nairobi County            |
-      | locality                  | Nairobi                   |
-      | postalCode                | 00100                     |
-      | yearFrom                  | 2020                      |
+      | Field           | Value                  |
+      | apartmentNumber | 4                      |
+      | buildingNumber  | 10                     |
+      | buildingName    | Kilimanjaro Apartments |
+      | streetName      | Ngong Road             |
+      | country         | KE                     |
+      | region          | Nairobi County         |
+      | locality        | Nairobi                |
+      | postalCode      | 00100                  |
+      | yearFrom        | 2020                   |
 
     Then the address is saved successfully
 
@@ -184,7 +184,7 @@ Feature: Address API happy path test
 
   @multiple_addresses_api_happy_with_header
   Scenario: Multiple Addresses API journey with TXMA event header
-    Given user has the test-identity 197 in the form of a signed JWT string
+    Given user has a default signed JWT
 
     # Session
     When user sends a POST request to session end point with txma header
