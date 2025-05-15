@@ -1061,11 +1061,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - "s3:Get*"
-                Resource:
-                  Fn::Sub:
-                    - "arn:aws:s3:::${s3bucket}/jwks.json"
-                    - s3bucket:
-                        Fn::ImportValue: core-infrastructure-PublishedKeysS3BucketName
+                Resource: !Sub
+                  - "arn:aws:s3:::govuk-one-login-address-published-keys-${env}/jwks.json"
+                  - env: !If [ IsLocalDevEnvironment, "dev", !Ref Environment ]
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
