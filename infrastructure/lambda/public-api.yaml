@@ -78,9 +78,12 @@ paths:
           Fn::GetAtt: [ "JWKSBucketRole", "Arn" ]
         uri:
           Fn::Sub:
-            - "arn:aws:apigateway:${AWS::Region}:s3:path/${s3bucket}/jwks.json"
-            - s3bucket:
-                Fn::ImportValue: core-infrastructure-PublishedKeysS3BucketName
+            - "arn:aws:apigateway:${AWS::Region}:s3:path/govuk-one-login-address-published-keys-${env}/jwks.json"
+            - env:
+                Fn::If:
+                  - IsLocalDevEnvironment
+                  - dev
+                  - Ref: Environment
         responses:
           default:
             statusCode: "200"
