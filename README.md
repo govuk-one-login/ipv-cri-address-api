@@ -28,22 +28,18 @@ Note: To update LambdaDeploymentPreference, update the LambdaCanaryDeployment pi
 
 ## Deploy to dev account
 
-Ensure you have the `sam-cli` and `gds-cli` installed, and that you can assume an admin role on the ` di-ipv-cri-address-dev` AWS account.
-Alternatively you can [create a sso profile](https://govukverify.atlassian.net/wiki/spaces/LO/pages/3725591061/Getting+set+up+with+AWS+SSO+in+terminal+CLI+-+quickstart)
+Ensure you have the `sam-cli` installed, [create a sso profile](https://govukverify.atlassian.net/wiki/spaces/LO/pages/3725591061/Getting+set+up+with+AWS+SSO+in+terminal+CLI+-+quickstart) for the role `AdministratorAccessPermission` on the ` di-ipv-cri-address-dev` AWS account which can be found by searching the [AWS start page](https://uk-digital-identity.awsapps.com/start#/) .
 
-Any time you wish to deploy, run:
 
-`gds aws  di-ipv-cri-address-dev -- ./deploy.sh`
-
-or with an AWS SSO profile
+To deploy a stack, run:
 
 `AWS_PROFILE=profile-name-you-created aws  di-ipv-cri-address-dev -- ./deploy.sh`
 
-The Stack Name, CommonStackName and SecretPrefix are optional, but can be overridden by supplying
+The `Stack Name`, `CommonStackName` and `SecretPrefix` are optional, but can be overridden by supplying
 
 additional arguments to `deploy.sh` i.e
 
-gds aws  di-ipv-cri-address-dev -- ./deploy.sh STACKNAME YOUR-COMMON-STACKNAME YOUR-SECRET-PREFIX
+AWS_PROFILE=profile-name-you-created ./deploy.sh STACKNAME YOUR-COMMON-STACKNAME YOUR-SECRET-PREFIX
 
 ## Deploy to AWS lambda
 
@@ -79,20 +75,30 @@ The public keys need to be published so that clients:
 * can verify the signature of the verifiable credential,
 * encrypt the Authorization JAR before sending to this CRI.
 
-The environment variable `IPV_CORE_STUB_CRI_ID` with value `address-cri-dev` allows the command below to use keys in `ipv-config` pointing to keys in `di-ipv-cri-address-dev` for the deployed stack in that account.
 
 ## Integration tests
 
+To run these tests the following environment variables are needed:
+
+- STACK_NAME
+- AWS_REGION
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_SESSION_TOKEN
+
+Temporary credentials can be found by going to the [AWS start page](https://uk-digital-identity.awsapps.com/start#/), selecting the account and clicking
+"Command line or programmatic access"
+
+
 Make sure you have deployed a stack to AWS and provide its name in the `STACK_NAME` variable below with the corresponding values for `API_GATEWAY_ID_PRIVATE` and `API_GATEWAY_ID_PUBLIC`.
 
-To initiate journeys for the tests we use the IPV Core Stub, which runs in AWS and is accessible at `https://cri.core.build.stubs.account.gov.uk`.
+To initiate journeys for the tests we use the Headless Core Stub, which runs in AWS and at the following endpoint `https://test-resources.review-a.dev.account.gov.uk`.
 
-The command below overrides the client ID used by the Core Stub to `ipv-core-stub-aws-prod` by setting the `DEFAULT_CLIENT_ID` environment variable.
 
 Optionally set a value for `TEST_RESOURCES_STACK_NAME` if you have deployed a local test resources stack and want to override the default stack named `test-resources`.
 
 ```
-ENVIRONMENT=localdev STACK_NAME=<your-stack> API_GATEWAY_ID_PRIVATE=<from-your-stack> API_GATEWAY_ID_PUBLIC=<from-your-stack> IPV_CORE_STUB_CRI_ID=address-cri-dev IPV_CORE_STUB_BASIC_AUTH_USER=xxxx IPV_CORE_STUB_BASIC_AUTH_PASSWORD=xxxx IPV_CORE_STUB_URL=https://cri.core.build.stubs.account.gov.uk DEFAULT_CLIENT_ID=ipv-core-stub-aws-build APIGW_API_KEY=xxxx TEST_RESOURCES_STACK_NAME= gradle integration-tests:cucumber
+ENVIRONMENT=localdev AWS_REGION=eu-west-2 STACK_NAME=<your-stack> API_GATEWAY_ID_PRIVATE=<from-your-stack> API_GATEWAY_ID_PUBLIC=<from-your-stack> APIGW_API_KEY=xxxx TEST_RESOURCES_STACK_NAME= gradle integration-tests:cucumber
 ```
 
 To run a particular test append `-P tags=@tag-name` to the command above specifying the tag you want to select.
