@@ -766,6 +766,29 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
 
+  NoMatchingEncryptionKeyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-NoMatchingEncryptionKeyAlarm"
+      AlarmDescription: Failed to find a key alias to decrypt a given JWT payload.
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      InsufficientDataActions: []
+      MetricName: all_aliases_unavailable_for_decryption
+      Namespace: !Sub "${CriIdentifier}"
+      Statistic: Sum
+      Period: 300
+      DatapointsToAlarm: 3
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
   AddressAPIGW5XXErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
