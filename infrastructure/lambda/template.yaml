@@ -53,10 +53,12 @@ Conditions:
   UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, "none"]]
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
-  UseCanaryDeploymentAlarms: !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  IsDevEnvironment: !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
+  UseCanaryDeploymentAlarms:
+    !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  IsDevEnvironment:
+    !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
-  IsBuildEnvironment: !Equals [ !Ref Environment, build ]
+  IsBuildEnvironment: !Equals [!Ref Environment, build]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
   IsDevLikeOrBuild: !Or
@@ -64,8 +66,21 @@ Conditions:
     - !Condition IsLocalDevEnvironment
     - !Condition IsBuildEnvironment
   AddProvisionedConcurrency:
-    !Not [!Equals [!FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency], 0]]
-  DeployAlarms: !Or [ !Condition IsNotDevEnvironment, !Equals [!Ref DeployAlarmsInDevEnvironment, "true"]]
+    !Not [
+      !Equals [
+        !FindInMap [
+          EnvironmentConfiguration,
+          !Ref Environment,
+          provisionedConcurrency,
+        ],
+        0,
+      ],
+    ]
+  DeployAlarms:
+    !Or [
+      !Condition IsNotDevEnvironment,
+      !Equals [!Ref DeployAlarmsInDevEnvironment, "true"],
+    ]
 
 Globals:
   Function:
@@ -89,7 +104,8 @@ Globals:
     Environment:
       Variables:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
-        SECRET_PREFIX: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
+        SECRET_PREFIX:
+          !If [UseSecretPrefix, !Ref SecretPrefix, !Ref AWS::StackName]
         SQS_AUDIT_EVENT_PREFIX: !Ref AuditEventNamePrefix
         COMMON_PARAMETER_NAME_PREFIX: !Ref CommonStackName
         POWERTOOLS_METRICS_NAMESPACE: !Ref CriIdentifier
@@ -98,25 +114,54 @@ Globals:
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
         DT_CONNECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_CONNECTION_BASE_URL: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_CLUSTER_ID: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_TENANT: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
-          - SecretArn: !FindInMap [EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
         OTEL_INSTRUMENTATION_AWS_SDK_EXPERIMENTAL_USE_PROPAGATOR_FOR_MESSAGING: "true"
-    ProvisionedConcurrencyConfig:
-      !If
+    ProvisionedConcurrencyConfig: !If
       - AddProvisionedConcurrency
-      - ProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, provisionedConcurrency]
+      - ProvisionedConcurrentExecutions:
+          !FindInMap [
+            EnvironmentConfiguration,
+            !Ref Environment,
+            provisionedConcurrency,
+          ]
       - !Ref AWS::NoValue
   Api:
     TracingEnabled: false
@@ -216,7 +261,7 @@ Resources:
         openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
           /never-created:
-            options: { }
+            options: {}
         Fn::Transform:
           Name: AWS::Include
           Parameters:
@@ -236,7 +281,7 @@ Resources:
         openapi: 3.0.1
         paths: # workaround to get `sam validate` to work
           /never-created:
-            options: { }
+            options: {}
         Fn::Transform:
           Name: AWS::Include
           Parameters:
@@ -300,12 +345,20 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref PostcodeLookupFunctionCanaryErrors, !Ref PostcodeLookupFunctionCanary5xxErrors]
+          - [
+              !Ref PostcodeLookupFunctionCanaryErrors,
+              !Ref PostcodeLookupFunctionCanary5xxErrors,
+            ]
           - [!Ref AWS::NoValue]
       Layers:
         - !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
@@ -320,10 +373,15 @@ Resources:
             - Sid: ReadSecretsPolicy
               Effect: Allow
               Action:
-                - 'secretsmanager:*'
+                - "secretsmanager:*"
               Resource: !Sub
                 - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${Prefix}/OrdnanceSurveyAPIKey*"
-                - Prefix: !If [UseSecretPrefix, !Ref SecretPrefix , !Ref AWS::StackName]
+                - Prefix:
+                    !If [
+                      UseSecretPrefix,
+                      !Ref SecretPrefix,
+                      !Ref AWS::StackName,
+                    ]
             - Sid: ReadParametersPolicy
               Effect: Allow
               Action:
@@ -380,12 +438,20 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref AddressFunctionCanaryErrors, !Ref AddressFunctionCanary5xxErrors]
+          - [
+              !Ref AddressFunctionCanaryErrors,
+              !Ref AddressFunctionCanary5xxErrors,
+            ]
           - [!Ref AWS::NoValue]
       Layers:
         - !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address"
@@ -435,13 +501,21 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref IssueCredentialFunctionCanaryErrors, !Ref IssueCredentialFunctionCanary5xxErrors]
+          - [
+              !Ref IssueCredentialFunctionCanaryErrors,
+              !Ref IssueCredentialFunctionCanary5xxErrors,
+            ]
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/issuecredential
       Layers:
         - !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
@@ -505,14 +579,22 @@ Resources:
       DeploymentPreference:
         Alarms: !If
           - UseCanaryDeploymentAlarms
-          - [!Ref GetAddressesFunctionCanaryErrors, !Ref GetAddressesFunctionCanary5xxErrors]
+          - [
+              !Ref GetAddressesFunctionCanaryErrors,
+              !Ref GetAddressesFunctionCanary5xxErrors,
+            ]
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs22.x
       Layers:
         - !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
@@ -646,7 +728,12 @@ Resources:
       Type: String
       Value: !Sub
         - "${Domain}/search/places/v1/postcode"
-        - Domain: !If [IsDevLikeOrBuild, !ImportValue third-party-stubs-ImposterStubApiUrl, "https://api.os.uk"]
+        - Domain:
+            !If [
+              IsDevLikeOrBuild,
+              !ImportValue third-party-stubs-ImposterStubApiUrl,
+              "https://api.os.uk",
+            ]
       Description: Ordnance Survey Postcode Lookup API URL
 
   AddressLookupTableNameParameter:
@@ -662,7 +749,8 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/release-flags/vc-contains-unique-id"
       Type: String
-      Value: !FindInMap [VcContainsUniqueIdMapping, Environment, !Ref Environment]
+      Value:
+        !FindInMap [VcContainsUniqueIdMapping, Environment, !Ref Environment]
       Description: Verifiable Credential Contains UniqueId Mapping
 
   PostcodeLookupFunctionPermission:
@@ -759,6 +847,32 @@ Resources:
       Dimensions:
         - Name: Service
           Value: !Sub "${CriIdentifier}-access-token"
+      Period: 300
+      DatapointsToAlarm: 3
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  SessionLambdaNoMatchingEncryptionKeyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-SessionLambdaNoMatchingEncryptionKeyAlarm"
+      AlarmDescription: Failed to find a key alias to decrypt a given JWT payload.
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      InsufficientDataActions: []
+      MetricName: all_aliases_unavailable_for_decryption
+      Namespace: !Sub "${CriIdentifier}"
+      Statistic: Sum
+      Dimensions:
+        - Name: Service
+          Value: !Sub "${CriIdentifier}-session"
       Period: 300
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
@@ -898,30 +1012,30 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
     Properties:
-     ActionsEnabled: true
-     AlarmActions:
-       - !ImportValue platform-alarm-warning-alert-topic
-     OKActions:
-       - !ImportValue platform-alarm-warning-alert-topic
-     AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
-     Namespace: AWS/ApiGateway
-     MetricName: 5XXError
-     Dimensions:
-       - Name: ApiName
-         Value: !Sub "${AWS::StackName}-PrivateAddressApi"
-       - Name: Method
-         Value: PUT
-       - Name: Stage
-         Value: !Ref Environment
-       - Name: Resource
-         Value: /address
-     Statistic: Sum
-     Unit: Count
-     Period: 60
-     EvaluationPeriods: 1
-     Threshold: 1
-     ComparisonOperator: GreaterThanOrEqualToThreshold
-     TreatMissingData: notBreaching
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+        - Name: Method
+          Value: PUT
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /address
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
 
   GetAddressesFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
@@ -1049,7 +1163,12 @@ Resources:
                 - codedeploy.amazonaws.com
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
-      PermissionsBoundary: !If [UsePermissionsBoundary, !Ref PermissionsBoundary, !Ref AWS::NoValue]
+      PermissionsBoundary:
+        !If [
+          UsePermissionsBoundary,
+          !Ref PermissionsBoundary,
+          !Ref AWS::NoValue,
+        ]
 
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
@@ -1071,7 +1190,7 @@ Resources:
                   - "s3:Get*"
                 Resource: !Sub
                   - "arn:aws:s3:::govuk-one-login-address-published-keys-${env}/jwks.json"
-                  - env: !If [ IsLocalDevEnvironment, "dev", !Ref Environment ]
+                  - env: !If [IsLocalDevEnvironment, "dev", !Ref Environment]
       PermissionsBoundary: !If
         - UsePermissionsBoundary
         - !Ref PermissionsBoundary
@@ -1091,7 +1210,7 @@ Resources:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: [ ]
+      InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
       Threshold: 1
@@ -1154,7 +1273,7 @@ Resources:
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
-      InsufficientDataActions: [ ]
+      InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
       Threshold: 80
@@ -1210,12 +1329,12 @@ Resources:
     Properties:
       AlarmName: !Sub "${AWS::StackName}-JsonWebKeys4XXApiGwErrorAlarm"
       AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 4XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
-      ActionsEnabled: false   # alarm reviewed in production and decision made to disable
+      ActionsEnabled: false # alarm reviewed in production and decision made to disable
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
         - !ImportValue platform-alarm-warning-alert-topic
-      InsufficientDataActions: [ ]
+      InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
       Threshold: 10
