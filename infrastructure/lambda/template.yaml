@@ -854,10 +854,10 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
 
-  NoMatchingEncryptionKeyAlarm:
+  SessionLambdaNoMatchingEncryptionKeyAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-${Environment}-NoMatchingEncryptionKeyAlarm"
+      AlarmName: !Sub "${AWS::StackName}-${Environment}-SessionLambdaNoMatchingEncryptionKeyAlarm"
       AlarmDescription: Failed to find a key alias to decrypt a given JWT payload.
       ActionsEnabled: true
       AlarmActions:
@@ -870,6 +870,9 @@ Resources:
       MetricName: all_aliases_unavailable_for_decryption
       Namespace: !Sub "${CriIdentifier}"
       Statistic: Sum
+      Dimensions:
+        - Name: Service
+          Value: !Sub "${CriIdentifier}-session"
       Period: 300
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
