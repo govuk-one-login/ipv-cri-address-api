@@ -44,10 +44,6 @@ Parameters:
     Description: "The stack containing the TXMA infrastructure"
     Type: String
     Default: txma-infrastructure
-  SupportManualURL:
-    Type: String
-    Default: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/address-credential-issuer-runbook"
-    Description: The support manual URL to be provided in alarm messages.
 
 Conditions:
   UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
@@ -191,6 +187,10 @@ Globals:
         }
 
 Mappings:
+  StaticVariables:
+    Urls:
+      SupportManualURL: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/address-credential-issuer-runbook"
+
   MemorySizeMapping:
     Environment:
       dev: 2048
@@ -784,7 +784,9 @@ Resources:
   AddressLambdaErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: !Sub Address ${Environment} lambda errors
+      AlarmDescription: !Sub
+        - "Address ${Environment} lambda errors. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -807,7 +809,9 @@ Resources:
   SessionLambdaFailedToVerifyJWTAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: Errors verifying JWTs that have been been received by the session lambda.
+      AlarmDescription: !Sub
+        - "Errors verifying JWTs that have been been received by the session lambda. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -832,7 +836,9 @@ Resources:
   TokenLambdaFailedToVerifyJWTAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: Errors verifying JWTs that have been been received by the token lambda.
+      AlarmDescription: !Sub
+        - "Errors verifying JWTs that have been been received by the token lambda. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -858,7 +864,9 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-SessionLambdaNoMatchingEncryptionKeyAlarm"
-      AlarmDescription: Failed to find a key alias to decrypt a given JWT payload.
+      AlarmDescription: !Sub
+        - "Failed to find a key alias to decrypt a given JWT payload. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -883,7 +891,9 @@ Resources:
   AddressAPIGW5XXErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: !Sub Address ${Environment} API Gateway 5XX errors
+      AlarmDescription: !Sub 
+        - "Address ${Environment} API Gateway 5XX errors. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -1204,7 +1214,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-${Environment}-JsonWebKeys5XXApiGwErrorAlarm"
-      AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 5XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 5XX errors on the JsonWebKeys endpoint. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
@@ -1265,7 +1277,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-JsonWebKeys5XXApiGwErrorCriticalAlarm"
-      AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a significant proportion of 5XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AWS::StackName}-PublicAddressApi - There has been a significant proportion of 5XX errors on the JsonWebKeys endpoint. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
         - !ImportValue core-infrastructure-AlarmTopic
@@ -1328,7 +1342,9 @@ Resources:
     Condition: DeployAlarms
     Properties:
       AlarmName: !Sub "${AWS::StackName}-JsonWebKeys4XXApiGwErrorAlarm"
-      AlarmDescription: !Sub "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 4XX errors on the JsonWebKeys endpoint. ${SupportManualURL}"
+      AlarmDescription: !Sub
+        - "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 4XX errors on the JsonWebKeys endpoint. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: false # alarm reviewed in production and decision made to disable
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
