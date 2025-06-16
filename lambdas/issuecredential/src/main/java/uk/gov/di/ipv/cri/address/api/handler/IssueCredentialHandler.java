@@ -44,6 +44,9 @@ import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
+import uk.gov.di.ipv.cri.common.library.util.retry.RetryConfig;
+import uk.gov.di.ipv.cri.common.library.util.retry.RetryManager;
+import uk.gov.di.ipv.cri.common.library.util.retry.Retryable;
 
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
@@ -136,7 +139,29 @@ public class IssueCredentialHandler
             var sessionItem = this.sessionService.getSessionByAccessToken(accessToken);
 
             eventProbe.log(Level.INFO, "found session");
-            var addressItem = addressService.getAddressItem(sessionItem.getSessionId());
+
+            RetryConfig retryConfig = getRetryConfig(500, 3, true);
+
+            AddressItem addressItem = addressService.getAddressItem(sessionItem.getSessionId());
+
+            if (addressItem == null) {
+                eventProbe.log(
+                        Level.INFO,
+                        "Initial get address item returned null. Going through retry logic..");
+
+                Retryable<AddressItem> retryable =
+                        () -> addressService.getAddressItem(sessionItem.getSessionId());
+
+                addressItem = RetryManager.execute(retryConfig, retryable);
+
+                if (addressItem == null) {
+                    eventProbe.log(
+                            ERROR,
+                            "Address item is still null after retrying {} times"
+                                    + retryConfig.getMaxAttempts());
+                    throw new NullPointerException("Address item is still null after retries");
+                }
+            }
 
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
@@ -245,5 +270,13 @@ public class IssueCredentialHandler
                                                 ErrorResponse.MISSING_AUTHORIZATION_HEADER));
 
         return AccessToken.parse(token, AccessTokenType.BEARER);
+    }
+
+    private RetryConfig getRetryConfig(int delayMs, int maxAttempts, boolean exponential) {
+        return new RetryConfig.Builder()
+                .delayBetweenAttempts(delayMs)
+                .maxAttempts(maxAttempts)
+                .exponentiallyRetry(exponential)
+                .build();
     }
 }
