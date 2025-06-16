@@ -1345,7 +1345,7 @@ Resources:
       AlarmDescription: !Sub
         - "${AWS::StackName}-PublicAddressApi - There has been a small proportion of 4XX errors on the JsonWebKeys endpoint. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: false # alarm reviewed in production and decision made to disable
+      ActionsEnabled: true
       OKActions:
         - !ImportValue platform-alarm-warning-alert-topic
       AlarmActions:
