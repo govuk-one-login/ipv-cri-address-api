@@ -21,6 +21,7 @@ import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
+import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
@@ -54,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
 import static org.apache.logging.log4j.Level.ERROR;
 import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.ACCESS_TOKEN_EXPIRED;
@@ -67,6 +69,8 @@ public class IssueCredentialHandler
     public static final String ADDRESS_CREDENTIAL_ISSUER = "address_credential_issuer";
     public static final String NO_SUCH_ALGORITHM_ERROR =
             "The algorithm name provided is incorrect or misspelled, should be ES256.";
+    public static final String ADDRESS_NOT_FOUND_TEMPLATE = " - %d: %s";
+    public static final int ADDR_NOT_FOUND_ERR_CODE = 2008;
     private final VerifiableCredentialService verifiableCredentialService;
     private final AddressService addressService;
     private final SessionService sessionService;
@@ -140,28 +144,7 @@ public class IssueCredentialHandler
 
             eventProbe.log(Level.INFO, "found session");
 
-            RetryConfig retryConfig = getRetryConfig(500, 3, true);
-
-            AddressItem addressItem = addressService.getAddressItem(sessionItem.getSessionId());
-
-            if (addressItem == null) {
-                eventProbe.log(
-                        Level.INFO,
-                        "Initial get address item returned null. Going through retry logic..");
-
-                Retryable<AddressItem> retryable =
-                        () -> addressService.getAddressItem(sessionItem.getSessionId());
-
-                addressItem = RetryManager.execute(retryConfig, retryable);
-
-                if (addressItem == null) {
-                    eventProbe.log(
-                            ERROR,
-                            "Address item is still null after retrying {} times"
-                                    + retryConfig.getMaxAttempts());
-                    throw new NullPointerException("Address item is still null after retries");
-                }
-            }
+            AddressItem addressItem = getAddressItemsWithRetries(sessionItem);
 
             SignedJWT signedJWT =
                     verifiableCredentialService.generateSignedVerifiableCredentialJwt(
@@ -219,6 +202,18 @@ public class IssueCredentialHandler
                     OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
                     OAuth2Error.ACCESS_DENIED
                             .appendDescription(" - " + SESSION_NOT_FOUND.getErrorSummary())
+                            .toJSONObject());
+        } catch (AddressNotFoundException e) {
+            eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
+
+            return ApiGatewayResponseGenerator.proxyJsonResponse(
+                    OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(),
+                    OAuth2Error.ACCESS_DENIED
+                            .appendDescription(
+                                    format(
+                                            ADDRESS_NOT_FOUND_TEMPLATE,
+                                            ADDR_NOT_FOUND_ERR_CODE,
+                                            e.getMessage()))
                             .toJSONObject());
         } catch (NoSuchAlgorithmException e) {
             eventProbe.log(ERROR, e).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
@@ -278,5 +273,28 @@ public class IssueCredentialHandler
                 .maxAttempts(maxAttempts)
                 .exponentiallyRetry(exponential)
                 .build();
+    }
+
+    private AddressItem getAddressItemsWithRetries(SessionItem sessionItem) {
+        RetryConfig retryConfig = getRetryConfig(500, 3, true);
+        try {
+            return addressService.getAddressItem(sessionItem);
+        } catch (AddressNotFoundException e) {
+            eventProbe.log(
+                    Level.WARN,
+                    "Initial get address item returned null. Going through retry logic..");
+
+            Retryable<AddressItem> retryable = () -> addressService.getAddressItem(sessionItem);
+            try {
+                return RetryManager.execute(retryConfig, retryable);
+            } catch (Exception ex) {
+                eventProbe.log(
+                        ERROR,
+                        format(
+                                "Address item is still null after retrying %s times",
+                                retryConfig.getMaxAttempts()));
+                throw new AddressNotFoundException("Address item is still null after retries");
+            }
+        }
     }
 }
