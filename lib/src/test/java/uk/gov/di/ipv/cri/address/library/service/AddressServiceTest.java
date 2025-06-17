@@ -16,6 +16,7 @@ import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
 import java.time.LocalDate;
@@ -642,8 +643,18 @@ class AddressServiceTest {
     }
 
     @Test
-    void shouldGetAddressItem() {
-        addressService.getAddressItem(SESSION_ID);
-        verify(mockDataStore).getItem(String.valueOf(SESSION_ID));
+    void shouldGetAddressItemUsingSessionItem() {
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(SESSION_ID);
+        addressService.getAddressItem(sessionItem);
+
+        verify(mockDataStore).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Test
+    void throwsAddressNotFoundExceptionWhenAddressIsNotFoundWithSessionItem() {
+        assertThrows(
+                NullPointerException.class,
+                () -> addressService.getAddressItem((SessionItem) null));
     }
 }

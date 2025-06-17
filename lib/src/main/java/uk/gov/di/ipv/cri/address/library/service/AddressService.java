@@ -8,12 +8,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.utils.StringUtils;
+import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.util.retry.RetryConfig;
+import uk.gov.di.ipv.cri.common.library.util.retry.RetryManager;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +38,7 @@ public class AddressService {
             "setAddressValidity found address where validFrom and validUntil are Equal.";
     private static final String ERROR_COUNTRY_CODE_NOT_PRESENT =
             "Country code not present for address";
-
+    private static final String ERROR_ADDRESS_ITEM_NOT_PRESENT = "Address Item not found";
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
 
@@ -89,8 +93,29 @@ public class AddressService {
         return addressItem;
     }
 
-    public AddressItem getAddressItem(UUID sessionId) {
-        return dataStore.getItem(String.valueOf(sessionId));
+    public AddressItem getAddressItemWithRetries(SessionItem sessionItem) {
+        RetryConfig retryConfig = getRetryConfig(500, 3, true);
+        return RetryManager.execute(retryConfig, () -> this.getAddressItem(sessionItem));
+    }
+
+    public AddressItem getAddressItem(SessionItem sessionItem) {
+        try {
+            return dataStore.getItem(sessionItem.getSessionId().toString());
+        } catch (Exception e) {
+            LOGGER.error(
+                    "{} for journey {}",
+                    ERROR_ADDRESS_ITEM_NOT_PRESENT,
+                    sessionItem.getClientSessionId());
+            throw new AddressNotFoundException(ERROR_ADDRESS_ITEM_NOT_PRESENT);
+        }
+    }
+
+    private RetryConfig getRetryConfig(int delayMs, int maxAttempts, boolean exponential) {
+        return new RetryConfig.Builder()
+                .delayBetweenAttempts(delayMs)
+                .maxAttempts(maxAttempts)
+                .exponentiallyRetry(exponential)
+                .build();
     }
 
     private ObjectReader getAddressReader() {
