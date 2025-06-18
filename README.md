@@ -89,7 +89,6 @@ To run these tests the following environment variables are needed:
 Temporary credentials can be found by going to the [AWS start page](https://uk-digital-identity.awsapps.com/start#/), selecting the account and clicking
 "Command line or programmatic access"
 
-
 Make sure you have deployed a stack to AWS and provide its name in the `STACK_NAME` variable below with the corresponding values for `API_GATEWAY_ID_PRIVATE` and `API_GATEWAY_ID_PUBLIC`.
 
 To initiate journeys for the tests we use the Headless Core Stub, which runs in AWS and at the following endpoint `https://test-resources.review-a.dev.account.gov.uk`.
