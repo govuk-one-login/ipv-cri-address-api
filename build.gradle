@@ -47,10 +47,10 @@ subprojects {
 
 	test {
 		useJUnitPlatform()
-		finalizedBy jacocoTestReport
+		finalizedBy(tasks.matching { it.name == 'jacocoTestReport' })
 	}
 
-	jacocoTestReport {
+	tasks.matching { it.name == "jacocoTestReport" }.configureEach {
 		dependsOn test
 		reports {
 			xml.required.set(true)
