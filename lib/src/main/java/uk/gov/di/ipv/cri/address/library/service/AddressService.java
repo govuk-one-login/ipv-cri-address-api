@@ -103,29 +103,11 @@ public class AddressService {
             return dataStore.getItem(sessionItem.getSessionId().toString());
         } catch (Exception e) {
             LOGGER.error(
-                    "{} for journey {}",
+                    "{} for gov uk journey id: {}",
                     ERROR_ADDRESS_ITEM_NOT_PRESENT,
                     sessionItem.getClientSessionId());
             throw new AddressNotFoundException(ERROR_ADDRESS_ITEM_NOT_PRESENT);
         }
-    }
-
-    private RetryConfig getRetryConfig(int delayMs, int maxAttempts, boolean exponential) {
-        return new RetryConfig.Builder()
-                .delayBetweenAttempts(delayMs)
-                .maxAttempts(maxAttempts)
-                .exponentiallyRetry(exponential)
-                .build();
-    }
-
-    private ObjectReader getAddressReader() {
-        if (Objects.isNull(this.addressReader)) {
-            this.addressReader =
-                    this.objectMapper
-                            .readerForListOf(CanonicalAddress.class)
-                            .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        }
-        return this.addressReader;
     }
 
     // See https://govukverify.atlassian.net/wiki/spaces/PYI/pages/3178004485/Decision+Log
@@ -150,6 +132,44 @@ public class AddressService {
                 // Only the CURRENT address has date information.
                 throw new AddressProcessingException(ERROR_TOO_MANY_ADDRESSES);
         }
+    }
+
+    public boolean isCurrentAddress(CanonicalAddress canonicalAddress) {
+
+        // Due to PREVIOUS addresses coming from AddressFront without a date set for validUntil we
+        // cannot use common-lib to evaluate the type (as they would evaluate as CURRENT addresses)
+        // Instead we look for this as a CURRENT address pattern and treat all others as PREVIOUS
+
+        return Objects.nonNull(canonicalAddress.getValidFrom())
+                && Objects.isNull(canonicalAddress.getValidUntil());
+    }
+
+    public boolean isNotCurrentAddress(CanonicalAddress canonicalAddress) {
+        return !isCurrentAddress(canonicalAddress);
+    }
+
+    public boolean isInvalidAddress(CanonicalAddress canonicalAddress) {
+        return ((Objects.nonNull(canonicalAddress.getValidFrom())
+                        && Objects.nonNull(canonicalAddress.getValidUntil()))
+                && (canonicalAddress.getValidFrom().isEqual(canonicalAddress.getValidUntil())));
+    }
+
+    private RetryConfig getRetryConfig(int delayMs, int maxAttempts, boolean exponential) {
+        return new RetryConfig.Builder()
+                .delayBetweenAttempts(delayMs)
+                .maxAttempts(maxAttempts)
+                .exponentiallyRetry(exponential)
+                .build();
+    }
+
+    private ObjectReader getAddressReader() {
+        if (Objects.isNull(this.addressReader)) {
+            this.addressReader =
+                    this.objectMapper
+                            .readerForListOf(CanonicalAddress.class)
+                            .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        }
+        return this.addressReader;
     }
 
     private void processAddresses(List<CanonicalAddress> addresses)
@@ -196,26 +216,6 @@ public class AddressService {
 
         // At this point the current address is known
         previousAddress.setValidUntil(currentAddress.getValidFrom());
-    }
-
-    public boolean isCurrentAddress(CanonicalAddress canonicalAddress) {
-
-        // Due to PREVIOUS addresses coming from AddressFront without a date set for validUntil we
-        // cannot use common-lib to evaluate the type (as they would evaluate as CURRENT addresses)
-        // Instead we look for this as a CURRENT address pattern and treat all others as PREVIOUS
-
-        return Objects.nonNull(canonicalAddress.getValidFrom())
-                && Objects.isNull(canonicalAddress.getValidUntil());
-    }
-
-    public boolean isNotCurrentAddress(CanonicalAddress canonicalAddress) {
-        return !isCurrentAddress(canonicalAddress);
-    }
-
-    public boolean isInvalidAddress(CanonicalAddress canonicalAddress) {
-        return ((Objects.nonNull(canonicalAddress.getValidFrom())
-                        && Objects.nonNull(canonicalAddress.getValidUntil()))
-                && (canonicalAddress.getValidFrom().isEqual(canonicalAddress.getValidUntil())));
     }
 
     private boolean isCountryCodePresentForAll(List<CanonicalAddress> addresses) {
