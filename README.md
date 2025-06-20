@@ -2,7 +2,7 @@
 
 ## Hooks
 
-**important:** One you've cloned the repo, run `pre-commit install` to install the pre-commit hooks.
+**important:** One you've cloned the repo, run `pre-commit install` to install the pre-commit hooks.test
 If you have not installed `pre-commit` then please do so [here](https://pre-commit.com/).
 
 ## Build
