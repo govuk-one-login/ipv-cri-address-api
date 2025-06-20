@@ -13,9 +13,9 @@ import com.nimbusds.jwt.JWTClaimNames;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.PlainJWT;
 import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.token.AccessToken;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
-import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,13 +24,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
+import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.address.library.service.AddressService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
@@ -64,14 +64,18 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.logging.log4j.Level.ERROR;
 import static org.apache.logging.log4j.Level.INFO;
+import static org.apache.logging.log4j.Level.WARN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -130,17 +134,17 @@ class IssueCredentialHandlerTest {
                 Map.of("iss", "issuer", "addressesEntered", addresses.size(), "isUkAddress", true);
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
-        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockAddressService.getAddressItem(sessionItem)).thenReturn(addressItem);
         when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses))
                 .thenReturn(mock(SignedJWT.class));
         when(mockVerifiableCredentialService.getAuditEventExtensions(canonicalAddresses))
                 .thenReturn(auditEventExtensions);
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
 
         verify(mockSessionService).getSessionByAccessToken(accessToken);
-        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockAddressService).getAddressItem(sessionItem);
         verify(mockVerifiableCredentialService)
                 .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER);
@@ -214,7 +218,7 @@ class IssueCredentialHandlerTest {
                 canonicalAddresses.stream().map(Address::new).collect(Collectors.toList());
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
-        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockAddressService.getAddressItem(sessionItem)).thenReturn(addressItem);
 
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
         ConfigurationService mockConfigurationService = mock(ConfigurationService.class);
@@ -241,10 +245,10 @@ class IssueCredentialHandlerTest {
                         mockEventProbe,
                         mockAuditService);
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
 
         verify(mockSessionService).getSessionByAccessToken(accessToken);
-        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockAddressService).getAddressItem(sessionItem);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER);
         verify(mockEventProbe).log(INFO, "found session");
         verifyNoMoreInteractions(mockEventProbe);
@@ -313,18 +317,18 @@ class IssueCredentialHandlerTest {
         addressItem.setAddresses(canonicalAddresses);
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
-        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockAddressService.getAddressItem(sessionItem)).thenReturn(addressItem);
         when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses))
                 .thenThrow(unExpectedJOSEException);
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
 
         verify(mockSessionService).getSessionByAccessToken(accessToken);
-        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockAddressService).getAddressItem(sessionItem);
         verify(mockVerifiableCredentialService)
                 .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
-        verify(mockEventProbe).log(Level.ERROR, unExpectedJOSEException);
+        verify(mockEventProbe).log(ERROR, unExpectedJOSEException);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verifyNoMoreInteractions(mockVerifiableCredentialService);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
@@ -365,18 +369,18 @@ class IssueCredentialHandlerTest {
         addressItem.setAddresses(canonicalAddresses);
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
-        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockAddressService.getAddressItem(sessionItem)).thenReturn(addressItem);
         when(mockVerifiableCredentialService.generateSignedVerifiableCredentialJwt(
                         SUBJECT, canonicalAddresses))
                 .thenThrow(noSuchAlgorithmException);
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
 
         verify(mockSessionService).getSessionByAccessToken(accessToken);
-        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockAddressService).getAddressItem(sessionItem);
         verify(mockVerifiableCredentialService)
                 .generateSignedVerifiableCredentialJwt(SUBJECT, canonicalAddresses);
-        verify(mockEventProbe).log(Level.ERROR, noSuchAlgorithmException);
+        verify(mockEventProbe).log(ERROR, noSuchAlgorithmException);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verifyNoMoreInteractions(mockVerifiableCredentialService);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
@@ -391,7 +395,7 @@ class IssueCredentialHandlerTest {
             throws SqsException {
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
         setupEventProbeExpectedErrorBehaviour();
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
         assertEquals(
@@ -430,7 +434,7 @@ class IssueCredentialHandlerTest {
                                 .awsErrorDetails(awsErrorDetails)
                                 .build());
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
 
         verify(mockSessionService).getSessionByAccessToken(accessToken);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
@@ -455,7 +459,7 @@ class IssueCredentialHandlerTest {
                         accessToken.toAuthorizationHeader()));
 
         setRequestBodyAsPlainJWT(event);
-        when(mockEventProbe.log(Level.INFO, "found session")).thenReturn(mockEventProbe);
+        when(mockEventProbe.log(INFO, "found session")).thenReturn(mockEventProbe);
         setupEventProbeExpectedErrorBehaviour();
 
         AwsErrorDetails awsErrorDetails =
@@ -468,21 +472,19 @@ class IssueCredentialHandlerTest {
                         .errorMessage("AWS DynamoDbException Occurred")
                         .build();
 
-        final UUID sessionId = UUID.randomUUID();
         SessionItem mockSessionItem = mock(SessionItem.class);
-        when(mockSessionItem.getSessionId()).thenReturn(sessionId);
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(mockSessionItem);
-        when(mockAddressService.getAddressItem(sessionId))
+        when(mockAddressService.getAddressItem(mockSessionItem))
                 .thenThrow(
                         AwsServiceException.builder()
                                 .statusCode(500)
                                 .awsErrorDetails(awsErrorDetails)
                                 .build());
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
 
         verify(mockSessionService).getSessionByAccessToken(accessToken);
-        verify(mockAddressService).getAddressItem(sessionId);
+        verify(mockAddressService).getAddressItem(mockSessionItem);
         verify(mockEventProbe).counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d);
         verify(mockAuditService, never()).sendAuditEvent(any(AuditEventType.class));
         Map<String, Object> responseBody =
@@ -514,7 +516,7 @@ class IssueCredentialHandlerTest {
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenThrow(exceptionClass);
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
         Map<String, Object> responseBody =
                 new ObjectMapper().readValue(response.getBody(), new TypeReference<>() {});
 
@@ -531,9 +533,104 @@ class IssueCredentialHandlerTest {
         assertEquals(exceptionClass, exceptionCaptor.getValue().getClass());
     }
 
-    private void setupEventProbeExpectedErrorBehaviour() {
-        when(mockEventProbe.log(eq(Level.ERROR), Mockito.any(Exception.class)))
+    @Test
+    void throwsNullPointExceptionWhenIssueCredentialRequestFailsDueNullAddressItem() {
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
+        setRequestBodyAsPlainJWT(event);
+
+        final UUID sessionId = UUID.randomUUID();
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSubject(SUBJECT);
+        sessionItem.setSessionId(sessionId);
+
+        AddressItem nullAddressItem = null;
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
+        when(mockAddressService.getAddressItem(sessionItem)).thenReturn(nullAddressItem);
+
+        assertThrows(NullPointerException.class, () -> getApiGatewayProxyResponseEvent(event));
+
+        verify(mockSessionService).getSessionByAccessToken(accessToken);
+        verify(mockAddressService, times(1)).getAddressItem(sessionItem);
+        verify(mockEventProbe).log(INFO, "found session");
+    }
+
+    @Test
+    void shouldThrowAccessDeniedErrorWhenIssueCredentialRequestFailsDueNullAddressItem()
+            throws JsonProcessingException {
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        AccessToken accessToken = new BearerAccessToken();
+        event.withHeaders(
+                Map.of(
+                        IssueCredentialHandler.AUTHORIZATION_HEADER_KEY,
+                        accessToken.toAuthorizationHeader()));
+        setRequestBodyAsPlainJWT(event);
+
+        AddressNotFoundException addressItemNotFound =
+                new AddressNotFoundException("Address Item not found");
+        AddressNotFoundException addrNotFoundAfterRetry =
+                new AddressNotFoundException("Address item is still null after retries");
+
+        final UUID sessionId = UUID.randomUUID();
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSubject(SUBJECT);
+        sessionItem.setSessionId(sessionId);
+
+        CanonicalAddress address = new CanonicalAddress();
+        address.setBuildingNumber("114");
+        address.setStreetName("Wellington Street");
+        address.setPostalCode("LS1 1BA");
+        address.setAddressRegion("Dummy Region");
+        AddressItem addressItem = new AddressItem();
+        addressItem.setAddresses(List.of(address));
+
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
+
+        when(mockEventProbe.log(INFO, "found session")).thenReturn(mockEventProbe);
+        when(mockAddressService.getAddressItem(sessionItem))
+                .thenThrow(addressItemNotFound)
+                .thenThrow(addressItemNotFound)
+                .thenThrow(addressItemNotFound)
+                .thenThrow(addressItemNotFound)
+                .thenThrow(addrNotFoundAfterRetry);
+
+        when(mockEventProbe.log(
+                        WARN,
+                        "Initial get address item returned null. Going through retry logic.."))
                 .thenReturn(mockEventProbe);
+        when(mockEventProbe.log(ERROR, "Address item is still null after retrying 3 times"))
+                .thenReturn(mockEventProbe);
+
+        setupEventProbeExpectedErrorBehaviour();
+
+        APIGatewayProxyResponseEvent response = getApiGatewayProxyResponseEvent(event);
+
+        Map<String, Object> responseBody =
+                new ObjectMapper().readValue(response.getBody(), new TypeReference<>() {});
+
+        assertEquals(OAuth2Error.ACCESS_DENIED.getHTTPStatusCode(), response.getStatusCode());
+        assertThat(
+                responseBody.get("error_description").toString(),
+                containsString("Access denied by resource owner or authorization server"));
+
+        verify(mockEventProbe).log(INFO, "found session");
+        verify(mockAddressService, times(4)).getAddressItem(sessionItem);
+        verify(mockEventProbe)
+                .log(WARN, "Initial get address item returned null. Going through retry logic..");
+        verify(mockEventProbe).log(ERROR, "Address item is still null after retrying 3 times");
+    }
+
+    private APIGatewayProxyResponseEvent getApiGatewayProxyResponseEvent(
+            APIGatewayProxyRequestEvent event) {
+        return handler.handleRequest(event, context);
+    }
+
+    private void setupEventProbeExpectedErrorBehaviour() {
+        when(mockEventProbe.log(eq(ERROR), any(Exception.class))).thenReturn(mockEventProbe);
         when(mockEventProbe.counterMetric(ADDRESS_CREDENTIAL_ISSUER, 0d))
                 .thenReturn(mockEventProbe);
     }
