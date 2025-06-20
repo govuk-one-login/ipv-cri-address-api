@@ -1,5 +1,6 @@
 plugins {
 	alias(libs.plugins.post.compile.weaving)
+	alias(libs.plugins.jacoco)
 }
 
 dependencies {
@@ -16,4 +17,9 @@ dependencies {
 	testImplementation libs.lambda.tests
 
 	testRuntimeOnly libs.bundles.test.runtime
+}
+
+test {
+	useJUnitPlatform()
+	finalizedBy jacocoTestReport
 }

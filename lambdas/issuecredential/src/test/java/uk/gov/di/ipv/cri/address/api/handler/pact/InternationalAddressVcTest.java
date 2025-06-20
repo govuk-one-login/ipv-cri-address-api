@@ -161,13 +161,14 @@ class InternationalAddressVcTest implements DummyStates, InternationalAddressSta
     void validDummyAccessToken() throws ParseException {
         AccessToken accessToken =
                 AccessToken.parse("Bearer dummyAccessToken", AccessTokenType.BEARER);
-        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(getSessionItem());
+        SessionItem sessionItem = getSessionItem();
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         AddressItem addressItem = new AddressItem();
         addressItem.setAddresses(getCanonicalAddresses());
         when(mockConfigurationService.getCommonParameterValue(
                         "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
-        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockAddressService.getAddressItemWithRetries(sessionItem)).thenReturn(addressItem);
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
         when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
     }

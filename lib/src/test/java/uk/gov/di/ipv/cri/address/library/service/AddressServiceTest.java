@@ -12,14 +12,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,7 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AddressServiceTest {
@@ -642,8 +648,67 @@ class AddressServiceTest {
     }
 
     @Test
-    void shouldGetAddressItem() {
-        addressService.getAddressItem(SESSION_ID);
-        verify(mockDataStore).getItem(String.valueOf(SESSION_ID));
+    void shouldGetAddressItemUsingSessionItem() {
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(SESSION_ID);
+        addressService.getAddressItem(sessionItem);
+
+        verify(mockDataStore).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Test
+    void throwsNullPointerExceptionWhenAddressIsNotFoundWithSessionItem() {
+        assertThrows(
+                NullPointerException.class,
+                () -> addressService.getAddressItem((SessionItem) null));
+    }
+
+    @Test
+    void getAddressItemWithRetriesAllRetriesFail() {
+        when(mockDataStore.getItem(anyString()))
+                .thenThrow(new RuntimeException())
+                .thenThrow(new RuntimeException())
+                .thenThrow(new RuntimeException());
+
+        var sessionItem = new SessionItem();
+        AddressNotFoundException ex =
+                assertThrows(
+                        AddressNotFoundException.class,
+                        () -> addressService.getAddressItemWithRetries(sessionItem));
+
+        assertEquals("Address Item not found", ex.getMessage());
+        verify(mockDataStore, times(3)).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Test
+    void getAddressItemSomeWithRetriesSucceedsAfterRetry() {
+        AddressItem addressItem = new AddressItem();
+        CanonicalAddress canonicalAddress = new CanonicalAddress();
+        canonicalAddress.setAddressCountry("GB");
+        addressItem.setAddresses(Collections.singletonList(canonicalAddress));
+
+        when(mockDataStore.getItem(anyString()))
+                .thenThrow(new RuntimeException("temporary failure"))
+                .thenReturn(addressItem);
+
+        var sessionItem = new SessionItem();
+        AddressItem result = addressService.getAddressItemWithRetries(sessionItem);
+
+        assertEquals(addressItem, result);
+        verify(mockDataStore, times(2)).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Test
+    void throwsAddressIsNotFoundWhenDataSoreGetItemFails() {
+        when(mockDataStore.getItem(anyString())).thenThrow(new RuntimeException("some db error"));
+
+        var sessionItem = new SessionItem();
+        AddressNotFoundException ex =
+                assertThrows(
+                        AddressNotFoundException.class,
+                        () -> addressService.getAddressItem(sessionItem));
+
+        assertEquals("Address Item not found", ex.getMessage());
+        verify(mockDataStore).getItem(sessionItem.getSessionId().toString());
     }
 }
