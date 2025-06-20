@@ -812,7 +812,7 @@ Resources:
       AlarmDescription: !Sub
         - "Errors verifying JWTs that have been been received by the session lambda. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: true
+      ActionsEnabled: false # turning off while it is being tuned
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
@@ -839,7 +839,7 @@ Resources:
       AlarmDescription: !Sub
         - "Errors verifying JWTs that have been been received by the token lambda. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: true
+      ActionsEnabled: false # turning off while it is being tuned
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
