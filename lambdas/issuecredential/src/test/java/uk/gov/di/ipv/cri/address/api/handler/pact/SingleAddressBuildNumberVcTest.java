@@ -158,10 +158,11 @@ class SingleAddressBuildNumberVcTest implements DummyStates, SingleAddressBuildi
     void validDummyAccessToken() throws ParseException {
         AccessToken accessToken =
                 AccessToken.parse("Bearer dummyAccessToken", AccessTokenType.BEARER);
-        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(getSessionItem());
+        SessionItem sessionItem = getSessionItem();
+        when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         AddressItem addressItem = new AddressItem();
         addressItem.setAddresses(getCanonicalAddresses());
-        when(mockAddressService.getAddressItem(sessionId)).thenReturn(addressItem);
+        when(mockAddressService.getAddressItemWithRetries(sessionItem)).thenReturn(addressItem);
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("dummyAddressComponentId");
         when(mockConfigurationService.getCommonParameterValue(

@@ -8,12 +8,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.utils.StringUtils;
+import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverageReport;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
+import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.util.retry.RetryConfig;
+import uk.gov.di.ipv.cri.common.library.util.retry.RetryManager;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +38,7 @@ public class AddressService {
             "setAddressValidity found address where validFrom and validUntil are Equal.";
     private static final String ERROR_COUNTRY_CODE_NOT_PRESENT =
             "Country code not present for address";
-
+    private static final String ERROR_ADDRESS_ITEM_NOT_PRESENT = "Address Item not found";
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
 
@@ -89,18 +93,21 @@ public class AddressService {
         return addressItem;
     }
 
-    public AddressItem getAddressItem(UUID sessionId) {
-        return dataStore.getItem(String.valueOf(sessionId));
+    public AddressItem getAddressItemWithRetries(SessionItem sessionItem) {
+        RetryConfig retryConfig = getRetryConfig(500, 3, true);
+        return RetryManager.execute(retryConfig, () -> this.getAddressItem(sessionItem));
     }
 
-    private ObjectReader getAddressReader() {
-        if (Objects.isNull(this.addressReader)) {
-            this.addressReader =
-                    this.objectMapper
-                            .readerForListOf(CanonicalAddress.class)
-                            .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    public AddressItem getAddressItem(SessionItem sessionItem) {
+        try {
+            return dataStore.getItem(sessionItem.getSessionId().toString());
+        } catch (Exception e) {
+            LOGGER.error(
+                    "{} for gov uk journey id: {}",
+                    ERROR_ADDRESS_ITEM_NOT_PRESENT,
+                    sessionItem.getClientSessionId());
+            throw new AddressNotFoundException(ERROR_ADDRESS_ITEM_NOT_PRESENT);
         }
-        return this.addressReader;
     }
 
     // See https://govukverify.atlassian.net/wiki/spaces/PYI/pages/3178004485/Decision+Log
@@ -125,6 +132,44 @@ public class AddressService {
                 // Only the CURRENT address has date information.
                 throw new AddressProcessingException(ERROR_TOO_MANY_ADDRESSES);
         }
+    }
+
+    public boolean isCurrentAddress(CanonicalAddress canonicalAddress) {
+
+        // Due to PREVIOUS addresses coming from AddressFront without a date set for validUntil we
+        // cannot use common-lib to evaluate the type (as they would evaluate as CURRENT addresses)
+        // Instead we look for this as a CURRENT address pattern and treat all others as PREVIOUS
+
+        return Objects.nonNull(canonicalAddress.getValidFrom())
+                && Objects.isNull(canonicalAddress.getValidUntil());
+    }
+
+    public boolean isNotCurrentAddress(CanonicalAddress canonicalAddress) {
+        return !isCurrentAddress(canonicalAddress);
+    }
+
+    public boolean isInvalidAddress(CanonicalAddress canonicalAddress) {
+        return ((Objects.nonNull(canonicalAddress.getValidFrom())
+                        && Objects.nonNull(canonicalAddress.getValidUntil()))
+                && (canonicalAddress.getValidFrom().isEqual(canonicalAddress.getValidUntil())));
+    }
+
+    private RetryConfig getRetryConfig(int delayMs, int maxAttempts, boolean exponential) {
+        return new RetryConfig.Builder()
+                .delayBetweenAttempts(delayMs)
+                .maxAttempts(maxAttempts)
+                .exponentiallyRetry(exponential)
+                .build();
+    }
+
+    private ObjectReader getAddressReader() {
+        if (Objects.isNull(this.addressReader)) {
+            this.addressReader =
+                    this.objectMapper
+                            .readerForListOf(CanonicalAddress.class)
+                            .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        }
+        return this.addressReader;
     }
 
     private void processAddresses(List<CanonicalAddress> addresses)
@@ -171,26 +216,6 @@ public class AddressService {
 
         // At this point the current address is known
         previousAddress.setValidUntil(currentAddress.getValidFrom());
-    }
-
-    public boolean isCurrentAddress(CanonicalAddress canonicalAddress) {
-
-        // Due to PREVIOUS addresses coming from AddressFront without a date set for validUntil we
-        // cannot use common-lib to evaluate the type (as they would evaluate as CURRENT addresses)
-        // Instead we look for this as a CURRENT address pattern and treat all others as PREVIOUS
-
-        return Objects.nonNull(canonicalAddress.getValidFrom())
-                && Objects.isNull(canonicalAddress.getValidUntil());
-    }
-
-    public boolean isNotCurrentAddress(CanonicalAddress canonicalAddress) {
-        return !isCurrentAddress(canonicalAddress);
-    }
-
-    public boolean isInvalidAddress(CanonicalAddress canonicalAddress) {
-        return ((Objects.nonNull(canonicalAddress.getValidFrom())
-                        && Objects.nonNull(canonicalAddress.getValidUntil()))
-                && (canonicalAddress.getValidFrom().isEqual(canonicalAddress.getValidUntil())));
     }
 
     private boolean isCountryCodePresentForAll(List<CanonicalAddress> addresses) {
