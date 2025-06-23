@@ -812,12 +812,12 @@ Resources:
       AlarmDescription: !Sub
         - "Errors verifying JWTs that have been been received by the session lambda. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: false # turning off while it is being tuned
+      ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: jwt_verification_failed
@@ -839,12 +839,12 @@ Resources:
       AlarmDescription: !Sub
         - "Errors verifying JWTs that have been been received by the token lambda. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: false # turning off while it is being tuned
+      ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
+        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: jwt_verification_failed
