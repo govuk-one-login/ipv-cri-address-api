@@ -144,7 +144,10 @@ public class PreLambdaHandler implements HttpHandler {
     }
 
     private void translateResponse(APIGatewayProxyResponseEvent response, HttpExchange exchange)
-            throws IOException, ParseException, InvalidKeySpecException, NoSuchAlgorithmException,
+            throws IOException,
+                    ParseException,
+                    InvalidKeySpecException,
+                    NoSuchAlgorithmException,
                     JOSEException {
 
         Integer statusCode = response.getStatusCode();
@@ -165,7 +168,10 @@ public class PreLambdaHandler implements HttpHandler {
     }
 
     public String reOrderJwt(String body)
-            throws ParseException, JOSEException, InvalidKeySpecException, NoSuchAlgorithmException,
+            throws ParseException,
+                    JOSEException,
+                    InvalidKeySpecException,
+                    NoSuchAlgorithmException,
                     JsonProcessingException {
         JWT jwt = JWTParser.parse(body);
 

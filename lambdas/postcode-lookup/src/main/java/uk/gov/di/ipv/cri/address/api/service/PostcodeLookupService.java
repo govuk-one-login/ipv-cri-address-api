@@ -75,8 +75,10 @@ public class PostcodeLookupService {
     }
 
     public List<CanonicalAddress> lookupPostcode(String postcode)
-            throws PostcodeValidationException, PostcodeLookupProcessingException,
-                    JsonProcessingException, PostcodeLookupBadRequestException {
+            throws PostcodeValidationException,
+                    PostcodeLookupProcessingException,
+                    JsonProcessingException,
+                    PostcodeLookupBadRequestException {
 
         this.validatePostCode(postcode);
         // Create our http request

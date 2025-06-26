@@ -93,7 +93,10 @@ class VerifiableCredentialServiceTest implements TestFixtures {
 
     @Test
     void shouldCreateValidSignedJWT()
-            throws InvalidKeySpecException, NoSuchAlgorithmException, JOSEException, ParseException,
+            throws InvalidKeySpecException,
+                    NoSuchAlgorithmException,
+                    JOSEException,
+                    ParseException,
                     JsonProcessingException {
         initMockConfigurationService();
         initMockVCClaimSetBuilder();
