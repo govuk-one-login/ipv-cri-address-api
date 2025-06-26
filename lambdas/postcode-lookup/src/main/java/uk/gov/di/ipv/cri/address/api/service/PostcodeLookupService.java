@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static uk.gov.di.ipv.cri.address.api.constants.OrdnanceSurveyConstants.LOG_RESPONSE_PREFIX;
 import static uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler.CONNECTION_TIMEOUT_SECONDS;
@@ -236,7 +235,7 @@ public class PostcodeLookupService {
                                         .map(Result::getDpa)
                                         .filter(Objects::nonNull)
                                         .map(Dpa::toCanonicalAddress)
-                                        .collect(Collectors.toList()))
+                                        .toList())
                 .orElseGet(
                         () -> {
                             log.warn("Postcode lookup returned no results");
