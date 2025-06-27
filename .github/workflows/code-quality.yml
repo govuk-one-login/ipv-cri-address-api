@@ -45,8 +45,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: 11
-          distribution: zulu
+          java-version: 21
+          distribution: corretto
           cache: gradle
 
       - name: Run Spotless
