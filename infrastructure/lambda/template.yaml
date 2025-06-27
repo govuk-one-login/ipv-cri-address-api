@@ -806,59 +806,189 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
 
-  SessionLambdaFailedToVerifyJWTAlarm:
+  SessionLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: DeployAlarms
     Properties:
+      AlarmName: !Sub ${AWS::StackName}-${Environment}-SessionLambdaFailedToVerifyJWTWarningAlarm
       AlarmDescription: !Sub
-        - "Errors verifying JWTs that have been been received by the session lambda. Runbook: ${SupportManualURL}"
+        - "Errors verifying JWTs (jwt_verification_failed) rate exceeds 10% of Session Lambda invocations consecutively for 3, 5 minute periods. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: true
-      AlarmActions:
-        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
-        - !ImportValue platform-alarm-critical-alert-topic
-      OKActions:
-        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
-        - !ImportValue platform-alarm-critical-alert-topic
-      InsufficientDataActions: []
-      MetricName: jwt_verification_failed
-      Namespace: !Sub "${CriIdentifier}"
-      Statistic: Sum
-      Dimensions:
-        - Name: Service
-          Value: !Sub "${CriIdentifier}-session"
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 10
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
-      Threshold: 1
-      ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      Metrics:
+        - Id: errors
+          Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
+          Label: JWTErrorRate
+          ReturnData: true
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: !Sub "${CriIdentifier}"
+              MetricName: jwt_verification_failed
+              Dimensions:
+                - Name: Service
+                  Value: !Sub "${CriIdentifier}-session"
+            Period: 300
+            Stat: Sum
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub ${CommonStackName}-SessionFunction
+            Period: 300
+            Stat: Sum
 
-  TokenLambdaFailedToVerifyJWTAlarm:
+  SessionLambdaFailedToVerifyJWTCriticalAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: DeployAlarms
     Properties:
+      AlarmName: !Sub ${AWS::StackName}-${Environment}-SessionLambdaFailedToVerifyJWTCriticalAlarm
       AlarmDescription: !Sub
-        - "Errors verifying JWTs that have been been received by the token lambda. Runbook: ${SupportManualURL}"
+        - "Errors verifying JWTs (jwt_verification_failed) rate exceeds 80% of Session Lambda invocations consecutively for 3, 5 minute periods. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
-      ActionsEnabled: true
-      AlarmActions:
-        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
-        - !ImportValue platform-alarm-critical-alert-topic
-      OKActions:
-        # - !ImportValue core-infrastructure-AlarmTopic # OJ-3243: turning off pager duty notifications while we are seeing false positives
-        - !ImportValue platform-alarm-critical-alert-topic
-      InsufficientDataActions: []
-      MetricName: jwt_verification_failed
-      Namespace: !Sub "${CriIdentifier}"
-      Statistic: Sum
-      Dimensions:
-        - Name: Service
-          Value: !Sub "${CriIdentifier}-access-token"
-      Period: 300
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
-      Threshold: 1
-      ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
+      AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      Metrics:
+        - Id: errors
+          Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
+          Label: JWTErrorRate
+          ReturnData: true
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: !Sub "${CriIdentifier}"
+              MetricName: jwt_verification_failed
+              Dimensions:
+                - Name: Service
+                  Value: !Sub "${CriIdentifier}-session"
+            Period: 300
+            Stat: Sum
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub ${CommonStackName}-SessionFunction
+            Period: 300
+            Stat: Sum
+
+  TokenLambdaFailedToVerifyJWTWarningAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: DeployAlarms
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${Environment}-TokenLambdaFailedToVerifyJWTWarningAlarm
+      AlarmDescription: !Sub
+        - "Errors verifying JWTs in Experian KBV (jwt_verification_failed) rate exceeds 10% of Token Lambda invocations consecutively for 3, 5 minute periods. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 10
+      DatapointsToAlarm: 3
+      EvaluationPeriods: 3
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      OKActions:
+        - !ImportValue platform-alarm-warning-alert-topic
+      Metrics:
+        - Id: errors
+          Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
+          Label: JWTErrorRate
+          ReturnData: true
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: !Sub "${CriIdentifier}"
+              MetricName: jwt_verification_failed
+              Dimensions:
+                - Name: Service
+                  Value: !Sub "${CriIdentifier}-access-token"
+            Period: 300
+            Stat: Sum
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub ${CommonStackName}-AccessTokenFunction
+            Period: 300
+            Stat: Sum
+
+  TokenLambdaFailedToVerifyJWTCriticalAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: DeployAlarms
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-${Environment}-TokenLambdaFailedToVerifyJWTCriticalAlarm
+      AlarmDescription: !Sub
+        - "Errors verifying JWTs (jwt_verification_failed) rate exceeds 80% of Token Lambda invocations consecutively for 3, 5 minute periods. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      DatapointsToAlarm: 3
+      EvaluationPeriods: 3
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      OKActions:
+        - !ImportValue core-infrastructure-AlarmTopic
+        - !ImportValue platform-alarm-critical-alert-topic
+      Metrics:
+        - Id: errors
+          Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
+          Label: JWTErrorRate
+          ReturnData: true
+        - Id: m1
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: !Sub "${CriIdentifier}"
+              MetricName: jwt_verification_failed
+              Dimensions:
+                - Name: Service
+                  Value: !Sub "${CriIdentifier}-access-token"
+            Period: 300
+            Stat: Sum
+        - Id: m2
+          ReturnData: false
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Sub ${CommonStackName}-AccessTokenFunction
+            Period: 300
+            Stat: Sum
 
   SessionLambdaNoMatchingEncryptionKeyAlarm:
     Type: AWS::CloudWatch::Alarm
