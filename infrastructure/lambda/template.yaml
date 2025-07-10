@@ -835,8 +835,8 @@ Resources:
               Namespace: !Sub "${CriIdentifier}"
               MetricName: jwt_verification_failed
               Dimensions:
-                - Name: Service
-                  Value: !Sub "${CriIdentifier}-session"
+                - Name: service
+                  Value: !Sub "${CriIdentifier}-sessionTS"
             Period: 300
             Stat: Sum
         - Id: m2
@@ -847,7 +847,7 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-SessionFunction
+                  Value: !Sub ${CommonStackName}-SessionFunctionTS
             Period: 300
             Stat: Sum
 
@@ -882,8 +882,8 @@ Resources:
               Namespace: !Sub "${CriIdentifier}"
               MetricName: jwt_verification_failed
               Dimensions:
-                - Name: Service
-                  Value: !Sub "${CriIdentifier}-session"
+                - Name: service
+                  Value: !Sub "${CriIdentifier}-sessionTS"
             Period: 300
             Stat: Sum
         - Id: m2
@@ -894,7 +894,7 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-SessionFunction
+                  Value: !Sub ${CommonStackName}-SessionFunctionTS
             Period: 300
             Stat: Sum
 
@@ -1009,8 +1009,8 @@ Resources:
       Namespace: !Sub "${CriIdentifier}"
       Statistic: Sum
       Dimensions:
-        - Name: Service
-          Value: !Sub "${CriIdentifier}-session"
+        - Name: service
+          Value: !Sub "${CriIdentifier}-sessionTS"
       Period: 300
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
