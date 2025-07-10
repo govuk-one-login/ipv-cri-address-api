@@ -857,12 +857,12 @@ Resources:
     Properties:
       AlarmName: !Sub ${AWS::StackName}-${Environment}-SessionLambdaFailedToVerifyJWTCriticalAlarm
       AlarmDescription: !Sub
-        - "Errors verifying JWTs (jwt_verification_failed) rate exceeds 80% of Session Lambda invocations consecutively for 3, 5 minute periods. Runbook: ${SupportManualURL}"
+        - "Errors verifying JWTs (jwt_verification_failed) rate exceeds 80% of Session Lambda invocations consecutively for 5, 5 minute periods. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
-      DatapointsToAlarm: 3
-      EvaluationPeriods: 3
+      DatapointsToAlarm: 5
+      EvaluationPeriods: 5
       TreatMissingData: notBreaching
       AlarmActions:
         - !ImportValue core-infrastructure-AlarmTopic
