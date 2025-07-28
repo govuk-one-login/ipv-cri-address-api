@@ -927,8 +927,8 @@ Resources:
               Namespace: !Sub "${CriIdentifier}"
               MetricName: jwt_verification_failed
               Dimensions:
-                - Name: Service
-                  Value: !Sub "${CriIdentifier}-access-token"
+                - Name: service
+                  Value: !Sub "${CriIdentifier}-access-token-2"
             Period: 300
             Stat: Sum
         - Id: m2
@@ -939,7 +939,7 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-AccessTokenFunction
+                  Value: !Sub ${CommonStackName}-AccessTokenFunctionTS
             Period: 300
             Stat: Sum
 
@@ -974,8 +974,8 @@ Resources:
               Namespace: !Sub "${CriIdentifier}"
               MetricName: jwt_verification_failed
               Dimensions:
-                - Name: Service
-                  Value: !Sub "${CriIdentifier}-access-token"
+                - Name: service
+                  Value: !Sub "${CriIdentifier}-access-token-2"
             Period: 300
             Stat: Sum
         - Id: m2
@@ -986,7 +986,7 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-AccessTokenFunction
+                  Value: !Sub ${CommonStackName}-AccessTokenFunctionTS
             Period: 300
             Stat: Sum
 
