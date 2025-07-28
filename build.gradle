@@ -45,16 +45,16 @@ subprojects {
 		}
 	}
 
-	test {
-		useJUnitPlatform()
-		finalizedBy(tasks.matching { it.name == 'jacocoTestReport' })
-	}
-
 	tasks.matching { it.name == "jacocoTestReport" }.configureEach {
 		dependsOn test
 		reports {
 			xml.required.set(true)
 		}
+	}
+
+	test {
+		useJUnitPlatform()
+		finalizedBy(tasks.matching { it.name == 'jacocoTestReport' })
 	}
 }
 
