@@ -109,6 +109,8 @@ public class AddressHandler
                 // Save our addresses to the address table
                 addressService.saveAddresses(UUID.fromString(sessionId), addresses, addressTtl);
 
+                addressService.storeAddressEntryTypeMetric(eventProbe, addresses);
+
                 // Now we've saved our address, we need to create an authorization code for the
                 // session
                 sessionService.createAuthorizationCode(session);

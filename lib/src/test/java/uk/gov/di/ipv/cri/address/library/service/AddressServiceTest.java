@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +19,7 @@ import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
+import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
 import java.time.LocalDate;
@@ -710,5 +712,77 @@ class AddressServiceTest {
 
         assertEquals("Address Item not found", ex.getMessage());
         verify(mockDataStore).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Nested
+    @DisplayName("Address Service stores entry type metric")
+    class AddressServiceStoredEntryMetric {
+
+        private static final String MANUAL_ADDRESS_METRIC = "manual-address-entry";
+        private static final String PRE_POPULATED_ADDRESS_METRIC = "pre-populated-address-entry";
+
+        private static final CanonicalAddress manualAddress = new CanonicalAddress();
+        private static final CanonicalAddress prepopulatedAddress = new CanonicalAddress();
+
+        @Mock private EventProbe eventProbe;
+
+        @BeforeAll
+        static void setupAddress() {
+            prepopulatedAddress.setUprn(123L);
+        }
+
+        @Test
+        void storesManualEntryMetric() {
+            addressService.storeAddressEntryTypeMetric(eventProbe, List.of(manualAddress));
+
+            verify(eventProbe, times(1)).counterMetric(MANUAL_ADDRESS_METRIC);
+            verify(eventProbe, times(0)).counterMetric(PRE_POPULATED_ADDRESS_METRIC);
+        }
+
+        @Test
+        void storesPrePopulatedEntryMetric() {
+            CanonicalAddress address = new CanonicalAddress();
+            address.setUprn(123L);
+
+            addressService.storeAddressEntryTypeMetric(eventProbe, List.of(prepopulatedAddress));
+
+            verify(eventProbe, times(0)).counterMetric(MANUAL_ADDRESS_METRIC);
+            verify(eventProbe, times(1)).counterMetric(PRE_POPULATED_ADDRESS_METRIC);
+        }
+
+        @Test
+        void storesMultipleManualEntryMetrics() {
+            addressService.storeAddressEntryTypeMetric(
+                    eventProbe, List.of(manualAddress, manualAddress));
+
+            verify(eventProbe, times(2)).counterMetric(MANUAL_ADDRESS_METRIC);
+            verify(eventProbe, times(0)).counterMetric(PRE_POPULATED_ADDRESS_METRIC);
+        }
+
+        @Test
+        void storesMultiplePrePopulatedEntryMetrics() {
+            addressService.storeAddressEntryTypeMetric(
+                    eventProbe, List.of(prepopulatedAddress, prepopulatedAddress));
+
+            verify(eventProbe, times(0)).counterMetric(MANUAL_ADDRESS_METRIC);
+            verify(eventProbe, times(2)).counterMetric(PRE_POPULATED_ADDRESS_METRIC);
+        }
+
+        @Test
+        void storesBothManualAnaPrepopulatedEntryMetrics() {
+            addressService.storeAddressEntryTypeMetric(
+                    eventProbe, List.of(prepopulatedAddress, manualAddress));
+
+            verify(eventProbe, times(1)).counterMetric(MANUAL_ADDRESS_METRIC);
+            verify(eventProbe, times(1)).counterMetric(PRE_POPULATED_ADDRESS_METRIC);
+        }
+
+        @Test
+        void storesNoMetricsIfAddressesEmpty() {
+            addressService.storeAddressEntryTypeMetric(eventProbe, Collections.emptyList());
+
+            verify(eventProbe, times(0)).counterMetric(MANUAL_ADDRESS_METRIC);
+            verify(eventProbe, times(0)).counterMetric(PRE_POPULATED_ADDRESS_METRIC);
+        }
     }
 }
