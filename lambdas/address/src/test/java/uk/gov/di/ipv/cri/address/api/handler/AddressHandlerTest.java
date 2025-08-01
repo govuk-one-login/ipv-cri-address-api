@@ -114,6 +114,7 @@ class AddressHandlerTest {
 
         verify(mockSessionService).createAuthorizationCode(sessionItem);
         verify(mockAddressService).setAddressValidity(canonicalAddresses);
+        verify(mockAddressService).storeAddressEntryTypeMetric(eventProbe, canonicalAddresses);
         verify(eventProbe).log(Level.INFO, "found session");
         verify(eventProbe).counterMetric("address");
         verifyNoMoreInteractions(eventProbe);

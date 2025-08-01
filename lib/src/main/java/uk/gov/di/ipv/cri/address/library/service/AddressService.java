@@ -16,6 +16,7 @@ import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
+import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryConfig;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryManager;
 
@@ -39,6 +40,8 @@ public class AddressService {
     private static final String ERROR_COUNTRY_CODE_NOT_PRESENT =
             "Country code not present for address";
     private static final String ERROR_ADDRESS_ITEM_NOT_PRESENT = "Address Item not found";
+    private static final String MANUAL_ADDRESS_METRIC = "manual-address-entry";
+    private static final String PRE_POPULATED_ADDRESS_METRIC = "pre-populated-address-entry";
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
 
@@ -152,6 +155,17 @@ public class AddressService {
         return ((Objects.nonNull(canonicalAddress.getValidFrom())
                         && Objects.nonNull(canonicalAddress.getValidUntil()))
                 && (canonicalAddress.getValidFrom().isEqual(canonicalAddress.getValidUntil())));
+    }
+
+    public void storeAddressEntryTypeMetric(
+            EventProbe eventProbe, List<CanonicalAddress> addresses) {
+        for (CanonicalAddress address : addresses) {
+            if (address.getUprn() != null) {
+                eventProbe.counterMetric(PRE_POPULATED_ADDRESS_METRIC);
+            } else {
+                eventProbe.counterMetric(MANUAL_ADDRESS_METRIC);
+            }
+        }
     }
 
     private RetryConfig getRetryConfig(int delayMs, int maxAttempts, boolean exponential) {
