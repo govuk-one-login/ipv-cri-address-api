@@ -20,8 +20,10 @@ import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryConfig;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryManager;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 public class AddressService {
@@ -85,7 +87,11 @@ public class AddressService {
         AddressItem addressItem = new AddressItem();
         addressItem.setSessionId(sessionId);
         addressItem.setExpiryDate(ttlExpiryEpoch);
-        addressItem.setAddresses(addresses);
+        addressItem.setAddresses(
+                Optional.ofNullable(addresses).orElse(Collections.emptyList()).stream()
+                        .filter(Objects::nonNull)
+                        .map(this::normalizePostCodeAddresses)
+                        .toList());
         dataStore.create(addressItem);
 
         LOGGER.info(
@@ -94,6 +100,25 @@ public class AddressService {
                 addressItem.getAddresses().size());
 
         return addressItem;
+    }
+
+    private CanonicalAddress normalizePostCodeAddresses(CanonicalAddress address) {
+        String rawPostcode = address.getPostalCode();
+        if (rawPostcode != null && "GB".equalsIgnoreCase(address.getAddressCountry())) {
+
+            String formattedPostCode = rawPostcode.replace(" ", "").toUpperCase();
+            int postCodeLength = formattedPostCode.length();
+            int minUKPostcodeLength = 5;
+            int maxUKPostcodeLength = 7;
+
+            if (postCodeLength >= minUKPostcodeLength && postCodeLength <= maxUKPostcodeLength) {
+                String outwardPostCodePart = formattedPostCode.substring(0, postCodeLength - 3);
+                String inwardPostCodeCodePart = formattedPostCode.substring(postCodeLength - 3);
+
+                address.setPostalCode(outwardPostCodePart + " " + inwardPostCodeCodePart);
+            }
+        }
+        return address;
     }
 
     public AddressItem getAddressItemWithRetries(SessionItem sessionItem) {

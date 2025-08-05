@@ -10,6 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -294,6 +296,7 @@ class AddressServiceTest {
             addresses.add(address3);
 
             addressService.saveAddresses(SESSION_ID, addresses, ADDRESS_TTL);
+
             ArgumentCaptor<AddressItem> addressItemArgumentCaptor =
                     ArgumentCaptor.forClass(AddressItem.class);
             verify(mockDataStore).create(addressItemArgumentCaptor.capture());
@@ -308,6 +311,7 @@ class AddressServiceTest {
         @Test
         void shouldPersistAnEmptyListOfAddressesWhenNoListOfCanonicalAddressesIsSupplied() {
             addressService.saveAddresses(SESSION_ID, null, ADDRESS_TTL);
+
             ArgumentCaptor<AddressItem> addressItemArgumentCaptor =
                     ArgumentCaptor.forClass(AddressItem.class);
             verify(mockDataStore).create(addressItemArgumentCaptor.capture());
@@ -318,6 +322,72 @@ class AddressServiceTest {
                     addressItemArgumentCaptor.getValue().getSessionId(), equalTo(SESSION_ID));
             MatcherAssert.assertThat(
                     addressItemArgumentCaptor.getValue().getExpiryDate(), equalTo(ADDRESS_TTL));
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+            "'M1 1AA', 'M1 1AA'", // correct
+            "'B33 8TH', 'B33 8TH'", // correct
+            "'W1A0AX', 'W1A 0AX'", // should add space
+            "'SE1 9GP', 'SE1 9GP'", // already correct
+            "' E1 6AN', 'E1 6AN'", // should remove leading space
+            "'N1 9GU ', 'N1 9GU'", // should remove trailing space
+            "' W2 1HB ', 'W2 1HB'", // should remove leading and trailing spaces
+            "'SW1A  2AA', 'SW1A 2AA'", // should normalize double space to single
+            "'   M25  4RT', 'M25 4RT'" // should remove leading spaces and normalize double space
+        })
+        void normalizesPostCodeWithoutSpacesWhileSavingWhenGivenAddressesWithPostcodeSpaces(
+                String inputPostcode, String expectedPostcode) {
+            CanonicalAddress address = new CanonicalAddress();
+            address.setUprn(1000000L);
+            address.setBuildingNumber("1");
+            address.setStreetName("TEST STREET");
+            address.setAddressLocality("TEST CITY");
+            address.setPostalCode(inputPostcode);
+            address.setAddressCountry("GB");
+            address.setValidFrom(LocalDate.of(2020, 1, 1));
+
+            addressService.saveAddresses(SESSION_ID, List.of(address), ADDRESS_TTL);
+
+            ArgumentCaptor<AddressItem> captor = ArgumentCaptor.forClass(AddressItem.class);
+            verify(mockDataStore).create(captor.capture());
+
+            assertEquals(expectedPostcode, captor.getValue().getAddresses().get(0).getPostalCode());
+            assertEquals(SESSION_ID, captor.getValue().getSessionId());
+            assertEquals(ADDRESS_TTL, captor.getValue().getExpiryDate());
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+            "'M1 1AA', 'M1 1AA'", // correct
+            "'B33 8TH', 'B33 8TH'", // correct
+            "'W1A0AX', 'W1A0AX'", // no space
+            "'SE1 9GP', 'SE1 9GP'", // already correct
+            "' E1 6AN', ' E1 6AN'", // leading space
+            "'N1 9GU ', 'N1 9GU '", // trailing space
+            "' W2 1HB ', ' W2 1HB '", // leading and trailing spaces
+            "'SW1A  2AA', 'SW1A  2AA'", // double space in between
+            "'   M25  4RT', '   M25  4RT'" // leading spaces and double space in between
+        })
+        void ignoresNormalizingPostCodeWhileSavingAddressWhenAddressCountryIsNonGB(
+                String inputPostcode, String expectedPostcode) {
+            CanonicalAddress address = new CanonicalAddress();
+            address.setUprn(1000000L);
+            address.setBuildingNumber("1");
+            address.setStreetName("TEST STREET");
+            address.setAddressLocality("TEST CITY");
+            address.setPostalCode(inputPostcode);
+            address.setAddressCountry("KE");
+            address.setValidFrom(LocalDate.of(2020, 1, 1));
+
+            addressService.saveAddresses(SESSION_ID, List.of(address), ADDRESS_TTL);
+
+            ArgumentCaptor<AddressItem> captor = ArgumentCaptor.forClass(AddressItem.class);
+            verify(mockDataStore).create(captor.capture());
+
+            assertEquals(expectedPostcode, captor.getValue().getAddresses().get(0).getPostalCode());
+            assertEquals(SESSION_ID, captor.getValue().getSessionId());
+            assertEquals(ADDRESS_TTL, captor.getValue().getExpiryDate());
         }
     }
 
