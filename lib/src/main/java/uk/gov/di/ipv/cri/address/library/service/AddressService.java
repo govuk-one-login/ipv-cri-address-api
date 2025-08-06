@@ -112,10 +112,7 @@ public class AddressService {
             int maxUKPostcodeLength = 7;
 
             if (postCodeLength >= minUKPostcodeLength && postCodeLength <= maxUKPostcodeLength) {
-                String outwardPostCodePart = formattedPostCode.substring(0, postCodeLength - 3);
-                String inwardPostCodeCodePart = formattedPostCode.substring(postCodeLength - 3);
-
-                address.setPostalCode(outwardPostCodePart + " " + inwardPostCodeCodePart);
+                address.setPostalCode(formattedPostCode);
             }
         }
         return address;

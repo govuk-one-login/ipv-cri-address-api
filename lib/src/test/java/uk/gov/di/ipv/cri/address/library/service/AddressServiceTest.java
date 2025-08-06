@@ -326,15 +326,15 @@ class AddressServiceTest {
 
         @ParameterizedTest
         @CsvSource({
-            "'M1 1AA', 'M1 1AA'", // correct
-            "'B33 8TH', 'B33 8TH'", // correct
-            "'W1A0AX', 'W1A 0AX'", // should add space
-            "'SE1 9GP', 'SE1 9GP'", // already correct
-            "' E1 6AN', 'E1 6AN'", // should remove leading space
-            "'N1 9GU ', 'N1 9GU'", // should remove trailing space
-            "' W2 1HB ', 'W2 1HB'", // should remove leading and trailing spaces
-            "'SW1A  2AA', 'SW1A 2AA'", // should normalize double space to single
-            "'   M25  4RT', 'M25 4RT'" // should remove leading spaces and normalize double space
+            "'M1 1AA', 'M11AA'", // correct
+            "'B33 8TH', 'B338TH'", // correct
+            "'W1A0AX', 'W1A0AX'", // correct
+            "'SE1 9GP', 'SE19GP'", // already correct
+            "' E1 6AN', 'E16AN'", // should remove leading space
+            "'N1 9GU ', 'N19GU'", // should remove trailing space
+            "' W2 1HB ', 'W21HB'", // should remove leading and trailing spaces
+            "'SW1A  2AA', 'SW1A2AA'", // should normalize double space to single
+            "'   M25  4RT', 'M254RT'" // should remove leading spaces and normalize double space
         })
         void normalizesPostCodeWithoutSpacesWhileSavingWhenGivenAddressesWithPostcodeSpaces(
                 String inputPostcode, String expectedPostcode) {
