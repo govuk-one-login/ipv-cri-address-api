@@ -35,7 +35,9 @@ Feature: Address API happy path test
 
     #Credential issued
     When user sends a POST request to Credential Issue end point with a valid access token
-    And a valid JWT is returned in the response
+    And a valid JWT is returned in the responses
+      | Field           | Value |
+      | postalCode      |SW1A2AA|
 
     # TXMA event
     When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
@@ -59,8 +61,8 @@ Feature: Address API happy path test
     Then enter your post code is pre-populated with response from /addresses
 
     # Postcode lookup
-    When the user performs a postcode lookup for post code "<testPostCode>"
-    Then user receives a list of addresses containing "<testPostCode>"
+    When the user performs a postcode lookup for post code "<postcode>"
+    Then user receives a list of addresses containing "<postcode>"
 
     # Address
     When the user selects address
@@ -76,16 +78,18 @@ Feature: Address API happy path test
 
     # Credential Issued
     When user sends a POST request to Credential Issue end point with a valid access token
-    And a valid JWT is returned in the response
+    And a valid JWT is returned in the responses
+      | Field           | Value |
+      | postalCode      | <expectedPostCode> |
 
     # TXMA event
     When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
     Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
 
     Examples:
-      | sharedClaims       | testPostCode |
-      | ALBERT_AKRIL.json  | CA14 5PH     |
-      | SUZIE_SHREEVE.json | S62 5AB      |
+      | sharedClaims       | postcode | expectedPostCode |
+      | ALBERT_AKRIL.json  | CA14 5PH | CA145PH          |
+      | SUZIE_SHREEVE.json | S62 5AB  | S625AB           |
 
   @international_address_api_happy_with_header
   Scenario: International Address API journey
@@ -218,7 +222,8 @@ Feature: Address API happy path test
     #Credential issued
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the multiple addresses response
-
+      | Field           | Value |
+      | postalCode      | SW1A2AA |
     # TXMA event
     When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
     Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
@@ -226,3 +231,74 @@ Feature: Address API happy path test
     # schema validation
     Then user sends a GET request to events end point for "IPV_ADDRESS_CRI_END"
     Then the IPV_ADDRESS_CRI_END event is emitted and validated against schema
+
+  @uk_address_save_address_remove_spaces_from_postcode
+  Scenario Outline: UK Address API journey saving addresses with postcode spacing variations
+    Given user has a default signed JWT
+
+    # Session
+    When user sends a POST request to session end point
+    Then user gets a session-id
+
+    # TXMA event
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_START"
+    And a valid START event is returned in the response without txma header
+    Then START TxMA event is validated against schema
+
+    # Postcode lookup
+    When the user performs a postcode lookup for post code "<postcode>"
+    Then uses "<postcode>" that didn't return any address
+
+    # Address
+    And the user enters address successfully
+      | Field           | Value            |
+      | apartmentNumber | <apartmentNumber>|
+      | buildingNumber  | <buildingNumber> |
+      | buildingName    | <buildingName>   |
+      | streetName      | <streetName>     |
+      | country         | GB               |
+      | region          | <region>         |
+      | locality        | <locality>       |
+      | postalCode      | <postcode>       |
+      | yearFrom        | 2020             |
+
+    Then the address is saved successfully
+
+    # Authorization
+    When user sends a GET request to authorization end point
+    And a valid authorization code is returned in the response
+
+    # Access token
+    When user sends a POST request to token end point
+    And a valid access token code is returned in the response
+
+    # Credential Issued
+    When user sends a POST request to Credential Issue end point with a valid access token
+
+    And a valid JWT is returned in the responses
+      | Field           | Value            |
+      | apartmentNumber | <apartmentNumber>|
+      | buildingNumber  | <buildingNumber> |
+      | buildingName    | <buildingName>   |
+      | streetName      | <streetName>     |
+      | country         | GB               |
+      | region          | <region>         |
+      | locality        | <locality>       |
+      | postalCode      |<expectedPostCode>|
+      | yearFrom        | 2020             |
+
+    # TXMA event
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
+    Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
+
+    Examples:
+      | apartmentNumber | buildingNumber | buildingName      | streetName      | locality    | region            | postcode   | expectedPostCode | # Comment
+      | 5               | 12             | City Tower        | Piccadilly      | Manchester  | Greater Manchester| M1 1AA     | M11AA           | # space after M1
+      | 2               | 45             | Oak House         | High Street     | Birmingham  | West Midlands     | B33 8TH    | B338TH          | # space after B33
+      | 1               | 100            | Oxford House      | Oxford Street   | London      | Greater London    | W1A0AX     | W1A0AX          | # no spaces
+      | 3               | 25             | Thames View       | Borough Road    | London      | Greater London    | SE1 9GP    | SE19GP          | # space after SE1
+      | 4               | 8              | Whitechapel Court | Commercial Road | London      | Greater London    |  E1 6AN    | E16AN           | # leading space
+      | 6               | 15             | Angel Apartments  | Upper Street    | London      | Greater London    | N1 9GU     | N19GU           | # trailing space
+      | 7               | 22             | Hyde Park Mansion | Bayswater Road  | London      | Greater London    |  W2 1HB    | W21HB           | # leading and trailing spaces
+      | 8               | 1              | Westminster House | Victoria Street | London      | Greater London    | SW1A  2AA  | SW1A2AA         | # double space between
+      | 9               | 33             | Orbital Building  | Ring Road       | Watford     | Hertfordshire     |   M25  4RT | M254RT          | # leading space and double space between

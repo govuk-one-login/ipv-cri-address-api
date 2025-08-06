@@ -31,6 +31,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -115,53 +116,40 @@ public class AddressSteps {
 
     @When("the user selects address")
     public void theUserSelectsAddress() throws IOException, InterruptedException {
-        addressContext.setCountryCode("GB");
-        this.testContext.setResponse(
-                this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(),
-                        addressContext.getUprn(),
-                        addressContext.getPostcode(),
-                        addressContext.getCountryCode()));
+        selectAddress("GB");
+    }
+
+    @Then("uses {string} that didn't return any address")
+    public void usesThatDidnTReturnAnyAddress(String postcode) {
+        assertEquals(401, this.testContext.getResponse().statusCode());
+        addressContext.setPostcode(postcode);
+    }
+
+    @And("the user enters address successfully")
+    public void theUserEntersAddressSuccessfully(DataTable dataTable)
+            throws IOException, InterruptedException {
+        enterAddressFromDataTable(dataTable);
     }
 
     @When("the user enters international address successfully")
     public void theUserEntersInternationalAddressSuccessfully(DataTable dataTable)
             throws IOException, InterruptedException {
-        Map<String, String> addressData = dataTable.asMap(String.class, String.class);
-        this.addressContext.setCountryCode(addressData.get("apartmentNumber"));
-        this.addressContext.setRegion(addressData.get("region"));
-        this.addressContext.setLocality(addressData.get("locality"));
-        this.addressContext.setStreetName(addressData.get("streetName"));
-        this.addressContext.setPostcode(addressData.get("postalCode"));
-        this.addressContext.setBuildingName(addressData.get("buildingName"));
-        this.addressContext.setBuildingNumber(addressData.get("buildingNumber"));
-        this.addressContext.setYearFrom(Integer.parseInt(addressData.get("yearFrom")));
-        this.addressContext.setCountryCode(addressData.get("country"));
-        this.testContext.setResponse(
-                this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(), this.addressContext));
+        enterAddressFromDataTable(dataTable);
     }
 
     @When("the user selects international address")
     public void theUserSelectsInternationalAddress() throws IOException, InterruptedException {
-        addressContext.setCountryCode("KE");
-        this.testContext.setResponse(
-                this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(),
-                        addressContext.getUprn(),
-                        addressContext.getPostcode(),
-                        addressContext.getCountryCode()));
+        selectAddress("KE");
     }
 
     @When("the user selects address without country code")
     public void theUserSelectsAddressWithoutCountryCode() throws IOException, InterruptedException {
-        addressContext.setCountryCode(null);
-        this.testContext.setResponse(
-                this.addressApiClient.sendAddressRequest(
-                        this.testContext.getSessionId(),
-                        addressContext.getUprn(),
-                        addressContext.getPostcode(),
-                        addressContext.getCountryCode()));
+        selectAddress(null);
+    }
+
+    @When("the user selects previous address")
+    public void the_user_selects_previous_address() throws IOException, InterruptedException {
+        selectPreviousAddress("GB");
     }
 
     @Then("the address is saved successfully")
@@ -187,6 +175,14 @@ public class AddressSteps {
         assertEquals(200, this.testContext.getResponse().statusCode());
         assertNotNull(this.testContext.getResponse().body());
         makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
+    }
+
+    @And("a valid JWT is returned in the responses")
+    public void aValidJWTIsReturnedInTheResponse(DataTable dataTable)
+            throws ParseException, IOException, InterruptedException {
+        assertEquals(200, this.testContext.getResponse().statusCode());
+        assertNotNull(this.testContext.getResponse().body());
+        makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()), dataTable);
     }
 
     @And("a valid START event is returned in the response with txma header")
@@ -291,31 +287,24 @@ public class AddressSteps {
         assertEquals(200, this.testContext.getResponse().statusCode());
     }
 
-    private void makeAssertions(SignedJWT decodedJWT) throws IOException {
-        final var header = objectMapper.readTree(decodedJWT.getHeader().toString());
-        final var payloadValue = decodedJWT.getPayload().toString();
-        final var payload = objectMapper.readTree(payloadValue);
+    @When("the saved address is retrieved")
+    public void theSavedAddressIsRetrieved() throws IOException, InterruptedException {
+        theUserArrivesAtFindYourAddressPage();
+    }
 
-        assertEquals("JWT", header.at("/typ").asText());
-        assertEquals("ES256", header.at("/alg").asText());
-        assertEquals(
-                "did:web:review-a.dev.account.gov.uk#77618cc9ebd6909cbf0b50b00126f8e7feb5dbfdb64e6c623c01a6cafca47e41",
-                header.at("/kid").asText());
+    @Then("the postcode is normalized as expected {string}")
+    public void thePostcodeIsNormalizedAsExpected(String expectedPostCode)
+            throws JsonProcessingException {
+        JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
+        assertEquals(200, this.testContext.getResponse().statusCode());
 
-        assertNotNull(payload);
-        assertNotNull(payload.get("nbf"));
+        assertNotNull(jsonNode);
+        assertTrue(jsonNode.get("addresses").isArray());
 
-        assertEquals("VerifiableCredential", payload.at("/vc/type/0").asText());
-        assertEquals("AddressCredential", payload.at("/vc/type/1").asText());
-        assertEquals(
-                addressContext.getPostcode(),
-                payload.at("/vc/credentialSubject/address/0/postalCode").asText());
-        assertEquals(
-                addressContext.getCountryCode(),
-                payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
-        assertEquals(
-                addressContext.getRegion(),
-                payload.at("/vc/credentialSubject/address/0/addressRegion").asText());
+        JsonNode firstAddress = jsonNode.get("addresses").get(0);
+        assertNotNull(firstAddress);
+
+        assertEquals(expectedPostCode, firstAddress.get("postalCode").asText());
     }
 
     @When("the user arrives at find your address page")
@@ -370,25 +359,15 @@ public class AddressSteps {
         assertEquals(403, this.testContext.getResponse().statusCode());
     }
 
-    @When("the user selects previous address")
-    public void the_user_selects_previous_address() throws IOException, InterruptedException {
-        addressContext.setCountryCode("GB");
-        this.testContext.setResponse(
-                this.addressApiClient.sendPreviousAddressRequest(
-                        this.testContext.getSessionId(),
-                        addressContext.getUprn(),
-                        addressContext.getPostcode(),
-                        addressContext.getCountryCode()));
-    }
-
     @When("a valid JWT is returned in the multiple addresses response")
-    public void a_valid_jwt_is_returned_in_the_multiple_addresses_response()
-            throws ParseException, IOException {
+    public void a_valid_jwt_is_returned_in_the_multiple_addresses_response(DataTable dataTable)
+            throws ParseException, IOException, InterruptedException {
         assertEquals(200, this.testContext.getResponse().statusCode());
-
         assertNotNull(this.testContext.getResponse().body());
-        makeAssertions(SignedJWT.parse(this.testContext.getResponse().body()));
-        final SignedJWT decodedJWT = SignedJWT.parse(this.testContext.getResponse().body());
+
+        SignedJWT decodedJWT = SignedJWT.parse(this.testContext.getResponse().body());
+        makeAssertions(decodedJWT, dataTable);
+
         final var payload = objectMapper.readTree(decodedJWT.getPayload().toString());
 
         assertEquals(
@@ -476,5 +455,96 @@ public class AddressSteps {
                     JsonSchemaValidator.validateJsonAgainstSchema(
                             testHarnessResponse.getEvent().getData(), addressEndJsonSchema));
         }
+    }
+
+    private void selectAddress(String countryCode) throws IOException, InterruptedException {
+        addressContext.setCountryCode(countryCode);
+        this.testContext.setResponse(
+                this.addressApiClient.sendAddressRequest(
+                        this.testContext.getSessionId(),
+                        addressContext.getUprn(),
+                        addressContext.getPostcode(),
+                        addressContext.getCountryCode()));
+    }
+
+    private void selectPreviousAddress(String countryCode)
+            throws IOException, InterruptedException {
+        addressContext.setCountryCode(countryCode);
+        this.testContext.setResponse(
+                this.addressApiClient.sendPreviousAddressRequest(
+                        this.testContext.getSessionId(),
+                        addressContext.getUprn(),
+                        addressContext.getPostcode(),
+                        addressContext.getCountryCode()));
+    }
+
+    private void enterAddressFromDataTable(DataTable dataTable)
+            throws IOException, InterruptedException {
+        Map<String, String> addressData = dataTable.asMap(String.class, String.class);
+
+        Optional.ofNullable(addressData.get("apartmentNumber"))
+                .ifPresent(this.addressContext::setApartmentNumber);
+
+        Optional.ofNullable(addressData.get("region")).ifPresent(this.addressContext::setRegion);
+
+        Optional.ofNullable(addressData.get("locality"))
+                .ifPresent(this.addressContext::setLocality);
+
+        Optional.ofNullable(addressData.get("streetName"))
+                .ifPresent(this.addressContext::setStreetName);
+
+        Optional.ofNullable(addressData.get("postalCode"))
+                .ifPresent(this.addressContext::setPostcode);
+
+        Optional.ofNullable(addressData.get("buildingName"))
+                .ifPresent(this.addressContext::setBuildingName);
+
+        Optional.ofNullable(addressData.get("buildingNumber"))
+                .ifPresent(this.addressContext::setBuildingNumber);
+
+        Optional.ofNullable(addressData.get("yearFrom"))
+                .filter(s -> !s.isEmpty())
+                .map(Integer::parseInt)
+                .ifPresent(this.addressContext::setYearFrom);
+
+        Optional.ofNullable(addressData.get("country"))
+                .ifPresent(this.addressContext::setCountryCode);
+
+        this.testContext.setResponse(
+                this.addressApiClient.sendAddressRequest(
+                        this.testContext.getSessionId(), this.addressContext));
+    }
+
+    private void makeAssertions(SignedJWT decodedJWT) throws IOException {
+        final var header = objectMapper.readTree(decodedJWT.getHeader().toString());
+        final var payloadValue = decodedJWT.getPayload().toString();
+        final var payload = objectMapper.readTree(payloadValue);
+
+        assertEquals("JWT", header.at("/typ").asText());
+        assertEquals("ES256", header.at("/alg").asText());
+        assertEquals(
+                "did:web:review-a.dev.account.gov.uk#77618cc9ebd6909cbf0b50b00126f8e7feb5dbfdb64e6c623c01a6cafca47e41",
+                header.at("/kid").asText());
+
+        assertNotNull(payload);
+        assertNotNull(payload.get("nbf"));
+
+        assertEquals("VerifiableCredential", payload.at("/vc/type/0").asText());
+        assertEquals("AddressCredential", payload.at("/vc/type/1").asText());
+        assertEquals(
+                addressContext.getPostcode(),
+                payload.at("/vc/credentialSubject/address/0/postalCode").asText());
+        assertEquals(
+                addressContext.getCountryCode(),
+                payload.at("/vc/credentialSubject/address/0/addressCountry").asText());
+        assertEquals(
+                addressContext.getRegion(),
+                payload.at("/vc/credentialSubject/address/0/addressRegion").asText());
+    }
+
+    private void makeAssertions(SignedJWT decodedJWT, DataTable dataTable)
+            throws IOException, InterruptedException {
+        enterAddressFromDataTable(dataTable);
+        makeAssertions(decodedJWT);
     }
 }
