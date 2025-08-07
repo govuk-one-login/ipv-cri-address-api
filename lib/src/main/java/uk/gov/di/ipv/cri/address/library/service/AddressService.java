@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.utils.StringUtils;
 import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
@@ -25,6 +24,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+
+import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isCountryCodeAbsentForAny;
+import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGreatBritain;
 
 public class AddressService {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -76,7 +78,7 @@ public class AddressService {
             throw new AddressProcessingException("could not parse addresses..." + e.getMessage());
         }
 
-        if (!isCountryCodePresentForAll(addresses)) {
+        if (isCountryCodeAbsentForAny(addresses)) {
             throw new AddressProcessingException(ERROR_COUNTRY_CODE_NOT_PRESENT);
         }
         return addresses;
@@ -90,7 +92,7 @@ public class AddressService {
         addressItem.setAddresses(
                 Optional.ofNullable(addresses).orElse(Collections.emptyList()).stream()
                         .filter(Objects::nonNull)
-                        .map(this::normalizePostCodeAddresses)
+                        .map(this::normalizePostcodeUkAddresses)
                         .toList());
         dataStore.create(addressItem);
 
@@ -102,18 +104,9 @@ public class AddressService {
         return addressItem;
     }
 
-    private CanonicalAddress normalizePostCodeAddresses(CanonicalAddress address) {
-        String rawPostcode = address.getPostalCode();
-        if (rawPostcode != null && "GB".equalsIgnoreCase(address.getAddressCountry())) {
-
-            String formattedPostCode = rawPostcode.replace(" ", "").toUpperCase();
-            int postCodeLength = formattedPostCode.length();
-            int minUKPostcodeLength = 5;
-            int maxUKPostcodeLength = 7;
-
-            if (postCodeLength >= minUKPostcodeLength && postCodeLength <= maxUKPostcodeLength) {
-                address.setPostalCode(formattedPostCode);
-            }
+    private CanonicalAddress normalizePostcodeUkAddresses(CanonicalAddress address) {
+        if (isGreatBritain(address.getAddressCountry())) {
+            address.setPostalCode(address.getPostalCode().replace(" ", "").toUpperCase());
         }
         return address;
     }
@@ -252,9 +245,5 @@ public class AddressService {
 
         // At this point the current address is known
         previousAddress.setValidUntil(currentAddress.getValidFrom());
-    }
-
-    private boolean isCountryCodePresentForAll(List<CanonicalAddress> addresses) {
-        return addresses.stream().noneMatch(a -> StringUtils.isEmpty(a.getAddressCountry()));
     }
 }
