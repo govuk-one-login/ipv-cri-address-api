@@ -13,13 +13,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import static com.nimbusds.jwt.JWTClaimNames.ISSUER;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.ADDRESS_CREDENTIAL_TYPE;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.DI_CONTEXT;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.VC_ADDRESS_KEY;
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.W3_BASE_CONTEXT;
+import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGbAndCrownDependency;
 
 public class VerifiableCredentialService {
     private final VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder;
@@ -70,7 +70,7 @@ public class VerifiableCredentialService {
                 "addressesEntered",
                 Objects.nonNull(addresses) ? addresses.size() : 0,
                 "isUkAddress",
-                isUkAddress(getFirstAddressCountryCode(addresses)));
+                isGbAndCrownDependency(getFirstAddressCountryCode(addresses)));
     }
 
     private Object[] convertAddresses(List<CanonicalAddress> addresses) {
@@ -86,9 +86,5 @@ public class VerifiableCredentialService {
             return "";
         }
         return addresses.get(0).getAddressCountry();
-    }
-
-    private boolean isUkAddress(final String countryCode) {
-        return Stream.of("GB", "GG", "JE", "IM").anyMatch(countryCode::equalsIgnoreCase);
     }
 }
