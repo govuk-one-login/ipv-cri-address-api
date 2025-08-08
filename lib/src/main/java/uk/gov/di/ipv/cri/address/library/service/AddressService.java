@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.utils.StringUtils;
 import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
 import uk.gov.di.ipv.cri.address.library.exception.AddressProcessingException;
 import uk.gov.di.ipv.cri.address.library.persistence.item.AddressItem;
@@ -20,9 +19,14 @@ import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryConfig;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryManager;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+
+import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isCountryCodeAbsentForAny;
+import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGreatBritain;
 
 public class AddressService {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -74,7 +78,7 @@ public class AddressService {
             throw new AddressProcessingException("could not parse addresses..." + e.getMessage());
         }
 
-        if (!isCountryCodePresentForAll(addresses)) {
+        if (isCountryCodeAbsentForAny(addresses)) {
             throw new AddressProcessingException(ERROR_COUNTRY_CODE_NOT_PRESENT);
         }
         return addresses;
@@ -85,7 +89,11 @@ public class AddressService {
         AddressItem addressItem = new AddressItem();
         addressItem.setSessionId(sessionId);
         addressItem.setExpiryDate(ttlExpiryEpoch);
-        addressItem.setAddresses(addresses);
+        addressItem.setAddresses(
+                Optional.ofNullable(addresses).orElse(Collections.emptyList()).stream()
+                        .filter(Objects::nonNull)
+                        .map(this::normalizePostcodeUkAddresses)
+                        .toList());
         dataStore.create(addressItem);
 
         LOGGER.info(
@@ -94,6 +102,13 @@ public class AddressService {
                 addressItem.getAddresses().size());
 
         return addressItem;
+    }
+
+    private CanonicalAddress normalizePostcodeUkAddresses(CanonicalAddress address) {
+        if (isGreatBritain(address.getAddressCountry())) {
+            address.setPostalCode(address.getPostalCode().replace(" ", "").toUpperCase());
+        }
+        return address;
     }
 
     public AddressItem getAddressItemWithRetries(SessionItem sessionItem) {
@@ -230,9 +245,5 @@ public class AddressService {
 
         // At this point the current address is known
         previousAddress.setValidUntil(currentAddress.getValidFrom());
-    }
-
-    private boolean isCountryCodePresentForAll(List<CanonicalAddress> addresses) {
-        return addresses.stream().noneMatch(a -> StringUtils.isEmpty(a.getAddressCountry()));
     }
 }

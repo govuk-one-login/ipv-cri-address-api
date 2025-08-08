@@ -30,90 +30,23 @@ public class AddressApiClient {
 
     public HttpResponse<String> sendPostCodeLookUpRequest(String sessionId, String postcode)
             throws IOException, InterruptedException {
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
         return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "postcode-lookup")
+                requestBuilder(
+                                clientConfigurationService.getPrivateApiEndpoint(),
+                                "postcode-lookup")
                         .header(SESSION_ID, sessionId)
-                        .POST(
-                                HttpRequest.BodyPublishers.ofString(
-                                        "{\"postcode\": \"" + postcode + "\"}"))
+                        .POST(HttpRequest.BodyPublishers.ofString(createPostcodeJson(postcode)))
                         .build());
     }
 
     public HttpResponse<String> sendPostCodeLookUpGETRequest(String sessionId, String postcode)
             throws IOException, InterruptedException {
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
         return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "postcode-lookup/" + postcode)
+                requestBuilder(
+                                clientConfigurationService.getPrivateApiEndpoint(),
+                                "postcode-lookup/" + postcode)
                         .header(SESSION_ID, sessionId)
                         .GET()
-                        .build());
-    }
-
-    public HttpResponse<String> sendAddressRequest(
-            String sessionId, String uprn, String postcode, String countryCode)
-            throws IOException, InterruptedException {
-
-        CanonicalAddress currentAddress = new CanonicalAddress();
-        currentAddress.setUprn(Long.parseLong(uprn));
-        currentAddress.setPostalCode(postcode);
-        currentAddress.setValidFrom(LocalDate.of(2020, 1, 1));
-        currentAddress.setAddressCountry(countryCode);
-
-        String requestBody =
-                objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "address")
-                        .header(SESSION_ID, sessionId)
-                        .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
-                        .build());
-    }
-
-    public HttpResponse<String> sendPreviousAddressRequest(
-            String sessionId, String uprn, String postcode, String countryCode)
-            throws IOException, InterruptedException {
-
-        CanonicalAddress previousAddress = new CanonicalAddress();
-        previousAddress.setUprn(Long.parseLong(uprn));
-        previousAddress.setPostalCode(postcode);
-        previousAddress.setAddressCountry(countryCode);
-
-        CanonicalAddress newAddress = new CanonicalAddress();
-        newAddress.setUprn(Long.parseLong(uprn));
-        newAddress.setPostalCode(postcode);
-        newAddress.setValidFrom(LocalDate.now().minusMonths(3));
-        newAddress.setAddressCountry(countryCode);
-
-        String previousAddressRequestBody =
-                objectMapper.writeValueAsString(
-                        new CanonicalAddress[] {previousAddress, newAddress});
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "address")
-                        .header(SESSION_ID, sessionId)
-                        .PUT(HttpRequest.BodyPublishers.ofString(previousAddressRequestBody))
-                        .build());
-    }
-
-    public HttpResponse<String> sendAddressRequest(String sessionId, AddressContext addressContext)
-            throws IOException, InterruptedException {
-
-        CanonicalAddress currentAddress =
-                AddressContextMapper.mapToCanonicalAddress(addressContext);
-
-        String requestBody =
-                objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "address")
-                        .header(SESSION_ID, sessionId)
-                        .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
                         .build());
     }
 
@@ -129,14 +62,98 @@ public class AddressApiClient {
                         .build());
     }
 
+    public HttpResponse<String> sendAddressRequest(String sessionId, AddressContext addressContext)
+            throws IOException, InterruptedException {
+        CanonicalAddress currentAddress =
+                AddressContextMapper.mapToCanonicalAddress(addressContext);
+        String requestBody =
+                objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
+        return sendAddressRequestWithBody(sessionId, requestBody);
+    }
+
+    public HttpResponse<String> sendAddressRequest(
+            String sessionId, String uprn, String postcode, String countryCode)
+            throws IOException, InterruptedException {
+        CanonicalAddress currentAddress =
+                createCanonicalAddress(uprn, postcode, countryCode, LocalDate.of(2020, 1, 1));
+        String requestBody =
+                objectMapper.writeValueAsString(new CanonicalAddress[] {currentAddress});
+        return sendAddressRequestWithBody(sessionId, requestBody);
+    }
+
+    public HttpResponse<String> sendPreviousAddressRequest(
+            String sessionId, String uprn, String postcode, String countryCode)
+            throws IOException, InterruptedException {
+        CanonicalAddress previousAddress =
+                createCanonicalAddress(uprn, postcode, countryCode, null);
+        CanonicalAddress newAddress =
+                createCanonicalAddress(uprn, postcode, countryCode, LocalDate.now().minusMonths(3));
+        String requestBody =
+                objectMapper.writeValueAsString(
+                        new CanonicalAddress[] {previousAddress, newAddress});
+        return sendAddressRequestWithBody(sessionId, requestBody);
+    }
+
     public HttpResponse<String> sendGetAddressesLookupRequest(String sessionId)
             throws IOException, InterruptedException {
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
         return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "addresses/v2")
+                requestBuilder(clientConfigurationService.getPrivateApiEndpoint(), "addresses/v2")
                         .GET()
                         .header(SESSION_ID, sessionId)
+                        .build());
+    }
+
+    public HttpResponse<String> sendGetAddressesLookupRequestWithOutSessionId()
+            throws IOException, InterruptedException {
+        return sendHttpRequest(
+                requestBuilder(clientConfigurationService.getPrivateApiEndpoint(), "addresses/v2")
+                        .GET()
+                        .build());
+    }
+
+    public HttpResponse<String> sendPostCodeLookupRequestWithNoSessionId(String postcode)
+            throws IOException, InterruptedException {
+        return sendHttpRequest(
+                requestBuilder(
+                                clientConfigurationService.getPrivateApiEndpoint(),
+                                "postcode-lookup")
+                        .POST(HttpRequest.BodyPublishers.ofString(createPostcodeJson(postcode)))
+                        .build());
+    }
+
+    public HttpResponse<String> sendNoPostCodeWithSessionIdLookUpRequest(String sessionId)
+            throws IOException, InterruptedException {
+        return sendHttpRequest(
+                requestBuilder(
+                                clientConfigurationService.getPrivateApiEndpoint(),
+                                "postcode-lookup")
+                        .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                        .header(SESSION_ID, sessionId)
+                        .build());
+    }
+
+    private String createPostcodeJson(String postcode) {
+        return "{\"postcode\": \"" + postcode + "\"}";
+    }
+
+    private CanonicalAddress createCanonicalAddress(
+            String uprn, String postcode, String countryCode, LocalDate validFrom) {
+        CanonicalAddress address = new CanonicalAddress();
+        address.setUprn(Long.parseLong(uprn));
+        address.setPostalCode(postcode);
+        address.setAddressCountry(countryCode);
+        if (validFrom != null) {
+            address.setValidFrom(validFrom);
+        }
+        return address;
+    }
+
+    private HttpResponse<String> sendAddressRequestWithBody(String sessionId, String requestBody)
+            throws IOException, InterruptedException {
+        return sendHttpRequest(
+                requestBuilder(clientConfigurationService.getPrivateApiEndpoint(), "address")
+                        .header(SESSION_ID, sessionId)
+                        .PUT(HttpRequest.BodyPublishers.ofString(requestBody))
                         .build());
     }
 
@@ -152,35 +169,5 @@ public class AddressApiClient {
     private HttpResponse<String> sendHttpRequest(HttpRequest request)
             throws IOException, InterruptedException {
         return this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    public HttpResponse<String> sendGetAddressesLookupRequestWithOutSessionId()
-            throws IOException, InterruptedException {
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        return sendHttpRequest(requestBuilder(privateApiEndpoint, "addresses/v2").GET().build());
-    }
-
-    public HttpResponse<String> sendPostCodeLookupRequestWithNoSessionId(String postcode)
-            throws IOException, InterruptedException {
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "postcode-lookup")
-                        .POST(
-                                HttpRequest.BodyPublishers.ofString(
-                                        "{\"postcode\": \"" + postcode + "\"}"))
-                        .build());
-    }
-
-    public HttpResponse<String> sendNoPostCodeWithSessionIdLookUpRequest(String sessionId)
-            throws IOException, InterruptedException {
-
-        String privateApiEndpoint = this.clientConfigurationService.getPrivateApiEndpoint();
-        return sendHttpRequest(
-                requestBuilder(privateApiEndpoint, "postcode-lookup")
-                        .POST(HttpRequest.BodyPublishers.ofString("{}"))
-                        .header(SESSION_ID, sessionId)
-                        .build());
     }
 }
