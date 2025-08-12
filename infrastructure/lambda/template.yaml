@@ -56,6 +56,7 @@ Conditions:
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsBuildEnvironment: !Equals [!Ref Environment, build]
   IsProdEnvironment: !Equals [!Ref Environment, production]
+  IsNotProdEnvironment: !Not [!Equals [!Ref Environment, production]]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
   IsDevLikeOrBuild: !Or
     - !Condition IsDevEnvironment
@@ -190,6 +191,15 @@ Mappings:
   StaticVariables:
     Urls:
       SupportManualURL: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/address-credential-issuer-runbook"
+      OrdnanceSurveyAPIURL: "https://api.os.uk/search/places/v1/postcode"
+
+  StubOrdnanceSurveyAPIURLs:
+    Environment:
+      localdev: https://dvzu1fes9j.execute-api.eu-west-2.amazonaws.com/dev/search/places/v1/postcode
+      dev: https://dvzu1fes9j.execute-api.eu-west-2.amazonaws.com/dev/search/places/v1/postcode
+      build: https://b8ysflv2t2.execute-api.eu-west-2.amazonaws.com/build/search/places/v1/postcode
+      staging: https://hv21rikq99.execute-api.eu-west-2.amazonaws.com/staging/search/places/v1/postcode
+      integration: https://api.os.uk/search/places/v1/postcode
 
   MemorySizeMapping:
     Environment:
@@ -752,6 +762,110 @@ Resources:
       Value:
         !FindInMap [VcContainsUniqueIdMapping, Environment, !Ref Environment]
       Description: Verifiable Credential Contains UniqueId Mapping
+
+  ProdIpvCoreOrdnanceSurveyAPIURL:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  ProdIpvCoreStubPreProdOrdnanceSurveyAPIURL:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  ProdIpvCoreStubPreProdAwsBuildOrdnanceSurveyAPIURL:
+    Condition: IsProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod-aws-build"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  IpvCoreStubAwsProdOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-prod"
+      Type: String
+      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+
+  IpvCoreStubAwsBuildOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-build"
+      Type: String
+      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+
+  IpvCoreStubOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub"
+      Type: String
+      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+
+  IpvCoreStubPreProdAwsBuildOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod-aws-build"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  IpvCoreStubPreProdOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  IpvCoreStubAwsHeadlessOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-headless"
+      Type: String
+      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+
+  IpvCoreStubAwsProd3rdpartyOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-prod_3rdparty"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  IpvCoreStubAwsBuild3rdpartyOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-build_3rdparty"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  IpvCoreOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core"
+      Type: String
+      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+
+  IpvCore3rdPartyStubsOrdnanceSurveyAPIURL:
+    Condition: IsNotProdEnvironment
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-3rd-party-stubs"
+      Type: String
+      Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
