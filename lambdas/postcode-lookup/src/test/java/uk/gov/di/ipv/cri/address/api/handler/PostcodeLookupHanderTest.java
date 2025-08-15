@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
+import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
@@ -325,6 +326,50 @@ class PostcodeLookupHandlerTest {
             assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
             assertEquals(
                     "{\"error_description\":\"Access denied by resource owner or authorization server - Session expired\",\"error\":\"access_denied\"}",
+                    responseEvent.getBody());
+        }
+
+        @Test
+        void clientIdNotFoundReturns400() throws JsonProcessingException {
+            var badRequestExceptionArgumentCaptor =
+                    ArgumentCaptor.forClass(ClientIdNotSupportedException.class);
+            when(eventProbe.log(INFO, "found session")).thenReturn(eventProbe);
+            when(eventProbe.log(eq(ERROR), badRequestExceptionArgumentCaptor.capture()))
+                    .thenReturn(eventProbe);
+            when(eventProbe.counterMetric(POSTCODE_ERROR)).thenReturn(eventProbe);
+            doNothing().when(eventProbe).addDimensions(argumentCaptorDimension.capture());
+
+            when(apiGatewayProxyRequestEvent.getHeaders()).thenReturn(TEST_REQUEST_HEADERS);
+            when(apiGatewayProxyRequestEvent.getBody()).thenReturn(TEST_POSTCODE_BODY);
+
+            when(sessionService.validateSessionId(TEST_SESSION_ID)).thenReturn(mockSessionItem);
+            when(mockSessionItem.getClientId()).thenReturn(TEST_CLIENT_ID);
+
+            ClientIdNotSupportedException exception =
+                    new ClientIdNotSupportedException(
+                            "The Client ID provided for this session is not supported");
+            when(postcodeLookupService.lookupPostcode(TEST_POSTCODE, TEST_CLIENT_ID))
+                    .thenThrow(exception);
+
+            APIGatewayProxyResponseEvent responseEvent =
+                    postcodeLookupHandler.handleRequest(apiGatewayProxyRequestEvent, null);
+
+            var capturedBadRequest = badRequestExceptionArgumentCaptor.getValue();
+            var capturedDimension = argumentCaptorDimension.getValue();
+
+            verifyErrorsLoggedByEventProbe(capturedBadRequest);
+            verifyNoMoreInteractions(eventProbe);
+
+            assertEquals(
+                    Map.of(
+                            POSTCODE_ERROR_TYPE,
+                            "lookup_server",
+                            POSTCODE_ERROR_MESSAGE,
+                            "The Client ID provided for this session is not supported"),
+                    capturedDimension);
+            assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
+            assertEquals(
+                    "\"The Client ID provided for this session is not supported\"",
                     responseEvent.getBody());
         }
     }

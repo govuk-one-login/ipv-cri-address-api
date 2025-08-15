@@ -16,7 +16,9 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
+import software.amazon.awssdk.services.ssm.model.SsmException;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
+import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
@@ -260,6 +262,26 @@ class PostcodeLookupServiceTest {
                             any(int.class),
                             eq(
                                     "Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was *******"));
+        }
+
+        @Test
+        void clientIdNotFoundReturnsError() {
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
+                    .thenThrow(
+                            SsmException.builder()
+                                    .message("Mocked failure")
+                                    .statusCode(500)
+                                    .build());
+
+            assertThrows(
+                    ClientIdNotSupportedException.class,
+                    () -> postcodeLookupService.lookupPostcode("LS1 1BA", TEST_CLIENT_ID));
+
+            verify(log, times(1))
+                    .error(
+                            "Error retrieving the OrdnanceSurveyAPIUrl from SSM with the provided client-id: {}",
+                            TEST_CLIENT_ID);
         }
     }
 
