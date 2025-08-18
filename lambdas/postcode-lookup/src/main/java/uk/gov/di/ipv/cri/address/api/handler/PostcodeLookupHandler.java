@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.Metrics;
+import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
@@ -144,7 +145,8 @@ public class PostcodeLookupHandler
                     postcodeLookupService.getAuditEventContext(
                             postcode, input.getHeaders(), sessionItem));
 
-            List<CanonicalAddress> results = postcodeLookupService.lookupPostcode(postcode);
+            List<CanonicalAddress> results =
+                    postcodeLookupService.lookupPostcode(postcode, sessionItem.getClientId());
 
             eventProbe.counterMetric(LAMBDA_NAME);
             auditService.sendAuditEvent(
@@ -163,6 +165,8 @@ public class PostcodeLookupHandler
             return handleException(e, ACCESS_DENIED, SESSION_EXPIRED.getMessage(), FORBIDDEN);
         } catch (SessionNotFoundException e) {
             return handleException(e, ACCESS_DENIED, SESSION_NOT_FOUND.getMessage(), FORBIDDEN);
+        } catch (ClientIdNotSupportedException e) {
+            return handleException(e, LOOKUP_SERVER.getMessage(), BAD_REQUEST);
         } catch (Exception e) {
             return handleException(e, LOOKUP_SERVER.getMessage(), UNAUTHORIZED);
         }

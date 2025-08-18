@@ -16,7 +16,9 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
+import software.amazon.awssdk.services.ssm.model.SsmException;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
+import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
@@ -49,6 +51,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PostcodeLookupServiceTest {
+    private static final String TEST_CLIENT_ID = "mock-client-id";
+
     @Mock private ConfigurationService mockConfigurationService;
     @Mock private HttpResponse<String> mockResponse;
     @Spy private HttpClient httpClient;
@@ -69,7 +73,7 @@ class PostcodeLookupServiceTest {
 
     @Test
     void shouldLogAPILatency() throws IOException, InterruptedException {
-        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+        when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                 .thenReturn("http://localhost:8080/");
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
         when(mockResponse.body())
@@ -80,7 +84,7 @@ class PostcodeLookupServiceTest {
                         ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                 .thenReturn(mockResponse);
 
-        postcodeLookupService.lookupPostcode("ZZ1 1ZZ");
+        postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID);
 
         verify(eventProbe, times(1))
                 .counterMetric(eq("lookup_postcode_duration"), anyDouble(), eq(Unit.MILLISECONDS));
@@ -93,17 +97,18 @@ class PostcodeLookupServiceTest {
         void nullOrEmptyPostcodeReturnsValidationException(String postcode) {
             assertThrows(
                     PostcodeValidationException.class,
-                    () -> postcodeLookupService.lookupPostcode(postcode));
+                    () -> postcodeLookupService.lookupPostcode(postcode, TEST_CLIENT_ID));
         }
 
         @Test
         void invalidUrlThrowsPostcodeLookupBadRequestException() {
             // Simulate a failure of the URI builder
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("invalidURL{}");
             assertThrows(
                     PostcodeLookupBadRequestException.class,
-                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
         }
     }
 
@@ -112,7 +117,8 @@ class PostcodeLookupServiceTest {
         @Test
         void shouldThrowTimeoutExceptionWhenHttpRequestExceedsSetTimeout()
                 throws PostcodeLookupTimeoutException, IOException, InterruptedException {
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
 
             when(httpClient.send(
@@ -122,7 +128,7 @@ class PostcodeLookupServiceTest {
 
             assertThrows(
                     PostcodeLookupTimeoutException.class,
-                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
         }
 
         @Test
@@ -131,7 +137,8 @@ class PostcodeLookupServiceTest {
                         + "and ipv-cri-lib dependencies for version mismatches")
         void noSuchFieldErrorThrowsProcessingException() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
 
             // Simulate Http Client IO Failure
@@ -141,13 +148,14 @@ class PostcodeLookupServiceTest {
                     .thenThrow(NoSuchFieldError.class);
             assertThrows(
                     PostcodeLookupProcessingException.class,
-                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
         }
 
         @Test
         void ioExceptionThrowsProcessingException() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
 
             // Simulate Http Client IO Failure
@@ -157,13 +165,14 @@ class PostcodeLookupServiceTest {
                     .thenThrow(IOException.class);
             assertThrows(
                     PostcodeLookupProcessingException.class,
-                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
         }
 
         @Test
         void interruptedThrowsProcessingException() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
 
             // Simulate Http Client Interrupted
@@ -173,13 +182,14 @@ class PostcodeLookupServiceTest {
                     .thenThrow(InterruptedException.class);
             assertThrows(
                     PostcodeLookupProcessingException.class,
-                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
         }
 
         @Test
         void non200ThrowsProcessingException() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
             // Simulate a 500 response
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.INTERNAL_SERVER_ERROR);
@@ -189,7 +199,7 @@ class PostcodeLookupServiceTest {
                     .thenReturn(mockResponse);
             assertThrows(
                     PostcodeLookupProcessingException.class,
-                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+                    () -> postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
             verify(log, times(1)).error(contains("unknown error"), any(String.class), any());
         }
     }
@@ -199,7 +209,8 @@ class PostcodeLookupServiceTest {
         @Test
         void badRequestReturnsEmptyButLogs() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
             // Simulate a 400 bad request response
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.BAD_REQUEST);
@@ -210,7 +221,9 @@ class PostcodeLookupServiceTest {
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
 
-            assertEquals(Collections.emptyList(), postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+            assertEquals(
+                    Collections.emptyList(),
+                    postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
 
             verify(log, times(1)).error(eq("{} unknown error: {}"), any(String.class), any());
         }
@@ -218,7 +231,8 @@ class PostcodeLookupServiceTest {
         @Test
         void badRequestReturnsEmptyButLogsWithDetails() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
             // Simulate a 400 bad request response
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.BAD_REQUEST);
@@ -237,7 +251,9 @@ class PostcodeLookupServiceTest {
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
 
-            assertEquals(Collections.emptyList(), postcodeLookupService.lookupPostcode("ZZ1 1ZZ"));
+            assertEquals(
+                    Collections.emptyList(),
+                    postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID));
 
             verify(log, times(1))
                     .error(
@@ -247,6 +263,26 @@ class PostcodeLookupServiceTest {
                             eq(
                                     "Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was *******"));
         }
+
+        @Test
+        void clientIdNotFoundReturnsError() {
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
+                    .thenThrow(
+                            SsmException.builder()
+                                    .message("Mocked failure")
+                                    .statusCode(500)
+                                    .build());
+
+            assertThrows(
+                    ClientIdNotSupportedException.class,
+                    () -> postcodeLookupService.lookupPostcode("LS1 1BA", TEST_CLIENT_ID));
+
+            verify(log, times(1))
+                    .error(
+                            "Error retrieving the OrdnanceSurveyAPIUrl from SSM with the provided client-id: {}",
+                            TEST_CLIENT_ID);
+        }
     }
 
     @Nested
@@ -254,7 +290,8 @@ class PostcodeLookupServiceTest {
         @Test
         void validPostcodeReturnsResults() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
             // Simulate a 200 response
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
@@ -267,7 +304,7 @@ class PostcodeLookupServiceTest {
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
 
-            assertFalse(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+            assertFalse(postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID).isEmpty());
         }
 
         @Test
@@ -275,7 +312,8 @@ class PostcodeLookupServiceTest {
                 "Should return empty when response from Ordnance Survey is 200 but results contain an empty DPA object")
         void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIs200WithEmptyDPA()
                 throws IOException, InterruptedException {
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
 
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
@@ -288,7 +326,7 @@ class PostcodeLookupServiceTest {
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
 
-            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID).isEmpty());
 
             verify(log)
                     .info("API response received from OS API: status={}, latencyInMs={}", 200, 0L);
@@ -300,7 +338,8 @@ class PostcodeLookupServiceTest {
         void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIsA200WResultsArrayEmpty()
                 throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
             // Simulate a 200 response
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
@@ -314,7 +353,7 @@ class PostcodeLookupServiceTest {
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
 
-            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID).isEmpty());
             verify(log, times(1))
                     .info(
                             "API response received from OS API: status={}, latencyInMs={}",
@@ -328,7 +367,8 @@ class PostcodeLookupServiceTest {
         @Test
         void notFoundReturnsNoResults() throws IOException, InterruptedException {
             // Mock a valid url so service doesn't fall over validating URI
-            when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIURL"))
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
             // Simulate a 404 response
             when(mockResponse.statusCode()).thenReturn(HttpStatusCode.NOT_FOUND);
@@ -336,7 +376,7 @@ class PostcodeLookupServiceTest {
                             any(HttpRequest.class),
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
                     .thenReturn(mockResponse);
-            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ").isEmpty());
+            assertTrue(postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID).isEmpty());
             verify(log).error(contains("404: Not Found"), any(String.class));
         }
     }

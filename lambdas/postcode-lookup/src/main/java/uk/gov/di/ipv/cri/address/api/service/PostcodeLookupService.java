@@ -6,7 +6,9 @@ import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.services.ssm.model.SsmException;
 import software.amazon.cloudwatchlogs.emf.model.Unit;
+import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupTimeoutException;
@@ -73,7 +75,7 @@ public class PostcodeLookupService {
         this.objectMapper = objectMapper;
     }
 
-    public List<CanonicalAddress> lookupPostcode(String postcode)
+    public List<CanonicalAddress> lookupPostcode(String postcode, String clientId)
             throws PostcodeValidationException,
                     PostcodeLookupProcessingException,
                     JsonProcessingException,
@@ -81,7 +83,7 @@ public class PostcodeLookupService {
 
         this.validatePostCode(postcode);
         // Create our http request
-        HttpRequest request = createHttpRequest(postcode);
+        HttpRequest request = createHttpRequest(postcode, clientId);
 
         long startTime = System.nanoTime();
         HttpResponse<String> response = sendHttpRequest(request);
@@ -122,10 +124,12 @@ public class PostcodeLookupService {
                 sessionItem);
     }
 
-    private HttpRequest createHttpRequest(String postcode)
-            throws PostcodeLookupBadRequestException {
+    private HttpRequest createHttpRequest(String postcode, String clientId)
+            throws PostcodeLookupBadRequestException, ClientIdNotSupportedException {
         try {
-            String urlParam = configurationService.getParameterValue("OrdnanceSurveyAPIURL");
+            String urlParam =
+                    configurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/%s".formatted(clientId));
             String apiKey = configurationService.getSecretValue("OrdnanceSurveyAPIKey");
             URI ordnanceSurveyAPIURL = new URI(urlParam);
 
@@ -149,6 +153,13 @@ public class PostcodeLookupService {
 
             throw new PostcodeLookupBadRequestException(
                     "Error building URI for postcode lookup", e);
+        } catch (SsmException e) {
+            log.error(
+                    "Error retrieving the OrdnanceSurveyAPIUrl from SSM with the provided client-id: {}",
+                    clientId);
+
+            throw new ClientIdNotSupportedException(
+                    "The Client ID provided for this session is not supported", e);
         }
     }
 
