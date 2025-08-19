@@ -62,6 +62,11 @@ public class AddressApiClient {
                         .build());
     }
 
+    public HttpResponse<String> sendAddressRequest(String sessionId, String requestBody)
+            throws IOException, InterruptedException {
+        return sendAddressRequestWithBody(sessionId, requestBody);
+    }
+
     public HttpResponse<String> sendAddressRequest(String sessionId, AddressContext addressContext)
             throws IOException, InterruptedException {
         CanonicalAddress currentAddress =

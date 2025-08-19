@@ -41,3 +41,27 @@ Feature: Address API unhappy path test
     Given a request is made to the postcode-lookup endpoint without a postcode in the body and with session id in the header
     Then the endpoint should return a 400 HTTP status code
     And the response body contains no postcode error
+
+  @invalid_date
+  Scenario: Date in the request body is the invalid value 0000-01-01
+    Given a request is made to the address endpoint with a validFrom date of "0000-01-01"
+    Then the endpoint should return a 400 HTTP status code
+    And the response body contains bad request error
+
+  @invalid_date
+  Scenario: Date in the request body is the invalid value 20000-01-01
+    Given a request is made to the address endpoint with a validFrom date of "20000-01-01"
+    Then the endpoint should return a 400 HTTP status code
+    And the response body contains bad request error
+
+  @invalid_date
+  Scenario: Date in the request body is the invalid value 2000-one-one
+    Given a request is made to the address endpoint with a validFrom date of "2000-one-one"
+    Then the endpoint should return a 400 HTTP status code
+    And the response body contains bad request error
+
+  @invalid_date
+  Scenario: Date in the request body is the invalid value 01-01-2000
+    Given a request is made to the address endpoint with a validFrom date of "01-01-2000"
+    Then the endpoint should return a 400 HTTP status code
+    And the response body contains bad request error
