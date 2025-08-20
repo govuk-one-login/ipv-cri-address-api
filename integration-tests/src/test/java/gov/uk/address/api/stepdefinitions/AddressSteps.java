@@ -437,6 +437,13 @@ public class AddressSteps {
         assertEquals("\"Missing postcode in request body.\"", responseBody);
     }
 
+    @Then("the response body contains bad request error")
+    public void theResponseBodyContainsBadRequestError() {
+        var responseBody = this.testContext.getResponse().body();
+        assertNotNull(responseBody);
+        assertEquals("{\"message\": \"Invalid request body\"}", responseBody);
+    }
+
     @Then("the IPV_ADDRESS_CRI_END event is emitted and validated against schema")
     public void verifyIpvAddressCriEndEventIsEmitted() throws IOException {
         String responseBody = testContext.getTestHarnessResponseBody();
@@ -476,6 +483,17 @@ public class AddressSteps {
                         addressContext.getUprn(),
                         addressContext.getPostcode(),
                         addressContext.getCountryCode()));
+    }
+
+    @Given("a request is made to the address endpoint with a validFrom date of {string}")
+    public void aRequestIsMadeToTheAddressEndpointWithDate(String validFromDate)
+            throws IOException, InterruptedException {
+        String requestBody =
+                "[{\"uprn\":100000000000,\"buildingNumber\":\"10\",\"streetName\":\"street\",\"addressLocality\":\"City\",\"postalCode\":\"SW1A 2AA\",\"addressCountry\":\"GB\",\"validFrom\":\""
+                        + validFromDate
+                        + "\"}]";
+        this.testContext.setResponse(
+                this.addressApiClient.sendAddressRequest("doesNotMatter", requestBody));
     }
 
     private void enterAddressFromDataTable(DataTable dataTable)

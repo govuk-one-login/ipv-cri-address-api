@@ -391,12 +391,14 @@ components:
           example: "IL"
           description: "The state, district, county, parish or province"
         validFrom:
-          description: "Date in ISO 8601 format"
+          description: "Date in ISO 8601 format, year must not be 0000"
           type: "string"
+          pattern: "^(?!0000)\\d{4}-\\d{2}-\\d{2}$"
           example: "2020-01-01"
         validUntil:
-          description: "Date in ISO 8601 format"
+          description: "Date in ISO 8601 format, year must not be 0000"
           type: "string"
+          pattern: "^(?!0000)\\d{4}-\\d{2}-\\d{2}$"
           example: "2020-01-01"
   responses:
     Error400:
