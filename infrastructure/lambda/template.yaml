@@ -467,6 +467,9 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBCrudPolicy:
             TableName: !Ref AddressTable
+        - KMSDecryptPolicy:
+            KeyId:
+              !Ref AddressTableKey
         - Statement:
             - Effect: Allow
               Action:
@@ -533,6 +536,9 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Ref AddressTable
+        - KMSDecryptPolicy:
+            KeyId:
+              !Ref AddressTableKey
         - Statement:
             Effect: Allow
             Action:
@@ -657,6 +663,35 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expiryDate
         Enabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref AddressTableKey
+        SSEEnabled: true
+        SSEType: KMS
+
+  AddressTableKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "${AWS::StackName} address table key"
+      Enabled: true
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      MultiRegion: false
+      PendingWindowInDays: 30
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "Allow the account to manage the key"
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName} address table key"
+        - Key: Environment
+          Value: !Ref Environment
 
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
