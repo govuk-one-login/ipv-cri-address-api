@@ -357,7 +357,7 @@ Resources:
           - [!Ref AWS::NoValue]
       Layers:
         # SEE https://github.com/govuk-one-login/observability-infrastructure/tree/main/lambdalayer
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_311_51_20250331-143707_with_collector_java:1
+        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
