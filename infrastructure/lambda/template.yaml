@@ -93,6 +93,7 @@ Globals:
       Type: !Ref LambdaDeploymentPreference
       Role: !GetAtt CodeDeployServiceRole.Arn
     MemorySize: !FindInMap [MemorySizeMapping, Environment, !Ref Environment]
+
     Environment:
       Variables:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
@@ -356,7 +357,6 @@ Resources:
             ]
           - [!Ref AWS::NoValue]
       Layers:
-        # SEE https://github.com/govuk-one-login/observability-infrastructure/tree/main/lambdalayer
         - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
       Environment:
         Variables:
@@ -443,7 +443,7 @@ Resources:
             ]
           - [!Ref AWS::NoValue]
       Layers:
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_277_157_20231019-162516_with_collector_java:1
+        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address"
@@ -500,7 +500,7 @@ Resources:
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/issuecredential
       Layers:
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_277_157_20231019-162516_with_collector_java:1
+        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
@@ -572,7 +572,7 @@ Resources:
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs22.x
       Layers:
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_299_2_20240809-044254_with_collector_nodejs:2
+        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
