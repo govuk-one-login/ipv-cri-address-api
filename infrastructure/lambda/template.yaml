@@ -443,14 +443,7 @@ Resources:
             ]
           - [!Ref AWS::NoValue]
       Layers:
-        - !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
+        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_277_157_20231019-162516_with_collector_java:1
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address"
@@ -507,14 +500,7 @@ Resources:
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/issuecredential
       Layers:
-        - !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:JAVA_LAYER}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
+        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_277_157_20231019-162516_with_collector_java:1
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
@@ -586,14 +572,7 @@ Resources:
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs22.x
       Layers:
-        - !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
+        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_299_2_20240809-044254_with_collector_nodejs:2
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
