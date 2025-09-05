@@ -14,7 +14,7 @@ slf4j = "2.0.13"
 # Plugins
 spotless = "6.23.+"
 sonarqube = "4.4.+"
-post-compile-weaving = "6.3.0"
+post-compile-weaving = "8.14.2"
 
 [libraries]
 # AWS SDK
