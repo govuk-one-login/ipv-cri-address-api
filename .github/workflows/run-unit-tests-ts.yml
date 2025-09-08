@@ -28,7 +28,7 @@ jobs:
         working-directory: lambdas/get-addresses
     steps:
       - name: Pull repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node
         uses: actions/setup-node@v4
