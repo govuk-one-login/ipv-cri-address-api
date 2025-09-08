@@ -20,7 +20,7 @@ jobs:
     environment: development
     steps:
       - name: Assume AWS Role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.DEPLOYMENT_ROLE_ARN }}
           aws-region: eu-west-2
