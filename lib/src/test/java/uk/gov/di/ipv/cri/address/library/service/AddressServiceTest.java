@@ -729,6 +729,27 @@ class AddressServiceTest {
     }
 
     @Test
+    void getAddressItemSomeWithRetriesOnNullReturnsSucceedsAfterRetrying() {
+        AddressItem addressItem = new AddressItem();
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(SESSION_ID);
+        addressItem.setSessionId(sessionItem.getSessionId());
+        CanonicalAddress canonicalAddress = new CanonicalAddress();
+        canonicalAddress.setAddressCountry("GB");
+        addressItem.setAddresses(Collections.singletonList(canonicalAddress));
+
+        when(mockDataStore.getItem(anyString()))
+                .thenReturn(null)
+                .thenReturn(null)
+                .thenReturn(addressItem);
+
+        AddressItem result = addressService.getAddressItemWithRetries(sessionItem);
+
+        assertEquals(addressItem, result);
+        verify(mockDataStore, times(3)).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Test
     void throwsNullPointerExceptionWhenAddressIsNotFoundWithSessionItem() {
         assertThrows(
                 NullPointerException.class,
