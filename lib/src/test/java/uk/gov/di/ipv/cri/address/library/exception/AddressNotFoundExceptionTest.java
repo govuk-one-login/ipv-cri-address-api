@@ -7,26 +7,34 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AddressNotFoundExceptionTest {
+    private static final String EXPECTED_MESSAGE = "Address not found";
+
     @Test
-    void shouldCreateExceptionWithMessage() {
-        String expectedMessage = "Address not found";
-        AddressNotFoundException exception = new AddressNotFoundException(expectedMessage);
+    void createsExceptionWithMessage() {
+        AddressNotFoundException exception = new AddressNotFoundException(EXPECTED_MESSAGE);
 
         assertNotNull(exception);
-        assertEquals(expectedMessage, exception.getMessage());
+        assertEquals(EXPECTED_MESSAGE, exception.getMessage());
     }
 
     @Test
-    void shouldThrowAndCatchCorrectly() {
-        String expectedMessage = "Address not found";
+    void createsAddressNotFoundExceptionWithMessageAndException() {
+        AddressNotFoundException addressNotFoundException =
+                new AddressNotFoundException(EXPECTED_MESSAGE, new RuntimeException());
 
+        assertNotNull(addressNotFoundException);
+        assertEquals(EXPECTED_MESSAGE, addressNotFoundException.getMessage());
+    }
+
+    @Test
+    void throwsAndCatchCorrectly() {
         Exception thrown =
                 assertThrows(
                         AddressNotFoundException.class,
                         () -> {
-                            throw new AddressNotFoundException(expectedMessage);
+                            throw new AddressNotFoundException(EXPECTED_MESSAGE);
                         });
 
-        assertEquals(expectedMessage, thrown.getMessage());
+        assertEquals(EXPECTED_MESSAGE, thrown.getMessage());
     }
 }
