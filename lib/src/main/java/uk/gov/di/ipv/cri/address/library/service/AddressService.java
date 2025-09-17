@@ -118,13 +118,20 @@ public class AddressService {
 
     public AddressItem getAddressItem(SessionItem sessionItem) {
         try {
-            return dataStore.getItem(sessionItem.getSessionId().toString());
+            AddressItem addressItem = dataStore.getItem(sessionItem.getSessionId().toString());
+            if (addressItem == null) {
+                LOGGER.error(
+                        "{} for gov uk journey id: {}",
+                        ERROR_ADDRESS_ITEM_NOT_PRESENT,
+                        sessionItem.getClientSessionId());
+                throw new AddressNotFoundException(ERROR_ADDRESS_ITEM_NOT_PRESENT);
+            }
+            return addressItem;
         } catch (Exception e) {
             LOGGER.error(
-                    "{} for gov uk journey id: {}",
-                    ERROR_ADDRESS_ITEM_NOT_PRESENT,
+                    "Unexpected datastore error for gov uk journey id: {}",
                     sessionItem.getClientSessionId());
-            throw new AddressNotFoundException(ERROR_ADDRESS_ITEM_NOT_PRESENT);
+            throw new AddressNotFoundException(ERROR_ADDRESS_ITEM_NOT_PRESENT, e);
         }
     }
 
