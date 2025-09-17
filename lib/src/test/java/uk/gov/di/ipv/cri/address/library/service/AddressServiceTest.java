@@ -723,9 +723,46 @@ class AddressServiceTest {
     void shouldGetAddressItemUsingSessionItem() {
         SessionItem sessionItem = new SessionItem();
         sessionItem.setSessionId(SESSION_ID);
+        when(mockDataStore.getItem(SESSION_ID.toString())).thenReturn(new AddressItem());
+
         addressService.getAddressItem(sessionItem);
 
         verify(mockDataStore).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Test
+    void getAddressItemSomeWithRetriesOnNullReturnsSucceedsAfterRetrying() {
+        AddressItem addressItem = new AddressItem();
+        SessionItem sessionItem = new SessionItem();
+        sessionItem.setSessionId(SESSION_ID);
+        addressItem.setSessionId(sessionItem.getSessionId());
+        CanonicalAddress canonicalAddress = new CanonicalAddress();
+        canonicalAddress.setAddressCountry("GB");
+        addressItem.setAddresses(Collections.singletonList(canonicalAddress));
+
+        when(mockDataStore.getItem(anyString()))
+                .thenReturn(null)
+                .thenReturn(null)
+                .thenReturn(addressItem);
+
+        AddressItem result = addressService.getAddressItemWithRetries(sessionItem);
+
+        assertEquals(addressItem, result);
+        verify(mockDataStore, times(3)).getItem(sessionItem.getSessionId().toString());
+    }
+
+    @Test
+    void getAddressItemWithRetriesAllRetriesFailWhenItReturnsAllNulls() {
+        when(mockDataStore.getItem(anyString())).thenReturn(null).thenReturn(null).thenReturn(null);
+
+        var sessionItem = new SessionItem();
+        AddressNotFoundException ex =
+                assertThrows(
+                        AddressNotFoundException.class,
+                        () -> addressService.getAddressItemWithRetries(sessionItem));
+
+        assertEquals("Address Item not found", ex.getMessage());
+        verify(mockDataStore, times(3)).getItem(sessionItem.getSessionId().toString());
     }
 
     @Test
