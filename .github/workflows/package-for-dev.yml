@@ -3,7 +3,7 @@ name: Package for Dev
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, IPS-2050-Blue-Green-Frontend]
 
 jobs:
   deploy:
