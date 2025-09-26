@@ -315,7 +315,6 @@ Resources:
                 Condition:
                   StringNotEquals:
                     aws:SourceVpce:
-                      - !ImportValue cri-vpc-ApiGatewayVpcEndpointId
                       - !ImportValue spoke-vpc-ExecuteApiGatewayEndpointId
 
   PublicAddressApiAccessLogGroup:

@@ -1,0 +1,57 @@
+name: Package for Dev Green
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [IPS-2050-transit-gateway-spike]
+
+jobs:
+  deploy:
+    name: Deploy to dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AWS_REGION: eu-west-2
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 21
+          distribution: corretto
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.11.2
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Assume temporary AWS role
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.DEV_CRI_GH_ACTIONS_ROLE_ARN_GREEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM Validate
+        run: sam validate --region ${{ env.AWS_REGION }} -t infrastructure/green/template.yaml
+
+      - name: SAM build
+        run: |
+          mkdir out
+          sam build -t ./infrastructure/green/template.yaml -b ./out/
+
+      - name: Deploy SAM app
+        uses: govuk-one-login/devplatform-upload-action@v3.11.0
+        with:
+          artifact-bucket-name: ${{ secrets.DEV_CRI_ARTIFACT_SOURCE_BUCKET_NAME_GREEN }}
+          signing-profile-name: ${{ secrets.DEV_SIGNING_PROFILE_NAME }}
+          working-directory: ./out

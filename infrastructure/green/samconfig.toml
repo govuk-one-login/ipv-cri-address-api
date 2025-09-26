@@ -1,0 +1,26 @@
+version = 0.1
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+stack_name = "<your-name>-address-api"
+
+capabilities = ["CAPABILITY_IAM"]
+fail_on_empty_changeset = false
+confirm_changeset = false
+s3_prefix = "localdev"
+region = "eu-west-2"
+resolve_s3 = true
+
+parameter_overrides = [
+    "Environment=localdev"
+]
+
+tags = [
+    "cri:component=ipv-cri-address-api",
+    "cri:deployment-source=manual",
+    "cri:application=Orange",
+    "cri:stack-type=localdev"
+]
