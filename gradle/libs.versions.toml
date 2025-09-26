@@ -1,18 +1,18 @@
 [versions]
 aws-lambda-events = "3.11.0"
-nimbusds-oauth = "11.2"
-nimbusds-jwt = "9.40"
+nimbusds-oauth = "11.29.1"
+nimbusds-jwt = "10.5"
 junit = "5.10.3"
 mockito = "5.18.0"
 powertools = "1.18.0"
-cri-common-lib = "6.5.0"
+cri-common-lib = "6.6.0"
 pact-provider = "4.5.11"
 webcompere = "2.1.6"
 open-telemetry = "2.12.0-alpha"
 slf4j = "2.0.13"
 
 # Plugins
-spotless = "6.23.+"
+spotless = "8.0.+"
 sonarqube = "4.4.+"
 post-compile-weaving = "6.3.0"
 
