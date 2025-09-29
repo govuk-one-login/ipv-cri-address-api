@@ -117,7 +117,7 @@ public class IssueCredentialHandler
 
         this.addressService =
                 new AddressService(
-                        config, objectMapper, clientProviderFactory.getDynamoDbEnhancedClient());
+                        objectMapper, clientProviderFactory.getDynamoDbEnhancedClient());
         this.sessionService =
                 new SessionService(config, clientProviderFactory.getDynamoDbEnhancedClient());
         this.eventProbe = new EventProbe();

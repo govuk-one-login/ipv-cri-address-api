@@ -46,19 +46,20 @@ public class AddressService {
     private static final String ERROR_ADDRESS_ITEM_NOT_PRESENT = "Address Item not found";
     private static final String MANUAL_ADDRESS_METRIC = "manual-address-entry";
     private static final String PRE_POPULATED_ADDRESS_METRIC = "pre-populated-address-entry";
+
+    private static final String ADDRESS_TABLE_NAME = System.getenv("ADDRESS_TABLE_NAME");
+
     private final DataStore<AddressItem> dataStore;
     private final ObjectMapper objectMapper;
-
     private ObjectReader addressReader;
 
     @ExcludeFromGeneratedCoverageReport
     public AddressService(
-            ConfigurationService configurationService,
             ObjectMapper objectMapper,
             DynamoDbEnhancedClient dynamoDbEnhancedClient) {
         this(
                 new DataStore<>(
-                        configurationService.getParameterValue("AddressTableName"),
+                        ADDRESS_TABLE_NAME,
                         AddressItem.class,
                         dynamoDbEnhancedClient),
                 objectMapper);
