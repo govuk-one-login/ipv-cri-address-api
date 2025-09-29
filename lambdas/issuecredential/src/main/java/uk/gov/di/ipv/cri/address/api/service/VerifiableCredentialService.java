@@ -23,6 +23,7 @@ import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGbAndCrownDep
 
 public class VerifiableCredentialService {
     private static final int MAX_JWT_TTL = Integer.parseInt(System.getenv("MAX_JWT_TTL"));
+    private static final String JWT_TTL_UNIT = System.getenv("JWT_TTL_UNIT");
 
     private final VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder;
     private final SignedJWTFactory signedJwtFactory;
@@ -43,8 +44,7 @@ public class VerifiableCredentialService {
     public SignedJWT generateSignedVerifiableCredentialJwt(
             String subject, List<CanonicalAddress> canonicalAddresses)
             throws NoSuchAlgorithmException, JOSEException {
-        ChronoUnit jwtTtlUnit =
-                ChronoUnit.valueOf(this.configurationService.getParameterValue("JwtTtlUnit"));
+        ChronoUnit jwtTtlUnit = ChronoUnit.valueOf(JWT_TTL_UNIT);
         var claimsSet =
                 this.vcClaimsSetBuilder
                         .subject(subject)

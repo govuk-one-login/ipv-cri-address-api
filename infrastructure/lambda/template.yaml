@@ -508,6 +508,7 @@ Resources:
             Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
           ADDRESS_TABLE_NAME: !Sub address-${AWS::StackName}
           MAX_JWT_TTL: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
+          JWT_TTL_UNIT: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -528,7 +529,6 @@ Resources:
             Action:
               - ssm:GetParameter
             Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
@@ -668,14 +668,6 @@ Resources:
       KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
       UsagePlanId: !Ref PublicAddressApiUsagePlan
-
-  JwtTtlUnitParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
-      Type: String
-      Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
-      Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
 
   ReleaseFlagsVcContainsUniqueIdParameter:
     Type: AWS::SSM::Parameter
