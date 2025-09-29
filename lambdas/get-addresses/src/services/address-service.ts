@@ -6,8 +6,9 @@ import { Address } from "../types/address";
 import { CanonicalAddress } from "../types/canonical-address";
 import { SessionItem } from "../types/session";
 
-const parameterPrefix = process.env.AWS_STACK_NAME || "";
-const commonParameterPrefix = process.env.COMMON_PARAMETER_NAME_PREFIX || "";
+const addressLookupTableName = process.env.ADDRESS_LOOKUP_TABLE_NAME || "";
+const sessionTableName = process.env.SESSION_TABLE_NAME || "";
+
 export class AddressService {
     private readonly dbService: DynamoDbService;
     private readonly logger: Logger;
@@ -19,11 +20,6 @@ export class AddressService {
 
     public async getAddressesBySessionId(sessionId: string): Promise<Address> {
         try {
-            const [addressLookupTableName, sessionTableName] = await Promise.all([
-                getParameter(`/${parameterPrefix}/AddressLookupTableName`),
-                getParameter(`/${commonParameterPrefix}/SessionTableName`),
-            ]);
-
             const sessionItem = (await this.dbService.getItem(sessionId, sessionTableName as string))
                 .Item as SessionItem;
 

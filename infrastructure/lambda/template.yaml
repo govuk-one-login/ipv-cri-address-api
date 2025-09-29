@@ -576,6 +576,8 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
+          ADDRESS_LOOKUP_TABLE_NAME: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+          SESSION_TABLE_NAME: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -583,14 +585,6 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - Statement:
-            - Sid: ReadParametersPolicy
-              Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -698,14 +692,6 @@ Resources:
       Type: String
       Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
       Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
-
-  AddressLookupTableNameParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/AddressLookupTableName"
-      Type: String
-      Value: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-      Description: Table name to retrieve addresses from store
 
   ReleaseFlagsVcContainsUniqueIdParameter:
     Type: AWS::SSM::Parameter
