@@ -5,8 +5,6 @@ import { Address } from "../types/address";
 import { CanonicalAddress } from "../types/canonical-address";
 import { SessionItem } from "../types/session";
 
-const parameterPrefix = process.env.AWS_STACK_NAME || "";
-const commonParameterPrefix = process.env.COMMON_PARAMETER_NAME_PREFIX || "";
 const addressLookupTableName = process.env.ADDRESS_LOOKUP_TABLE_NAME || "";
 const sessionTableName = process.env.SESSION_TABLE_NAME || "";
 
