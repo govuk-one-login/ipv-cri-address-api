@@ -57,6 +57,8 @@ Conditions:
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotProdEnvironment: !Not [!Equals [!Ref Environment, production]]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  IsNotIntOrProdEnvironment: !Not [!Or [!Equals [!Ref Environment, integration], !Equals [!Ref Environment, production]]]
+
   AddProvisionedConcurrency:
     !Not [
       !Equals [
@@ -254,6 +256,7 @@ Mappings:
       production: MONTHS
       localdev: HOURS
 
+
 Resources:
   PublicAddressApi:
     Type: AWS::Serverless::Api
@@ -261,6 +264,7 @@ Resources:
       Name: !Sub ${AWS::StackName}-PublicAddressApi
       Description: Public Address CRI API
       StageName: !Ref Environment
+      AlwaysDeploy: true
       AccessLogSetting:
         DestinationArn: !GetAtt PublicAddressApiAccessLogGroup.Arn
       DefinitionBody:
@@ -274,6 +278,9 @@ Resources:
             Location: ./public-api.yaml
       EndpointConfiguration:
         Type: REGIONAL
+      Tags:
+        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
+        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
 
   PrivateAddressApi:
     Type: AWS::Serverless::Api
@@ -281,6 +288,7 @@ Resources:
       Name: !Sub ${AWS::StackName}-PrivateAddressApi
       Description: Private Address CRI API
       StageName: !Ref Environment
+      AlwaysDeploy: true
       AccessLogSetting:
         DestinationArn: !GetAtt PrivateAddressApiAccessLogGroup.Arn
       DefinitionBody:
@@ -312,6 +320,11 @@ Resources:
                 Condition:
                   StringNotEquals:
                     aws:SourceVpce: !ImportValue cri-vpc-ApiGatewayVpcEndpointId
+      Tags:
+        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
+        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
+
+
 
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1088,7 +1101,7 @@ Resources:
   AddressAPIGW5XXErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: !Sub 
+      AlarmDescription: !Sub
         - "Address ${Environment} API Gateway 5XX errors. Runbook: ${SupportManualURL}"
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
