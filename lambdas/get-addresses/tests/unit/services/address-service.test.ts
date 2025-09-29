@@ -6,11 +6,7 @@ jest.mock("@aws-sdk/lib-dynamodb", () => {
         GetCommand: jest.fn(),
     };
 });
-jest.mock("@aws-lambda-powertools/parameters/ssm", () => ({
-    getParameter: jest.fn(),
-}));
 
-import { getParameter } from "@aws-lambda-powertools/parameters/ssm";
 import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { AddressService } from "../../../src/services/address-service";
@@ -20,7 +16,6 @@ import { Address } from "../../../src/types/address";
 const mockDynamoDbClient = jest.mocked(DynamoDbClient);
 const mockLogger = jest.mocked(Logger);
 const mockGetCommand = jest.mocked(GetCommand);
-const getParameterMock = jest.mocked(getParameter);
 
 const infoLoggerSpy = jest.spyOn(mockLogger.prototype, "info");
 const appendKeysLoggerSpy = jest.spyOn(mockLogger.prototype, "appendKeys").mockImplementation((args) => args);
@@ -33,8 +28,8 @@ describe("Address Service Test", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-        getParameterMock.mockResolvedValueOnce(addressTableName);
-        getParameterMock.mockResolvedValueOnce(sessionTable);
+        process.env.ADDRESS_TABLE = "ADDRESS_TABLE"
+        process.env.SESSION_TABLE = "SESSION_TABLE"
 
         addressService = new AddressService(DynamoDbClient, mockLogger.prototype);
     });

@@ -76,7 +76,12 @@ import static uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSe
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(SystemStubsExtension.class)
 class MultipleAddressVcTest implements DummyStates, MultipleAddressStates {
-    @SystemStub private EnvironmentVariables environmentVariables = new EnvironmentVariables();
+    @SystemStub
+    private EnvironmentVariables environmentVariables =
+            new EnvironmentVariables(
+                    "JWT_TTL_UNIT", "MINUTES",
+                    "MAX_JWT_TTL", "10");
+
     private static final int PORT = 5010;
     private static final boolean ENABLE_FULL_DEBUG = false;
     public static final String SUBJECT = "test-subject";
@@ -169,8 +174,6 @@ class MultipleAddressVcTest implements DummyStates, MultipleAddressStates {
         when(mockConfigurationService.getCommonParameterValue(
                         "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
-        when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
-        when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
     }
 
     @NotNull

@@ -48,6 +48,9 @@ import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -83,7 +86,7 @@ import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getM
 import static uk.gov.di.ipv.cri.address.api.service.fixtures.TestFixtures.EC_PRIVATE_KEY_1;
 import static uk.gov.di.ipv.cri.common.library.error.ErrorResponse.VERIFIABLE_CREDENTIAL_ERROR;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
 class IssueCredentialHandlerTest {
     public static final String SUBJECT = "subject";
     @Mock private Context context;
@@ -94,6 +97,13 @@ class IssueCredentialHandlerTest {
     @Mock private AuditService mockAuditService;
 
     @InjectMocks private IssueCredentialHandler handler;
+
+    @SystemStub
+    @SuppressWarnings("unused")
+    private final EnvironmentVariables environment =
+            new EnvironmentVariables(
+                    "JWT_TTL_UNIT", "MINUTES",
+                    "MAX_JWT_TTL", "10");
 
     @Test
     void shouldReturn200OkWhenIssueCredentialRequestIsValid()
@@ -224,8 +234,8 @@ class IssueCredentialHandlerTest {
         when(mockConfigurationService.getCommonParameterValue(
                         "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
-        when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
-        when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
+        //
+        // when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
         ObjectMapper objectMapper = getMapperWithCustomSerializers();
 
         Clock clock = Clock.fixed(Instant.parse("2099-01-01T00:00:00.00Z"), ZoneId.of("UTC"));
