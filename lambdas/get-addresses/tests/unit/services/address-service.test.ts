@@ -28,8 +28,6 @@ describe("Address Service Test", () => {
 
     beforeEach(() => {
         jest.resetAllMocks();
-        process.env.ADDRESS_TABLE = "ADDRESS_TABLE"
-        process.env.SESSION_TABLE = "SESSION_TABLE"
 
         addressService = new AddressService(DynamoDbClient, mockLogger.prototype);
     });

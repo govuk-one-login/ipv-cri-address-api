@@ -6,6 +6,7 @@ export default {
     modulePaths: ["<rootDir>/src"],
     collectCoverageFrom: ["<rootDir>/src/**/*"],
     testMatch: ["<rootDir>/tests/**/*.test.ts"],
+    setupFiles: ["<rootDir>/setEnvVars.js"],
     coverageThreshold: {
         global: {
             statements: 100,
