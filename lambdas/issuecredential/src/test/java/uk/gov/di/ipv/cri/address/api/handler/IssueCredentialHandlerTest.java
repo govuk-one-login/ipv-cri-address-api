@@ -234,8 +234,6 @@ class IssueCredentialHandlerTest {
         when(mockConfigurationService.getCommonParameterValue(
                         "verifiableCredentialKmsSigningKeyId"))
                 .thenReturn(EC_PRIVATE_KEY_1);
-        //
-        // when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
         ObjectMapper objectMapper = getMapperWithCustomSerializers();
 
         Clock clock = Clock.fixed(Instant.parse("2099-01-01T00:00:00.00Z"), ZoneId.of("UTC"));
