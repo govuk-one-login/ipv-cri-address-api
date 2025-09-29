@@ -22,6 +22,9 @@ import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants
 import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGbAndCrownDependency;
 
 public class VerifiableCredentialService {
+    private static final int MAX_JWT_TTL = Integer.parseInt(System.getenv("MAX_JWT_TTL"));
+    private static final String JWT_TTL_UNIT = System.getenv("JWT_TTL_UNIT");
+
     private final VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder;
     private final SignedJWTFactory signedJwtFactory;
     private final ConfigurationService configurationService;
@@ -41,13 +44,11 @@ public class VerifiableCredentialService {
     public SignedJWT generateSignedVerifiableCredentialJwt(
             String subject, List<CanonicalAddress> canonicalAddresses)
             throws NoSuchAlgorithmException, JOSEException {
-        long jwtTtl = this.configurationService.getMaxJwtTtl();
-        ChronoUnit jwtTtlUnit =
-                ChronoUnit.valueOf(this.configurationService.getParameterValue("JwtTtlUnit"));
+        ChronoUnit jwtTtlUnit = ChronoUnit.valueOf(JWT_TTL_UNIT);
         var claimsSet =
                 this.vcClaimsSetBuilder
                         .subject(subject)
-                        .timeToLive(jwtTtl, jwtTtlUnit)
+                        .timeToLive(MAX_JWT_TTL, jwtTtlUnit)
                         .verifiableCredentialType(ADDRESS_CREDENTIAL_TYPE)
                         .verifiableCredentialContext(new String[] {W3_BASE_CONTEXT, DI_CONTEXT})
                         .verifiableCredentialSubject(
