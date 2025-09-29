@@ -532,8 +532,6 @@ Resources:
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/release-flags/vc-expiry-removed"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/release-flags/vc-contains-unique-id"
         - Statement:
             Effect: Allow
             Action:
@@ -668,15 +666,6 @@ Resources:
       KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
       UsagePlanId: !Ref PublicAddressApiUsagePlan
-
-  ReleaseFlagsVcContainsUniqueIdParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/release-flags/vc-contains-unique-id"
-      Type: String
-      Value:
-        !FindInMap [VcContainsUniqueIdMapping, Environment, !Ref Environment]
-      Description: Verifiable Credential Contains UniqueId Mapping
 
   ProdIpvCoreOrdnanceSurveyAPIURL:
     Condition: IsProdEnvironment
