@@ -507,6 +507,7 @@ Resources:
           SQS_AUDIT_EVENT_QUEUE_URL:
             Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
           ADDRESS_TABLE_NAME: !Sub address-${AWS::StackName}
+          MAX_JWT_TTL: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
@@ -527,7 +528,6 @@ Resources:
             Action:
               - ssm:GetParameter
             Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
@@ -668,14 +668,6 @@ Resources:
       KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
       UsagePlanId: !Ref PublicAddressApiUsagePlan
-
-  MaxJwtTtlParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
-      Type: String
-      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
-      Description: default time to live for an JWT in (seconds)
 
   JwtTtlUnitParameter:
     Type: AWS::SSM::Parameter
