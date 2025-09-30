@@ -101,9 +101,7 @@ class IssueCredentialHandlerTest {
     @SystemStub
     @SuppressWarnings("unused")
     private final EnvironmentVariables environment =
-            new EnvironmentVariables(
-                    "JWT_TTL_UNIT", "MINUTES",
-                    "MAX_JWT_TTL", "10");
+            new EnvironmentVariables("JWT_TTL_UNIT", "MINUTES");
 
     @Test
     void shouldReturn200OkWhenIssueCredentialRequestIsValid()
@@ -231,9 +229,9 @@ class IssueCredentialHandlerTest {
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(new ECDSASigner(getPrivateKey()));
         ConfigurationService mockConfigurationService = mock(ConfigurationService.class);
         when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn("issuer");
-        when(mockConfigurationService.getCommonParameterValue(
-                        "verifiableCredentialKmsSigningKeyId"))
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
                 .thenReturn(EC_PRIVATE_KEY_1);
+        when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
         ObjectMapper objectMapper = getMapperWithCustomSerializers();
 
         Clock clock = Clock.fixed(Instant.parse("2099-01-01T00:00:00.00Z"), ZoneId.of("UTC"));

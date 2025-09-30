@@ -81,7 +81,7 @@ class InternationalAddressVcTest implements DummyStates, InternationalAddressSta
     private EnvironmentVariables environmentVariables =
             new EnvironmentVariables(
                     "JWT_TTL_UNIT", "MINUTES",
-                    "MAX_JWT_TTL", "10");
+                    "MAXIMUM_JWT_TTL", "10");
 
     private static final int PORT = 5010;
     private static final boolean ENABLE_FULL_DEBUG = false;
