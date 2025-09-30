@@ -697,7 +697,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
       Type: String
-      Value: !FindInMap [ MaxJwtTtlMapping, Environment, !Ref Environment ]
+      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
       Description: default time to live for an JWT in (seconds)
 
   JwtTtlUnitParameter:
@@ -705,7 +705,7 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
       Type: String
-      Value: !FindInMap [ JwtTtlUnitMapping, Environment, !Ref Environment ]
+      Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
       Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
 
   AddressLookupTableNameParameter:
