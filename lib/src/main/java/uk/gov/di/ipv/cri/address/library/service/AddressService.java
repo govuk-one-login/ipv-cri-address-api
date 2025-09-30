@@ -30,7 +30,7 @@ import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGreatBritain;
 public class AddressService {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final String ADDRESS_TABLE_NAME =
-            Optional.ofNullable(System.getenv("ADDRESS_TABLE_NAME"))
+            Optional.ofNullable(System.getenv("ADDRESS_TABLE"))
                     .orElse("address-address-cri-api-v1");
     private static final String ERROR_SINGLE_ADDRESS_NOT_CURRENT =
             "setAddressValidity found a single address but is not a CURRENT address.";

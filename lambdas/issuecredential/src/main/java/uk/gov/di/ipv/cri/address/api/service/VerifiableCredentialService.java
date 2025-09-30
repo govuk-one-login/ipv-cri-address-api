@@ -22,7 +22,6 @@ import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants
 import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGbAndCrownDependency;
 
 public class VerifiableCredentialService {
-    private static final int MAX_JWT_TTL = Integer.parseInt(System.getenv("MAX_JWT_TTL"));
     private static final String JWT_TTL_UNIT = System.getenv("JWT_TTL_UNIT");
 
     private final VerifiableCredentialClaimsSetBuilder vcClaimsSetBuilder;
@@ -48,7 +47,7 @@ public class VerifiableCredentialService {
         var claimsSet =
                 this.vcClaimsSetBuilder
                         .subject(subject)
-                        .timeToLive(MAX_JWT_TTL, jwtTtlUnit)
+                        .timeToLive(configurationService.getMaxJwtTtl(), jwtTtlUnit)
                         .verifiableCredentialType(ADDRESS_CREDENTIAL_TYPE)
                         .verifiableCredentialContext(new String[] {W3_BASE_CONTEXT, DI_CONTEXT})
                         .verifiableCredentialSubject(
@@ -58,8 +57,7 @@ public class VerifiableCredentialService {
         return signedJwtFactory.createSignedJwt(
                 claimsSet,
                 configurationService.getVerifiableCredentialIssuer(),
-                configurationService.getCommonParameterValue(
-                        "verifiableCredentialKmsSigningKeyId"));
+                configurationService.getVerifiableCredentialKmsSigningKeyId());
     }
 
     public Map<String, Object> getAuditEventExtensions(List<CanonicalAddress> addresses) {

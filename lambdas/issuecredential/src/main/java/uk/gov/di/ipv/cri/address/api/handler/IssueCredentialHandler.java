@@ -101,8 +101,7 @@ public class IssueCredentialHandler
                         .registerModule(new Jdk8Module())
                         .registerModule(new JavaTimeModule());
 
-        String kmsSigningKeyId =
-                config.getCommonParameterValue("verifiableCredentialKmsSigningKeyId");
+        String kmsSigningKeyId = config.getVerifiableCredentialKmsSigningKeyId();
 
         SignedJWTFactory signedJWTFactory =
                 new SignedJWTFactory(

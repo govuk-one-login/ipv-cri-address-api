@@ -5,8 +5,8 @@ import { Address } from "../types/address";
 import { CanonicalAddress } from "../types/canonical-address";
 import { SessionItem } from "../types/session";
 
-const addressLookupTableName = process.env.ADDRESS_LOOKUP_TABLE_NAME || "";
-const sessionTableName = process.env.SESSION_TABLE_NAME || "";
+const addressLookupTableName = process.env.ADDRESS_LOOKUP_TABLE || "";
+const sessionTableName = process.env.SESSION_TABLE || "";
 
 export class AddressService {
     private readonly dbService: DynamoDbService;
