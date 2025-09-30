@@ -78,9 +78,7 @@ import static uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSe
 class MultipleAddressVcTest implements DummyStates, MultipleAddressStates {
     @SystemStub
     private EnvironmentVariables environmentVariables =
-            new EnvironmentVariables(
-                    "JWT_TTL_UNIT", "MINUTES",
-                    "MAXIMUM_JWT_TTL", "10");
+            new EnvironmentVariables("JWT_TTL_UNIT", "MINUTES");
 
     private static final int PORT = 5010;
     private static final boolean ENABLE_FULL_DEBUG = false;
@@ -171,9 +169,9 @@ class MultipleAddressVcTest implements DummyStates, MultipleAddressStates {
         when(mockAddressService.getAddressItemWithRetries(sessionItem)).thenReturn(addressItem);
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("dummyAddressComponentId");
-        when(mockConfigurationService.getCommonParameterValue(
-                        "verifiableCredentialKmsSigningKeyId"))
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
                 .thenReturn(EC_PRIVATE_KEY_1);
+        when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
     }
 
     @NotNull
