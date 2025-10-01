@@ -515,7 +515,7 @@ Resources:
           MAXIMUM_JWT_TTL: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
           JWT_TTL_UNIT: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
           VERIFIABLE_CREDENTIAL_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
-          VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID: !ImportValue core-infrastructure-CriVcSigningKey1Arn
+          VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID: !ImportValue core-infrastructure-CriVcSigningKey1Id
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
