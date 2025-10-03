@@ -14,7 +14,6 @@ import uk.gov.di.ipv.cri.common.library.annotations.ExcludeFromGeneratedCoverage
 import uk.gov.di.ipv.cri.common.library.persistence.DataStore;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.persistence.item.SessionItem;
-import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryConfig;
 import uk.gov.di.ipv.cri.common.library.util.retry.RetryManager;
@@ -30,7 +29,9 @@ import static uk.gov.di.ipv.cri.address.library.util.CountryCode.isGreatBritain;
 
 public class AddressService {
     private static final Logger LOGGER = LogManager.getLogger();
-
+    private static final String ADDRESS_TABLE_NAME =
+            Optional.ofNullable(System.getenv("ADDRESS_TABLE"))
+                    .orElse("address-address-cri-api-v1");
     private static final String ERROR_SINGLE_ADDRESS_NOT_CURRENT =
             "setAddressValidity found a single address but is not a CURRENT address.";
     private static final String ERROR_TOO_MANY_ADDRESSES =
@@ -53,14 +54,10 @@ public class AddressService {
 
     @ExcludeFromGeneratedCoverageReport
     public AddressService(
-            ConfigurationService configurationService,
-            ObjectMapper objectMapper,
-            DynamoDbEnhancedClient dynamoDbEnhancedClient) {
+            ObjectMapper objectMapper, DynamoDbEnhancedClient dynamoDbEnhancedClient) {
+
         this(
-                new DataStore<>(
-                        configurationService.getParameterValue("AddressTableName"),
-                        AddressItem.class,
-                        dynamoDbEnhancedClient),
+                new DataStore<>(ADDRESS_TABLE_NAME, AddressItem.class, dynamoDbEnhancedClient),
                 objectMapper);
     }
 

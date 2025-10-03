@@ -21,6 +21,9 @@ import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
 import uk.gov.di.ipv.cri.common.library.service.ConfigurationService;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -46,12 +49,10 @@ import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants
 import static uk.gov.di.ipv.cri.address.api.domain.VerifiableCredentialConstants.W3_BASE_CONTEXT;
 import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, SystemStubsExtension.class})
 class VerifiableCredentialServiceTest implements TestFixtures {
     private static final JWTClaimsSet TEST_CLAIMS_SET =
             new JWTClaimsSet.Builder().subject("test").issuer("test").build();
-    private static final long DEFAULT_JWT_TTL = 6L;
-    private static final String DEFAULT_JWT_TTL_UNIT = "MONTHS";
     private static final String VC_ISSUER = "dummyAddressComponentId";
     private static final String SUBJECT = "subject";
     private final ObjectMapper objectMapper = getMapperWithCustomSerializers();
@@ -59,6 +60,11 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     @Mock private SignedJWTFactory mockSignedClaimSetJwt;
     @Mock private VerifiableCredentialClaimsSetBuilder mockVcClaimSetBuilder;
     @Captor private ArgumentCaptor<Map<String, Object>> mapArgumentCaptor;
+
+    @SystemStub
+    @SuppressWarnings("unused")
+    private final EnvironmentVariables environment =
+            new EnvironmentVariables("JWT_TTL_UNIT", "MINUTES");
 
     private VerifiableCredentialService verifiableCredentialService;
 
@@ -75,12 +81,10 @@ class VerifiableCredentialServiceTest implements TestFixtures {
     @Test
     void shouldReturnAVerifiedCredentialWhenGivenCanonicalAddresses()
             throws JOSEException, NoSuchAlgorithmException {
-        initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
         when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
-        when(mockConfigurationService.getCommonParameterValue(
-                        "verifiableCredentialKmsSigningKeyId"))
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
                 .thenReturn(EC_PRIVATE_KEY_1);
 
         var canonicalAddresses = List.of(mock(CanonicalAddress.class));
@@ -98,12 +102,10 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                     JOSEException,
                     ParseException,
                     JsonProcessingException {
-        initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
         when(mockConfigurationService.getVerifiableCredentialIssuer()).thenReturn(VC_ISSUER);
-        when(mockConfigurationService.getCommonParameterValue(
-                        "verifiableCredentialKmsSigningKeyId"))
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
                 .thenReturn(EC_PRIVATE_KEY_1);
 
         CanonicalAddress address = new CanonicalAddress();
@@ -135,8 +137,6 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         verify(mockVcClaimSetBuilder).subject(SUBJECT);
         verify(mockVcClaimSetBuilder).verifiableCredentialType(ADDRESS_CREDENTIAL_TYPE);
         verify(mockVcClaimSetBuilder)
-                .timeToLive(DEFAULT_JWT_TTL, ChronoUnit.valueOf(DEFAULT_JWT_TTL_UNIT));
-        verify(mockVcClaimSetBuilder)
                 .verifiableCredentialContext(new String[] {W3_BASE_CONTEXT, DI_CONTEXT});
         verify(mockVcClaimSetBuilder).verifiableCredentialSubject(mapArgumentCaptor.capture());
         Map<?, ?> vcSubjectClaims =
@@ -167,7 +167,6 @@ class VerifiableCredentialServiceTest implements TestFixtures {
         when(mockSignedClaimSetJwt.createSignedJwt(any(), any(), any()))
                 .thenThrow(noSuchAlgorithmException);
 
-        initMockConfigurationService();
         initMockVCClaimSetBuilder();
         when(mockVcClaimSetBuilder.build()).thenReturn(TEST_CLAIMS_SET);
 
@@ -206,12 +205,6 @@ class VerifiableCredentialServiceTest implements TestFixtures {
                 .thenReturn(mockVcClaimSetBuilder);
         when(mockVcClaimSetBuilder.verifiableCredentialType(ADDRESS_CREDENTIAL_TYPE))
                 .thenReturn(mockVcClaimSetBuilder);
-    }
-
-    private void initMockConfigurationService() {
-        when(mockConfigurationService.getMaxJwtTtl()).thenReturn(DEFAULT_JWT_TTL);
-        when(mockConfigurationService.getParameterValue("JwtTtlUnit"))
-                .thenReturn(DEFAULT_JWT_TTL_UNIT);
     }
 
     @Nested

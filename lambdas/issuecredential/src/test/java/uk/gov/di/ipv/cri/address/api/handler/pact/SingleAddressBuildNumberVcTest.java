@@ -77,7 +77,10 @@ import static uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSe
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(SystemStubsExtension.class)
 class SingleAddressBuildNumberVcTest implements DummyStates, SingleAddressBuildingNumberStates {
-    @SystemStub private EnvironmentVariables environmentVariables = new EnvironmentVariables();
+    @SystemStub
+    private EnvironmentVariables environmentVariables =
+            new EnvironmentVariables("JWT_TTL_UNIT", "MINUTES");
+
     private static final int PORT = 5010;
     private static final boolean ENABLE_FULL_DEBUG = false;
     public static final String SUBJECT = "test-subject";
@@ -165,11 +168,9 @@ class SingleAddressBuildNumberVcTest implements DummyStates, SingleAddressBuildi
         when(mockAddressService.getAddressItemWithRetries(sessionItem)).thenReturn(addressItem);
         when(mockConfigurationService.getVerifiableCredentialIssuer())
                 .thenReturn("dummyAddressComponentId");
-        when(mockConfigurationService.getCommonParameterValue(
-                        "verifiableCredentialKmsSigningKeyId"))
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
                 .thenReturn(EC_PRIVATE_KEY_1);
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
-        when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
     }
 
     @NotNull

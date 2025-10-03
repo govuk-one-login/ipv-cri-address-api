@@ -77,7 +77,10 @@ import static uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSe
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(SystemStubsExtension.class)
 class InternationalAddressVcTest implements DummyStates, InternationalAddressStates {
-    @SystemStub private EnvironmentVariables environmentVariables = new EnvironmentVariables();
+    @SystemStub
+    private EnvironmentVariables environmentVariables =
+            new EnvironmentVariables("JWT_TTL_UNIT", "MINUTES");
+
     private static final int PORT = 5010;
     private static final boolean ENABLE_FULL_DEBUG = false;
     public static final String SUBJECT = "test-subject";
@@ -165,12 +168,10 @@ class InternationalAddressVcTest implements DummyStates, InternationalAddressSta
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         AddressItem addressItem = new AddressItem();
         addressItem.setAddresses(getCanonicalAddresses());
-        when(mockConfigurationService.getCommonParameterValue(
-                        "verifiableCredentialKmsSigningKeyId"))
+        when(mockConfigurationService.getVerifiableCredentialKmsSigningKeyId())
                 .thenReturn(EC_PRIVATE_KEY_1);
         when(mockAddressService.getAddressItemWithRetries(sessionItem)).thenReturn(addressItem);
         when(mockConfigurationService.getMaxJwtTtl()).thenReturn(10L);
-        when(mockConfigurationService.getParameterValue("JwtTtlUnit")).thenReturn("MINUTES");
     }
 
     @NotNull

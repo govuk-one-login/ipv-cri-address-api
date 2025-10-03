@@ -4,8 +4,9 @@ export default {
     preset: "ts-jest",
     clearMocks: true,
     modulePaths: ["<rootDir>/src"],
-    collectCoverageFrom: ["<rootDir>/src/**/*"],
+    collectCoverageFrom: ["<rootDir>/src/**/*", "!<rootDir>/setEnvVars.js"],
     testMatch: ["<rootDir>/tests/**/*.test.ts"],
+    setupFiles: ["<rootDir>/setEnvVars.js"],
     coverageThreshold: {
         global: {
             statements: 100,
