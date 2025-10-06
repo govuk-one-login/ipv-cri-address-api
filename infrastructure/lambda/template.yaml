@@ -398,9 +398,7 @@ Resources:
               Action:
                 - ssm:GetParameter
               Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTtl"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
         - Statement:
             - Effect: Allow
               Action:
@@ -467,8 +465,6 @@ Resources:
               Action:
                 - ssm:GetParameter
               Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTtl"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
         - Statement:
@@ -540,12 +536,6 @@ Resources:
             Action:
               - ssm:GetParameter
             Resource:
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/MaxJwtTtl"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/JwtTtlUnit"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiableCredentialKmsSigningKeyId"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
-              - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/verifiable-credential/issuer"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/release-flags/vc-expiry-removed"
               - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/release-flags/vc-contains-unique-id"
         - Statement:
@@ -599,14 +589,6 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-        - Statement:
-            - Sid: ReadParametersPolicy
-              Effect: Allow
-              Action:
-                - ssm:GetParameter
-              Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/AddressLookupTableName"
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTableName"
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
