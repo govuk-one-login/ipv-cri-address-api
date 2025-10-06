@@ -700,47 +700,6 @@ Resources:
       KeyType: API_KEY
       UsagePlanId: !Ref PublicAddressApiUsagePlan
 
-  ParameterAddressItemTableName:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/AddressTableName"
-      Value: !Sub address-${AWS::StackName}
-      Type: String
-      Description: address item dynamodb table name
-
-  MaxJwtTtlParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/MaxJwtTtl"
-      Type: String
-      Value: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
-      Description: default time to live for an JWT in (seconds)
-
-  JwtTtlUnitParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/JwtTtlUnit"
-      Type: String
-      Value: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
-      Description: The unit for the time-to-live for an JWT e.g. (MONTHS)
-
-  AddressLookupTableNameParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/AddressLookupTableName"
-      Type: String
-      Value: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-      Description: Table name to retrieve addresses from store
-
-  ReleaseFlagsVcContainsUniqueIdParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/release-flags/vc-contains-unique-id"
-      Type: String
-      Value:
-        !FindInMap [VcContainsUniqueIdMapping, Environment, !Ref Environment]
-      Description: Verifiable Credential Contains UniqueId Mapping
-
   ProdIpvCoreOrdnanceSurveyAPIURL:
     Condition: IsProdEnvironment
     Type: AWS::SSM::Parameter
