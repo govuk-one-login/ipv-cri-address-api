@@ -208,15 +208,6 @@ Mappings:
       production: 4096
       localdev: 2048
 
-  VcContainsUniqueIdMapping:
-    Environment:
-      dev: true
-      build: true
-      staging: true
-      integration: false
-      production: false
-      localdev: true
-
   EnvironmentConfiguration:
     dev:
       provisionedConcurrency: 0
