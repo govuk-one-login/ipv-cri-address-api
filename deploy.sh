@@ -33,4 +33,5 @@ sam deploy --stack-name "$stack_name" \
   Environment=localdev \
   SecretPrefix=pre-merge-test \
   ${common_stack_name:+CommonStackName=$common_stack_name} \
-  ${secret_prefix:+SecretPrefix=$secret_prefix}
+  ${secret_prefix:+SecretPrefix=$secret_prefix} \
+  ForceLambdaUpdate="$(date +%s)"

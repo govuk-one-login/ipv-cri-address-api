@@ -16,6 +16,10 @@ Parameters:
     Description: "Specifies the configuration to enable gradual Lambda deployments"
     Type: String
     Default: AllAtOnce
+  ForceLambdaUpdate:
+    Type: String
+    Default: "initial"
+    Description: "For localdev only - used to force Lambda version updates"
   CodeSigningConfigArn:
     Description: "The ARN of the Code Signing Config to use, provided by the deployment pipeline"
     Type: String
@@ -107,6 +111,7 @@ Globals:
         POWERTOOLS_LOG_LEVEL: INFO
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+        FORCE_LAMBDA_UPDATE: !If [IsLocalDevEnvironment, !Ref ForceLambdaUpdate, !Ref AWS::NoValue]
         DT_CONNECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
           - SecretArn:
