@@ -101,7 +101,8 @@ class IssueCredentialHandlerTest {
     @SystemStub
     @SuppressWarnings("unused")
     private final EnvironmentVariables environment =
-            new EnvironmentVariables("JWT_TTL_UNIT", "MINUTES");
+            new EnvironmentVariables(
+                    "JWT_TTL_UNIT", "MINUTES", "POWERTOOLS_METRICS_NAMESPACE", "AddressCRI");
 
     @Test
     void shouldReturn200OkWhenIssueCredentialRequestIsValid()

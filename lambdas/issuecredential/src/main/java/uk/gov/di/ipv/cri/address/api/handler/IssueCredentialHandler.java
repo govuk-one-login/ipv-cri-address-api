@@ -16,9 +16,9 @@ import com.nimbusds.oauth2.sdk.token.AccessTokenType;
 import org.apache.logging.log4j.Level;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.http.HttpStatusCode;
-import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
+import software.amazon.lambda.powertools.logging.CorrelationIdPaths;
 import software.amazon.lambda.powertools.logging.Logging;
-import software.amazon.lambda.powertools.metrics.Metrics;
+import software.amazon.lambda.powertools.metrics.FlushMetrics;
 import uk.gov.di.ipv.cri.address.api.exception.CredentialRequestException;
 import uk.gov.di.ipv.cri.address.api.service.VerifiableCredentialService;
 import uk.gov.di.ipv.cri.address.library.exception.AddressNotFoundException;
@@ -128,8 +128,8 @@ public class IssueCredentialHandler
     }
 
     @Override
-    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST, clearState = true)
-    @Metrics(captureColdStart = true)
+    @Logging(correlationIdPath = CorrelationIdPaths.API_GATEWAY_REST, clearState = true)
+    @FlushMetrics(captureColdStart = true)
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
 
