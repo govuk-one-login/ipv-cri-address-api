@@ -17,6 +17,8 @@ dependencies {
 	implementation(libs.bundles.nimbus)
 	implementation(libs.bundles.jackson)
 	implementation(libs.bundles.dynamodb)
+	implementation(libs.log4j.lambda)
+	implementation(libs.aspectjrt)
 
 	aspect libs.bundles.powertools
 
