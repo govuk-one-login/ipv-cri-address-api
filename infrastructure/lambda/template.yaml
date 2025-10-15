@@ -61,7 +61,6 @@ Conditions:
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotProdEnvironment: !Not [!Equals [!Ref Environment, production]]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
-  IsNotIntOrProdEnvironment: !Not [!Or [!Equals [!Ref Environment, integration], !Equals [!Ref Environment, production]]]
 
   AddProvisionedConcurrency:
     !Not [
@@ -275,8 +274,8 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
       Tags:
-        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
-        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
+        FMSRegionalPolicy: !If [IsNotProdEnvironment, "false", ""]
+        CustomPolicy: !If [IsNotProdEnvironment, "true", ""]
 
   PrivateAddressApi:
     Type: AWS::Serverless::Api
@@ -317,8 +316,8 @@ Resources:
                   StringNotEquals:
                     aws:SourceVpce: !ImportValue cri-vpc-ApiGatewayVpcEndpointId
       Tags:
-        FMSRegionalPolicy: !If [IsNotIntOrProdEnvironment, "false", ""]
-        CustomPolicy: !If [IsNotIntOrProdEnvironment, "true", ""]
+        FMSRegionalPolicy: !If [IsNotProdEnvironment, "false", ""]
+        CustomPolicy: !If [IsNotProdEnvironment, "true", ""]
 
 
 
