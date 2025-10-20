@@ -253,6 +253,37 @@ Mappings:
 
 
 Resources:
+  DynamoTablesEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Description: !Sub ${AWS::StackName} customer-managed key for DynamoDB at-rest encryption
+      KeyPolicy:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - kms:*
+            Resource: "*"
+          - Effect: Allow
+            Principal:
+              Service: "dynamodb.amazonaws.com"
+            Action:
+              - "kms:Encrypt*"
+              - "kms:Decrypt*"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:Describe*"
+            Resource: "*"
+            Condition:
+              StringEquals:
+                "kms:CallerAccount": !Sub "${AWS::AccountId}"
+                "kms:ViaService":
+                  - "dynamodb.amazonaws.com"
+                  - !Sub "lambda.${AWS::Region}.amazonaws.com"
+
   PublicAddressApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -465,6 +496,9 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBCrudPolicy:
             TableName: !Ref AddressTable
+        - KMSDecryptPolicy:
+            KeyId:
+              !Ref DynamoTablesEncryptionKey
         - Statement:
             - Effect: Allow
               Action:
@@ -527,6 +561,9 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Ref AddressTable
+        - KMSDecryptPolicy:
+            KeyId:
+              !Ref DynamoTablesEncryptionKey
         - Statement:
             Effect: Allow
             Action:
