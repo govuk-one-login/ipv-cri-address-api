@@ -662,6 +662,10 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expiryDate
         Enabled: true
+      SSESpecification:
+        KMSMasterKeyId: !Ref DynamoTablesEncryptionKey
+        SSEEnabled: true
+        SSEType: KMS
 
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
