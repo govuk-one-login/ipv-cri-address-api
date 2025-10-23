@@ -409,6 +409,8 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - Statement:
             - Sid: ReadSecretsPolicy
               Effect: Allow
@@ -499,6 +501,8 @@ Resources:
         - KMSDecryptPolicy:
             KeyId:
               !Ref DynamoTablesEncryptionKey
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - Statement:
             - Effect: Allow
               Action:
@@ -564,6 +568,8 @@ Resources:
         - KMSDecryptPolicy:
             KeyId:
               !Ref DynamoTablesEncryptionKey
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - Statement:
             Effect: Allow
             Action:
@@ -623,6 +629,8 @@ Resources:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
