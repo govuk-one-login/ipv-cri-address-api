@@ -4,12 +4,14 @@ nimbusds-oauth = "11.29.1"
 nimbusds-jwt = "10.5"
 junit = "5.10.3"
 mockito = "5.18.0"
-powertools = "1.18.0"
-cri-common-lib = "7.0.0"
+powertools = "2.4.0"
+cri-common-lib = "8.0.0"
 pact-provider = "4.5.11"
 webcompere = "2.1.6"
 open-telemetry = "2.12.0-alpha"
 slf4j = "2.0.13"
+log4j = "2.23.1"
+aspectj = "1.9.22.1"
 
 # Plugins
 spotless = "8.0.+"
@@ -38,8 +40,10 @@ jackson-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8"
 
 # Powertools
 powertools-logging = { module = "software.amazon.lambda:powertools-logging", version.ref = "powertools" }
+powertools-logging-log4j = { module = "software.amazon.lambda:powertools-logging-log4j", version.ref = "powertools" }
 powertools-metrics = { module = "software.amazon.lambda:powertools-metrics", version.ref = "powertools" }
-powertools-parameters = { module = "software.amazon.lambda:powertools-parameters", version.ref = "powertools" }
+powertools-parameters-ssm = { module = "software.amazon.lambda:powertools-parameters-ssm", version.ref = "powertools" }
+powertools-parameters-secrets = { module = "software.amazon.lambda:powertools-parameters-secrets", version.ref = "powertools" }
 
 # Nimbus
 nimbusds-oauth = { module = "com.nimbusds:oauth2-oidc-sdk", version.ref = "nimbusds-oauth" }
@@ -65,8 +69,11 @@ pact-provider = { module = "au.com.dius.pact:provider", version.ref = "pact-prov
 otel-aws-autoconfigure = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version.ref = "open-telemetry" }
 otel-http-client = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version.ref = "open-telemetry" }
 
-# slf4j
 slf4j = { module = "org.slf4j:slf4j-log4j12", version.ref = "slf4j" }
+
+log4j-lambda = { module = "com.amazonaws:aws-lambda-java-log4j2", version = "1.6.0" }
+
+aspectjrt = { module = "org.aspectj:aspectjrt", version.ref = "aspectj" }
 
 [bundles]
 jackson = [ "jackson-core", "jackson-annotations", "jackson-databind", "jackson-jdk8", "jackson-jsr310" ]
@@ -74,10 +81,11 @@ nimbus = [ "nimbusds-jwt", "nimbusds-oauth" ]
 otel = [ "otel-aws-autoconfigure", "otel-http-client" ]
 test_runtime = [ "junit-engine" ]
 tests = [ "junit-api", "junit-params", "mockito-junit", "mockito-core"]
-powertools = [ "powertools-logging", "powertools-metrics", "powertools-parameters" ]
+powertools = [ "powertools-logging", "powertools-logging-log4j", "powertools-metrics", "powertools-parameters-ssm", "powertools-parameters-secrets" ]
 webcompere = [ "system-stubs-core", "system-stubs-jupiter" ]
 pact = [ "pact-junit5", "pact-provider" ]
 dynamodb = [ "dynamodb", "dynamodb-enhanced" ]
+
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

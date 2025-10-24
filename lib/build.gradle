@@ -9,6 +9,8 @@ dependencies {
 	implementation(libs.dynamodb.enhanced)
 	implementation(libs.cri.common.lib)
 	implementation(libs.bundles.jackson)
+	implementation(libs.log4j.lambda)
+	implementation(libs.aspectjrt)
 
 	aspect libs.bundles.powertools
 
