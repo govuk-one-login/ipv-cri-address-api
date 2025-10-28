@@ -24,7 +24,7 @@ lambda = { module = "software.amazon.awssdk:lambda" }
 aws-lambda-events = { module = "com.amazonaws:aws-lambda-java-events", version.ref = "aws-lambda-events" }
 sqs = { module = "software.amazon.awssdk:sqs" }
 kms = { module = "software.amazon.awssdk:kms" }
-lambda-tests = { module = "com.amazonaws:aws-lambda-java-tests", version = "1.1.1" }
+lambda-tests = { module = "com.amazonaws:aws-lambda-java-tests", version = "1.1.2" }
 
 # CRI
 cri-common-lib = { module = "uk.gov.account:cri-common-lib", version.ref = "cri-common-lib" }
