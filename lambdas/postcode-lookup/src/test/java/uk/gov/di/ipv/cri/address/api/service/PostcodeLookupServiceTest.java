@@ -17,7 +17,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.services.ssm.model.SsmException;
-import software.amazon.cloudwatchlogs.emf.model.Unit;
+import software.amazon.lambda.powertools.metrics.model.MetricUnit;
 import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
@@ -87,7 +87,8 @@ class PostcodeLookupServiceTest {
         postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID);
 
         verify(eventProbe, times(1))
-                .counterMetric(eq("lookup_postcode_duration"), anyDouble(), eq(Unit.MILLISECONDS));
+                .counterMetric(
+                        eq("lookup_postcode_duration"), anyDouble(), eq(MetricUnit.MILLISECONDS));
     }
 
     @Nested
