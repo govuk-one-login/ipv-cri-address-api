@@ -190,6 +190,15 @@ Globals:
         }
 
 Mappings:
+  SnapStartMapping:
+    Environment:
+      localdev: None
+      dev: None
+      build: None
+      staging: None
+      integration: None
+      production: None
+
   StaticVariables:
     Urls:
       SupportManualURL: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/address-credential-issuer-runbook"
@@ -384,7 +393,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       SnapStart:
-        ApplyOn: PublishedVersions
+        ApplyOn: !FindInMap [SnapStartMapping, Environment, !Ref Environment]
       CodeUri: ../../lambdas/postcode-lookup
       Handler: uk.gov.di.ipv.cri.address.api.handler.PostcodeLookupHandler::handleRequest
       DeploymentPreference:
@@ -472,7 +481,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       SnapStart:
-        ApplyOn: PublishedVersions
+        ApplyOn: !FindInMap [SnapStartMapping, Environment, !Ref Environment]
       CodeUri: ../../lambdas/address
       Handler: uk.gov.di.ipv.cri.address.api.handler.AddressHandler::handleRequest
       DeploymentPreference:
@@ -534,7 +543,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       SnapStart:
-        ApplyOn: PublishedVersions
+        ApplyOn: !FindInMap [SnapStartMapping, Environment, !Ref Environment]
       Handler: uk.gov.di.ipv.cri.address.api.handler.IssueCredentialHandler::handleRequest
       DeploymentPreference:
         Alarms: !If
