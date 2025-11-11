@@ -44,6 +44,7 @@ import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
 import uk.gov.di.ipv.cri.common.library.util.KMSSigner;
 import uk.gov.di.ipv.cri.common.library.util.SignedJWTFactory;
+import uk.gov.di.ipv.cri.common.library.util.TempCleaner;
 import uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder;
 
 import java.security.NoSuchAlgorithmException;
@@ -89,6 +90,8 @@ public class IssueCredentialHandler
 
     @ExcludeFromGeneratedCoverageReport
     public IssueCredentialHandler() {
+        TempCleaner.clean();
+
         ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
 
         ConfigurationService config =

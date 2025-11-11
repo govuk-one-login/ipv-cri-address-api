@@ -34,6 +34,7 @@ import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
+import uk.gov.di.ipv.cri.common.library.util.TempCleaner;
 
 import java.net.http.HttpClient;
 import java.time.Clock;
@@ -77,6 +78,8 @@ public class PostcodeLookupHandler
 
     @ExcludeFromGeneratedCoverageReport
     public PostcodeLookupHandler() {
+        TempCleaner.clean();
+
         ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
 
         ConfigurationService configurationService =
