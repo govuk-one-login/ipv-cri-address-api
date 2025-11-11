@@ -26,6 +26,7 @@ import uk.gov.di.ipv.cri.common.library.service.SessionService;
 import uk.gov.di.ipv.cri.common.library.util.ApiGatewayResponseGenerator;
 import uk.gov.di.ipv.cri.common.library.util.ClientProviderFactory;
 import uk.gov.di.ipv.cri.common.library.util.EventProbe;
+import uk.gov.di.ipv.cri.common.library.util.TempCleaner;
 import uk.gov.di.ipv.cri.common.library.util.deserializers.PiiRedactingDeserializer;
 
 import java.util.List;
@@ -47,6 +48,8 @@ public class AddressHandler
 
     @ExcludeFromGeneratedCoverageReport
     public AddressHandler() {
+        TempCleaner.clean();
+
         ClientProviderFactory clientProviderFactory = new ClientProviderFactory();
 
         ObjectMapper objectMapper =
