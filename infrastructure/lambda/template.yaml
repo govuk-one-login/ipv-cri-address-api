@@ -61,6 +61,8 @@ Conditions:
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotProdEnvironment: !Not [!Equals [!Ref Environment, production]]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
+  IsDevBuildEnvironment: !Or [!Equals [!Ref Environment, build], !Condition IsDevEnvironment]
+  IsNotDevBuildEnvironment: !Not [!Condition IsDevBuildEnvironment]
 
   AddProvisionedConcurrency:
     !Not [
@@ -369,7 +371,7 @@ Resources:
 
   PublicAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -383,7 +385,7 @@ Resources:
 
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -471,7 +473,7 @@ Resources:
 
   PostcodeLookupFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -533,7 +535,7 @@ Resources:
 
   AddressFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -602,7 +604,7 @@ Resources:
 
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -659,7 +661,7 @@ Resources:
 
   GetAddressesFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevEnvironment
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
