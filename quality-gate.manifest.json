@@ -95,8 +95,18 @@
           "check-types": ["vulnerability detection"],
           "config": {
             "file": ".github/workflows/scan-repo.yml",
-            "name": "CodeQL",
-            "path": "jobs.codeql"
+            "name": "CodeQL (TS)",
+            "path": "jobs.codeql-ts"
+          },
+          "phase": "pre-merge",
+          "provider": "GitHub"
+        },
+        {
+          "check-types": ["vulnerability detection"],
+          "config": {
+            "file": ".github/workflows/scan-repo.yml",
+            "name": "CodeQL (Java)",
+            "path": "jobs.codeql-java"
           },
           "phase": "pre-merge",
           "provider": "GitHub"
