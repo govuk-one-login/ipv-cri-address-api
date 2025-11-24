@@ -195,7 +195,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "invalid_postcode_param",
                             POSTCODE_ERROR_MESSAGE,
-                            "Postcode is empty"),
+                            "Postcode_is_empty"),
                     capturedDimension);
             assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
             assertEquals("\"Postcode is empty\"", responseEvent.getBody());
@@ -222,7 +222,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "invalid_postcode_param",
                             POSTCODE_ERROR_MESSAGE,
-                            "Missing postcode in request body."),
+                            "Missing_postcode_in_request_body."),
                     capturedDimension);
             assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
             assertEquals("\"Missing postcode in request body.\"", responseEvent.getBody());
@@ -254,7 +254,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "invalid_postcode_param",
                             POSTCODE_ERROR_MESSAGE,
-                            "Failed to parse postcode from request body"),
+                            "Failed_to_parse_postcode_from_request_body"),
                     capturedDimension);
             assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
             assertEquals("\"Failed to parse postcode from request body\"", responseEvent.getBody());
@@ -287,7 +287,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "session_not_found",
                             POSTCODE_ERROR_MESSAGE,
-                            "Session not found"),
+                            "Session_not_found"),
                     capturedDimension);
             assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
             assertEquals(
@@ -321,7 +321,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "session_expired",
                             POSTCODE_ERROR_MESSAGE,
-                            "session expired"),
+                            "session_expired"),
                     capturedDimension);
             assertEquals(HttpStatusCode.FORBIDDEN, responseEvent.getStatusCode());
             assertEquals(
@@ -365,7 +365,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "lookup_server",
                             POSTCODE_ERROR_MESSAGE,
-                            "The Client ID provided for this session is not supported"),
+                            "The_Client_ID_provided_for_this_session_is_not_supported"),
                     capturedDimension);
             assertEquals(HttpStatusCode.BAD_REQUEST, responseEvent.getStatusCode());
             assertEquals(
@@ -405,7 +405,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "lookup_server",
                             POSTCODE_ERROR_MESSAGE,
-                            "Any other exception"),
+                            "Any_other_exception"),
                     dimension);
             assertEquals(HttpStatusCode.UNAUTHORIZED, responseEvent.getStatusCode());
             assertEquals("\"Any other exception\"", responseEvent.getBody().toString());
@@ -444,7 +444,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "time_out_error",
                             POSTCODE_ERROR_MESSAGE,
-                            "Error Connection Timeout"),
+                            "Error_Connection_Timeout"),
                     dimension);
             assertEquals("\"Error Connection Timeout\"", responseEvent.getBody().toString());
         }
@@ -483,7 +483,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_TYPE,
                             "lookup_processing",
                             POSTCODE_ERROR_MESSAGE,
-                            "Error sending request for postcode lookup"),
+                            "Error_sending_request_for_postcode_lookup"),
                     dimension);
             assertEquals("\"Error sending request for postcode lookup\"", responseEvent.getBody());
         }
