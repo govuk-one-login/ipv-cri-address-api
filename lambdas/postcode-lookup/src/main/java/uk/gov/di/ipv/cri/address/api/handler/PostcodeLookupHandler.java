@@ -215,8 +215,8 @@ public class PostcodeLookupHandler
         eventProbe.addDimensions(
                 Map.of(
                         POSTCODE_ERROR_TYPE,
-                        metricErrorType,
+                        EventProbe.clean(metricErrorType),
                         POSTCODE_ERROR_MESSAGE,
-                        e.getMessage()));
+                        EventProbe.clean(e.getMessage())));
     }
 }
