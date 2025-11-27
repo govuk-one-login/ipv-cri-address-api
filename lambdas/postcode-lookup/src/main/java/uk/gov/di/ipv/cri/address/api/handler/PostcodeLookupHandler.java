@@ -11,9 +11,10 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.instrumentation.httpclient.JavaHttpClientTelemetry;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
-import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
+import software.amazon.lambda.powertools.logging.CorrelationIdPaths;
 import software.amazon.lambda.powertools.logging.Logging;
-import software.amazon.lambda.powertools.metrics.Metrics;
+import software.amazon.lambda.powertools.metrics.FlushMetrics;
+import uk.gov.di.ipv.cri.address.api.Clean;
 import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
@@ -131,8 +132,8 @@ public class PostcodeLookupHandler
     }
 
     @Override
-    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST, clearState = true)
-    @Metrics(captureColdStart = true)
+    @Logging(correlationIdPath = CorrelationIdPaths.API_GATEWAY_REST, clearState = true)
+    @FlushMetrics(namespace = "address-cri-api", captureColdStart = true)
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         String sessionId = input.getHeaders().get(SESSION_ID);
@@ -211,12 +212,21 @@ public class PostcodeLookupHandler
         String[] formatMessage = message.toLowerCase().split(" ");
         String metricErrorType = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
 
+        eventProbe.log(Level.INFO, "metricErrorType" + metricErrorType);
+        eventProbe.log(Level.INFO, "e.getMessage()" + e.getMessage());
+
+        String cleanedMetricErrorType = Clean.clean(metricErrorType);
+        String cleanedErrorMessage = Clean.clean(e.getMessage());
+
+        eventProbe.log(Level.INFO, "cleanedMetricErrorType" + cleanedMetricErrorType);
+        eventProbe.log(Level.INFO, "cleanedErrorMessage" + cleanedErrorMessage);
+
         eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
         eventProbe.addDimensions(
                 Map.of(
                         POSTCODE_ERROR_TYPE,
-                        metricErrorType,
+                        cleanedMetricErrorType,
                         POSTCODE_ERROR_MESSAGE,
-                        e.getMessage()));
+                        cleanedErrorMessage));
     }
 }
