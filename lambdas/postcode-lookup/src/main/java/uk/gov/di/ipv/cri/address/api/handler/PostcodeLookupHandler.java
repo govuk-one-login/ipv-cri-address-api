@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import software.amazon.lambda.powertools.logging.CorrelationIdPaths;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.FlushMetrics;
+import uk.gov.di.ipv.cri.address.api.Clean;
 import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
@@ -215,8 +216,8 @@ public class PostcodeLookupHandler
         eventProbe.addDimensions(
                 Map.of(
                         POSTCODE_ERROR_TYPE,
-                        EventProbe.clean(metricErrorType),
+                        Clean.clean(metricErrorType),
                         POSTCODE_ERROR_MESSAGE,
-                        EventProbe.clean(e.getMessage())));
+                        Clean.clean(e.getMessage())));
     }
 }
