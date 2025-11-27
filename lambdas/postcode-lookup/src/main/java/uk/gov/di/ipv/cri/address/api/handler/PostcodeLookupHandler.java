@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import software.amazon.lambda.powertools.logging.CorrelationIdPaths;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.FlushMetrics;
+import uk.gov.di.ipv.cri.address.api.Clean;
 import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
@@ -41,6 +42,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -210,12 +212,21 @@ public class PostcodeLookupHandler
         String[] formatMessage = message.toLowerCase().split(" ");
         String metricErrorType = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
 
-        //        eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
-        //        eventProbe.addDimensions(
-        //                Map.of(
-        //                        POSTCODE_ERROR_TYPE,
-        //                        Clean.clean(metricErrorType),
-        //                        POSTCODE_ERROR_MESSAGE,
-        //                        Clean.clean(e.getMessage())));
+        eventProbe.log(Level.INFO, "metricErrorType" + metricErrorType);
+        eventProbe.log(Level.INFO, "e.getMessage()" + e.getMessage());
+
+        String cleanedMetricErrorType = Clean.clean(metricErrorType);
+        String cleanedErrorMessage = Clean.clean(e.getMessage());
+
+        eventProbe.log(Level.INFO, "cleanedMetricErrorType" + cleanedMetricErrorType);
+        eventProbe.log(Level.INFO, "cleanedErrorMessage" + cleanedErrorMessage);
+
+        eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
+        eventProbe.addDimensions(
+                Map.of(
+                        POSTCODE_ERROR_TYPE,
+                        cleanedMetricErrorType,
+                        POSTCODE_ERROR_MESSAGE,
+                        cleanedErrorMessage));
     }
 }

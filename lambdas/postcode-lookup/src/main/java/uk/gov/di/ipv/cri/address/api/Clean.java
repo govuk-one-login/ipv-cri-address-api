@@ -5,6 +5,6 @@ public class Clean {
         if (metricValue == null || metricValue.isBlank()) {
             return "no_content";
         }
-        return metricValue.replaceAll(" ", "_").trim();
+        return metricValue.replaceAll("\\s+", "_").trim();
     }
 }
