@@ -208,7 +208,7 @@ public class PostcodeLookupHandler
 
     private void setPostCodeLookupErrorMetrics(Exception e, String message) {
         String[] formatMessage = message.toLowerCase().split(" ");
-        //String metricErrorType = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
+        String metricErrorType = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
 
         //        eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
         //        eventProbe.addDimensions(
