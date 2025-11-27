@@ -38,7 +38,7 @@ subprojects {
 		implementation platform("com.fasterxml.jackson:jackson-bom:2.18.3")
 		implementation(libs.bundles.otel)
 		implementation(libs.bundles.logging)
-		implementation(libs.bundles.aspect)
+		implementation(libs.bundles.powertools)
 	}
 
 	tasks.register("pactTests", Test) {

@@ -12,12 +12,10 @@ webcompere = "2.1.6"
 open-telemetry = "2.12.0-alpha"
 slf4j = "2.0.13"
 log4j = "2.23.1"
-aspectj = "1.9.25"
 
 # Plugins
 spotless = "8.0.+"
 sonarqube = "4.4.+"
-post-compile-weaving = "9.1.0"
 
 [libraries]
 # AWS SDK
@@ -58,10 +56,6 @@ mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "m
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 hamcrest = { module = "org.hamcrest:hamcrest", version = "3.0" }
 
-# aspectj
-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref = "aspectj" }
-aspectjweaver = { module = "org.aspectj:aspectjweaver", version.ref = "aspectj" }
-
 # WebCompere
 system-stubs-core = { module = "uk.org.webcompere:system-stubs-core", version.ref = "webcompere" }
 system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
@@ -92,11 +86,8 @@ pact = [ "pact-junit5", "pact-provider" ]
 dynamodb = [ "dynamodb", "dynamodb-enhanced" ]
 logging = [ "log4j-core", "log4j-slf4j2-impl", "log4j-layout-template-json" ]
 
-aspect = [ "aspectjrt", "aspectjweaver"]
-
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 java = { id = "java" }
 jacoco = { id = "jacoco" }
-post-compile-weaving = { id = "io.freefair.aspectj.post-compile-weaving", version.ref = "post-compile-weaving" }
