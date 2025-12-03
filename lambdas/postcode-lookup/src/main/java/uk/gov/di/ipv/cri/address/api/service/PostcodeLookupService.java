@@ -7,7 +7,7 @@ import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
 import software.amazon.awssdk.services.ssm.model.SsmException;
-import software.amazon.cloudwatchlogs.emf.model.Unit;
+import software.amazon.lambda.powertools.metrics.model.MetricUnit;
 import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
@@ -94,7 +94,8 @@ public class PostcodeLookupService {
                 response.statusCode(),
                 totalTimeInMs);
 
-        eventProbe.counterMetric("lookup_postcode_duration", totalTimeInMs, Unit.MILLISECONDS);
+        eventProbe.counterMetric(
+                "lookup_postcode_duration", totalTimeInMs, MetricUnit.MILLISECONDS);
 
         switch (response.statusCode()) {
             case HttpStatusCode.OK:
