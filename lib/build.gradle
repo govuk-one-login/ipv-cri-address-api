@@ -1,5 +1,4 @@
 plugins {
-	alias(libs.plugins.post.compile.weaving)
 	alias(libs.plugins.jacoco)
 }
 
@@ -10,7 +9,7 @@ dependencies {
 	implementation(libs.cri.common.lib)
 	implementation(libs.bundles.jackson)
 
-	aspect libs.bundles.powertools
+	implementation(libs.bundles.powertools)
 
 	testImplementation libs.bundles.tests
 	testImplementation libs.hamcrest
