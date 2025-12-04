@@ -1,6 +1,7 @@
 plugins {
 	alias(libs.plugins.java)
 	alias(libs.plugins.jacoco)
+	alias(libs.plugins.post.compile.weaving)
 }
 
 dependencies {
@@ -14,7 +15,7 @@ dependencies {
 	implementation(libs.bundles.nimbus)
 	implementation(libs.bundles.dynamodb)
 
-	implementation(libs.bundles.powertools)
+	aspect libs.bundles.powertools
 
 	testImplementation libs.bundles.tests
 	testImplementation libs.hamcrest

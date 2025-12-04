@@ -18,6 +18,8 @@ spotless = "8.0.+"
 sonarqube = "4.4.+"
 
 [libraries]
+aspectjrt = { module = "org.aspectj:aspectjrt", version = "1.9.20.1" }
+
 # AWS SDK
 dynamodb = { module = "software.amazon.awssdk:dynamodb" }
 dynamodb-enhanced = { module = "software.amazon.awssdk:dynamodb-enhanced" }
@@ -91,3 +93,4 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 java = { id = "java" }
 jacoco = { id = "jacoco" }
+post-compile-weaving = { id = "io.freefair.aspectj.post-compile-weaving", version = '6.3.0' }
