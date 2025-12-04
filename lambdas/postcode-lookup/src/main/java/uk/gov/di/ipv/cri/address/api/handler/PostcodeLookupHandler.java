@@ -11,9 +11,9 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.instrumentation.httpclient.JavaHttpClientTelemetry;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
-import software.amazon.lambda.powertools.logging.CorrelationIdPathConstants;
+import software.amazon.lambda.powertools.logging.CorrelationIdPaths;
 import software.amazon.lambda.powertools.logging.Logging;
-import software.amazon.lambda.powertools.metrics.Metrics;
+import software.amazon.lambda.powertools.metrics.FlushMetrics;
 import uk.gov.di.ipv.cri.address.api.exceptions.ClientIdNotSupportedException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupBadRequestException;
 import uk.gov.di.ipv.cri.address.api.exceptions.PostcodeLookupProcessingException;
@@ -39,11 +39,9 @@ import uk.gov.di.ipv.cri.common.library.util.TempCleaner;
 import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.nimbusds.oauth2.sdk.OAuth2Error.ACCESS_DENIED;
 import static software.amazon.awssdk.http.HttpStatusCode.BAD_REQUEST;
@@ -131,8 +129,8 @@ public class PostcodeLookupHandler
     }
 
     @Override
-    @Logging(correlationIdPath = CorrelationIdPathConstants.API_GATEWAY_REST, clearState = true)
-    @Metrics(captureColdStart = true)
+    @Logging(correlationIdPath = CorrelationIdPaths.API_GATEWAY_REST, clearState = true)
+    @FlushMetrics(namespace = "di-ipv-cri-address-api", captureColdStart = true)
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         String sessionId = input.getHeaders().get(SESSION_ID);
@@ -208,15 +206,15 @@ public class PostcodeLookupHandler
     }
 
     private void setPostCodeLookupErrorMetrics(Exception e, String message) {
-        String[] formatMessage = message.toLowerCase().split(" ");
-        String metricErrorType = Arrays.stream(formatMessage).collect(Collectors.joining("_"));
+        String metricErrorType = String.join("_", message.toLowerCase().split(" "));
 
         eventProbe.log(Level.ERROR, e).counterMetric(POSTCODE_ERROR);
+
         eventProbe.addDimensions(
                 Map.of(
                         POSTCODE_ERROR_TYPE,
-                        metricErrorType,
+                        EventProbe.clean(metricErrorType),
                         POSTCODE_ERROR_MESSAGE,
-                        e.getMessage()));
+                        EventProbe.clean(e.getMessage())));
     }
 }
