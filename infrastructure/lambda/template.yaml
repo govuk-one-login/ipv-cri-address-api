@@ -64,6 +64,12 @@ Conditions:
   IsDevBuildEnvironment: !Or [!Equals [!Ref Environment, build], !Condition IsDevEnvironment]
   IsNotDevBuildEnvironment: !Not [!Condition IsDevBuildEnvironment]
 
+  UseNewDTLayer: !Or
+    - !Equals [ !Ref Environment, localdev ]
+    - !Equals [ !Ref Environment, dev ]
+    - !Equals [ !Ref Environment, build ]
+    - !Equals [ !Ref Environment, staging ]
+
   AddProvisionedConcurrency:
     !Not [
       !Equals [
@@ -129,14 +135,26 @@ Globals:
                 !Ref Environment,
                 dynatraceSecretArn,
               ]
-        DT_CLUSTER_ID: !Sub
-          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
-          - SecretArn:
-              !FindInMap [
-                EnvironmentConfiguration,
-                !Ref Environment,
-                dynatraceSecretArn,
-              ]
+        DT_CLUSTER_ID: !If
+          - UseNewDTLayer
+          - !Ref "AWS::NoValue"
+          - !Sub
+            - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+            - SecretArn:
+                !FindInMap
+                - EnvironmentConfiguration
+                - !Ref Environment
+                - dynatraceSecretArn
+        DT_CLUSTER: !If
+          - UseNewDTLayer
+          - !Sub
+            - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+            - SecretArn:
+                !FindInMap
+                - EnvironmentConfiguration
+                - !Ref Environment
+                - dynatraceSecretArn
+          - !Ref "AWS::NoValue"
         DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
           - SecretArn:
@@ -153,7 +171,10 @@ Globals:
                 !Ref Environment,
                 dynatraceSecretArn,
               ]
-        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: true
+        DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: !If
+          - UseNewDTLayer
+          - !Ref "AWS::NoValue"
+          - "true"
         OTEL_INSTRUMENTATION_AWS_SDK_EXPERIMENTAL_USE_PROPAGATOR_FOR_MESSAGING: "true"
     ProvisionedConcurrencyConfig: !If
       - AddProvisionedConcurrency
@@ -261,6 +282,26 @@ Mappings:
       integration: MONTHS
       production: MONTHS
       localdev: HOURS
+
+  DynatraceLayerARN:
+    localdev:
+      java: arn:aws:lambda:eu-west-2:005455562524:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+    dev:
+      java: arn:aws:lambda:eu-west-2:005455562524:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+    build:
+      java: arn:aws:lambda:eu-west-2:612168027154:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+    staging:
+      java: arn:aws:lambda:eu-west-2:318282704185:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+    integration:
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+    production:
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
 
 
 Resources:
@@ -407,7 +448,7 @@ Resources:
             ]
           - [!Ref AWS::NoValue]
       Layers:
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
+        - !FindInMap [DynatraceLayerARN, !Ref Environment, java]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
@@ -495,7 +536,7 @@ Resources:
             ]
           - [!Ref AWS::NoValue]
       Layers:
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
+        - !FindInMap [DynatraceLayerARN, !Ref Environment, java]
       Environment:
         Variables:
           ADDRESS_TABLE: !Ref AddressTable
@@ -557,7 +598,7 @@ Resources:
           - [!Ref AWS::NoValue]
       CodeUri: ../../lambdas/issuecredential
       Layers:
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_36_20250507-184408_with_collector_java:1
+        - !FindInMap [DynatraceLayerARN, !Ref Environment, java]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-issuecredential"
@@ -627,7 +668,7 @@ Resources:
       CodeUri: ../../lambdas/get-addresses/
       Runtime: nodejs22.x
       Layers:
-        - arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+        - !FindInMap [DynatraceLayerARN, !Ref Environment, node]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
