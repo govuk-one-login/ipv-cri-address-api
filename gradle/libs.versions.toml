@@ -9,7 +9,8 @@ powertools = "2.7.0"
 cri-common-lib = "8.0.2"
 pact-provider = "4.7.0-beta.2"
 webcompere = "2.1.6"
-open-telemetry = "2.12.0-alpha"
+otel = "1.55.0"
+otel-alpha = "2.12.0-alpha"
 slf4j = "2.0.13"
 log4j = "2.23.1"
 
@@ -67,8 +68,15 @@ pact-junit5 = { module = "au.com.dius.pact.provider:junit5", version.ref = "pact
 pact-provider = { module = "au.com.dius.pact:provider", version.ref = "pact-provider" }
 
 # OpenTelemetry
-otel-aws-autoconfigure = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version.ref = "open-telemetry" }
-otel-http-client = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version.ref = "open-telemetry" }
+otel-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "otel" }
+otel-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "otel" }
+otel-context = { module = "io.opentelemetry:opentelemetry-context", version.ref = "otel" }
+otel-metrics = { module = "io.opentelemetry:opentelemetry-sdk-metrics", version.ref = "otel" }
+otel-trace = { module = "io.opentelemetry:opentelemetry-sdk-trace", version.ref = "otel" }
+otel-logs = { module = "io.opentelemetry:opentelemetry-sdk-logs", version.ref = "otel" }
+otel-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "otel" }
+otel-sdk2-autoconf = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version.ref = "otel-alpha" }
+otel-httpclient = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version.ref = "otel-alpha" }
 
 # slf4j
 slf4j = { module = "org.slf4j:slf4j-log4j12", version.ref = "slf4j" }
@@ -79,7 +87,7 @@ log4j-layout-template-json = { module = "org.apache.logging.log4j:log4j-layout-t
 [bundles]
 jackson = [ "jackson-core", "jackson-annotations", "jackson-databind", "jackson-jdk8", "jackson-jsr310" ]
 nimbus = [ "nimbusds-jwt", "nimbusds-oauth" ]
-otel = [ "otel-aws-autoconfigure", "otel-http-client" ]
+otel = [ "otel-api", "otel-sdk", "otel-context", "otel-metrics", "otel-trace", "otel-logs", "otel-otlp", "otel-sdk2-autoconf", "otel-httpclient" ]
 test_runtime = [ "junit-engine", "junit-launcher" ]
 tests = [ "junit-api", "junit-params", "mockito-junit", "mockito-core"]
 powertools = [ "powertools-logging", "powertools-metrics", "powertools-parameters-ssm", "powertools-secrets" ]
