@@ -7,8 +7,6 @@ plugins {
 dependencies {
 	implementation project(":lib")
 
-	runtimeOnly libs.bundles.otel
-
 	implementation(libs.lambda)
 	implementation(libs.aws.lambda.events)
 	implementation(libs.cri.common.lib)
