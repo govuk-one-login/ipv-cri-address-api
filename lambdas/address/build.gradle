@@ -5,7 +5,6 @@ plugins {
 }
 
 dependencies {
-	runtimeOnly libs.bundles.otel
 
 	implementation project(":lib")
 	implementation(libs.lambda)

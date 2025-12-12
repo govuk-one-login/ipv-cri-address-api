@@ -9,7 +9,7 @@ powertools = "2.7.0"
 cri-common-lib = "8.0.2"
 pact-provider = "4.7.0-beta.2"
 webcompere = "2.1.6"
-open-telemetry = "2.12.0-alpha"
+oneagent = "1.9.0"
 slf4j = "2.0.13"
 log4j = "2.23.1"
 
@@ -66,9 +66,8 @@ system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", vers
 pact-junit5 = { module = "au.com.dius.pact.provider:junit5", version.ref = "pact-provider" }
 pact-provider = { module = "au.com.dius.pact:provider", version.ref = "pact-provider" }
 
-# OpenTelemetry
-otel-aws-autoconfigure = { module = "io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2-autoconfigure", version.ref = "open-telemetry" }
-otel-http-client = { module = "io.opentelemetry.instrumentation:opentelemetry-java-http-client", version.ref = "open-telemetry" }
+# OneAgent
+oneagent-sdk = { module = "com.dynatrace.oneagent.sdk.java:oneagent-sdk", version.ref = "oneagent" }
 
 # slf4j
 slf4j = { module = "org.slf4j:slf4j-log4j12", version.ref = "slf4j" }
@@ -79,7 +78,6 @@ log4j-layout-template-json = { module = "org.apache.logging.log4j:log4j-layout-t
 [bundles]
 jackson = [ "jackson-core", "jackson-annotations", "jackson-databind", "jackson-jdk8", "jackson-jsr310" ]
 nimbus = [ "nimbusds-jwt", "nimbusds-oauth" ]
-otel = [ "otel-aws-autoconfigure", "otel-http-client" ]
 test_runtime = [ "junit-engine", "junit-launcher" ]
 tests = [ "junit-api", "junit-params", "mockito-junit", "mockito-core"]
 powertools = [ "powertools-logging", "powertools-metrics", "powertools-parameters-ssm", "powertools-secrets" ]

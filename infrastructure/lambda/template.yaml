@@ -175,7 +175,10 @@ Globals:
           - UseNewDTLayer
           - !Ref "AWS::NoValue"
           - "true"
-        OTEL_INSTRUMENTATION_AWS_SDK_EXPERIMENTAL_USE_PROPAGATOR_FOR_MESSAGING: "true"
+        OTEL_INSTRUMENTATION_AWS_SDK_EXPERIMENTAL_USE_PROPAGATOR_FOR_MESSAGING: !If
+          - UseNewDTLayer
+          - !Ref "AWS::NoValue"
+          - "true"
     ProvisionedConcurrencyConfig: !If
       - AddProvisionedConcurrency
       - ProvisionedConcurrentExecutions:

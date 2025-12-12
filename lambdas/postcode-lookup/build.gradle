@@ -5,13 +5,13 @@ plugins {
 }
 
 dependencies {
-	runtimeOnly libs.bundles.otel
 
 	implementation project(":lib")
 	implementation(libs.cri.common.lib)
 	implementation(libs.aws.lambda.events)
 	implementation(libs.lambda)
 	implementation(libs.sqs)
+	implementation(libs.oneagent.sdk)
 	implementation libs.bundles.nimbus
 	implementation libs.bundles.dynamodb
 	implementation libs.bundles.jackson

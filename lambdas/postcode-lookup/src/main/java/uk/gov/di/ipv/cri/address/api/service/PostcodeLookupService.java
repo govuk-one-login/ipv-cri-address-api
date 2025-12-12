@@ -1,5 +1,8 @@
 package uk.gov.di.ipv.cri.address.api.service;
 
+import com.dynatrace.oneagent.sdk.OneAgentSDKFactory;
+import com.dynatrace.oneagent.sdk.api.OneAgentSDK;
+import com.dynatrace.oneagent.sdk.api.OutgoingWebRequestTracer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.Logger;
@@ -55,6 +58,8 @@ public class PostcodeLookupService {
             "Error occurred due to library incompatibility issues. "
                     + "A field was not found, indicating a potential version mismatch "
                     + "in your dependencies. Check your build configuration.";
+
+    private static final OneAgentSDK oneAgentSdk = OneAgentSDKFactory.createInstance();
     // Create our http client to enable asynchronous requests
     private final HttpClient client;
     private final Logger log;
@@ -82,8 +87,14 @@ public class PostcodeLookupService {
                     PostcodeLookupBadRequestException {
 
         this.validatePostCode(postcode);
-        // Create our http request
-        HttpRequest request = createHttpRequest(postcode, clientId);
+
+        OutgoingWebRequestTracer outgoingWebRequestTracer =
+                oneAgentSdk.traceOutgoingWebRequest("api.os.uk", "GET");
+        outgoingWebRequestTracer.start();
+
+        HttpRequest request =
+                createHttpRequest(
+                        postcode, clientId, outgoingWebRequestTracer.getDynatraceStringTag());
 
         long startTime = System.nanoTime();
         HttpResponse<String> response = sendHttpRequest(request);
@@ -96,6 +107,8 @@ public class PostcodeLookupService {
 
         eventProbe.counterMetric(
                 "lookup_postcode_duration", totalTimeInMs, MetricUnit.MILLISECONDS);
+        outgoingWebRequestTracer.setStatusCode(response.statusCode());
+        outgoingWebRequestTracer.end();
 
         switch (response.statusCode()) {
             case HttpStatusCode.OK:
@@ -125,7 +138,7 @@ public class PostcodeLookupService {
                 sessionItem);
     }
 
-    private HttpRequest createHttpRequest(String postcode, String clientId)
+    private HttpRequest createHttpRequest(String postcode, String clientId, String tracingHeader)
             throws PostcodeLookupBadRequestException, ClientIdNotSupportedException {
         try {
             String urlParam =
@@ -147,6 +160,7 @@ public class PostcodeLookupService {
                                     .getUri())
                     .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                     .header("Accept", "application/json")
+                    .header(OneAgentSDK.DYNATRACE_HTTP_HEADERNAME, tracingHeader)
                     .GET()
                     .build();
         } catch (URISyntaxException e) {
