@@ -2,6 +2,7 @@ package uk.gov.di.ipv.cri.address.api.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.opentelemetry.api.trace.Span;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.http.HttpStatusCode;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
@@ -18,6 +19,7 @@ import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeError;
 import uk.gov.di.ipv.cri.address.api.models.OrdnanceSurveyPostcodeResponse;
 import uk.gov.di.ipv.cri.address.api.models.Result;
 import uk.gov.di.ipv.cri.address.api.pii.PiiPostcodeMasker;
+import uk.gov.di.ipv.cri.address.library.util.OpenTelemetryUtil;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEventContext;
 import uk.gov.di.ipv.cri.common.library.domain.personidentity.Address;
 import uk.gov.di.ipv.cri.common.library.persistence.item.CanonicalAddress;
@@ -85,6 +87,9 @@ public class PostcodeLookupService {
         // Create our http request
         HttpRequest request = createHttpRequest(postcode, clientId);
 
+        Span span =
+                OpenTelemetryUtil.createSpan(this.getClass(), "lookupPostcode", "GET", "api.os.uk");
+
         long startTime = System.nanoTime();
         HttpResponse<String> response = sendHttpRequest(request);
         long endTime = System.nanoTime();
@@ -93,9 +98,10 @@ public class PostcodeLookupService {
                 "API response received from OS API: status={}, latencyInMs={}",
                 response.statusCode(),
                 totalTimeInMs);
-
         eventProbe.counterMetric(
                 "lookup_postcode_duration", totalTimeInMs, MetricUnit.MILLISECONDS);
+
+        OpenTelemetryUtil.endSpan(span);
 
         switch (response.statusCode()) {
             case HttpStatusCode.OK:
