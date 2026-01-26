@@ -888,10 +888,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: Errors
@@ -964,10 +962,8 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       Metrics:
         - Id: errors
@@ -1056,10 +1052,8 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       Metrics:
         - Id: errors
@@ -1098,10 +1092,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       MetricName: all_aliases_unavailable_for_decryption
@@ -1125,10 +1117,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       DatapointsToAlarm: 3
@@ -1511,10 +1501,8 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       AlarmActions:
-        - !ImportValue core-infrastructure-AlarmTopic
         - !ImportValue platform-alarm-critical-alert-topic
       InsufficientDataActions: []
       EvaluationPeriods: 5
