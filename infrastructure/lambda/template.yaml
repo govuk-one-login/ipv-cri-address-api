@@ -899,9 +899,9 @@ Resources:
       Period: 300
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
-      Threshold: 1
+      Threshold: 0
       ComparisonOperator: GreaterThanThreshold
-      TreatMissingData: notBreaching
+      TreatMissingData: breaching
 
   SessionLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
