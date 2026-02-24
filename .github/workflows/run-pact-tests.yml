@@ -55,7 +55,7 @@ jobs:
         run: ./gradlew :lambdas:issuecredential:pactTests -x spotlessApply -x spotlessCheck
 
       - name: Upload test report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ failure() }}
         with:
           name: test-report
