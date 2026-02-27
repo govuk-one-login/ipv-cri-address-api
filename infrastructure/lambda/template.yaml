@@ -888,9 +888,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       MetricName: Errors
       Namespace: AWS/Lambda
@@ -917,9 +917,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -962,9 +962,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -1007,9 +1007,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -1052,9 +1052,9 @@ Resources:
       EvaluationPeriods: 3
       TreatMissingData: notBreaching
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       Metrics:
         - Id: errors
           Expression: IF(m2 != 0, (m1 / m2) * 100, 0)
@@ -1092,9 +1092,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       MetricName: all_aliases_unavailable_for_decryption
       Namespace: !Sub "${CriIdentifier}"
@@ -1117,9 +1117,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       DatapointsToAlarm: 3
       EvaluationPeriods: 3
@@ -1160,9 +1160,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the PostcodeLookupFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1187,9 +1187,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "PostcodeLookupFunction Lambda returning 5xx response."
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
@@ -1216,9 +1216,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the AddressFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1243,9 +1243,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
@@ -1272,9 +1272,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the GetAddressesFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1299,9 +1299,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "GetAddressesFunction Lambda returning 5xx response."
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
@@ -1328,9 +1328,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "Errors returned from the IssueCredentialFunction Lambda."
       MetricName: Errors
       Dimensions:
@@ -1355,9 +1355,9 @@ Resources:
     Properties:
       ActionsEnabled: true
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "IssueCredential Lambda returning 5xx response."
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
@@ -1438,9 +1438,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -1501,9 +1501,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       AlarmActions:
-        - !ImportValue platform-alarm-critical-alert-topic
+        !ImportValue - !If [IsProdEnvironment, !ImportValue slack-notifications-PagerDutySNSTopicArn, !ImportValue slack-notifications-CriticalAlertsTopicArn]
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
@@ -1564,9 +1564,9 @@ Resources:
         - SupportManualURL: !FindInMap [StaticVariables, Urls, SupportManualURL]
       ActionsEnabled: true
       OKActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmActions:
-        - !ImportValue platform-alarm-warning-alert-topic
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
       InsufficientDataActions: []
       EvaluationPeriods: 5
       DatapointsToAlarm: 2
