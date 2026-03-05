@@ -61,7 +61,8 @@ Conditions:
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotProdEnvironment: !Not [!Equals [!Ref Environment, production]]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
-  IsDevBuildEnvironment: !Or [!Equals [!Ref Environment, build], !Condition IsDevEnvironment]
+  IsDevBuildEnvironment:
+    !Or [!Equals [!Ref Environment, build], !Condition IsDevEnvironment]
   IsNotDevBuildEnvironment: !Not [!Condition IsDevBuildEnvironment]
 
   AddProvisionedConcurrency:
@@ -112,7 +113,8 @@ Globals:
         POWERTOOLS_LOG_LEVEL: INFO
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
-        FORCE_LAMBDA_UPDATE: !If [IsLocalDevEnvironment, !Ref ForceLambdaUpdate, !Ref AWS::NoValue]
+        FORCE_LAMBDA_UPDATE:
+          !If [IsLocalDevEnvironment, !Ref ForceLambdaUpdate, !Ref AWS::NoValue]
         DT_CONNECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
           - SecretArn:
@@ -130,12 +132,11 @@ Globals:
                 dynatraceSecretArn,
               ]
         DT_CLUSTER: !Sub
-            - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
-            - SecretArn:
-                !FindInMap
-                - EnvironmentConfiguration
-                - !Ref Environment
-                - dynatraceSecretArn
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+          - SecretArn: !FindInMap
+              - EnvironmentConfiguration
+              - !Ref Environment
+              - dynatraceSecretArn
         DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
           - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
           - SecretArn:
@@ -262,24 +263,23 @@ Mappings:
 
   DynatraceLayerARN:
     localdev:
-      java: arn:aws:lambda:eu-west-2:005455562524:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
-      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
     dev:
-      java: arn:aws:lambda:eu-west-2:005455562524:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
-      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
     build:
-      java: arn:aws:lambda:eu-west-2:612168027154:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
-      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
     staging:
-      java: arn:aws:lambda:eu-west-2:318282704185:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
-      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
     integration:
-      java: arn:aws:lambda:eu-west-2:993720532118:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
-      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
     production:
-      java: arn:aws:lambda:eu-west-2:608988268245:layer:OneAgent_1_323_46_with_collector_java_arm-v1-signed:1
-      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_313_2_20250404-043044_with_collector_nodejs:1
-
+      java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
+      node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
 
 Resources:
   DynamoTablesEncryptionKey:
@@ -378,8 +378,6 @@ Resources:
       Tags:
         FMSRegionalPolicy: "false"
         CustomPolicy: "true"
-
-
 
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -528,8 +526,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref AddressTable
         - KMSDecryptPolicy:
-            KeyId:
-              !Ref DynamoTablesEncryptionKey
+            KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
             KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - Statement:
@@ -583,8 +580,10 @@ Resources:
             Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
           ADDRESS_TABLE: !Ref AddressTable
           SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-          MAXIMUM_JWT_TTL: !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
-          JWT_TTL_UNIT: !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
+          MAXIMUM_JWT_TTL:
+            !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
+          JWT_TTL_UNIT:
+            !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
           VERIFIABLE_CREDENTIAL_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
           VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID: !ImportValue core-infrastructure-CriVcSigningKey1Id
       Policies:
@@ -595,8 +594,7 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Ref AddressTable
         - KMSDecryptPolicy:
-            KeyId:
-              !Ref DynamoTablesEncryptionKey
+            KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
             KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
         - Statement:
@@ -778,7 +776,8 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-prod"
       Type: String
-      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+      Value:
+        !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
 
   IpvCoreStubAwsBuildOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
@@ -786,7 +785,8 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-build"
       Type: String
-      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+      Value:
+        !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
 
   IpvCoreStubOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
@@ -794,7 +794,8 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub"
       Type: String
-      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+      Value:
+        !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
 
   IpvCoreStubPreProdAwsBuildOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
@@ -818,7 +819,8 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-headless"
       Type: String
-      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+      Value:
+        !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
 
   IpvCoreStubAwsProd3rdpartyOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
@@ -842,7 +844,8 @@ Resources:
     Properties:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core"
       Type: String
-      Value: !FindInMap [ StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment ]
+      Value:
+        !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
 
   IpvCore3rdPartyStubsOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
