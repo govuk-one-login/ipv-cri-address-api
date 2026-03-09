@@ -45,3 +45,5 @@ build
 # intellij project dir
 .idea
 *.env
+
+.vscode
