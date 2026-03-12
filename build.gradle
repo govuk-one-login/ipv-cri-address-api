@@ -9,9 +9,7 @@ plugins {
 defaultTasks 'clean', 'spotlessApply', 'build'
 
 repositories {
-	maven {
-		url 'https://gds.jfrog.io/artifactory/di-allowed-repos'
-	}
+	mavenCentral()
 }
 
 subprojects {
@@ -23,9 +21,7 @@ subprojects {
 	}
 
 	repositories {
-		maven {
-			url 'https://gds.jfrog.io/artifactory/di-allowed-repos'
-		}
+		mavenCentral()
 	}
 
 	// The dynamodb enhanced package loads the apache-client as well as the spi-client, so
