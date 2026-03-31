@@ -30,6 +30,15 @@ subprojects {
 		exclude group: "software.amazon.awssdk", module: "apache-client"
 	}
 
+	configurations.configureEach {
+		resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+			if (details.requested.group == 'io.netty') {
+				details.useVersion "4.2.12.Final"
+				details.because 'Vulnerability fix: force Netty version to override vulnerable transitive dependency'
+			}
+		}
+	}
+
 	dependencies {
 		implementation platform("software.amazon.awssdk:bom:2.33.9")
 		implementation platform("com.fasterxml.jackson:jackson-bom:2.18.3")
