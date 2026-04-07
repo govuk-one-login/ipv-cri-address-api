@@ -241,12 +241,13 @@ class PostcodeLookupServiceTest {
             // Simulate a sammple response body
             when(mockResponse.body())
                     .thenReturn(
-                            "{\n"
-                                    + "  \"error\" : {\n"
-                                    + "    \"statuscode\" : 400,\n"
-                                    + "    \"message\" : \"Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ\"\n"
-                                    + "  }\n"
-                                    + "}");
+                            """
+                                    {
+                                      "error" : {
+                                        "statuscode" : 400,
+                                        "message" : "Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ"
+                                      }
+                                    }""");
             when(httpClient.send(
                             any(HttpRequest.class),
                             ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
@@ -398,7 +399,11 @@ class PostcodeLookupServiceTest {
             assertNull(auditEventContext.getPersonIdentity().getNames());
             assertEquals(
                     postcode,
-                    auditEventContext.getPersonIdentity().getAddresses().get(0).getPostalCode());
+                    auditEventContext
+                            .getPersonIdentity()
+                            .getAddresses()
+                            .getFirst()
+                            .getPostalCode());
             assertEquals(requestHeaders, auditEventContext.getRequestHeaders());
             assertEquals(sessionItem, auditEventContext.getSessionItem());
         }

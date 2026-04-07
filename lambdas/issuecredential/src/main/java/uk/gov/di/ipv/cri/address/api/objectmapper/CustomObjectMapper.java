@@ -21,7 +21,9 @@ public class CustomObjectMapper {
                 new ObjectMapper()
                         .registerModule(new Jdk8Module())
                         .registerModule(new JavaTimeModule())
-                        .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                        .setDefaultPropertyInclusion(
+                                JsonInclude.Value.construct(
+                                        JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
                         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         objectMapper.addMixIn(CanonicalAddress.class, AddressMixIn.class);

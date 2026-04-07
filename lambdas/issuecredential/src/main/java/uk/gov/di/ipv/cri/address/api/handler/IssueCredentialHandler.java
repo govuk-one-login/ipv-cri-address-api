@@ -51,7 +51,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.apache.logging.log4j.Level.ERROR;
@@ -235,7 +234,7 @@ public class IssueCredentialHandler
                                 .withAddresses(
                                         addressItem.getAddresses().stream()
                                                 .map(Address::new)
-                                                .collect(Collectors.toList()))
+                                                .toList())
                                 .build(),
                         headers,
                         sessionItem);

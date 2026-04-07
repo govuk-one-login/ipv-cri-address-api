@@ -116,7 +116,7 @@ class InternationalAddressVcTest implements DummyStates, InternationalAddressSta
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         MockHttpServer.stopServer();
     }
 
