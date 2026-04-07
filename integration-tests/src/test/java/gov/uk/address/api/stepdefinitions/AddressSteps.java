@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,7 +51,7 @@ public class AddressSteps {
     private final String addressStartJsonSchema;
     private final String addressEndJsonSchema;
     private final String addressVCIssuedJsonSchema;
-    private AddressContext addressContext;
+    private final AddressContext addressContext;
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext)
@@ -262,7 +261,7 @@ public class AddressSteps {
                                         event.getEvent()
                                                 .getData()
                                                 .contains("IPV_ADDRESS_CRI_VC_ISSUED"))
-                        .collect(Collectors.toList());
+                        .toList();
 
         assertNotNull(events);
         assertEquals(1, events.size());

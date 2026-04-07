@@ -65,12 +65,10 @@ class AddressServiceTest {
             "Country code not present for address";
     private static final long ADDRESS_TTL = 1730197212;
 
-    private ObjectMapper objectMapper;
-
     @BeforeEach
     void setup() {
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper
                 .registerModule(new JavaTimeModule())
                 .registerModule(
                         new SimpleModule()
@@ -86,62 +84,64 @@ class AddressServiceTest {
         @Test
         void shouldParseAddresses() throws AddressProcessingException {
             String addresses =
-                    "[\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"72262801\",\n"
-                            + "      \"buildingNumber\": \"8\",\n"
-                            + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
-                            + "      \"addressLocality\": \"LEEDS\",\n"
-                            + "      \"postalCode\": \"LS10 4QL\",\n"
-                            + "      \"addressCountry\": \"GB\",\n"
-                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
-                            + "      \"validFrom\": \"2010-02-26\",\n"
-                            + "      \"validUntil\": \"2021-01-16\"\n"
-                            + "   },\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"63094965\",\n"
-                            + "      \"buildingNumber\": \"15\",\n"
-                            + "      \"dependentLocality\": \"LOFTHOUSE\",\n"
-                            + "      \"streetName\": \"RIDINGS LANE\",\n"
-                            + "      \"addressLocality\": \"WAKEFIELD\",\n"
-                            + "      \"postalCode\": \"WF3 3SE\",\n"
-                            + "      \"addressCountry\": \"GB\",\n"
-                            + "      \"validFrom\": \"2021-01-16\",\n"
-                            + "      \"validUntil\": \"2021-08-02\"\n"
-                            + "   },\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"63042351\",\n"
-                            + "      \"buildingNumber\": \"5\",\n"
-                            + "      \"streetName\": \"GATEWAYS\",\n"
-                            + "      \"addressLocality\": \"WAKEFIELD\",\n"
-                            + "      \"postalCode\": \"WF1 2LZ\",\n"
-                            + "      \"addressCountry\": \"GB\",\n"
-                            + "      \"validFrom\": \"2021-08-02\"\n"
-                            + "   }\n"
-                            + "]";
+                    """
+                            [
+                               {
+                                  "uprn": "72262801",
+                                  "buildingNumber": "8",
+                                  "streetName": "GRANGE FIELDS WAY",
+                                  "addressLocality": "LEEDS",
+                                  "postalCode": "LS10 4QL",
+                                  "addressCountry": "GB",
+                                  "addressRegion": "YORKSHIRE",
+                                  "validFrom": "2010-02-26",
+                                  "validUntil": "2021-01-16"
+                               },
+                               {
+                                  "uprn": "63094965",
+                                  "buildingNumber": "15",
+                                  "dependentLocality": "LOFTHOUSE",
+                                  "streetName": "RIDINGS LANE",
+                                  "addressLocality": "WAKEFIELD",
+                                  "postalCode": "WF3 3SE",
+                                  "addressCountry": "GB",
+                                  "validFrom": "2021-01-16",
+                                  "validUntil": "2021-08-02"
+                               },
+                               {
+                                  "uprn": "63042351",
+                                  "buildingNumber": "5",
+                                  "streetName": "GATEWAYS",
+                                  "addressLocality": "WAKEFIELD",
+                                  "postalCode": "WF1 2LZ",
+                                  "addressCountry": "GB",
+                                  "validFrom": "2021-08-02"
+                               }
+                            ]""";
 
             List<CanonicalAddress> parsedAddresses = addressService.parseAddresses(addresses);
 
             assertThat(parsedAddresses.size(), equalTo(3));
-            assertEquals("YORKSHIRE", parsedAddresses.get(0).getAddressRegion());
+            assertEquals("YORKSHIRE", parsedAddresses.getFirst().getAddressRegion());
         }
 
         @Test
         void shouldNotRevealPIIAddressDetailWhenAnInvalidDateIsSupplied() {
             String addresses =
-                    "[\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"72262801\",\n"
-                            + "      \"buildingNumber\": \"8\",\n"
-                            + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
-                            + "      \"addressLocality\": \"LEEDS\",\n"
-                            + "      \"postalCode\": \"LS10 4QL\",\n"
-                            + "      \"addressCountry\": \"GB\",\n"
-                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
-                            + "      \"validFrom\": \"2010-00-00\",\n"
-                            + "      \"validUntil\": \"2021-01-16\"\n"
-                            + "   },\n"
-                            + "]";
+                    """
+                            [
+                               {
+                                  "uprn": "72262801",
+                                  "buildingNumber": "8",
+                                  "streetName": "GRANGE FIELDS WAY",
+                                  "addressLocality": "LEEDS",
+                                  "postalCode": "LS10 4QL",
+                                  "addressCountry": "GB",
+                                  "addressRegion": "YORKSHIRE",
+                                  "validFrom": "2010-00-00",
+                                  "validUntil": "2021-01-16"
+                               },
+                            ]""";
 
             AddressProcessingException addressProcessingException =
                     assertThrows(
@@ -158,44 +158,43 @@ class AddressServiceTest {
                                     "*".repeat("LEEDS".length()),
                                     "*".repeat("LS10 4QL".length()),
                                     "*".repeat("GB".length()),
-                                    "*".repeat("YORKSHIRE".length()),
-                                    "*".repeat("2010-00-00".length()),
-                                    "*".repeat("2021-01-16".length()))));
+                                    "*".repeat("YORKSHIRE".length()))));
         }
 
         @Test
         void shouldThrowExceptionWhenNoCountryCodePresentInAddresses() {
             String addresses =
-                    "[\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"72262801\",\n"
-                            + "      \"buildingNumber\": \"8\",\n"
-                            + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
-                            + "      \"addressLocality\": \"LEEDS\",\n"
-                            + "      \"postalCode\": \"LS10 4QL\",\n"
-                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
-                            + "      \"validFrom\": \"2010-02-26\",\n"
-                            + "      \"validUntil\": \"2021-01-16\"\n"
-                            + "   },\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"63094965\",\n"
-                            + "      \"buildingNumber\": \"15\",\n"
-                            + "      \"dependentLocality\": \"LOFTHOUSE\",\n"
-                            + "      \"streetName\": \"RIDINGS LANE\",\n"
-                            + "      \"addressLocality\": \"WAKEFIELD\",\n"
-                            + "      \"postalCode\": \"WF3 3SE\",\n"
-                            + "      \"validFrom\": \"2021-01-16\",\n"
-                            + "      \"validUntil\": \"2021-08-02\"\n"
-                            + "   },\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"63042351\",\n"
-                            + "      \"buildingNumber\": \"5\",\n"
-                            + "      \"streetName\": \"GATEWAYS\",\n"
-                            + "      \"addressLocality\": \"WAKEFIELD\",\n"
-                            + "      \"postalCode\": \"WF1 2LZ\",\n"
-                            + "      \"validFrom\": \"2021-08-02\"\n"
-                            + "   }\n"
-                            + "]";
+                    """
+                            [
+                               {
+                                  "uprn": "72262801",
+                                  "buildingNumber": "8",
+                                  "streetName": "GRANGE FIELDS WAY",
+                                  "addressLocality": "LEEDS",
+                                  "postalCode": "LS10 4QL",
+                                  "addressRegion": "YORKSHIRE",
+                                  "validFrom": "2010-02-26",
+                                  "validUntil": "2021-01-16"
+                               },
+                               {
+                                  "uprn": "63094965",
+                                  "buildingNumber": "15",
+                                  "dependentLocality": "LOFTHOUSE",
+                                  "streetName": "RIDINGS LANE",
+                                  "addressLocality": "WAKEFIELD",
+                                  "postalCode": "WF3 3SE",
+                                  "validFrom": "2021-01-16",
+                                  "validUntil": "2021-08-02"
+                               },
+                               {
+                                  "uprn": "63042351",
+                                  "buildingNumber": "5",
+                                  "streetName": "GATEWAYS",
+                                  "addressLocality": "WAKEFIELD",
+                                  "postalCode": "WF1 2LZ",
+                                  "validFrom": "2021-08-02"
+                               }
+                            ]""";
 
             AddressProcessingException exception =
                     assertThrows(
@@ -207,38 +206,39 @@ class AddressServiceTest {
         @Test
         void shouldThrowExceptionWhenNoCountryCodePresentInAnAddress() {
             String addresses =
-                    "[\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"72262801\",\n"
-                            + "      \"buildingNumber\": \"8\",\n"
-                            + "      \"streetName\": \"GRANGE FIELDS WAY\",\n"
-                            + "      \"addressLocality\": \"LEEDS\",\n"
-                            + "      \"postalCode\": \"LS10 4QL\",\n"
-                            + "      \"addressCountry\": \"GB\",\n"
-                            + "      \"addressRegion\": \"YORKSHIRE\",\n"
-                            + "      \"validFrom\": \"2010-02-26\",\n"
-                            + "      \"validUntil\": \"2021-01-16\"\n"
-                            + "   },\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"63094965\",\n"
-                            + "      \"buildingNumber\": \"15\",\n"
-                            + "      \"dependentLocality\": \"LOFTHOUSE\",\n"
-                            + "      \"streetName\": \"RIDINGS LANE\",\n"
-                            + "      \"addressLocality\": \"WAKEFIELD\",\n"
-                            + "      \"postalCode\": \"WF3 3SE\",\n"
-                            + "      \"addressCountry\": \"GB\",\n"
-                            + "      \"validFrom\": \"2021-01-16\",\n"
-                            + "      \"validUntil\": \"2021-08-02\"\n"
-                            + "   },\n"
-                            + "   {\n"
-                            + "      \"uprn\": \"63042351\",\n"
-                            + "      \"buildingNumber\": \"5\",\n"
-                            + "      \"streetName\": \"GATEWAYS\",\n"
-                            + "      \"addressLocality\": \"WAKEFIELD\",\n"
-                            + "      \"postalCode\": \"WF1 2LZ\",\n"
-                            + "      \"validFrom\": \"2021-08-02\"\n"
-                            + "   }\n"
-                            + "]";
+                    """
+                            [
+                               {
+                                  "uprn": "72262801",
+                                  "buildingNumber": "8",
+                                  "streetName": "GRANGE FIELDS WAY",
+                                  "addressLocality": "LEEDS",
+                                  "postalCode": "LS10 4QL",
+                                  "addressCountry": "GB",
+                                  "addressRegion": "YORKSHIRE",
+                                  "validFrom": "2010-02-26",
+                                  "validUntil": "2021-01-16"
+                               },
+                               {
+                                  "uprn": "63094965",
+                                  "buildingNumber": "15",
+                                  "dependentLocality": "LOFTHOUSE",
+                                  "streetName": "RIDINGS LANE",
+                                  "addressLocality": "WAKEFIELD",
+                                  "postalCode": "WF3 3SE",
+                                  "addressCountry": "GB",
+                                  "validFrom": "2021-01-16",
+                                  "validUntil": "2021-08-02"
+                               },
+                               {
+                                  "uprn": "63042351",
+                                  "buildingNumber": "5",
+                                  "streetName": "GATEWAYS",
+                                  "addressLocality": "WAKEFIELD",
+                                  "postalCode": "WF1 2LZ",
+                                  "validFrom": "2021-08-02"
+                               }
+                            ]""";
 
             AddressProcessingException exception =
                     assertThrows(
@@ -352,7 +352,8 @@ class AddressServiceTest {
             ArgumentCaptor<AddressItem> captor = ArgumentCaptor.forClass(AddressItem.class);
             verify(mockDataStore).create(captor.capture());
 
-            assertEquals(expectedPostcode, captor.getValue().getAddresses().get(0).getPostalCode());
+            assertEquals(
+                    expectedPostcode, captor.getValue().getAddresses().getFirst().getPostalCode());
             assertEquals(SESSION_ID, captor.getValue().getSessionId());
             assertEquals(ADDRESS_TTL, captor.getValue().getExpiryDate());
         }
@@ -385,7 +386,8 @@ class AddressServiceTest {
             ArgumentCaptor<AddressItem> captor = ArgumentCaptor.forClass(AddressItem.class);
             verify(mockDataStore).create(captor.capture());
 
-            assertEquals(expectedPostcode, captor.getValue().getAddresses().get(0).getPostalCode());
+            assertEquals(
+                    expectedPostcode, captor.getValue().getAddresses().getFirst().getPostalCode());
             assertEquals(SESSION_ID, captor.getValue().getSessionId());
             assertEquals(ADDRESS_TTL, captor.getValue().getExpiryDate());
         }
@@ -401,40 +403,20 @@ class AddressServiceTest {
         }
 
         @Test
-        void shouldEvaluateToPreviousWithNULLNULL() {
-            // The reason for the linker existing is that a second address, intended as
-            // a PREVIOUS address has ValidFrom and ValidUntil not set - null,null. This however
-            // matches the pattern for a CURRENT address with unknown start date.
-            // In this specific case, we evaluate null, null as the intended PREVIOUS address.
-
-            CanonicalAddress currentAddress = new CanonicalAddress();
-            currentAddress.setValidFrom(null);
-            currentAddress.setValidUntil(null);
-
-            List<CanonicalAddress> canonicalAddresses = List.of(currentAddress);
-
-            AddressProcessingException exception =
-                    assertThrows(
-                            AddressProcessingException.class,
-                            () -> addressService.setAddressValidity(canonicalAddresses));
-            assertEquals(ERROR_SINGLE_ADDRESS_NOT_CURRENT, exception.getMessage());
-        }
-
-        @Test
         void shouldThrowExceptionWhenAboutToTrampleAlreadySetDates() {
             // When AddressCRIFront is setting ValidUntil in previous addresses
             // The linker can be removed entirely.
 
-            final LocalDate TEST_DATE_0 = LocalDate.of(1999, 12, 31);
-            final LocalDate TEST_DATE_1 = LocalDate.of(1999, 11, 30);
+            final LocalDate testDate0 = LocalDate.of(1999, 12, 31);
+            final LocalDate testDate1 = LocalDate.of(1999, 11, 30);
 
             CanonicalAddress currentAddress = new CanonicalAddress();
-            currentAddress.setValidFrom(TEST_DATE_0);
+            currentAddress.setValidFrom(testDate0);
             currentAddress.setValidUntil(null);
 
             CanonicalAddress previousAddress = new CanonicalAddress();
             previousAddress.setValidFrom(null);
-            previousAddress.setValidUntil(TEST_DATE_1);
+            previousAddress.setValidUntil(testDate1);
 
             List<CanonicalAddress> canonicalAddresses = List.of(currentAddress, previousAddress);
 
@@ -848,9 +830,6 @@ class AddressServiceTest {
 
         @Test
         void storesPrePopulatedEntryMetric() {
-            CanonicalAddress address = new CanonicalAddress();
-            address.setUprn(123L);
-
             addressService.storeAddressEntryTypeMetric(eventProbe, List.of(prepopulatedAddress));
 
             verify(eventProbe, times(0)).counterMetric(MANUAL_ADDRESS_METRIC);

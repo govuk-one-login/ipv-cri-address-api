@@ -115,7 +115,7 @@ class SingleAddressBuildNumberVcTest implements DummyStates, SingleAddressBuildi
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         MockHttpServer.stopServer();
     }
 

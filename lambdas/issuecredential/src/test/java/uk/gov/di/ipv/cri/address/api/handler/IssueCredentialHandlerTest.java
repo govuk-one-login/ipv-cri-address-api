@@ -64,7 +64,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.logging.log4j.Level.ERROR;
@@ -133,8 +132,7 @@ class IssueCredentialHandlerTest {
 
         List<CanonicalAddress> canonicalAddresses = List.of(address);
         addressItem.setAddresses(canonicalAddresses);
-        List<Address> addresses =
-                canonicalAddresses.stream().map(Address::new).collect(Collectors.toList());
+        List<Address> addresses = canonicalAddresses.stream().map(Address::new).toList();
 
         Map<String, Object> auditEventExtensions =
                 Map.of("iss", "issuer", "addressesEntered", addresses.size(), "isUkAddress", true);
@@ -220,8 +218,7 @@ class IssueCredentialHandlerTest {
 
         List<CanonicalAddress> canonicalAddresses = List.of(address);
         addressItem.setAddresses(canonicalAddresses);
-        List<Address> addresses =
-                canonicalAddresses.stream().map(Address::new).collect(Collectors.toList());
+        List<Address> addresses = canonicalAddresses.stream().map(Address::new).toList();
 
         when(mockSessionService.getSessionByAccessToken(accessToken)).thenReturn(sessionItem);
         when(mockAddressService.getAddressItemWithRetries(sessionItem)).thenReturn(addressItem);

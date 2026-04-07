@@ -115,7 +115,7 @@ class MultipleAddressVcTest implements DummyStates, MultipleAddressStates {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         MockHttpServer.stopServer();
     }
 

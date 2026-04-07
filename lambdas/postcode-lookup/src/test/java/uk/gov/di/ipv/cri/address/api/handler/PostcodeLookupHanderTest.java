@@ -408,7 +408,7 @@ class PostcodeLookupHandlerTest {
                             "Any_other_exception"),
                     dimension);
             assertEquals(HttpStatusCode.UNAUTHORIZED, responseEvent.getStatusCode());
-            assertEquals("\"Any other exception\"", responseEvent.getBody().toString());
+            assertEquals("\"Any other exception\"", responseEvent.getBody());
         }
 
         @Test
@@ -446,7 +446,7 @@ class PostcodeLookupHandlerTest {
                             POSTCODE_ERROR_MESSAGE,
                             "Error_Connection_Timeout"),
                     dimension);
-            assertEquals("\"Error Connection Timeout\"", responseEvent.getBody().toString());
+            assertEquals("\"Error Connection Timeout\"", responseEvent.getBody());
         }
 
         @Test
