@@ -418,11 +418,11 @@ class PostcodeLookupServiceTest {
 
         @Test
         void getAuditEventContextShouldThrowExceptionWhenSessionItemIsNull() {
+            Map<String, String> context = Map.of("key", "value");
+
             assertThrows(
                     NullPointerException.class,
-                    () ->
-                            postcodeLookupService.getAuditEventContext(
-                                    "LS1 1BA", Map.of("key", "value"), null),
+                    () -> postcodeLookupService.getAuditEventContext("LS1 1BA", context, null),
                     "sessionItem must not be null");
         }
     }
