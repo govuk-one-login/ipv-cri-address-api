@@ -64,6 +64,9 @@ Conditions:
   IsDevBuildEnvironment:
     !Or [!Equals [!Ref Environment, build], !Condition IsDevEnvironment]
   IsNotDevBuildEnvironment: !Not [!Condition IsDevBuildEnvironment]
+  CreateOAuthSSMParam: !And
+    - !Not [!Condition IsLocalDevEnvironment]
+    - !Not [!Condition IsProdEnvironment]
 
   AddProvisionedConcurrency:
     !Not [
@@ -854,6 +857,15 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-3rd-party-stubs"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
+  OAuthCommonStackNameParam:
+    Type: AWS::SSM::Parameter
+    Condition: CreateOAuthSSMParam
+    Properties:
+      Name: /common-cri/oauth-common/stack-name
+      Type: String
+      Value: !Ref CommonStackName
+      Description: The stack currently used for OAuth (common-lambdas or oauth-common). Only required for test-resources.
 
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
