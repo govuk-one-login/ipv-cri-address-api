@@ -14,7 +14,7 @@ webcompere = "2.1.6"
 otel = "1.55.0"
 otel-alpha = "2.12.0-alpha"
 slf4j = "2.0.13"
-log4j = "2.25.3"
+log4j = "2.25.4"
 
 # Plugins
 spotless = "8.0.+"
