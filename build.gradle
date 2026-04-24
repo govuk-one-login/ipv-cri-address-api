@@ -24,20 +24,23 @@ subprojects {
 		mavenCentral()
 	}
 
-	// The dynamodb enhanced package loads the apache-client as well as the spi-client, so
-	// we need to add the apache-client to the dependencies exclusion to not get a mismatch
 	configurations.configureEach {
-		exclude group: "software.amazon.awssdk", module: "apache-client"
-	}
+		// The dynamodb enhanced package loads the apache-client as well as the spi-client, so
+		// we need to add the apache-client to the dependencies exclusion to not get a mismatch
 
-	configurations.configureEach {
-		resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-			if (details.requested.group == 'io.netty') {
-				details.useVersion "4.2.12.Final"
-				details.because 'Vulnerability fix: force Netty version to override vulnerable transitive dependency'
-			}
+		//These clients are excluded as we are using the aws-crt client exclusively
+		// https://aws.amazon.com/blogs/developer/tuning-the-aws-java-sdk-2-x-to-reduce-startup-time/
+		exclude group:"software.amazon.awssdk", module: "apache-client"
+		exclude group:"software.amazon.awssdk", module: "netty-nio-client"
+		exclude group:"software.amazon.awssdk", module: "url-connection-client"
+
+		// Exclude netty in general but allow for webdriver manager in acceptance tests (browser download)
+		if (project.name != 'acceptance-tests') {
+			exclude group: "io.netty", module: "*"
+			exclude group: "io.grpc", module: "grpc-netty"
 		}
 	}
+
 
 	dependencies {
 		implementation platform("software.amazon.awssdk:bom:2.33.9")
