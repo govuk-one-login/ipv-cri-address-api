@@ -41,7 +41,6 @@ subprojects {
 		}
 	}
 
-
 	dependencies {
 		implementation platform("software.amazon.awssdk:bom:2.33.9")
 		implementation platform("com.fasterxml.jackson:jackson-bom:2.18.3")
