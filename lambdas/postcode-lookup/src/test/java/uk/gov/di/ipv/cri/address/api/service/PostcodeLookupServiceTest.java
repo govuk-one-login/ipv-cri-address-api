@@ -52,6 +52,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PostcodeLookupServiceTest {
     private static final String TEST_CLIENT_ID = "mock-client-id";
+    private static final String TEST_API_KEY = "mock-api-key";
 
     @Mock private ConfigurationService mockConfigurationService;
     @Mock private HttpResponse<String> mockResponse;
@@ -73,6 +74,8 @@ class PostcodeLookupServiceTest {
 
     @Test
     void shouldLogAPILatency() throws IOException, InterruptedException {
+        when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                .thenReturn(TEST_API_KEY);
         when(mockConfigurationService.getParameterValue("OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                 .thenReturn("http://localhost:8080/");
         when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
@@ -118,6 +121,9 @@ class PostcodeLookupServiceTest {
         @Test
         void shouldThrowTimeoutExceptionWhenHttpRequestExceedsSetTimeout()
                 throws PostcodeLookupTimeoutException, IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
@@ -137,6 +143,9 @@ class PostcodeLookupServiceTest {
                 "it should throw Error due to library incompatibility issues. check project build configuration"
                         + "and ipv-cri-lib dependencies for version mismatches")
         void noSuchFieldErrorThrowsProcessingException() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -154,6 +163,9 @@ class PostcodeLookupServiceTest {
 
         @Test
         void ioExceptionThrowsProcessingException() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -171,6 +183,9 @@ class PostcodeLookupServiceTest {
 
         @Test
         void interruptedThrowsProcessingException() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -188,6 +203,9 @@ class PostcodeLookupServiceTest {
 
         @Test
         void non200ThrowsProcessingException() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -209,6 +227,9 @@ class PostcodeLookupServiceTest {
     class PostCodeLookUpServiceOrdnanceSurvey400BadRequestTest {
         @Test
         void badRequestReturnsEmptyButLogs() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -231,6 +252,9 @@ class PostcodeLookupServiceTest {
 
         @Test
         void badRequestReturnsEmptyButLogsWithDetails() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -291,6 +315,9 @@ class PostcodeLookupServiceTest {
     class PostCodeLookUpServiceOrdnanceSurvey200OkTest {
         @Test
         void validPostcodeReturnsResults() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -314,6 +341,9 @@ class PostcodeLookupServiceTest {
                 "Should return empty when response from Ordnance Survey is 200 but results contain an empty DPA object")
         void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIs200WithEmptyDPA()
                 throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
                     .thenReturn("http://localhost:8080/");
@@ -339,6 +369,9 @@ class PostcodeLookupServiceTest {
                 "it should return empty when response from Ordnance Survey is a 200 and no results provided")
         void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIsA200WResultsArrayEmpty()
                 throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
@@ -368,6 +401,9 @@ class PostcodeLookupServiceTest {
     class PostCodeLookUpServiceOrdnanceSurvey404NotFoundTest {
         @Test
         void notFoundReturnsNoResults() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+
             // Mock a valid url so service doesn't fall over validating URI
             when(mockConfigurationService.getParameterValue(
                             "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
