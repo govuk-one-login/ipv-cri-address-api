@@ -33,12 +33,6 @@ subprojects {
 		exclude group:"software.amazon.awssdk", module: "apache-client"
 		exclude group:"software.amazon.awssdk", module: "netty-nio-client"
 		exclude group:"software.amazon.awssdk", module: "url-connection-client"
-
-		// Exclude netty in general but allow for webdriver manager in acceptance tests (browser download)
-		if (project.name != 'acceptance-tests') {
-			exclude group: "io.netty", module: "*"
-			exclude group: "io.grpc", module: "grpc-netty"
-		}
 	}
 
 	dependencies {
