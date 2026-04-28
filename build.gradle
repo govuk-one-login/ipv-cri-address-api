@@ -33,6 +33,9 @@ subprojects {
 		exclude group:"software.amazon.awssdk", module: "apache-client"
 		exclude group:"software.amazon.awssdk", module: "netty-nio-client"
 		exclude group:"software.amazon.awssdk", module: "url-connection-client"
+
+		exclude group: "io.netty", module: "*"
+		exclude group: "ip.grpc", module: "grpc-netty"
 	}
 
 	dependencies {
