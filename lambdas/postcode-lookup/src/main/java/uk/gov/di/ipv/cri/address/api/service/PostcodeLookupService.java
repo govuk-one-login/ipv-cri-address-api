@@ -147,12 +147,12 @@ public class PostcodeLookupService {
                                     .appendRawQueryParameter(
                                             "postcode",
                                             URLDecoder.decode(postcode, Charset.defaultCharset()))
-                                    .appendRawQueryParameter("key", apiKey)
                                     .method(SdkHttpMethod.GET)
                                     .build()
                                     .getUri())
                     .timeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                     .header("Accept", "application/json")
+                    .header("key", apiKey)
                     .GET()
                     .build();
         } catch (URISyntaxException e) {
