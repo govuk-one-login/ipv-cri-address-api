@@ -365,6 +365,27 @@ class PostcodeLookupServiceTest {
         }
 
         @Test
+        void shouldSetApiKeyAsHeader() throws IOException, InterruptedException {
+            when(mockConfigurationService.getSecretValue("OrdnanceSurveyAPIKey"))
+                    .thenReturn(TEST_API_KEY);
+            when(mockConfigurationService.getParameterValue(
+                            "OrdnanceSurveyAPIUrl/" + TEST_CLIENT_ID))
+                    .thenReturn("http://localhost:8080/");
+            when(mockResponse.statusCode()).thenReturn(HttpStatusCode.OK);
+            when(mockResponse.body()).thenReturn("{\"header\":{},\"results\":[]}");
+            when(httpClient.send(
+                            postCodeRequest.capture(),
+                            ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                    .thenReturn(mockResponse);
+
+            postcodeLookupService.lookupPostcode("ZZ1 1ZZ", TEST_CLIENT_ID);
+
+            HttpRequest capturedRequest = postCodeRequest.getValue();
+            assertEquals(TEST_API_KEY, capturedRequest.headers().firstValue("key").orElse(null));
+            assertFalse(capturedRequest.uri().getQuery().contains("key="));
+        }
+
+        @Test
         @DisplayName(
                 "it should return empty when response from Ordnance Survey is a 200 and no results provided")
         void shouldReturnEmptyWhenResponseFromOrdnanceSurveyIsA200WResultsArrayEmpty()
