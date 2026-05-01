@@ -1,13 +1,14 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { DynamoDbService } from "../../../src/services/dynamodb-service";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockDynamoDbClient = {
-    send: jest.fn(),
+    send: vi.fn(),
 };
 const mockLogger = {
-    error: jest.fn(),
-    warn: jest.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
 } as unknown as Logger;
 
 describe("DynamoDbService", () => {
@@ -15,7 +16,7 @@ describe("DynamoDbService", () => {
 
     beforeEach(() => {
         dynamoDbService = new DynamoDbService(mockDynamoDbClient as unknown as DynamoDBDocument, mockLogger);
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     const sessionId = "session-id";
