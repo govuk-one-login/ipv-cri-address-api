@@ -15,7 +15,9 @@ To run an individual test file, you must pass the file name to the test command.
 To run an individual test, you must pass the file name to test command but also modify the test with the `only` attribute.
 
 For example:
-``` Javascript
+
+```Javascript
 it.only("will only run this test in this file",() => );
 ```
-Note that if you dont specify Jest to run just the file with the test, then it will also run the other files in parallel.
+
+Note that if you dont specify to run just the file with the test, then it will also run the other files in parallel.

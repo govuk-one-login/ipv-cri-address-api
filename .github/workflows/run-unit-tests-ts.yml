@@ -17,7 +17,7 @@ defaults:
   run:
     shell: bash
 
-permissions: { }
+permissions: {}
 
 jobs:
   run-unit-tests:
@@ -40,7 +40,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm run test:coverage -- --config jest.config.ci.ts
+        run: npm run test:coverage -- --coverage.reporter=lcov
 
       - name: Archive coverage results
         if: ${{ inputs.coverage-report }}
