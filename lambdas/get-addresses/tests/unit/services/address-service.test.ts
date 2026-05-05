@@ -1,35 +1,50 @@
-jest.mock("@aws-sdk/lib-dynamodb", () => {
-    const originalModule = jest.requireActual("@aws-sdk/lib-dynamodb");
-    return {
-        __esModule: true,
-        ...originalModule,
-        GetCommand: jest.fn(),
-    };
-});
-
 import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
-import { Logger } from "@aws-lambda-powertools/logger";
 import { AddressService } from "../../../src/services/address-service";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { Address } from "../../../src/types/address";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Logger } from "@aws-lambda-powertools/logger";
 
-const mockDynamoDbClient = jest.mocked(DynamoDbClient);
-const mockLogger = jest.mocked(Logger);
-const mockGetCommand = jest.mocked(GetCommand);
+vi.mock("@aws-sdk/lib-dynamodb", async (importActual) => {
+    const originalModule = await importActual();
+    return {
+        __esModule: true,
+        ...(originalModule as { [k: string]: unknown }),
+        GetCommand: vi.fn(),
+    };
+});
 
-const infoLoggerSpy = jest.spyOn(mockLogger.prototype, "info");
-const appendKeysLoggerSpy = jest.spyOn(mockLogger.prototype, "appendKeys").mockImplementation((args) => args);
+const mockLogInfo = vi.fn();
+const mockAppendKeys = vi.fn();
+vi.mock("@aws-lambda-powertools/logger", () => ({
+    Logger: vi.fn(
+        class {
+            info = mockLogInfo;
+            error = vi.fn();
+            warn = vi.fn();
+            appendKeys = mockAppendKeys;
+        },
+    ),
+}));
+const logger = new Logger();
+
+const addressTableName = "ADDRESS_TABLE";
+const sessionTable = "SESSION_TABLE";
+const sessionId = "SESSION_ID";
+
+vi.stubEnv("SESSION_TABLE", sessionTable);
+vi.stubEnv("ADDRESS_LOOKUP_TABLE", addressTableName);
+
+const mockDynamoDbClient = vi.mocked(DynamoDbClient);
+const mockGetCommand = vi.mocked(GetCommand);
 
 describe("Address Service Test", () => {
     let addressService: AddressService;
-    const addressTableName = "ADDRESS_TABLE";
-    const sessionTable = "SESSION_TABLE";
-    const sessionId = "SESSION_ID";
 
     beforeEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
 
-        addressService = new AddressService(DynamoDbClient, mockLogger.prototype);
+        addressService = new AddressService(DynamoDbClient, logger);
     });
 
     describe("with context", () => {
@@ -47,15 +62,15 @@ describe("Address Service Test", () => {
                 ],
             };
 
-            mockDynamoDbClient.send = jest
+            mockDynamoDbClient.send = vi
                 .fn()
                 .mockResolvedValueOnce({ Item: sessionItem })
                 .mockResolvedValueOnce({ Item: addressResponse });
 
             const result = await addressService.getAddressesBySessionId(sessionId);
 
-            expect(infoLoggerSpy).toHaveBeenCalledWith("Found session with context: new-context");
-            expect(appendKeysLoggerSpy).toHaveBeenCalledWith({ govuk_signin_journey_id: "1234567" });
+            expect(mockLogInfo).toHaveBeenCalledWith("Found session with context: new-context");
+            expect(mockAppendKeys).toHaveBeenCalledWith({ govuk_signin_journey_id: "1234567" });
             expect(mockGetCommand).toHaveBeenNthCalledWith(1, {
                 TableName: sessionTable,
                 Key: { sessionId },
@@ -72,7 +87,7 @@ describe("Address Service Test", () => {
         });
 
         it("returns an empty array when no address is found", async () => {
-            mockDynamoDbClient.send = jest
+            mockDynamoDbClient.send = vi
                 .fn()
                 .mockResolvedValueOnce({ Item: sessionItem })
                 .mockResolvedValueOnce({ Item: undefined });
@@ -98,7 +113,7 @@ describe("Address Service Test", () => {
         it("returns an error when dynamoDB throws an error", async () => {
             try {
                 expect.assertions(5);
-                mockDynamoDbClient.send = jest
+                mockDynamoDbClient.send = vi
                     .fn()
                     .mockResolvedValueOnce({ Item: sessionItem })
                     .mockRejectedValueOnce(new Error("DynamoDB Error"));
@@ -137,7 +152,7 @@ describe("Address Service Test", () => {
                 ],
             };
 
-            mockDynamoDbClient.send = jest
+            mockDynamoDbClient.send = vi
                 .fn()
                 .mockResolvedValueOnce({ Item: sessionItem })
                 .mockResolvedValueOnce({ Item: addressResponse });
@@ -160,7 +175,7 @@ describe("Address Service Test", () => {
         });
 
         it("returns an empty array when no address is found", async () => {
-            mockDynamoDbClient.send = jest
+            mockDynamoDbClient.send = vi
                 .fn()
                 .mockResolvedValueOnce({ Item: sessionItem })
                 .mockResolvedValueOnce({ Item: undefined });
@@ -185,7 +200,7 @@ describe("Address Service Test", () => {
         it("returns an error when dynamoDB throws an error", async () => {
             try {
                 expect.assertions(5);
-                mockDynamoDbClient.send = jest
+                mockDynamoDbClient.send = vi
                     .fn()
                     .mockResolvedValueOnce({ Item: sessionItem })
                     .mockRejectedValueOnce(new Error("DynamoDB Error"));

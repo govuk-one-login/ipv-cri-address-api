@@ -5,12 +5,12 @@ import { Address } from "../types/address";
 import { CanonicalAddress } from "../types/canonical-address";
 import { SessionItem } from "../types/session";
 
-const addressLookupTableName = process.env.ADDRESS_LOOKUP_TABLE || "";
-const sessionTableName = process.env.SESSION_TABLE || "";
-
 export class AddressService {
     private readonly dbService: DynamoDbService;
     private readonly logger: Logger;
+
+    private readonly addressLookupTableName = process.env.ADDRESS_LOOKUP_TABLE as string;
+    private readonly sessionTableName = process.env.SESSION_TABLE as string;
 
     constructor(dynamoDbClient: DynamoDBDocument, logger: Logger) {
         this.dbService = new DynamoDbService(dynamoDbClient, logger);
@@ -19,13 +19,12 @@ export class AddressService {
 
     public async getAddressesBySessionId(sessionId: string): Promise<Address> {
         try {
-            const sessionItem = (await this.dbService.getItem(sessionId, sessionTableName as string))
-                .Item as SessionItem;
+            const sessionItem = (await this.dbService.getItem(sessionId, this.sessionTableName)).Item as SessionItem;
 
             this.logger.appendKeys({ govuk_signin_journey_id: sessionItem?.clientSessionId });
             this.logger.info(`Found session with context: ${sessionItem?.context}`);
 
-            const result = await this.dbService.getItem(sessionId, addressLookupTableName as string);
+            const result = await this.dbService.getItem(sessionId, this.addressLookupTableName);
             const canonicalAddresses = result?.Item?.addresses ? (result?.Item?.addresses as CanonicalAddress[]) : [];
 
             return {

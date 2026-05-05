@@ -1,15 +1,16 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { ApiError, handleError } from "../../../src/lib/error-handler";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockLogger = {
-    error: jest.fn(),
+    error: vi.fn(),
 } as unknown as Logger;
 
 describe("handleError", () => {
     const functionName = "testFunction";
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it("handles Error objects and log the error without statusCode set and default to 500", () => {
