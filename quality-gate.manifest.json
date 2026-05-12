@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.1.0/schemas/schema.json",
+  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.4.0/schemas/schema.json",
   "services": [
     {
       "quality-gates": [
@@ -8,7 +8,7 @@
           "config": {
             "file": ".github/workflows/code-quality.yml",
             "name": "pre-commit",
-            "path": "jobs.run-pre-commit"
+            "path": "jobs.pre-commit"
           },
           "phase": "pre-merge",
           "provider": "GitHub"
@@ -54,11 +54,16 @@
           "provider": "GitHub"
         },
         {
-          "check-types": ["integration", "regression", "new feature"],
+          "check-types": [
+            "component",
+            "integration",
+            "regression",
+            "new feature"
+          ],
           "config": {
             "file": ".github/workflows/check-pr.yml",
             "name": "Run tests",
-            "path": "jobs.apigw-tests"
+            "path": "jobs.integration-tests"
           },
           "phase": "pre-merge",
           "provider": "GitHub"
