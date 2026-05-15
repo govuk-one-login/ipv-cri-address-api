@@ -13,10 +13,10 @@
     },
     "dependencies": {
         "@aws-lambda-powertools/logger": "^2.10.0",
-        "@aws-lambda-powertools/parameters": "2.10.0",
-        "@aws-sdk/client-dynamodb": "3.1005.0",
-        "@aws-sdk/client-ssm": "3.1005.0",
-        "@aws-sdk/lib-dynamodb": "3.1005.0",
+        "@aws-lambda-powertools/parameters": "2.33.0",
+        "@aws-sdk/client-dynamodb": "3.1047.0",
+        "@aws-sdk/client-ssm": "3.1047.0",
+        "@aws-sdk/lib-dynamodb": "3.1047.0",
         "esbuild": "0.28.0"
     },
     "devDependencies": {
