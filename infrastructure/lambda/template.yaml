@@ -665,8 +665,14 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Format: esm
+        Target: es2022
         Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
         EntryPoints:
           - src/get-addresses-handler.ts
         External:
