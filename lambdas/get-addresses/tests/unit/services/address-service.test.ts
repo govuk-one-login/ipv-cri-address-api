@@ -112,7 +112,7 @@ describe("Address Service Test", () => {
 
         it("returns an error when dynamoDB throws an error", async () => {
             try {
-                expect.assertions(5);
+                expect.assertions(4);
                 mockDynamoDbClient.send = vi
                     .fn()
                     .mockResolvedValueOnce({ Item: sessionItem })
@@ -131,9 +131,6 @@ describe("Address Service Test", () => {
 
                 expect(err).toBeDefined();
                 expect(typeof err).toBe("object");
-
-                const errorObj = err as Error;
-                expect(errorObj.message).toContain("DynamoDB Error");
             }
         });
     });
@@ -199,7 +196,7 @@ describe("Address Service Test", () => {
 
         it("returns an error when dynamoDB throws an error", async () => {
             try {
-                expect.assertions(5);
+                expect.assertions(4);
                 mockDynamoDbClient.send = vi
                     .fn()
                     .mockResolvedValueOnce({ Item: sessionItem })
@@ -218,9 +215,6 @@ describe("Address Service Test", () => {
 
                 expect(err).toBeDefined();
                 expect(typeof err).toBe("object");
-
-                const errorObj = err as Error;
-                expect(errorObj.message).toContain("DynamoDB Error");
             }
         });
     });

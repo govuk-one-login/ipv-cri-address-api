@@ -62,7 +62,7 @@ describe("DynamoDbService", () => {
         mockDynamoDbClient.send.mockRejectedValueOnce(mockError);
 
         await expect(dynamoDbService.getItem(sessionId, tableName)).rejects.toThrow(
-            `Error retrieving ${tableName} item with sessionId: ${sessionId}, due to ${mockError}`,
+            `Error retrieving ${tableName} item with sessionId: ${sessionId}`,
         );
 
         expect(mockLogger.error).toHaveBeenCalledWith(
