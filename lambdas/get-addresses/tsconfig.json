@@ -1,16 +1,10 @@
 {
+    "extends": "@tsconfig/node22/tsconfig.json",
     "compilerOptions": {
         "experimentalDecorators": true,
-        "target": "es2022",
-        "strict": true,
         "preserveConstEnums": true,
         "sourceMap": true,
-        "module": "es2022",
-        "moduleResolution": "node",
-        "esModuleInterop": true,
-        "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "types": ["node", "aws-lambda"],
         "outDir": "./build/",
         "noImplicitAny": true
     },

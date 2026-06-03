@@ -24,7 +24,9 @@ export class DynamoDbService {
         } catch (error: unknown) {
             this.logger.error(`Error fetching item from ${tableName} for sessionId: ${sessionId}`, error as Error);
 
-            throw new Error(`Error retrieving ${tableName} item with sessionId: ${sessionId}, due to ${error}`);
+            throw new Error(`Error retrieving ${tableName} item with sessionId: ${sessionId}`, {
+                cause: error,
+            });
         }
     }
 
