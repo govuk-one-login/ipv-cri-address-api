@@ -62,7 +62,6 @@ import static org.mockito.Mockito.when;
 import static uk.gov.di.ipv.cri.address.api.handler.pact.util.JwtSigner.getEcdsaSigner;
 import static uk.gov.di.ipv.cri.address.api.objectmapper.CustomObjectMapper.getMapperWithCustomSerializers;
 import static uk.gov.di.ipv.cri.address.api.service.fixtures.TestFixtures.EC_PRIVATE_KEY_1;
-import static uk.gov.di.ipv.cri.common.library.util.VerifiableCredentialClaimsSetBuilder.ENV_VAR_FEATURE_FLAG_VC_CONTAINS_UNIQUE_ID;
 
 @Tag("Pact")
 @Provider("AddressCriVcProvider")
@@ -124,7 +123,6 @@ class MultipleAddressVcTest implements DummyStates, MultipleAddressStates {
             throws IOException, JOSEException, NoSuchAlgorithmException, InvalidKeySpecException {
 
         environmentVariables.set("LAMBDA_TASK_ROOT", "handler");
-        environmentVariables.set(ENV_VAR_FEATURE_FLAG_VC_CONTAINS_UNIQUE_ID, "override");
 
         SignedJWTFactory signedJwtFactory = new SignedJWTFactory(getEcdsaSigner());
         ObjectMapper objectMapper = getMapperWithCustomSerializers();
