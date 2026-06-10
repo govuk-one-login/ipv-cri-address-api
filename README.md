@@ -1,4 +1,4 @@
-# Address Collector Credential Issuer API
+# Address Collector Credential Issuer API 
 
 ## Hooks
 
