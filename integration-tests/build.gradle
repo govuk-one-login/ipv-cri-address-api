@@ -12,6 +12,7 @@ dependencies {
 	testImplementation libs.bundles.nimbus
 	testImplementation libs.bundles.jackson
 	testImplementation libs.junit.api
+	testImplementation(libs.secrets)
 
 	testImplementation "org.apache.commons:commons-lang3:${apache_common_lang_version}"
 	testImplementation(testFixtures(libs.cri.common.lib))

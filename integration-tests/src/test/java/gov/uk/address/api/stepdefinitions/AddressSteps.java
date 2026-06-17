@@ -9,10 +9,16 @@ import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
 import gov.uk.address.api.util.AddressContext;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.UpdateSecretRequest;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
@@ -52,6 +58,10 @@ public class AddressSteps {
     private final String addressEndJsonSchema;
     private final String addressVCIssuedJsonSchema;
     private final AddressContext addressContext;
+    String secretName = "/pre-merge-test/OrdnanceSurveyAPIKey";
+    private final SecretsManagerClient secretsManagerClient =
+            SecretsManagerClient.builder().region(Region.EU_WEST_2).build();
+    private String originalApiKey;
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext)
@@ -401,6 +411,11 @@ public class AddressSteps {
         assertEquals(400, this.testContext.getResponse().statusCode());
     }
 
+    @Then("the endpoint should return a 404 HTTP status code")
+    public void theEndpointShouldReturnA401HttpStatusCode() {
+        assertEquals(404, this.testContext.getResponse().statusCode());
+    }
+
     @Given(
             "a request is made to the postcode-lookup endpoint with postcode in the request body with no session id header")
     public void
@@ -408,6 +423,29 @@ public class AddressSteps {
                     throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendPostCodeLookupRequestWithNoSessionId("TEST"));
+    }
+
+    @Before("@invalid_api_key")
+    public void setInvalidApiKey() {
+        originalApiKey =
+                secretsManagerClient
+                        .getSecretValue(
+                                GetSecretValueRequest.builder().secretId(secretName).build())
+                        .secretString();
+
+        secretsManagerClient.updateSecret(
+                UpdateSecretRequest.builder().secretId(secretName).secretString("abc").build());
+    }
+
+    @After("@invalid_api_key")
+    public void restoreApiKey() throws InterruptedException {
+        secretsManagerClient.updateSecret(
+                UpdateSecretRequest.builder()
+                        .secretId(secretName)
+                        .secretString(originalApiKey)
+                        .build());
+        //Wait for lambda to pick up restored secret
+        Thread.sleep(5000);
     }
 
     @Given(
@@ -441,6 +479,13 @@ public class AddressSteps {
         var responseBody = this.testContext.getResponse().body();
         assertNotNull(responseBody);
         assertEquals("{\"message\": \"Invalid request body\"}", responseBody);
+    }
+
+    @Then("the response body returns the unauthorised {string} response")
+    public void theResponseBodyReturnsUnauthorisedResponse(String errorResponse) {
+        var responseBody = this.testContext.getResponse().body();
+        assertNotNull(responseBody);
+        assertTrue(responseBody.contains(errorResponse));
     }
 
     @Then("the IPV_ADDRESS_CRI_END event is emitted and validated against schema")

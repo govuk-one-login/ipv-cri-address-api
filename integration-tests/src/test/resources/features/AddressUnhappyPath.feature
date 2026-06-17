@@ -65,3 +65,18 @@ Feature: Address API unhappy path test
     Given a request is made to the address endpoint with a validFrom date of "01-01-2000"
     Then the endpoint should return a 400 HTTP status code
     And the response body contains bad request error
+
+  @invalid_api_key
+  Scenario: Header key is not valid in the postcode-lookup request body
+    Given user has a default signed JWT
+
+    # Session
+    When user sends a POST request to session end point
+    Then user gets a session-id
+
+    # TXMA event
+    When user sends a GET request to events end point for "IPV_ADDRESS_CRI_START"
+    And a valid START event is returned in the response without txma header
+    When the user performs a postcode lookup for post code "SW1A 2AA"
+    Then the endpoint should return a 404 HTTP status code
+    And the response body returns the unauthorised "Invalid ApiKey" response
