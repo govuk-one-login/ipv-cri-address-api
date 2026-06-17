@@ -444,7 +444,7 @@ public class AddressSteps {
                         .secretId(secretName)
                         .secretString(originalApiKey)
                         .build());
-        //Wait for lambda to pick up restored secret
+        // Wait for lambda to pick up restored secret
         Thread.sleep(5000);
     }
 
