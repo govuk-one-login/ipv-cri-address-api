@@ -410,7 +410,7 @@ public class AddressSteps {
     }
 
     @Then("the endpoint should return a 404 HTTP status code")
-    public void theEndpointShouldReturnA401HttpStatusCode() throws InterruptedException {
+    public void theEndpointShouldReturnA404HttpStatusCode() throws InterruptedException {
         restoreApiKey();
         assertEquals(404, this.testContext.getResponse().statusCode());
     }
