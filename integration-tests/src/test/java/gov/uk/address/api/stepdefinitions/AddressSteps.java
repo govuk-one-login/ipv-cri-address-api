@@ -9,8 +9,6 @@ import com.nimbusds.jwt.SignedJWT;
 import gov.uk.address.api.client.AddressApiClient;
 import gov.uk.address.api.util.AddressContext;
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -48,6 +46,7 @@ import static org.junit.Assert.assertTrue;
 public class AddressSteps {
     private static final String ADDRESS_START_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_START.json";
     private static final String ADDRESS_END_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_END.json";
+    private static final String SECRET_NAME = "/pre-merge-test/OrdnanceSurveyAPIKey";
 
     private static final String ADDRESS_VC_ISSUED_SCHEMA_FILE =
             "/schema/IPV_ADDRESS_CRI_VC_ISSUED.json";
@@ -58,7 +57,6 @@ public class AddressSteps {
     private final String addressEndJsonSchema;
     private final String addressVCIssuedJsonSchema;
     private final AddressContext addressContext;
-    String secretName = "/pre-merge-test/OrdnanceSurveyAPIKey";
     private final SecretsManagerClient secretsManagerClient =
             SecretsManagerClient.builder().region(Region.EU_WEST_2).build();
     private String originalApiKey;
@@ -412,7 +410,8 @@ public class AddressSteps {
     }
 
     @Then("the endpoint should return a 404 HTTP status code")
-    public void theEndpointShouldReturnA401HttpStatusCode() {
+    public void theEndpointShouldReturnA401HttpStatusCode() throws InterruptedException {
+        restoreApiKey();
         assertEquals(404, this.testContext.getResponse().statusCode());
     }
 
@@ -425,27 +424,28 @@ public class AddressSteps {
                 this.addressApiClient.sendPostCodeLookupRequestWithNoSessionId("TEST"));
     }
 
-    @Before("@invalid_api_key")
-    public void setInvalidApiKey() {
+    @Then("user sets an invalid api key {string}")
+    public void setInvalidApiKey(String apikey) throws InterruptedException {
         originalApiKey =
                 secretsManagerClient
                         .getSecretValue(
-                                GetSecretValueRequest.builder().secretId(secretName).build())
+                                GetSecretValueRequest.builder().secretId(SECRET_NAME).build())
                         .secretString();
 
         secretsManagerClient.updateSecret(
-                UpdateSecretRequest.builder().secretId(secretName).secretString("abc").build());
+                UpdateSecretRequest.builder().secretId(SECRET_NAME).secretString(apikey).build());
+        // Wait for lambda to use updated secret
+        Thread.sleep(5000); // NOSONAR
     }
 
-    @After("@invalid_api_key")
     public void restoreApiKey() throws InterruptedException {
         secretsManagerClient.updateSecret(
                 UpdateSecretRequest.builder()
-                        .secretId(secretName)
+                        .secretId(SECRET_NAME)
                         .secretString(originalApiKey)
                         .build());
         // Wait for lambda to pick up restored secret
-        Thread.sleep(5000);
+        Thread.sleep(5000); // NOSONAR
     }
 
     @Given(

@@ -77,6 +77,7 @@ Feature: Address API unhappy path test
     # TXMA event
     When user sends a GET request to events end point for "IPV_ADDRESS_CRI_START"
     And a valid START event is returned in the response without txma header
+    Then user sets an invalid api key "abc"
     When the user performs a postcode lookup for post code "SW1A 2AA"
     Then the endpoint should return a 404 HTTP status code
     And the response body returns the unauthorised "Invalid ApiKey" response
