@@ -429,6 +429,14 @@ Resources:
         - !FindInMap [DynatraceLayerARN, !Ref Environment, java]
       Environment:
         Variables:
+          CONFIG_SERVICE_SSM_OPTIMIZED_CACHE_AGE_MIN_MINUTES: !If
+            - IsLocalDevEnvironment
+            - 0
+            - !Ref AWS::NoValue
+          CONFIG_SERVICE_SSM_OPTIMIZED_CACHE_AGE_MAX_MINUTES: !If
+            - IsLocalDevEnvironment
+            - 0
+            - !Ref AWS::NoValue
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
           SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
           VERIFIABLE_CREDENTIAL_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"

@@ -13,6 +13,10 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.UpdateSecretRequest;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
@@ -42,6 +46,7 @@ import static org.junit.Assert.assertTrue;
 public class AddressSteps {
     private static final String ADDRESS_START_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_START.json";
     private static final String ADDRESS_END_SCHEMA_FILE = "/schema/IPV_ADDRESS_CRI_END.json";
+    private static final String SECRET_NAME = "/pre-merge-test/OrdnanceSurveyAPIKey";
 
     private static final String ADDRESS_VC_ISSUED_SCHEMA_FILE =
             "/schema/IPV_ADDRESS_CRI_VC_ISSUED.json";
@@ -52,6 +57,9 @@ public class AddressSteps {
     private final String addressEndJsonSchema;
     private final String addressVCIssuedJsonSchema;
     private final AddressContext addressContext;
+    private final SecretsManagerClient secretsManagerClient =
+            SecretsManagerClient.builder().region(Region.EU_WEST_2).build();
+    private String originalApiKey;
 
     public AddressSteps(
             ClientConfigurationService clientConfigurationService, CriTestContext testContext)
@@ -401,6 +409,12 @@ public class AddressSteps {
         assertEquals(400, this.testContext.getResponse().statusCode());
     }
 
+    @Then("the endpoint should return a 404 HTTP status code")
+    public void theEndpointShouldReturnA404HttpStatusCode() throws InterruptedException {
+        restoreApiKey();
+        assertEquals(404, this.testContext.getResponse().statusCode());
+    }
+
     @Given(
             "a request is made to the postcode-lookup endpoint with postcode in the request body with no session id header")
     public void
@@ -408,6 +422,30 @@ public class AddressSteps {
                     throws IOException, InterruptedException {
         this.testContext.setResponse(
                 this.addressApiClient.sendPostCodeLookupRequestWithNoSessionId("TEST"));
+    }
+
+    @Then("user sets an invalid api key {string}")
+    public void setInvalidApiKey(String apikey) throws InterruptedException {
+        originalApiKey =
+                secretsManagerClient
+                        .getSecretValue(
+                                GetSecretValueRequest.builder().secretId(SECRET_NAME).build())
+                        .secretString();
+
+        secretsManagerClient.updateSecret(
+                UpdateSecretRequest.builder().secretId(SECRET_NAME).secretString(apikey).build());
+        // Wait for lambda to use updated secret
+        Thread.sleep(5000); // NOSONAR
+    }
+
+    public void restoreApiKey() throws InterruptedException {
+        secretsManagerClient.updateSecret(
+                UpdateSecretRequest.builder()
+                        .secretId(SECRET_NAME)
+                        .secretString(originalApiKey)
+                        .build());
+        // Wait for lambda to pick up restored secret
+        Thread.sleep(5000); // NOSONAR
     }
 
     @Given(
@@ -441,6 +479,13 @@ public class AddressSteps {
         var responseBody = this.testContext.getResponse().body();
         assertNotNull(responseBody);
         assertEquals("{\"message\": \"Invalid request body\"}", responseBody);
+    }
+
+    @Then("the response body returns the unauthorised {string} response")
+    public void theResponseBodyReturnsUnauthorisedResponse(String errorResponse) {
+        var responseBody = this.testContext.getResponse().body();
+        assertNotNull(responseBody);
+        assertTrue(responseBody.contains(errorResponse));
     }
 
     @Then("the IPV_ADDRESS_CRI_END event is emitted and validated against schema")
