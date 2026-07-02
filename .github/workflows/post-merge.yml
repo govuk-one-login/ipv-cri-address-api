@@ -1,0 +1,28 @@
+name: Post merge
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+  security-events: write
+
+jobs:
+  scan-and-unit-test:
+    name: Scan repo
+    uses: ./.github/workflows/scan-repo.yml
+    secrets: inherit
+
+  deploy-dev:
+    name: Package for dev
+    needs: scan-and-unit-test
+    uses: ./.github/workflows/package-for-dev.yml
+    secrets: inherit
+
+  deploy-build:
+    name: Package for build
+    needs: scan-and-unit-test
+    uses: ./.github/workflows/package-for-build.yml
+    secrets: inherit
