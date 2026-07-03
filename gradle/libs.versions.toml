@@ -2,8 +2,8 @@
 aws-lambda-events = "3.11.0"
 nimbusds-oauth = "11.29.1"
 nimbusds-jwt = "10.5"
-jackson = "2.21.1"
-jackson_annotations = "2.21"
+jackson = "2.22.0"
+jackson_annotations = "2.22" # annotations has no patch version
 junit = "5.14.1"
 junit-launcher = "1.12.2"
 mockito = "5.20.0"
@@ -88,16 +88,16 @@ log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", ver
 log4j-layout-template-json = { module = "org.apache.logging.log4j:log4j-layout-template-json", version.ref = "log4j" }
 
 [bundles]
-jackson = [ "jackson-core", "jackson-annotations", "jackson-databind", "jackson-jdk8", "jackson-jsr310" ]
-nimbus = [ "nimbusds-jwt", "nimbusds-oauth" ]
-otel = [ "otel-api", "otel-sdk", "otel-context", "otel-metrics", "otel-trace", "otel-logs", "otel-otlp", "otel-sdk2-autoconf", "otel-httpclient" ]
-test_runtime = [ "junit-engine", "junit-launcher" ]
-tests = [ "junit-api", "junit-params", "mockito-junit", "mockito-core"]
-powertools = [ "powertools-logging", "powertools-metrics", "powertools-parameters-ssm", "powertools-secrets" ]
-webcompere = [ "system-stubs-core", "system-stubs-jupiter" ]
-pact = [ "pact-junit5", "pact-provider" ]
-dynamodb = [ "dynamodb", "dynamodb-enhanced" ]
-logging = [ "log4j-core", "log4j-slf4j2-impl", "log4j-layout-template-json" ]
+jackson = ["jackson-core", "jackson-annotations", "jackson-databind", "jackson-jdk8", "jackson-jsr310"]
+nimbus = ["nimbusds-jwt", "nimbusds-oauth"]
+otel = ["otel-api", "otel-sdk", "otel-context", "otel-metrics", "otel-trace", "otel-logs", "otel-otlp", "otel-sdk2-autoconf", "otel-httpclient"]
+test_runtime = ["junit-engine", "junit-launcher"]
+tests = ["junit-api", "junit-params", "mockito-junit", "mockito-core"]
+powertools = ["powertools-logging", "powertools-metrics", "powertools-parameters-ssm", "powertools-secrets"]
+webcompere = ["system-stubs-core", "system-stubs-jupiter"]
+pact = ["pact-junit5", "pact-provider"]
+dynamodb = ["dynamodb", "dynamodb-enhanced"]
+logging = ["log4j-core", "log4j-slf4j2-impl", "log4j-layout-template-json"]
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
