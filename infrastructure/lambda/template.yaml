@@ -887,6 +887,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref PostcodeLookupFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
 
   AddressFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -894,6 +896,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AddressFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
 
   IssueCredentialFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -901,6 +905,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref IssueCredentialFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PublicAddressApi}/*/*/*"
 
   GetAddressesFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -908,6 +914,8 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref GetAddressesFunction.Alias
       Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
 
   AddressLambdaErrors:
     Type: AWS::CloudWatch::Alarm
