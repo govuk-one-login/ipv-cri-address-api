@@ -30,12 +30,18 @@ subprojects {
 
 		//These clients are excluded as we are using the aws-crt client exclusively
 		// https://aws.amazon.com/blogs/developer/tuning-the-aws-java-sdk-2-x-to-reduce-startup-time/
-		exclude group:"software.amazon.awssdk", module: "apache-client"
-		exclude group:"software.amazon.awssdk", module: "netty-nio-client"
-		exclude group:"software.amazon.awssdk", module: "url-connection-client"
+		exclude group: "software.amazon.awssdk", module: "apache-client"
+		exclude group: "software.amazon.awssdk", module: "netty-nio-client"
+		exclude group: "software.amazon.awssdk", module: "url-connection-client"
 
 		exclude group: "io.netty", module: "*"
 		exclude group: "ip.grpc", module: "grpc-netty"
+	}
+
+	configurations.configureEach {
+		resolutionStrategy {
+			force 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
+		}
 	}
 
 	dependencies {
