@@ -14,10 +14,6 @@ on:
         description: The region in which the stack was deployed
         value: ${{ jobs.deploy.outputs.aws-region }}
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   build:
     name: Build SAM app
@@ -28,15 +24,15 @@ jobs:
       cache-restore-keys: ${{ steps.build.outputs.cache-restore-keys }}
     steps:
       - name: Pull repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
         with:
-          gradle-version: '8.13'
+          gradle-version: '9.6.1'
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
         with:
           java-version: 21
           distribution: corretto
@@ -56,6 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build
+    permissions:
+      id-token: write
+      contents: read
     concurrency:
       group: deploy-development-${{ github.head_ref || github.ref_name }}
     environment:
