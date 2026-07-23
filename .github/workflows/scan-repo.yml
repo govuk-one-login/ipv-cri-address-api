@@ -12,19 +12,20 @@ concurrency:
   group: scan-repo-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
   unit-tests-ts:
     name: Collect coverage
     if: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
     uses: ./.github/workflows/run-unit-tests-ts.yml
     with:
       coverage-report: true
 
   unit-tests-java:
     name: Test coverage
+    permissions:
+      contents: read
     uses: ./.github/workflows/run-unit-tests-java.yml
     with:
       coverage-report: true
@@ -33,6 +34,8 @@ jobs:
     name: SonarCloud / Java
     needs: unit-tests-java
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Pull repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -84,6 +87,8 @@ jobs:
     needs: unit-tests-ts
     runs-on: ubuntu-latest
     if: ${{ success() || needs.unit-tests-ts.result == 'skipped' }}
+    permissions:
+      contents: read
     steps:
       - name: Run SonarCloud scan
         uses: govuk-one-login/github-actions/code-quality/sonarcloud@7bc197778553493ca4c6fb4a78caf3cfd03f8ccb
@@ -99,6 +104,7 @@ jobs:
     name: CodeQL (TS)
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
     steps:
       - name: Run CodeQL scan
@@ -110,6 +116,7 @@ jobs:
     name: CodeQL (Java)
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
     steps:
       - name: Pull repository
