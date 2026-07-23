@@ -31,20 +31,16 @@ test {
 	useJUnitPlatform()
 }
 
-task cucumber() {
+task cucumber(type: JavaExec) {
 	dependsOn assemble, testClasses
-	doLast {
-		javaexec {
-			main = "io.cucumber.core.cli.Main"
-			classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
-			args = [
-				'--plugin',
-				'pretty',
-				'--tags',
-				(findProperty('tags') == null ? "not @Ignore" : "${tags} and not @Ignore")
-			]
-		}
-	}
+	mainClass = "io.cucumber.core.cli.Main"
+	classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+	args = [
+		'--plugin',
+		'pretty',
+		'--tags',
+		(findProperty('tags') == null ? "not @Ignore" : "${tags} and not @Ignore")
+	]
 }
 
 gradle.startParameter.excludedTaskNames.add(':integration-tests:test')
