@@ -44,6 +44,26 @@
           "provider": "GitHub"
         },
         {
+          "check-types": ["unit"],
+          "config": {
+            "file": ".github/workflows/scan-repo.yml",
+            "name": "Test coverage",
+            "path": "jobs.unit-tests-java"
+          },
+          "phase": "pre-upload",
+          "provider": "GitHub"
+        },
+        {
+          "check-types": ["unit"],
+          "config": {
+            "file": ".github/workflows/scan-repo.yml",
+            "name": "Collect coverage",
+            "path": "jobs.unit-tests-ts"
+          },
+          "phase": "pre-upload",
+          "provider": "GitHub"
+        },
+        {
           "check-types": ["contract"],
           "config": {
             "file": ".github/workflows/check-pr.yml",
@@ -104,6 +124,34 @@
             "path": "jobs.codeql-ts"
           },
           "phase": "pre-merge",
+          "provider": "GitHub"
+        },
+        {
+          "check-types": [
+            "code style and linting",
+            "unit test coverage",
+            "vulnerability detection"
+          ],
+          "config": {
+            "file": ".github/workflows/scan-repo.yml",
+            "name": "SonarCloud / Java",
+            "path": "jobs.sonarcloud-java"
+          },
+          "phase": "pre-upload",
+          "provider": "GitHub"
+        },
+        {
+          "check-types": [
+            "code style and linting",
+            "unit test coverage",
+            "vulnerability detection"
+          ],
+          "config": {
+            "file": ".github/workflows/scan-repo.yml",
+            "name": "SonarCloud / TypeScript",
+            "path": "jobs.sonarcloud-ts"
+          },
+          "phase": "pre-upload",
           "provider": "GitHub"
         },
         {
