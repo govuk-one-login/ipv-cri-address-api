@@ -107,14 +107,15 @@ paths:
 
   /session:
     post:
+      summary: "IP address of the client."
       parameters:
+        - in: header
+          name: "X-Forwarded-For"
+          schema:
+            type: string
+            format: string
+            required: false
         - $ref: "#/components/parameters/AuditHeader"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Authorization"
-        required: true
       responses:
         "400":
           description: "400 response"
