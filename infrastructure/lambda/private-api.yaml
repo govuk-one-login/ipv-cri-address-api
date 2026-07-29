@@ -108,6 +108,13 @@ paths:
   /session:
     post:
       parameters:
+        - in: header
+          name: "X-Forwarded-For"
+          description: "IP address of the client"
+          schema:
+            type: string
+            format: string
+            required: false
         - $ref: "#/components/parameters/AuditHeader"
       requestBody:
         content:
