@@ -8,7 +8,7 @@ junit = "5.14.1"
 junit-launcher = "1.12.2"
 mockito = "5.20.0"
 powertools = "2.10.0"
-cri-common-lib = "9.1.2"
+cri-common-lib = "9.2.0"
 pact-provider = "4.6.20"
 webcompere = "2.1.6"
 otel = "1.62.0"
@@ -21,7 +21,7 @@ spotless = "8.0.+"
 sonarqube = "7.3.1.8318"
 
 [libraries]
-aspectjrt = { module = "org.aspectj:aspectjrt", version = "1.9.20.1" }
+aspectjrt = { module = "org.aspectj:aspectjrt", version = "1.9.25.1" }
 
 # AWS SDK
 dynamodb = { module = "software.amazon.awssdk:dynamodb" }
