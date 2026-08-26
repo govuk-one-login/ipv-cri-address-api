@@ -60,6 +60,10 @@ Conditions:
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotProdEnvironment: !Not [!Equals [!Ref Environment, production]]
+  IsNotIntOrProdEnvironment: !Not 
+    - !Or
+      - !Condition IsProdEnvironment
+      - !Equals [!Ref Environment, integration]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
   IsDevBuildEnvironment:
     !Or [!Equals [!Ref Environment, build], !Condition IsDevEnvironment]
@@ -229,21 +233,45 @@ Mappings:
     dev:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      BaseURL: https://review-a.dev.account.gov.uk
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
+      ProvisionedConcurrency: 0
     localdev:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      BaseURL: https://review-a.dev.account.gov.uk
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
+      ProvisionedConcurrency: 0
     build:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      BaseURL: https://review-a.build.account.gov.uk
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      StubJwksEndpoint: https://test-resources.review-a.build.account.gov.uk/.well-known/jwks.json
+      ProvisionedConcurrency: 1
     staging:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      BaseURL: https://review-a.staging.account.gov.uk
+      CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      StubJwksEndpoint: https://test-resources.review-a.staging.account.gov.uk/.well-known/jwks.json
+      ProvisionedConcurrency: 0
     integration:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
+      BaseURL: https://review-a.integration.account.gov.uk
+      CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=address
+      StubJwksEndpoint: https://test-resources.review-a.integration.account.gov.uk/.well-known/jwks.json
+      ProvisionedConcurrency: 0
     production:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
+      BaseURL: https://review-a.account.gov.uk
+      CoreRedirectURI: https://identity.account.gov.uk/credential-issuer/callback?id=address
+      StubJwksEndpoint: ""
+      ProvisionedConcurrency: 1
 
   MaxJwtTtlMapping:
     Environment:
@@ -285,6 +313,45 @@ Mappings:
       node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
 
 Resources:
+  OAuth:
+    Type: AWS::Serverless::Application
+    Condition: IsNotIntOrProdEnvironment
+    Properties:
+      Location:
+        ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
+        SemanticVersion: 1.2.6
+      Parameters:
+        AuditEventNamePrefix: IPV_ADDRESS_CRI
+        BuildNotificationStackName: slack-notifications
+        CommonLambdasStackName: !Ref CommonStackName
+        CommonLambdasUsesCMK: true
+        CSLSDestinationArn: !If
+          - IsNotDevBuildEnvironment
+          - arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython
+          - !Ref AWS::NoValue
+        CriIdentifier: !Ref CriIdentifier
+        CriAudience: !FindInMap [EnvironmentConfiguration, !Ref Environment, BaseURL]
+        CriVcIssuer: !FindInMap [EnvironmentConfiguration, !Ref Environment, BaseURL]
+        CriPrivateApiGwName: !Sub ${AWS::StackName}-PrivateAddressApi
+        CriPublicApiGwName: !Sub ${AWS::StackName}-PublicAddressApi
+        Environment: !If
+          - IsLocalDevEnvironment
+          - dev
+          - !Ref Environment
+        IPVCoreRedirectURI: !FindInMap [EnvironmentConfiguration, !Ref Environment, CoreRedirectURI]
+        IPVCoreStubJwksEndpoint: !FindInMap [EnvironmentConfiguration, !Ref Environment, StubJwksEndpoint]
+        LambdaCodeSigningConfigArn: !If
+          - UseCodeSigningConfig
+          - !Ref CodeSigningConfigArn
+          - !Ref AWS::NoValue
+        LambdaDeploymentPreference: !Ref LambdaDeploymentPreference
+        LambdaProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, ProvisionedConcurrency]
+        LambdaVpcConfiguration: di-ipv-cri-pipeline-deployment
+        PermissionsBoundaryArn: !If
+          - UsePermissionsBoundary
+          - !Ref PermissionsBoundary
+          - !Ref AWS::NoValue
+
   DynamoTablesEncryptionKey:
     Type: AWS::KMS::Key
     Properties:
