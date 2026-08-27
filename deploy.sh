@@ -23,7 +23,7 @@ sam deploy --stack-name "$stack_name" \
   --resolve-s3 \
   --s3-prefix "$stack_name" \
   --region "${AWS_REGION:-eu-west-2}" \
-  --capabilities CAPABILITY_IAM \
+  --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
   --tags \
   cri:component=ipv-cri-address-api \
   cri:stack-type=localdev \
