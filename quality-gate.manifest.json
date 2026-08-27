@@ -1,171 +1,195 @@
 {
-  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.4.0/schemas/schema.json",
+  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.19.0/schemas/schema.json",
   "services": [
     {
-      "quality-gates": [
+      "product": "ipv-cri-address",
+      "component": "ipv-cri-address",
+      "promotionType": "securePipelines",
+      "automated": [
         {
-          "check-types": ["code style and linting", "secret scanning"],
-          "config": {
-            "file": ".github/workflows/code-quality.yml",
-            "name": "pre-commit",
-            "path": "jobs.pre-commit"
-          },
           "phase": "pre-merge",
-          "provider": "GitHub"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "code style and linting"
+            },
+            {
+              "name": "secret scanning"
+            }
+          ],
+          "file": ".github/workflows/code-quality.yml",
+          "path": "$.jobs.pre-commit"
         },
         {
-          "check-types": ["code style and linting"],
-          "config": {
-            "file": ".github/workflows/code-quality.yml",
-            "name": "Linting",
-            "path": "jobs.linting"
-          },
           "phase": "pre-merge",
-          "provider": "GitHub"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "code style and linting"
+            }
+          ],
+          "file": ".github/workflows/code-quality.yml",
+          "path": "$.jobs.linting"
         },
         {
-          "check-types": ["unit"],
-          "config": {
-            "file": ".github/workflows/check-pr.yml",
-            "name": "Unit tests",
-            "path": "jobs.unit-tests-java"
-          },
           "phase": "pre-merge",
-          "provider": "GitHub"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "unit"
+            }
+          ],
+          "file": ".github/workflows/check-pr.yml",
+          "path": "$.jobs.unit-tests-java"
         },
         {
-          "check-types": ["unit"],
-          "config": {
-            "file": ".github/workflows/check-pr.yml",
-            "name": "Run tests",
-            "path": "jobs.unit-tests-ts"
-          },
           "phase": "pre-merge",
-          "provider": "GitHub"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "unit"
+            }
+          ],
+          "file": ".github/workflows/check-pr.yml",
+          "path": "$.jobs.unit-tests-ts"
         },
         {
-          "check-types": ["unit"],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "Test coverage",
-            "path": "jobs.unit-tests-java"
-          },
           "phase": "pre-upload",
-          "provider": "GitHub"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "unit"
+            }
+          ],
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.unit-tests-java"
         },
         {
-          "check-types": ["unit"],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "Collect coverage",
-            "path": "jobs.unit-tests-ts"
-          },
           "phase": "pre-upload",
-          "provider": "GitHub"
-        },
-        {
-          "check-types": ["contract"],
-          "config": {
-            "file": ".github/workflows/check-pr.yml",
-            "name": "Run tests",
-            "path": "jobs.pact-tests"
-          },
-          "phase": "pre-merge",
-          "provider": "GitHub"
-        },
-        {
-          "check-types": [
-            "component",
-            "integration",
-            "regression",
-            "new feature"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "unit"
+            }
           ],
-          "config": {
-            "file": ".github/workflows/check-pr.yml",
-            "name": "Run tests",
-            "path": "jobs.integration-tests"
-          },
-          "phase": "pre-merge",
-          "provider": "GitHub"
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.unit-tests-ts"
         },
         {
-          "check-types": [
-            "code style and linting",
-            "unit test coverage",
-            "vulnerability detection"
+          "phase": "pre-merge",
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "contract"
+            }
           ],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "SonarCloud / Java",
-            "path": "jobs.sonarcloud-java"
-          },
-          "phase": "pre-merge",
-          "provider": "GitHub"
+          "file": ".github/workflows/check-pr.yml",
+          "path": "$.jobs.pact-tests"
         },
         {
-          "check-types": [
-            "code style and linting",
-            "unit test coverage",
-            "vulnerability detection"
+          "phase": "pre-merge",
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "integration",
+              "purpose": ["regression", "new feature"],
+              "scope": "component"
+            }
           ],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "SonarCloud / TypeScript",
-            "path": "jobs.sonarcloud-ts"
-          },
-          "phase": "pre-merge",
-          "provider": "GitHub"
+          "file": ".github/workflows/check-pr.yml",
+          "path": "$.jobs.integration-tests"
         },
         {
-          "check-types": ["vulnerability detection"],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "CodeQL (TS)",
-            "path": "jobs.codeql-ts"
-          },
           "phase": "pre-merge",
-          "provider": "GitHub"
-        },
-        {
-          "check-types": [
-            "code style and linting",
-            "unit test coverage",
-            "vulnerability detection"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "code style and linting"
+            },
+            {
+              "name": "unit test coverage"
+            },
+            {
+              "name": "vulnerability detection"
+            }
           ],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "SonarCloud / Java",
-            "path": "jobs.sonarcloud-java"
-          },
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.sonarcloud-java"
+        },
+        {
+          "phase": "pre-merge",
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "code style and linting"
+            },
+            {
+              "name": "unit test coverage"
+            },
+            {
+              "name": "vulnerability detection"
+            }
+          ],
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.sonarcloud-ts"
+        },
+        {
+          "phase": "pre-merge",
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "vulnerability detection"
+            }
+          ],
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.codeql-ts"
+        },
+        {
           "phase": "pre-upload",
-          "provider": "GitHub"
-        },
-        {
-          "check-types": [
-            "code style and linting",
-            "unit test coverage",
-            "vulnerability detection"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "code style and linting"
+            },
+            {
+              "name": "unit test coverage"
+            },
+            {
+              "name": "vulnerability detection"
+            }
           ],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "SonarCloud / TypeScript",
-            "path": "jobs.sonarcloud-ts"
-          },
-          "phase": "pre-upload",
-          "provider": "GitHub"
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.sonarcloud-java"
         },
         {
-          "check-types": ["vulnerability detection"],
-          "config": {
-            "file": ".github/workflows/scan-repo.yml",
-            "name": "CodeQL (Java)",
-            "path": "jobs.codeql-java"
-          },
+          "phase": "pre-upload",
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "code style and linting"
+            },
+            {
+              "name": "unit test coverage"
+            },
+            {
+              "name": "vulnerability detection"
+            }
+          ],
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.sonarcloud-ts"
+        },
+        {
           "phase": "pre-merge",
-          "provider": "GitHub"
+          "provider": "GitHub",
+          "checks": [
+            {
+              "name": "vulnerability detection"
+            }
+          ],
+          "file": ".github/workflows/scan-repo.yml",
+          "path": "$.jobs.codeql-java"
         }
-      ],
-      "service-tag": "ipv-cri-address"
+      ]
     }
   ]
 }
