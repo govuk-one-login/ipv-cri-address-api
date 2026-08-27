@@ -60,10 +60,6 @@ Conditions:
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
   IsProdEnvironment: !Equals [!Ref Environment, production]
   IsNotProdEnvironment: !Not [!Equals [!Ref Environment, production]]
-  IsNotIntOrProdEnvironment: !Not 
-    - !Or
-      - !Condition IsProdEnvironment
-      - !Equals [!Ref Environment, integration]
   IsNotDevEnvironment: !Not [!Condition IsDevEnvironment]
   IsDevBuildEnvironment:
     !Or [!Equals [!Ref Environment, build], !Condition IsDevEnvironment]
@@ -315,7 +311,6 @@ Mappings:
 Resources:
   OAuth:
     Type: AWS::Serverless::Application
-    Condition: IsNotIntOrProdEnvironment
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
