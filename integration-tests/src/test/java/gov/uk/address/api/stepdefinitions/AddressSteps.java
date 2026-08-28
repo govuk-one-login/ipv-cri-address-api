@@ -17,7 +17,10 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.UpdateSecretRequest;
+import uk.gov.di.ipv.cri.common.library.aws.CloudFormationHelper;
+import uk.gov.di.ipv.cri.common.library.aws.DynamoDbHelper;
 import uk.gov.di.ipv.cri.common.library.client.ClientConfigurationService;
+import uk.gov.di.ipv.cri.common.library.config.Environment;
 import uk.gov.di.ipv.cri.common.library.domain.AuditEvent;
 import uk.gov.di.ipv.cri.common.library.domain.TestHarnessResponse;
 import uk.gov.di.ipv.cri.common.library.stepdefinitions.CriTestContext;
@@ -506,6 +509,39 @@ public class AddressSteps {
                     JsonSchemaValidator.validateJsonAgainstSchema(
                             testHarnessResponse.getEvent().getData(), addressEndJsonSchema));
         }
+    }
+
+    @Then("the sessions exist in the CommonLambdas tables is {word}")
+    public void theSessionsExistInTheCommonLambdasTables(String isExpected) {
+        String commonStackName = Environment.getEnvOrDefault("COMMON_STACK_NAME", "common-cri-api");
+        String sessionTableName = "session-" + commonStackName;
+        String personIdentityTableName = "person-identity-" + commonStackName;
+
+        assertEquals(
+                Boolean.parseBoolean(isExpected),
+                DynamoDbHelper.sessionExists(sessionTableName, this.testContext.getSessionId()));
+        assertEquals(
+                Boolean.parseBoolean(isExpected),
+                DynamoDbHelper.sessionExists(
+                        personIdentityTableName, this.testContext.getSessionId()));
+    }
+
+    @Then("the sessions exist in the OAuthCommon tables is {word}")
+    public void theSessionsExistInTheOAuthCommonTables(String isExpected) {
+        String stackName = Environment.getEnv("STACK_NAME");
+        String oAuthStackName = CloudFormationHelper.getOutput(stackName, "OAuthCommonStackName");
+        String sessionTableName =
+                CloudFormationHelper.getOutput(oAuthStackName, "DbSessionTableName");
+        String personIdentityTableName =
+                CloudFormationHelper.getOutput(oAuthStackName, "DbPersonIdentityTableName");
+
+        assertEquals(
+                Boolean.parseBoolean(isExpected),
+                DynamoDbHelper.sessionExists(sessionTableName, this.testContext.getSessionId()));
+        assertEquals(
+                Boolean.parseBoolean(isExpected),
+                DynamoDbHelper.sessionExists(
+                        personIdentityTableName, this.testContext.getSessionId()));
     }
 
     private void selectAddress(String countryCode) throws IOException, InterruptedException {

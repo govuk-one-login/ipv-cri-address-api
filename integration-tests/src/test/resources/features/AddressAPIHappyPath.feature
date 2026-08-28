@@ -79,12 +79,17 @@ Feature: Address API happy path test
     # Credential Issued
     When user sends a POST request to Credential Issue end point with a valid access token
     And a valid JWT is returned in the responses
+
       | Field           | Value |
       | postalCode      | <expectedPostCode> |
 
     # TXMA event
     When user sends a GET request to events end point for "IPV_ADDRESS_CRI_VC_ISSUED"
     Then VC_ISSUED TxMA event is validated against schema with isUkAddress "true"
+
+    # Migration table check
+    Then the sessions exist in the CommonLambdas tables is true
+    And the sessions exist in the OAuthCommon tables is false
 
     Examples:
       | sharedClaims       | postcode | expectedPostCode |
