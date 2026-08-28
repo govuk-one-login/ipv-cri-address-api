@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Digital Identity IPV CRI Address API
 Transform: AWS::Serverless-2016-10-31 #TODO: Cannot add the LanguageExtensions transform due to a bug in SAM/CF
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W8003 #For UseOAuthCommonLambdas & UseOAuthCommonTables condition - Can be removed one migration complete.
 
 Parameters:
   Environment:
@@ -67,6 +72,14 @@ Conditions:
   CreateOAuthSSMParam: !And
     - !Not [!Condition IsLocalDevEnvironment]
     - !Not [!Condition IsProdEnvironment]
+  UseOAuthCommonLambdas: !Equals
+    - !FindInMap [ EnvironmentConfiguration, !Ref Environment, OAuthCommonLambdas ]
+    - true
+  UseOAuthCommonTables: !And
+    - !Condition UseOAuthCommonLambdas
+    - !Equals
+      - !FindInMap [ EnvironmentConfiguration, !Ref Environment, OAuthCommonTables ]
+      - true
 
   AddProvisionedConcurrency:
     !Not [
@@ -233,6 +246,8 @@ Mappings:
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
+      OAuthCommonLambdas: false
+      OAuthCommonTables: false
     localdev:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -240,6 +255,8 @@ Mappings:
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
+      OAuthCommonLambdas: false
+      OAuthCommonTables: false
     build:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -247,6 +264,8 @@ Mappings:
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.build.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 1
+      OAuthCommonLambdas: false
+      OAuthCommonTables: false
     staging:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -254,6 +273,8 @@ Mappings:
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.staging.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
+      OAuthCommonLambdas: false
+      OAuthCommonTables: false
     integration:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -261,6 +282,8 @@ Mappings:
       CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.integration.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
+      OAuthCommonLambdas: false
+      OAuthCommonTables: false
     production:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
@@ -268,6 +291,8 @@ Mappings:
       CoreRedirectURI: https://identity.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: ""
       ProvisionedConcurrency: 1
+      OAuthCommonLambdas: false
+      OAuthCommonTables: false
 
   MaxJwtTtlMapping:
     Environment:
@@ -314,12 +339,18 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
-        SemanticVersion: 1.2.6
+        SemanticVersion: 1.2.7
       Parameters:
         AuditEventNamePrefix: IPV_ADDRESS_CRI
         BuildNotificationStackName: slack-notifications
-        CommonLambdasStackName: !Ref CommonStackName
-        CommonLambdasUsesCMK: true
+        CommonLambdasStackName: !If
+          - UseOAuthCommonTables
+          - !Ref AWS::NoValue
+          - !Ref CommonStackName
+        CommonLambdasUsesCMK: !If
+          - UseOAuthCommonTables
+          - !Ref AWS::NoValue
+          - true
         CSLSDestinationArn: !If
           - IsNotDevBuildEnvironment
           - arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython
@@ -500,8 +531,14 @@ Resources:
             - 0
             - !Ref AWS::NoValue
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
-          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
-          VERIFIABLE_CREDENTIAL_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          VERIFIABLE_CREDENTIAL_ISSUER: !If
+            - UseOAuthCommonTables
+            - !FindInMap [ EnvironmentConfiguration, !Ref Environment, BaseURL ]
+            - !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
           SQS_AUDIT_EVENT_QUEUE_URL:
             Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
       Policies:
@@ -509,8 +546,12 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - KMSDecryptPolicy:
             KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - Statement:
             - Sid: ReadSecretsPolicy
               Effect: Allow
@@ -588,20 +629,30 @@ Resources:
       Environment:
         Variables:
           ADDRESS_TABLE: !Ref AddressTable
-          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address"
-          VERIFIABLE_CREDENTIAL_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          VERIFIABLE_CREDENTIAL_ISSUER: !If
+            - UseOAuthCommonTables
+            - !FindInMap [ EnvironmentConfiguration, !Ref Environment, BaseURL ]
+            - !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
         - DynamoDBCrudPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBCrudPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
+        - DynamoDBCrudPolicy:
             TableName: !Ref AddressTable
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
             KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - Statement:
             - Effect: Allow
               Action:
@@ -652,12 +703,18 @@ Resources:
           SQS_AUDIT_EVENT_QUEUE_URL:
             Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
           ADDRESS_TABLE: !Ref AddressTable
-          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
           MAXIMUM_JWT_TTL:
             !FindInMap [MaxJwtTtlMapping, Environment, !Ref Environment]
           JWT_TTL_UNIT:
             !FindInMap [JwtTtlUnitMapping, Environment, !Ref Environment]
-          VERIFIABLE_CREDENTIAL_ISSUER: !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          VERIFIABLE_CREDENTIAL_ISSUER: !If
+            - UseOAuthCommonTables
+            - !FindInMap [ EnvironmentConfiguration, !Ref Environment, BaseURL ]
+            - !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
           VERIFIABLE_CREDENTIAL_SIGNING_KEY_ID: !ImportValue core-infrastructure-CriVcSigningKey1Id
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -665,11 +722,15 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
         - DynamoDBReadPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
+        - DynamoDBReadPolicy:
             TableName: !Ref AddressTable
         - KMSDecryptPolicy:
             KeyId: !Ref DynamoTablesEncryptionKey
         - KMSDecryptPolicy:
             KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
         - Statement:
             Effect: Allow
             Action:
@@ -720,17 +781,29 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-get-addresses"
-          ADDRESS_LOOKUP_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
-          SESSION_TABLE: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          ADDRESS_LOOKUP_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbPersonIdentityTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSXrayWriteOnlyAccess
         - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/PersonIdentityTableName}}"
         - DynamoDBReadPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbPersonIdentityTableName
+        - DynamoDBReadPolicy:
             TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
         - KMSDecryptPolicy:
             KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       BuildProperties:
@@ -940,7 +1013,10 @@ Resources:
     Properties:
       Name: /common-cri/oauth-common/stack-name
       Type: String
-      Value: !Ref CommonStackName
+      Value: !If
+        - UseOAuthCommonTables
+        - !Select [ 1, !Split [ "/", !Ref OAuth ] ]
+        - !Ref CommonStackName
       Description: The stack currently used for OAuth (common-lambdas or oauth-common). Only required for test-resources.
 
   PostcodeLookupFunctionPermission:
@@ -1045,7 +1121,10 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-SessionFunctionTS
+                  Value: !If
+                    - UseOAuthCommonLambdas
+                    - !GetAtt OAuth.Outputs.LambdaSessionFunctionName
+                    - !Sub ${CommonStackName}-SessionFunctionTS
             Period: 300
             Stat: Sum
 
@@ -1092,7 +1171,10 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-SessionFunctionTS
+                  Value: !If
+                    - UseOAuthCommonLambdas
+                    - !GetAtt OAuth.Outputs.LambdaSessionFunctionName
+                    - !Sub ${CommonStackName}-SessionFunctionTS
             Period: 300
             Stat: Sum
 
@@ -1137,7 +1219,10 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-AccessTokenFunctionTS
+                  Value: !If
+                    - UseOAuthCommonLambdas
+                    - !GetAtt OAuth.Outputs.LambdaAccessTokenFunctionName
+                    - !Sub ${CommonStackName}-AccessTokenFunctionTS
             Period: 300
             Stat: Sum
 
@@ -1184,7 +1269,10 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Sub ${CommonStackName}-AccessTokenFunctionTS
+                  Value: !If
+                    - UseOAuthCommonLambdas
+                    - !GetAtt OAuth.Outputs.LambdaAccessTokenFunctionName
+                    - !Sub ${CommonStackName}-AccessTokenFunctionTS
             Period: 300
             Stat: Sum
 
@@ -1734,15 +1822,19 @@ Outputs:
     Value: !Sub "${PublicAddressApi}"
     Export:
       Name: !Sub ${AWS::StackName}-AddressApiGatewayId
-
   PublicAddressApiGatewayId:
     Description: "API GatewayID of the public Address CRI API"
     Value: !Sub "${PublicAddressApi}"
     Export:
       Name: !Sub ${AWS::StackName}-PublicAddressApiGatewayId
-
   PrivateAddressApiGatewayId:
     Description: "API GatewayID of the private Address CRI API"
     Value: !Ref PrivateAddressApi
     Export:
       Name: !Sub ${AWS::StackName}-PrivateAddressApiGatewayId
+  CommonStackName:
+    Description: Common Lambdas Stack Name
+    Value: !Ref CommonStackName
+  OAuthCommonStackName:
+    Description: OAuthCommon Stack Name
+    Value: !Select [ 1, !Split [ "/", !Ref OAuth ] ]
