@@ -246,7 +246,7 @@ Mappings:
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     localdev:
       provisionedConcurrency: 0
@@ -255,7 +255,7 @@ Mappings:
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     build:
       provisionedConcurrency: 0
