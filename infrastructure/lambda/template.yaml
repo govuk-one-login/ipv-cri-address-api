@@ -273,7 +273,7 @@ Mappings:
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.staging.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     integration:
       provisionedConcurrency: 0
