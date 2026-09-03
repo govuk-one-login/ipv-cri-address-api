@@ -282,7 +282,7 @@ Mappings:
       CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.integration.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
     production:
       provisionedConcurrency: 0
@@ -291,7 +291,7 @@ Mappings:
       CoreRedirectURI: https://identity.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: ""
       ProvisionedConcurrency: 1
-      OAuthCommonLambdas: false
+      OAuthCommonLambdas: true
       OAuthCommonTables: false
 
   MaxJwtTtlMapping:
