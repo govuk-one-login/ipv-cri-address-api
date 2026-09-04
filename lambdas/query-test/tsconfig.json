@@ -1,0 +1,13 @@
+{
+  "extends": "@tsconfig/node22/tsconfig.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./build/",
+    "noImplicitAny": true
+  },
+  "exclude": ["node_modules", "build", "coverage"],
+  "include": ["src", "tests"]
+}

@@ -256,7 +256,7 @@ Mappings:
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
       OAuthCommonLambdas: true
-      OAuthCommonTables: false
+      OAuthCommonTables: true
     build:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -433,6 +433,35 @@ Resources:
         FMSRegionalPolicy: "false"
         CustomPolicy: "true"
 
+  QueryTestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.main
+      CodeUri: ../../lambdas/query-test/
+      Runtime: nodejs22.x
+      Policies:
+        - AWSLambdaBasicExecutionRole
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: esm
+        Target: es2022
+        Sourcemap: true # Enabling source maps will create the required NODE_OPTIONS environment variables on your lambda function during sam build
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+          - src/handler.ts
+
+  QueryTestFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${QueryTestFunction}"
+      RetentionInDays: 30
+
   PrivateAddressApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -444,13 +473,15 @@ Resources:
         DestinationArn: !GetAtt PrivateAddressApiAccessLogGroup.Arn
       DefinitionBody:
         openapi: 3.0.1
-        paths: # workaround to get `sam validate` to work
-          /never-created:
-            options: {}
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ./private-api.yaml
+        paths:
+          /query:
+            x-amazon-apigateway-any-method:
+              operationId: test-query-method
+              x-amazon-apigateway-integration:
+                httpMethod: "QUERY"
+                uri: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:QueryTestFunction:live/invocations
+                type: aws_proxy
+
       EndpointConfiguration:
         Type: !If [IsLocalDevEnvironment, REGIONAL, PRIVATE]
       Auth:
@@ -817,7 +848,7 @@ Resources:
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
         EntryPoints:
-          - src/get-addresses-handler.ts
+          - src/handler.ts
         External:
           - "@aws-sdk/*"
 

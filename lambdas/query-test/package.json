@@ -1,0 +1,27 @@
+{
+  "name": "get-addresses",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "unit": "vitest run",
+    "test": "npm run unit --",
+    "test:coverage": "npm run unit -- --coverage",
+    "sam:validate": "cd ../../infrastructure/lambda && sam validate && sam validate --lint",
+    "sam:build": "npm run sam:validate && sam build --template ../../infrastructure/lambda/template.yaml --cached --parallel",
+    "deploy": "../../deploy.sh",
+    "compile": "tsc"
+  },
+  "dependencies": {
+    "esbuild": "0.28.1"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "^22.0.5",
+    "@types/aws-lambda": "8.10.149",
+    "@types/node": "22.12.0",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.60.0"
+  }
+}
