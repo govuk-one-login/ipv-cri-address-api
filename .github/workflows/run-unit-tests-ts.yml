@@ -45,5 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.coverage-artifact }}
-          path: lambdas/get-addresses/coverage/lcov.info
+          path: coverage/lcov.info
           retention-days: 3
