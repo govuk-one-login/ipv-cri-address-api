@@ -9,5 +9,5 @@
         "noImplicitAny": true
     },
     "exclude": ["node_modules", "build", "coverage"],
-    "include": ["src", "tests"]
+    "include": ["lambdas/*/src", "lambdas/*/tests"]
 }

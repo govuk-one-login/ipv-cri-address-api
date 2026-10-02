@@ -23,9 +23,7 @@ jobs:
   run-unit-tests:
     name: TypeScript
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: lambdas/get-addresses
+
     steps:
       - name: Pull repository
         uses: actions/checkout@v5
@@ -34,10 +32,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           cache: npm
-          cache-dependency-path: lambdas/get-addresses/package.json
+          cache-dependency-path: package.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Run tests
         run: npm run test:coverage -- --coverage.reporter=lcov
@@ -47,5 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.coverage-artifact }}
-          path: lambdas/get-addresses/coverage/lcov.info
+          path: coverage/lcov.info
           retention-days: 3

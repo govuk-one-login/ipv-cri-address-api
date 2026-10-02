@@ -23,11 +23,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           cache: npm
-          cache-dependency-path: lambdas/get-addresses/package.json
+          cache-dependency-path: package.json
 
       - name: Install dependencies
-        working-directory: lambdas/get-addresses
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Run pre-commit
         uses: govuk-one-login/github-actions/code-quality/run-pre-commit@4aa6635feaed2295171e4637a9b1ef7cf03b1e96

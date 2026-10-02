@@ -1,15 +1,17 @@
 {
-    "name": "get-addresses",
+    "name": "ipv-cri-address-api",
+    "version": "1.0.0",
+    "description": "",
     "type": "module",
     "scripts": {
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
-        "unit": "vitest run",
+        "unit": "export POWERTOOLS_DEV=true && vitest run",
         "test": "npm run unit --",
-        "test:coverage": "npm run unit -- --coverage",
-        "sam:validate": "cd ../../infrastructure/lambda && sam validate && sam validate --lint",
-        "sam:build": "npm run sam:validate && sam build --template ../../infrastructure/lambda/template.yaml --cached --parallel",
-        "deploy": "../../deploy.sh",
+        "test:coverage": "export POWERTOOLS_DEV=true && vitest run --coverage",
+        "sam:validate": "cd infrastructure/lambda && sam validate --region eu-west-2 && sam validate --region eu-west-2 --lint",
+        "sam:build": "npm run sam:validate && sam build --region eu-west-2 --template infrastructure/lambda/template.yaml --cached --parallel",
+        "deploy": "./deploy.sh",
         "compile": "tsc"
     },
     "dependencies": {
