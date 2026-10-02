@@ -774,7 +774,7 @@ Resources:
               !Ref GetAddressesFunctionCanary5xxErrors,
             ]
           - [!Ref AWS::NoValue]
-      CodeUri: ../../lambdas/get-addresses/
+      CodeUri: ../../
       Runtime: nodejs22.x
       Layers:
         - !FindInMap [DynatraceLayerARN, !Ref Environment, node]
@@ -817,7 +817,7 @@ Resources:
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
         EntryPoints:
-          - src/get-addresses-handler.ts
+          - lambdas/get-addresses/src/get-addresses-handler.ts
         External:
           - "@aws-sdk/*"
 
