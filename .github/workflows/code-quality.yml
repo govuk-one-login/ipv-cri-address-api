@@ -26,7 +26,7 @@ jobs:
           cache-dependency-path: package.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Run pre-commit
         uses: govuk-one-login/github-actions/code-quality/run-pre-commit@4aa6635feaed2295171e4637a9b1ef7cf03b1e96
