@@ -23,9 +23,7 @@ jobs:
   run-unit-tests:
     name: TypeScript
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: lambdas/get-addresses
+
     steps:
       - name: Pull repository
         uses: actions/checkout@v5
@@ -34,7 +32,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           cache: npm
-          cache-dependency-path: lambdas/get-addresses/package.json
+          cache-dependency-path: package.json
 
       - name: Install dependencies
         run: npm ci
