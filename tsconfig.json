@@ -8,6 +8,8 @@
         "outDir": "./build/",
         "noImplicitAny": true
     },
-    "exclude": ["node_modules", "build", "coverage"],
-    "include": ["src", "tests"]
+    "exclude": [
+      "lambdas/get-addresses/node_modules", "build", "coverage"],
+    "include": [
+      "lambdas/get-addresses/src", "tests"]
 }
