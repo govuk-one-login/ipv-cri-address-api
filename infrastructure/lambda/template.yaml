@@ -339,7 +339,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
-        SemanticVersion: 1.2.7
+        SemanticVersion: 1.4.1
       Parameters:
         AuditEventNamePrefix: IPV_ADDRESS_CRI
         BuildNotificationStackName: slack-notifications
