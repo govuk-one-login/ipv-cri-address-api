@@ -1,5 +1,5 @@
 import { CanonicalAddress } from "../types/canonical-address";
-import { Dpa } from "../types/ordnance-survey";
+import { Dpa, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey";
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     uprn: dpa.UPRN,
@@ -16,3 +16,18 @@ export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     postalCode: dpa.POSTCODE,
     addressCountry: "GB",
 });
+
+export const processOrdnanceSurveySuccessResponse = (responseBody: string): CanonicalAddress[] => {
+    if (responseBody.trim() === "") {
+        return [];
+    }
+
+    const response = JSON.parse(responseBody) as OrdnanceSurveyPostcodeResponse;
+
+    return (
+        response.results
+            ?.map((result) => result.DPA)
+            .filter((dpa): dpa is Dpa => dpa !== undefined)
+            .map(toCanonicalAddress) ?? []
+    );
+};

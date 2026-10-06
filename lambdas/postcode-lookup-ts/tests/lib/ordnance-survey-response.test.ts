@@ -1,31 +1,69 @@
 import { describe, expect, it } from "vitest";
-import { toCanonicalAddress } from "../../src/lib/ordnance-survey-response";
 
-describe("toCanonicalAddress", () => {
-    it("maps DPA fields to CanonicalAddress", () => {
-        const result = toCanonicalAddress({
-            UPRN: "123456",
-            ORGANISATION_NAME: "HMRC",
-            BUILDING_NUMBER: "1",
-            THOROUGHFARE_NAME: "Parliament Street",
-            POST_TOWN: "London",
-            POSTCODE: "SW1A 2AA",
+import { processOrdnanceSurveySuccessResponse } from "../../src/lib/ordnance-survey-response";
+
+describe("processOrdnanceSurveySuccessResponse", () => {
+    it("returns mapped canonical addresses", () => {
+        const response = JSON.stringify({
+            results: [
+                {
+                    DPA: {
+                        UPRN: "123",
+                        POSTCODE: "SW1A 2AA",
+                        POST_TOWN: "London",
+                    },
+                },
+            ],
         });
 
-        expect(result).toEqual({
-            uprn: "123456",
-            organisationName: "HMRC",
-            buildingNumber: "1",
-            streetName: "Parliament Street",
-            addressLocality: "London",
-            postalCode: "SW1A 2AA",
-            addressCountry: "GB",
-        });
+        const result = processOrdnanceSurveySuccessResponse(response);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual(
+            expect.objectContaining({
+                uprn: "123",
+                postalCode: "SW1A 2AA",
+                addressLocality: "London",
+                addressCountry: "GB",
+            }),
+        );
     });
 
-    it("always sets address country to GB", () => {
-        const result = toCanonicalAddress({});
+    it("returns an empty array when results is empty", () => {
+        const result = processOrdnanceSurveySuccessResponse(
+            JSON.stringify({
+                results: [],
+            }),
+        );
 
-        expect(result.addressCountry).toBe("GB");
+        expect(result).toEqual([]);
+    });
+
+    it("returns an empty array when results is missing", () => {
+        const result = processOrdnanceSurveySuccessResponse("{}");
+
+        expect(result).toEqual([]);
+    });
+
+    it("returns an empty array when the response body is empty", () => {
+        const result = processOrdnanceSurveySuccessResponse("");
+
+        expect(result).toEqual([]);
+    });
+
+    it("returns an empty array when the response body contains only whitespace", () => {
+        const result = processOrdnanceSurveySuccessResponse("   ");
+
+        expect(result).toEqual([]);
+    });
+
+    it("ignores results without a DPA", () => {
+        const result = processOrdnanceSurveySuccessResponse(
+            JSON.stringify({
+                results: [{}],
+            }),
+        );
+
+        expect(result).toEqual([]);
     });
 });
