@@ -479,7 +479,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   PublicAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -493,7 +493,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -599,7 +599,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   PostcodeLookupFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -670,7 +670,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   AddressFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -750,7 +750,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
@@ -825,7 +825,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${GetAddressesFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
 
   GetAddressesFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
