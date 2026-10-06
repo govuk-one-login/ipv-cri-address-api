@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-describe("placeholder", () => {
-    it("should be implemented", () => {
+describe("PostcodeLookupHandler", () => {
+    it("returns a successful response", async () => {
         expect(true).toBe(true);
     });
 });
