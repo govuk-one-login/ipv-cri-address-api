@@ -5,12 +5,15 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda
 import { ApiError, handleError } from "./lib/error-handler";
 import { PostcodeLookupService } from "./services/postcode-lookup-service";
 import { PostcodeRequest } from "./types/postcode-request";
+import { getSessionId } from "./lib/session-header";
 
 const logger = new Logger();
 
 export class PostcodeLookupHandler implements LambdaInterface {
-    constructor(private readonly postcodeLookupService: PostcodeLookupService) {}
-
+    constructor(
+        private readonly postcodeLookupService: PostcodeLookupService,
+        private readonly sessionService: SessionService,
+    ) {}
     private getPostcodeFromRequest(event: APIGatewayProxyEvent): string {
         if (!event.body) {
             throw new ApiError("Missing postcode in request body", 400);
@@ -35,7 +38,11 @@ export class PostcodeLookupHandler implements LambdaInterface {
         try {
             const postcode = this.getPostcodeFromRequest(event);
 
-            const results = await this.postcodeLookupService.lookupPostcode(postcode, "test-client");
+            const sessionId = getSessionId(event.headers);
+
+            const session = await this.sessionService.getSession(sessionId);
+
+            const results = await this.postcodeLookupService.lookupPostcode(postcode, session.clientId);
 
             return {
                 statusCode: 200,

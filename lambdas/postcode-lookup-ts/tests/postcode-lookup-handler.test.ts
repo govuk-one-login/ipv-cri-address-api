@@ -4,6 +4,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { PostcodeLookupHandler } from "../src/postcode-lookup-handler";
 import { PostcodeLookupService } from "../src/services/postcode-lookup-service";
 
+const getSession = vi.fn();
+
+const mockSessionService = {
+    getSession,
+};
+
 describe("PostcodeLookupHandler", () => {
     const lookupPostcode = vi.fn();
 
@@ -22,11 +28,13 @@ describe("PostcodeLookupHandler", () => {
     const createEvent = (body: string | null): APIGatewayProxyEvent =>
         ({
             body,
-            headers: {},
+            headers: {
+                session_id: "test-session-id",
+            },
         }) as APIGatewayProxyEvent;
 
     it("returns 400 when request body is missing", async () => {
-        const handler = new PostcodeLookupHandler(mockService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
 
         const result = await handler.handler(createEvent(null), context);
 
@@ -42,7 +50,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 400 when request body is invalid json", async () => {
-        const handler = new PostcodeLookupHandler(mockService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
 
         const result = await handler.handler(createEvent("{"), context);
 
@@ -58,7 +66,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 400 when postcode value is missing", async () => {
-        const handler = new PostcodeLookupHandler(mockService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
 
         const result = await handler.handler(createEvent("{}"), context);
 
@@ -68,7 +76,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 400 when postcode value is blank", async () => {
-        const handler = new PostcodeLookupHandler(mockService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
 
         const result = await handler.handler(
             createEvent(
@@ -91,8 +99,10 @@ describe("PostcodeLookupHandler", () => {
                 postalCode: "SW1A 2AA",
             },
         ]);
-
-        const handler = new PostcodeLookupHandler(mockService);
+        getSession.mockResolvedValue({
+            clientId: "test-client",
+        });
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
 
         const result = await handler.handler(
             createEvent(
@@ -116,8 +126,10 @@ describe("PostcodeLookupHandler", () => {
         ];
 
         lookupPostcode.mockResolvedValue(addresses);
-
-        const handler = new PostcodeLookupHandler(mockService);
+        getSession.mockResolvedValue({
+            clientId: "test-client",
+        });
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
 
         const result = await handler.handler(
             createEvent(
@@ -129,5 +141,46 @@ describe("PostcodeLookupHandler", () => {
         );
 
         expect(result?.body).toBe(JSON.stringify(addresses));
+    });
+
+    it("returns 400 when session_id header is missing", async () => {
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+
+        const result = await handler.handler(
+            {
+                body: JSON.stringify({
+                    value: "SW1A 2AA",
+                }),
+                headers: {},
+            } as APIGatewayProxyEvent,
+            context,
+        );
+
+        expect(result?.statusCode).toBe(400);
+
+        expect(lookupPostcode).not.toHaveBeenCalled();
+    });
+
+    it("uses client id from session when looking up postcode", async () => {
+        lookupPostcode.mockResolvedValue([]);
+
+        getSession.mockResolvedValue({
+            clientId: "client-from-session",
+        });
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    value: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(getSession).toHaveBeenCalledWith("test-session-id");
+
+        expect(lookupPostcode).toHaveBeenCalledWith("SW1A 2AA", "client-from-session");
     });
 });
