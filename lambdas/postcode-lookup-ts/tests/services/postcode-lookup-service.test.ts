@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { PostcodeLookupService } from "../../src/services/postcode-lookup-service";
 
+const TEST_URL = "https://test.os.uk/postcode";
+const TEST_API_KEY = "mock-api-key";
+
 describe("PostcodeLookupService", () => {
     const mockLogger = {
         info: vi.fn(),
@@ -14,7 +17,7 @@ describe("PostcodeLookupService", () => {
             text: vi.fn().mockResolvedValue(""),
         });
 
-        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
 
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
@@ -34,7 +37,7 @@ describe("PostcodeLookupService", () => {
             ),
         });
 
-        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
 
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
@@ -59,7 +62,7 @@ describe("PostcodeLookupService", () => {
             ),
         });
 
-        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
 
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
@@ -85,19 +88,19 @@ describe("PostcodeLookupService", () => {
             ),
         });
 
-        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
 
         await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toThrow();
     });
 
     it("throws when postcode is empty", async () => {
-        const service = new PostcodeLookupService(mockLogger, vi.fn() as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, vi.fn() as typeof fetch, TEST_URL, TEST_API_KEY);
 
         await expect(service.lookupPostcode("", "test-client")).rejects.toThrow();
     });
 
     it("throws when postcode is whitespace", async () => {
-        const service = new PostcodeLookupService(mockLogger, vi.fn() as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, vi.fn() as typeof fetch, TEST_URL, TEST_API_KEY);
 
         await expect(service.lookupPostcode("   ", "test-client")).rejects.toThrow();
     });
@@ -108,7 +111,7 @@ describe("PostcodeLookupService", () => {
             text: vi.fn().mockResolvedValue(""),
         });
 
-        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
 
         await service.lookupPostcode("SW1A 2AA", "test-client");
 
@@ -121,7 +124,7 @@ describe("PostcodeLookupService", () => {
             text: vi.fn().mockResolvedValue(""),
         });
 
-        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
 
         await service.lookupPostcode("SW1A 2AA", "test-client");
 
@@ -130,7 +133,7 @@ describe("PostcodeLookupService", () => {
             expect.objectContaining({
                 headers: {
                     Accept: "application/json",
-                    key: "test-api-key",
+                    key: TEST_API_KEY,
                 },
             }),
         );
@@ -139,10 +142,48 @@ describe("PostcodeLookupService", () => {
     it("throws when fetch fails", async () => {
         const mockFetch = vi.fn().mockRejectedValue(new Error("network failure"));
 
-        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
 
         await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toThrow(
             "Error sending request for postcode lookup",
         );
+    });
+
+    it("uses the configured API key when making requests", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 404,
+            text: vi.fn().mockResolvedValue(""),
+        });
+
+        const service = new PostcodeLookupService(
+            mockLogger,
+            mockFetch as typeof fetch,
+            TEST_URL,
+            "configured-api-key",
+        );
+
+        await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    key: "configured-api-key",
+                }),
+            }),
+        );
+    });
+
+    it("uses the configured API URL when building requests", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 404,
+            text: vi.fn().mockResolvedValue(""),
+        });
+
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch, TEST_URL, TEST_API_KEY);
+
+        await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining(TEST_URL), expect.any(Object));
     });
 });

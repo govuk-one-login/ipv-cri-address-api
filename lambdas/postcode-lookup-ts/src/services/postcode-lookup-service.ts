@@ -11,9 +11,11 @@ export class PostcodeLookupService {
     constructor(
         private readonly logger: Logger,
         private readonly fetchFn: typeof fetch = fetch,
+        private readonly osApiUrl: string,
+        private readonly osApiKey: string,
     ) {}
     private buildLookupUrl(postcode: string): string {
-        const url = new URL("https://api.os.uk/search/places/v1/postcode");
+        const url = new URL(this.osApiUrl);
         url.searchParams.set("postcode", postcode);
         return url.toString();
     }
@@ -28,7 +30,7 @@ export class PostcodeLookupService {
             response = await this.fetchFn(this.buildLookupUrl(postcode), {
                 headers: {
                     Accept: "application/json",
-                    key: "test-api-key",
+                    key: this.osApiKey,
                 },
             });
         } catch {
