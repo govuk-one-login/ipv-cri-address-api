@@ -6,6 +6,7 @@ import { ApiError, handleError } from "./lib/error-handler";
 import { PostcodeLookupService } from "./services/postcode-lookup-service";
 import { PostcodeRequest } from "./types/postcode-request";
 import { getSessionId } from "./lib/session-header";
+import type { SessionService } from "./services/session-service";
 
 const logger = new Logger();
 
@@ -40,7 +41,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
 
             const sessionId = getSessionId(event.headers);
 
-            const session = await this.sessionService.getSession(sessionId);
+            const session = await this.sessionService.validateSessionId(sessionId);
 
             const results = await this.postcodeLookupService.lookupPostcode(postcode, session.clientId);
 

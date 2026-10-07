@@ -3,11 +3,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { PostcodeLookupHandler } from "../src/postcode-lookup-handler";
 import { PostcodeLookupService } from "../src/services/postcode-lookup-service";
+import { ApiError } from "../src/lib/error-handler";
 
-const getSession = vi.fn();
+const validateSessionId = vi.fn();
 
 const mockSessionService = {
-    getSession,
+    validateSessionId,
 };
 
 describe("PostcodeLookupHandler", () => {
@@ -99,7 +100,7 @@ describe("PostcodeLookupHandler", () => {
                 postalCode: "SW1A 2AA",
             },
         ]);
-        getSession.mockResolvedValue({
+        validateSessionId.mockResolvedValue({
             clientId: "test-client",
         });
         const handler = new PostcodeLookupHandler(mockService, mockSessionService);
@@ -126,7 +127,7 @@ describe("PostcodeLookupHandler", () => {
         ];
 
         lookupPostcode.mockResolvedValue(addresses);
-        getSession.mockResolvedValue({
+        validateSessionId.mockResolvedValue({
             clientId: "test-client",
         });
         const handler = new PostcodeLookupHandler(mockService, mockSessionService);
@@ -164,7 +165,7 @@ describe("PostcodeLookupHandler", () => {
     it("uses client id from session when looking up postcode", async () => {
         lookupPostcode.mockResolvedValue([]);
 
-        getSession.mockResolvedValue({
+        validateSessionId.mockResolvedValue({
             clientId: "client-from-session",
         });
 
@@ -179,8 +180,40 @@ describe("PostcodeLookupHandler", () => {
             context,
         );
 
-        expect(getSession).toHaveBeenCalledWith("test-session-id");
+        expect(validateSessionId).toHaveBeenCalledWith("test-session-id");
 
         expect(lookupPostcode).toHaveBeenCalledWith("SW1A 2AA", "client-from-session");
+    });
+
+    it("returns 403 when session is not found", async () => {
+        validateSessionId.mockRejectedValue(new ApiError("Session not found", 403));
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+        const result = await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(result?.statusCode).toBe(403);
+        expect(lookupPostcode).not.toHaveBeenCalled();
+    });
+
+    it("returns 403 when session has expired", async () => {
+        validateSessionId.mockRejectedValue(new ApiError("Session expired", 403));
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+        const result = await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(result?.statusCode).toBe(403);
+        expect(lookupPostcode).not.toHaveBeenCalled();
     });
 });
