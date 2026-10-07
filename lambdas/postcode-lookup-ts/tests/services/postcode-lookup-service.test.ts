@@ -101,4 +101,48 @@ describe("PostcodeLookupService", () => {
 
         await expect(service.lookupPostcode("   ", "test-client")).rejects.toThrow();
     });
+
+    it("builds a postcode lookup URL", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 404,
+            text: vi.fn().mockResolvedValue(""),
+        });
+
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+
+        await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("postcode=SW1A+2AA"), expect.any(Object));
+    });
+
+    it("sends required headers", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 404,
+            text: vi.fn().mockResolvedValue(""),
+        });
+
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+
+        await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                headers: {
+                    Accept: "application/json",
+                    key: "test-api-key",
+                },
+            }),
+        );
+    });
+
+    it("throws when fetch fails", async () => {
+        const mockFetch = vi.fn().mockRejectedValue(new Error("network failure"));
+
+        const service = new PostcodeLookupService(mockLogger, mockFetch as typeof fetch);
+
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toThrow(
+            "Error sending request for postcode lookup",
+        );
+    });
 });
