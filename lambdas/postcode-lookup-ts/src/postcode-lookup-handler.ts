@@ -27,11 +27,11 @@ export class PostcodeLookupHandler implements LambdaInterface {
             throw new ApiError("Failed to parse postcode from request body", 400);
         }
 
-        if (!request.value?.trim()) {
+        if (!request.postcode?.trim()) {
             throw new ApiError("Missing postcode in request body", 400);
         }
 
-        return request.value;
+        return request.postcode;
     }
 
     public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult | undefined> {

@@ -1,3 +1,3 @@
 export interface PostcodeLookupRequest {
-    value?: string;
+    postcode?: string;
 }

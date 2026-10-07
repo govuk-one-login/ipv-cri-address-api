@@ -81,7 +81,7 @@ describe("PostcodeLookupHandler", () => {
         const result = await handler.handler(
             createEvent(
                 JSON.stringify({
-                    value: "   ",
+                    postcode: "   ",
                 }),
             ),
             context,
@@ -107,7 +107,7 @@ describe("PostcodeLookupHandler", () => {
         const result = await handler.handler(
             createEvent(
                 JSON.stringify({
-                    value: "SW1A 2AA",
+                    postcode: "SW1A 2AA",
                 }),
             ),
             context,
@@ -134,7 +134,7 @@ describe("PostcodeLookupHandler", () => {
         const result = await handler.handler(
             createEvent(
                 JSON.stringify({
-                    value: "SW1A 2AA",
+                    postcode: "SW1A 2AA",
                 }),
             ),
             context,
@@ -149,7 +149,7 @@ describe("PostcodeLookupHandler", () => {
         const result = await handler.handler(
             {
                 body: JSON.stringify({
-                    value: "SW1A 2AA",
+                    postcode: "SW1A 2AA",
                 }),
                 headers: {},
             } as APIGatewayProxyEvent,
@@ -173,7 +173,7 @@ describe("PostcodeLookupHandler", () => {
         await handler.handler(
             createEvent(
                 JSON.stringify({
-                    value: "SW1A 2AA",
+                    postcode: "SW1A 2AA",
                 }),
             ),
             context,
