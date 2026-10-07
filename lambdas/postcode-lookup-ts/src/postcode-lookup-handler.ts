@@ -2,27 +2,47 @@ import type { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 
-import { handleError } from "./lib/error-handler";
+import { ApiError, handleError } from "./lib/error-handler";
 import { PostcodeLookupService } from "./services/postcode-lookup-service";
+import { PostcodeRequest } from "./types/postcode-request";
 
 const logger = new Logger();
 
 export class PostcodeLookupHandler implements LambdaInterface {
     constructor(private readonly postcodeLookupService: PostcodeLookupService) {}
 
+    private getPostcodeFromRequest(event: APIGatewayProxyEvent): string {
+        if (!event.body) {
+            throw new ApiError("Missing postcode in request body", 400);
+        }
+
+        let request: PostcodeRequest;
+
+        try {
+            request = JSON.parse(event.body) as PostcodeRequest;
+        } catch {
+            throw new ApiError("Failed to parse postcode from request body", 400);
+        }
+
+        if (!request.value?.trim()) {
+            throw new ApiError("Missing postcode in request body", 400);
+        }
+
+        return request.value;
+    }
+
     public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult | undefined> {
         try {
+            const postcode = this.getPostcodeFromRequest(event);
+
+            const results = await this.postcodeLookupService.lookupPostcode(postcode, "test-client");
+
             return {
                 statusCode: 200,
-                body: JSON.stringify([]),
+                body: JSON.stringify(results),
             };
         } catch (error: unknown) {
             return handleError(logger, error, `Error in ${context.functionName}`);
         }
     }
 }
-
-const postcodeLookupService = new PostcodeLookupService(logger);
-const handlerClass = new PostcodeLookupHandler(postcodeLookupService);
-
-export const lambdaHandler = handlerClass.handler.bind(handlerClass);
