@@ -1,5 +1,6 @@
 import { CanonicalAddress } from "../types/canonical-address";
-import { Dpa, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey";
+import { Dpa, OrdnanceSurveyPostcodeResponse, OrdnanceSurveyPostcodeError } from "../types/ordnance-survey";
+import { ApiError } from "../lib/error-handler";
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     uprn: dpa.UPRN,
@@ -16,6 +17,29 @@ export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     postalCode: dpa.POSTCODE,
     addressCountry: "GB",
 });
+
+export const processOrdnanceSurveyBadResponse = (responseBody: string): [] => {
+    try {
+        JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
+    } catch {
+        return [];
+    }
+    return [];
+};
+
+export const processOrdnanceSurveyErrorResponse = (responseBody: string): never => {
+    try {
+        const error = JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
+
+        throw new ApiError(`Error processing postcode lookup: ${error.error.message}`, 500);
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
+        throw new ApiError(`Error processing postcode lookup: ${responseBody}`, 500);
+    }
+};
 
 export const processOrdnanceSurveySuccessResponse = (responseBody: string): CanonicalAddress[] => {
     if (responseBody.trim() === "") {

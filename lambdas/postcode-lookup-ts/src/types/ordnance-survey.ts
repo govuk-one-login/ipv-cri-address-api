@@ -20,3 +20,12 @@ export interface Dpa {
     POST_TOWN?: string;
     POSTCODE?: string;
 }
+
+export interface OrdnanceSurveyPostcodeError {
+    error: OrdnanceSurveyError;
+}
+
+export interface OrdnanceSurveyError {
+    statuscode: number;
+    message: string;
+}
