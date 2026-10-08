@@ -6,31 +6,45 @@ import {
     processOrdnanceSurveyErrorResponse,
 } from "../lib/ordnance-survey-response";
 import { ApiError } from "../lib/error-handler";
+import type { ConfigurationService } from "./configuration-service";
 
 export class PostcodeLookupService {
     constructor(
         private readonly logger: Logger,
+        private readonly configurationService: ConfigurationService,
         private readonly fetchFn: typeof fetch = fetch,
-        private readonly osApiUrl: string,
-        private readonly osApiKey: string,
     ) {}
-    private buildLookupUrl(postcode: string): string {
-        const url = new URL(this.osApiUrl);
-        url.searchParams.set("postcode", postcode);
+    private buildLookupUrl(postcode: string, osApiUrl: string): string {
+        const url = new URL(osApiUrl);
+        url.searchParams.set("postcode", decodeURIComponent(postcode));
+
         return url.toString();
     }
-    public async lookupPostcode(postcode: string, _clientId: string): Promise<CanonicalAddress[]> {
+    public async lookupPostcode(postcode: string, clientId: string): Promise<CanonicalAddress[]> {
         if (!postcode?.trim()) {
-            throw new Error("Postcode must not be null or blank");
+            throw new ApiError("Postcode must not be null or blank", 400);
         }
-        this.logger.info(`Looking up postcode: ${postcode}`);
+
+        let osApiUrl: string;
+        let osApiKey: string;
+
+        try {
+            osApiUrl = await this.configurationService.getParameterValue(`OrdnanceSurveyAPIUrl/${clientId}`);
+
+            osApiKey = await this.configurationService.getSecretValue("OrdnanceSurveyAPIKey");
+        } catch {
+            throw new ApiError("The Client ID provided for this session is not supported", 400);
+        }
+
+        this.logger.info("Looking up postcode");
+
         let response: Response;
 
         try {
-            response = await this.fetchFn(this.buildLookupUrl(postcode), {
+            response = await this.fetchFn(this.buildLookupUrl(postcode, osApiUrl), {
                 headers: {
                     Accept: "application/json",
-                    key: this.osApiKey,
+                    key: osApiKey,
                 },
             });
         } catch {
@@ -52,5 +66,31 @@ export class PostcodeLookupService {
             default:
                 return processOrdnanceSurveyErrorResponse(responseBody);
         }
+    }
+
+    public getAuditEventContext(
+        postcode: string,
+        requestHeaders: Record<string, string>,
+        session: SessionItem,
+    ): AuditEventContext {
+        if (!requestHeaders) {
+            throw new Error("requestHeaders must not be null");
+        }
+
+        if (!session) {
+            throw new Error("sessionItem must not be null");
+        }
+
+        return {
+            personIdentity: {
+                addresses: [
+                    {
+                        postalCode: decodeURIComponent(postcode).toUpperCase(),
+                    },
+                ],
+            },
+            requestHeaders,
+            session,
+        };
     }
 }
