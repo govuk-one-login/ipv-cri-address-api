@@ -216,4 +216,85 @@ describe("PostcodeLookupHandler", () => {
         expect(result?.statusCode).toBe(403);
         expect(lookupPostcode).not.toHaveBeenCalled();
     });
+
+    it("returns 400 when client id is not supported", async () => {
+        validateSessionId.mockResolvedValue({
+            clientId: "unsupported-client",
+        });
+
+        lookupPostcode.mockRejectedValue(new ApiError("The Client ID provided for this session is not supported", 400));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+
+        const result = await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(result?.statusCode).toBe(400);
+    });
+
+    it("returns 401 when session validation fails", async () => {
+        validateSessionId.mockRejectedValue(new ApiError("Any other exception", 401));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+
+        const result = await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(result?.statusCode).toBe(401);
+        expect(lookupPostcode).not.toHaveBeenCalled();
+    });
+
+    it("returns 408 when postcode lookup times out", async () => {
+        validateSessionId.mockResolvedValue({
+            clientId: "test-client",
+        });
+
+        lookupPostcode.mockRejectedValue(new ApiError("Error Connection Timeout", 408));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+
+        const result = await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(result?.statusCode).toBe(408);
+    });
+
+    it("returns 404 when postcode lookup processing fails", async () => {
+        validateSessionId.mockResolvedValue({
+            clientId: "test-client",
+        });
+
+        lookupPostcode.mockRejectedValue(new ApiError("Error sending request for postcode lookup", 404));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService);
+
+        const result = await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(result?.statusCode).toBe(404);
+    });
 });
