@@ -16,6 +16,11 @@ const mockAuditService = {
     sendAuditEvent,
 };
 const getAuditEventContext = vi.fn();
+const counterMetric = vi.fn();
+
+const mockEventProbe = {
+    counterMetric,
+};
 
 describe("PostcodeLookupHandler", () => {
     const lookupPostcode = vi.fn();
@@ -42,7 +47,7 @@ describe("PostcodeLookupHandler", () => {
         }) as APIGatewayProxyEvent;
 
     it("returns 400 when request body is missing", async () => {
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(createEvent(null), context);
 
@@ -58,7 +63,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 400 when request body is invalid json", async () => {
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(createEvent("{"), context);
 
@@ -74,7 +79,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 400 when postcode value is missing", async () => {
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(createEvent("{}"), context);
 
@@ -84,7 +89,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 400 when postcode value is blank", async () => {
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             createEvent(
@@ -110,7 +115,7 @@ describe("PostcodeLookupHandler", () => {
         validateSessionId.mockResolvedValue({
             clientId: "test-client",
         });
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             createEvent(
@@ -137,7 +142,7 @@ describe("PostcodeLookupHandler", () => {
         validateSessionId.mockResolvedValue({
             clientId: "test-client",
         });
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             createEvent(
@@ -152,7 +157,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 400 when session_id header is missing", async () => {
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             {
@@ -176,7 +181,7 @@ describe("PostcodeLookupHandler", () => {
             clientId: "client-from-session",
         });
 
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         await handler.handler(
             createEvent(
@@ -194,7 +199,7 @@ describe("PostcodeLookupHandler", () => {
 
     it("returns 403 when session is not found", async () => {
         validateSessionId.mockRejectedValue(new ApiError("Session not found", 403));
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
         const result = await handler.handler(
             createEvent(
                 JSON.stringify({
@@ -210,7 +215,7 @@ describe("PostcodeLookupHandler", () => {
 
     it("returns 403 when session has expired", async () => {
         validateSessionId.mockRejectedValue(new ApiError("Session expired", 403));
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
         const result = await handler.handler(
             createEvent(
                 JSON.stringify({
@@ -231,7 +236,7 @@ describe("PostcodeLookupHandler", () => {
 
         lookupPostcode.mockRejectedValue(new ApiError("The Client ID provided for this session is not supported", 400));
 
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             createEvent(
@@ -248,7 +253,7 @@ describe("PostcodeLookupHandler", () => {
     it("returns 401 when session validation fails", async () => {
         validateSessionId.mockRejectedValue(new ApiError("Any other exception", 401));
 
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             createEvent(
@@ -270,7 +275,7 @@ describe("PostcodeLookupHandler", () => {
 
         lookupPostcode.mockRejectedValue(new ApiError("Error Connection Timeout", 408));
 
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             createEvent(
@@ -291,7 +296,7 @@ describe("PostcodeLookupHandler", () => {
 
         lookupPostcode.mockRejectedValue(new ApiError("Error sending request for postcode lookup", 404));
 
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         const result = await handler.handler(
             createEvent(
@@ -316,7 +321,7 @@ describe("PostcodeLookupHandler", () => {
             test: true,
         });
 
-        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService);
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
         await handler.handler(
             createEvent(
@@ -330,5 +335,30 @@ describe("PostcodeLookupHandler", () => {
         expect(sendAuditEvent).toHaveBeenNthCalledWith(1, AuditEventType.REQUEST_SENT, { test: true });
 
         expect(sendAuditEvent).toHaveBeenNthCalledWith(2, AuditEventType.RESPONSE_RECEIVED, { test: true });
+    });
+
+    it("records postcode lookup metric", async () => {
+        validateSessionId.mockResolvedValue({
+            clientId: "test-client",
+        });
+
+        lookupPostcode.mockResolvedValue([]);
+
+        getAuditEventContext.mockReturnValue({
+            test: true,
+        });
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(counterMetric).toHaveBeenCalledWith("postcode_lookup");
     });
 });

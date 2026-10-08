@@ -17,6 +17,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
         private readonly postcodeLookupService: PostcodeLookupService,
         private readonly sessionService: SessionService,
         private readonly auditService: AuditService,
+        private readonly eventProbe: EventProbe,
     ) {}
     private getPostcodeFromRequest(event: APIGatewayProxyEvent): string {
         if (!event.body) {
@@ -52,7 +53,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
             const results = await this.postcodeLookupService.lookupPostcode(postcode, session.clientId);
 
             await this.auditService.sendAuditEvent(AuditEventType.RESPONSE_RECEIVED, auditContext);
-
+            this.eventProbe.counterMetric("postcode_lookup");
             return {
                 statusCode: 200,
                 body: JSON.stringify(results),
