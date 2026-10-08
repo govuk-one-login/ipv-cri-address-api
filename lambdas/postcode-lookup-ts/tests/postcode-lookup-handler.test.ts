@@ -361,4 +361,21 @@ describe("PostcodeLookupHandler", () => {
 
         expect(counterMetric).toHaveBeenCalledWith("postcode_lookup");
     });
+
+    it("records a postcode error metric", async () => {
+        validateSessionId.mockRejectedValue(new ApiError("Session not found", 403));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(counterMetric).toHaveBeenCalledWith("postcode_error");
+    });
 });

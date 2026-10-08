@@ -11,6 +11,7 @@ import type { AuditService } from "./services/audit-service";
 import { AuditEventType } from "./services/audit-service";
 
 const logger = new Logger();
+const POSTCODE_ERROR = "postcode_error";
 
 export class PostcodeLookupHandler implements LambdaInterface {
     constructor(
@@ -59,6 +60,8 @@ export class PostcodeLookupHandler implements LambdaInterface {
                 body: JSON.stringify(results),
             };
         } catch (error: unknown) {
+            this.eventProbe.counterMetric(POSTCODE_ERROR);
+
             return handleError(logger, error, `Error in ${context.functionName}`);
         }
     }

@@ -1,3 +1,4 @@
 export interface EventProbe {
-    counterMetric(metricName: string): void;
+    log(error: unknown): EventProbe;
+    counterMetric(metricName: string): EventProbe;
 }
