@@ -158,6 +158,73 @@ describe("PostcodeLookupHandler", () => {
         expect(result?.body).toBe(JSON.stringify(addresses));
     });
 
+    it("records invalid postcode dimensions", async () => {
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(createEvent("{"), context);
+
+        expect(addDimensions).toHaveBeenCalledWith({
+            postcode_lookup_error_type: "invalid_postcode_param",
+            postcode_lookup_error_message: "Failed_to_parse_postcode_from_request_body",
+        });
+    });
+
+    it("records lookup processing dimensions", async () => {
+        validateSessionId.mockResolvedValue({
+            clientId: "test-client",
+        });
+
+        getAuditEventContext.mockReturnValue({
+            test: true,
+        });
+
+        lookupPostcode.mockRejectedValue(new ApiError("Error sending request for postcode lookup", 404));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(addDimensions).toHaveBeenCalledWith({
+            postcode_lookup_error_type: "lookup_processing",
+            postcode_lookup_error_message: "Error_sending_request_for_postcode_lookup",
+        });
+    });
+
+    it("records lookup server dimensions", async () => {
+        validateSessionId.mockResolvedValue({
+            clientId: "unsupported-client",
+        });
+
+        getAuditEventContext.mockReturnValue({
+            test: true,
+        });
+
+        lookupPostcode.mockRejectedValue(new ApiError("The Client ID provided for this session is not supported", 400));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(addDimensions).toHaveBeenCalledWith({
+            postcode_lookup_error_type: "lookup_server",
+            postcode_lookup_error_message: "The_Client_ID_provided_for_this_session_is_not_supported",
+        });
+    });
+
     it("returns 400 when session_id header is missing", async () => {
         const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
 
