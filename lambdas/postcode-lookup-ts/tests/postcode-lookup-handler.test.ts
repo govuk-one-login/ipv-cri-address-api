@@ -17,9 +17,11 @@ const mockAuditService = {
 };
 const getAuditEventContext = vi.fn();
 const counterMetric = vi.fn();
+const addDimensions = vi.fn();
 
 const mockEventProbe = {
     counterMetric,
+    addDimensions,
 };
 
 describe("PostcodeLookupHandler", () => {
@@ -376,6 +378,76 @@ describe("PostcodeLookupHandler", () => {
             context,
         );
 
-        expect(counterMetric).toHaveBeenCalledWith("postcode_error");
+        expect(counterMetric).toHaveBeenCalledWith("postcode_lookup_error");
+    });
+
+    it("records session-not-found error dimensions", async () => {
+        validateSessionId.mockRejectedValue(new ApiError("Session not found", 403));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(counterMetric).toHaveBeenCalledWith("postcode_lookup_error");
+
+        expect(addDimensions).toHaveBeenCalledWith({
+            postcode_lookup_error_type: "session_not_found",
+            postcode_lookup_error_message: "Session_not_found",
+        });
+    });
+
+    it("records session-expired error dimensions", async () => {
+        validateSessionId.mockRejectedValue(new ApiError("Session expired", 403));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(addDimensions).toHaveBeenCalledWith({
+            postcode_lookup_error_type: "session_expired",
+            postcode_lookup_error_message: "Session_expired",
+        });
+    });
+
+    it("records timeout error dimensions", async () => {
+        validateSessionId.mockResolvedValue({
+            clientId: "test-client",
+        });
+
+        getAuditEventContext.mockReturnValue({
+            test: true,
+        });
+
+        lookupPostcode.mockRejectedValue(new ApiError("Error Connection Timeout", 408));
+
+        const handler = new PostcodeLookupHandler(mockService, mockSessionService, mockAuditService, mockEventProbe);
+
+        await handler.handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(addDimensions).toHaveBeenCalledWith({
+            postcode_lookup_error_type: "time_out_error",
+            postcode_lookup_error_message: "Error_Connection_Timeout",
+        });
     });
 });

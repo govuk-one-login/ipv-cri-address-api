@@ -1,4 +1,5 @@
 export interface EventProbe {
-    log(error: unknown): EventProbe;
-    counterMetric(metricName: string): EventProbe;
+    counterMetric(metricName: string): void;
+
+    addDimensions(dimensions: Record<string, string>): void;
 }

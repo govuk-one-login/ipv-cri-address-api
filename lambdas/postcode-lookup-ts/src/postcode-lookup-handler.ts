@@ -1,6 +1,7 @@
 import type { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics";
 
 import { ApiError, handleError } from "./lib/error-handler";
 import { PostcodeLookupService } from "./services/postcode-lookup-service";
@@ -11,7 +12,6 @@ import type { AuditService } from "./services/audit-service";
 import { AuditEventType } from "./services/audit-service";
 
 const logger = new Logger();
-const POSTCODE_ERROR = "postcode_error";
 
 export class PostcodeLookupHandler implements LambdaInterface {
     constructor(
@@ -60,7 +60,9 @@ export class PostcodeLookupHandler implements LambdaInterface {
                 body: JSON.stringify(results),
             };
         } catch (error: unknown) {
-            this.eventProbe.counterMetric(POSTCODE_ERROR);
+            this.eventProbe.counterMetric(POSTCODE_LOOKUP_ERROR);
+
+            this.eventProbe.addDimensions(getPostcodeErrorDimensions(error));
 
             return handleError(logger, error, `Error in ${context.functionName}`);
         }
