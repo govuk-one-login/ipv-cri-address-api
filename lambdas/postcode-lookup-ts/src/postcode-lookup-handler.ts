@@ -7,6 +7,8 @@ import { PostcodeLookupService } from "./services/postcode-lookup-service";
 import { PostcodeRequest } from "./types/postcode-request";
 import { getSessionId } from "./lib/session-header";
 import { SessionService } from "./services/session-service";
+import type { AuditService } from "./services/audit-service";
+import { AuditEventType } from "./services/audit-service";
 
 const logger = new Logger();
 
@@ -14,6 +16,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
     constructor(
         private readonly postcodeLookupService: PostcodeLookupService,
         private readonly sessionService: SessionService,
+        private readonly auditService: AuditService,
     ) {}
     private getPostcodeFromRequest(event: APIGatewayProxyEvent): string {
         if (!event.body) {
@@ -34,7 +37,6 @@ export class PostcodeLookupHandler implements LambdaInterface {
 
         return request.postcode;
     }
-
     public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult | undefined> {
         try {
             const postcode = this.getPostcodeFromRequest(event);
@@ -43,7 +45,13 @@ export class PostcodeLookupHandler implements LambdaInterface {
 
             const session = await this.sessionService.validateSessionId(sessionId);
 
+            const auditContext = this.postcodeLookupService.getAuditEventContext(postcode, event.headers, session);
+
+            await this.auditService.sendAuditEvent(AuditEventType.REQUEST_SENT, auditContext);
+
             const results = await this.postcodeLookupService.lookupPostcode(postcode, session.clientId);
+
+            await this.auditService.sendAuditEvent(AuditEventType.RESPONSE_RECEIVED, auditContext);
 
             return {
                 statusCode: 200,
