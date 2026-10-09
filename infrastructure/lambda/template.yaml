@@ -1147,7 +1147,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref PostcodeLookupTsFunction
+      FunctionName: !Ref PostcodeLookupTsFunction.Alias
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
