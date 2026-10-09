@@ -835,7 +835,122 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref GetAddressesFunctionLogGroup
+  PostcodeLookupTsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
+      Handler: lambda.lambdaHandler
+      DeploymentPreference:
+        Alarms: !If
+          - UseCanaryDeploymentAlarms
+          - [
+            !Ref PostcodeLookupFunctionCanaryErrors,
+            !Ref PostcodeLookupFunctionCanary5xxErrors,
+          ]
+          - [ !Ref AWS::NoValue ]
+      CodeUri: ../../
+      Runtime: nodejs22.x
+      Layers:
+        - !FindInMap [ DynatraceLayerARN, !Ref Environment, node ]
 
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
+
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+
+          VERIFIABLE_CREDENTIAL_ISSUER: !If
+            - UseOAuthCommonTables
+            - !FindInMap [ EnvironmentConfiguration, !Ref Environment, BaseURL ]
+            - !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+
+          SQS_AUDIT_EVENT_QUEUE_URL:
+            Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
+
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+
+        - DynamoDBReadPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
+
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
+
+        - Statement:
+            - Sid: ReadSecretsPolicy
+              Effect: Allow
+              Action:
+                - secretsmanager:*
+              Resource: !Sub
+                - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${Prefix}/OrdnanceSurveyAPIKey*"
+                - Prefix:
+                    !If [
+                      UseSecretPrefix,
+                      !Ref SecretPrefix,
+                      !Ref AWS::StackName,
+                    ]
+
+            - Sid: ReadParametersPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIUrl/*"
+
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTtl"
+
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+
+        - SQSSendMessagePolicy:
+            QueueName:
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
+
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey
+              Resource:
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: esm
+        Target: es2022
+        Sourcemap: true
+        OutExtension:
+           - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+        - lambdas/postcode-lookup-ts/src/lambda.ts
+        External:
+        - "@aws-sdk/*"
   AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -1029,6 +1144,14 @@ Resources:
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
 
+  PostcodeLookupTsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PostcodeLookupTsFunction.Alias
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
   AddressFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
