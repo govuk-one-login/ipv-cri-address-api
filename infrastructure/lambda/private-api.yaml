@@ -102,8 +102,12 @@ paths:
             - FunctionArn:
                 Fn::If:
                   - IsDevEnvironment
-                  - !GetAtt PostcodeLookupTsFunction.Arn
-                  - !GetAtt PostcodeLookupFunction.Arn
+                  - Fn::GetAtt:
+                      - PostcodeLookupTsFunction
+                      - Arn
+                  - Fn::GetAtt:
+                      - PostcodeLookupFunction
+                      - Arn
         responses:
           default:
             statusCode: "200"
