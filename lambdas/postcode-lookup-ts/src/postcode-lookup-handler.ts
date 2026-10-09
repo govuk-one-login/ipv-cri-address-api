@@ -1,25 +1,78 @@
 import type { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
-import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics";
+import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+
+import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
+import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
 
 import { ApiError, handleError } from "./lib/error-handler";
-import { PostcodeLookupService } from "./services/postcode-lookup-service";
-import { PostcodeRequest } from "./types/postcode-request";
+import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics";
 import { getSessionId } from "./lib/session-header";
+import { PostcodeLookupService } from "./services/postcode-lookup-service";
 import { SessionService } from "./services/session-service";
-import type { AuditService } from "./services/audit-service";
-import { AuditEventType } from "./services/audit-service";
+import type { PostcodeRequest } from "./types/postcode-request";
 
 const logger = new Logger();
+
+const AUDIT_EVENT_TYPE = {
+    REQUEST_SENT: "REQUEST_SENT",
+    RESPONSE_RECEIVED: "RESPONSE_RECEIVED",
+} as const;
+
+const POSTCODE_LOOKUP_METRIC = "postcode_lookup";
+const TXMA_AUDIT_ENCODED_HEADER = "txma-audit-encoded";
+
+export interface AuditConfig {
+    queueUrl: string;
+    componentId: string;
+}
 
 export class PostcodeLookupHandler implements LambdaInterface {
     constructor(
         private readonly postcodeLookupService: PostcodeLookupService,
         private readonly sessionService: SessionService,
-        private readonly auditService: AuditService,
-        private readonly eventProbe: EventProbe,
+        private readonly auditConfig: AuditConfig,
     ) {}
+
+    public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+        try {
+            const postcode = this.getPostcodeFromRequest(event);
+            const sessionId = getSessionId(event.headers);
+            const session = await this.sessionService.validateSessionId(sessionId);
+            logger.info("found session");
+            const restricted = this.buildAuditRestricted(postcode, event.headers);
+
+            await buildAndSendAuditEvent(
+                this.auditConfig.queueUrl,
+                AUDIT_EVENT_TYPE.REQUEST_SENT,
+                this.auditConfig.componentId,
+                session,
+                { restricted },
+            );
+
+            const results = await this.postcodeLookupService.lookupPostcode(postcode, session.clientId);
+
+            captureMetric(POSTCODE_LOOKUP_METRIC);
+
+            await buildAndSendAuditEvent(
+                this.auditConfig.queueUrl,
+                AUDIT_EVENT_TYPE.RESPONSE_RECEIVED,
+                this.auditConfig.componentId,
+                session,
+                { restricted },
+            );
+
+            return {
+                statusCode: 200,
+                body: JSON.stringify(results),
+            };
+        } catch (error: unknown) {
+            captureMetricWithDimensions(POSTCODE_LOOKUP_ERROR, getPostcodeErrorDimensions(error));
+
+            return handleError(logger, error, `Error in ${context.functionName}`);
+        }
+    }
+
     private getPostcodeFromRequest(event: APIGatewayProxyEvent): string {
         if (!event.body) {
             throw new ApiError("Missing postcode in request body", 400);
@@ -39,32 +92,21 @@ export class PostcodeLookupHandler implements LambdaInterface {
 
         return request.postcode;
     }
-    public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult | undefined> {
-        try {
-            const postcode = this.getPostcodeFromRequest(event);
 
-            const sessionId = getSessionId(event.headers);
+    private buildAuditRestricted(postcode: string, headers: APIGatewayProxyEvent["headers"]): Record<string, unknown> {
+        const encodedDeviceInformation = headers[TXMA_AUDIT_ENCODED_HEADER];
 
-            const session = await this.sessionService.validateSessionId(sessionId);
-
-            const auditContext = this.postcodeLookupService.getAuditEventContext(postcode, event.headers, session);
-
-            await this.auditService.sendAuditEvent(AuditEventType.REQUEST_SENT, auditContext);
-
-            const results = await this.postcodeLookupService.lookupPostcode(postcode, session.clientId);
-
-            await this.auditService.sendAuditEvent(AuditEventType.RESPONSE_RECEIVED, auditContext);
-            this.eventProbe.counterMetric("postcode_lookup");
-            return {
-                statusCode: 200,
-                body: JSON.stringify(results),
-            };
-        } catch (error: unknown) {
-            this.eventProbe.counterMetric(POSTCODE_LOOKUP_ERROR);
-
-            this.eventProbe.addDimensions(getPostcodeErrorDimensions(error));
-
-            return handleError(logger, error, `Error in ${context.functionName}`);
-        }
+        return {
+            addresses: [
+                {
+                    postalCode: decodeURIComponent(postcode).toUpperCase(),
+                },
+            ],
+            ...(encodedDeviceInformation && {
+                device_information: {
+                    encoded: encodedDeviceInformation,
+                },
+            }),
+        };
     }
 }

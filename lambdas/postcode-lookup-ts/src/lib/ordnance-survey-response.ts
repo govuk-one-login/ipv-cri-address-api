@@ -51,7 +51,7 @@ export const processOrdnanceSurveySuccessResponse = (responseBody: string): Cano
     return (
         response.results
             ?.map((result) => result.DPA)
-            .filter((dpa): dpa is Dpa => dpa !== undefined)
+            .filter((dpa): dpa is Dpa => dpa != null)
             .map(toCanonicalAddress) ?? []
     );
 };

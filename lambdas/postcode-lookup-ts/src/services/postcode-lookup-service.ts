@@ -40,8 +40,16 @@ export class PostcodeLookupService {
 
         let response: Response;
 
+        let lookupUrl: string;
+
         try {
-            response = await this.fetchFn(this.buildLookupUrl(postcode, osApiUrl), {
+            lookupUrl = this.buildLookupUrl(postcode, osApiUrl);
+        } catch {
+            throw new ApiError("Error building URI for postcode lookup", 400);
+        }
+
+        try {
+            response = await this.fetchFn(lookupUrl, {
                 headers: {
                     Accept: "application/json",
                     key: osApiKey,
@@ -66,31 +74,5 @@ export class PostcodeLookupService {
             default:
                 return processOrdnanceSurveyErrorResponse(responseBody);
         }
-    }
-
-    public getAuditEventContext(
-        postcode: string,
-        requestHeaders: Record<string, string>,
-        session: SessionItem,
-    ): AuditEventContext {
-        if (!requestHeaders) {
-            throw new Error("requestHeaders must not be null");
-        }
-
-        if (!session) {
-            throw new Error("sessionItem must not be null");
-        }
-
-        return {
-            personIdentity: {
-                addresses: [
-                    {
-                        postalCode: decodeURIComponent(postcode).toUpperCase(),
-                    },
-                ],
-            },
-            requestHeaders,
-            session,
-        };
     }
 }

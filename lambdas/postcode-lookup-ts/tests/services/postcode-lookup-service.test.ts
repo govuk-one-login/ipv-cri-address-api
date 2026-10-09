@@ -86,6 +86,7 @@ describe("PostcodeLookupService", () => {
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
         expect(result).toHaveLength(1);
+
         expect(result[0]).toMatchObject({
             uprn: "123",
             postalCode: "SW1A 2AA",
@@ -264,6 +265,7 @@ describe("PostcodeLookupService", () => {
         });
 
         expect(getSecretValue).not.toHaveBeenCalled();
+
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
@@ -280,163 +282,91 @@ describe("PostcodeLookupService", () => {
         });
 
         expect(getParameterValue).toHaveBeenCalledWith("OrdnanceSurveyAPIUrl/test-client");
+
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("creates an audit event context", () => {
-        const mockFetch = vi.fn();
-
-        const service = createService(mockFetch as typeof fetch);
-
-        const session = {
-            sessionId: "test-session-id",
-            clientId: "test-client",
-        };
-
-        const headers = {
-            session_id: "test-session-id",
-        };
-
-        const result = service.getAuditEventContext("LS1 1BA", headers, session as never);
-
-        expect(result).toEqual({
-            personIdentity: {
-                addresses: [
-                    {
-                        postalCode: "LS1 1BA",
-                    },
-                ],
-            },
-            requestHeaders: headers,
-            session,
+    it("returns empty array for a 200 response with an empty body", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 200,
+            text: vi.fn().mockResolvedValue(""),
         });
-    });
-
-    it("uppercases the postcode in the audit context", () => {
-        const mockFetch = vi.fn();
 
         const service = createService(mockFetch as typeof fetch);
 
-        const result = service.getAuditEventContext("ls1 1ba", {}, {} as never);
+        const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
-        expect(result.personIdentity.addresses[0].postalCode).toBe("LS1 1BA");
+        expect(result).toEqual([]);
     });
 
-    it("decodes an encoded postcode", () => {
-        const mockFetch = vi.fn();
-
-        const service = createService(mockFetch as typeof fetch);
-
-        const result = service.getAuditEventContext("LS1%201BA", {}, {} as never);
-
-        expect(result.personIdentity.addresses[0].postalCode).toBe("LS1 1BA");
-    });
-
-    it("throws when request headers are missing", () => {
-        const mockFetch = vi.fn();
-
-        const service = createService(mockFetch as typeof fetch);
-
-        expect(() => service.getAuditEventContext("LS1 1BA", undefined as never, {} as never)).toThrow(
-            "requestHeaders must not be null",
-        );
-    });
-
-    it("throws when session item is missing", () => {
-        const mockFetch = vi.fn();
-
-        const service = createService(mockFetch as typeof fetch);
-
-        expect(() => service.getAuditEventContext("LS1 1BA", {}, undefined as never)).toThrow(
-            "sessionItem must not be null",
-        );
-    });
-    it("creates an audit event context", () => {
-        const service = createService(vi.fn() as typeof fetch);
-
-        const session = {
-            sessionId: "session-id",
-            clientId: "test-client",
-        };
-
-        const headers = {
-            session_id: "session-id",
-        };
-
-        const result = service.getAuditEventContext("LS1 1BA", headers, session);
-
-        expect(result).toEqual({
-            personIdentity: {
-                addresses: [
-                    {
-                        postalCode: "LS1 1BA",
-                    },
-                ],
-            },
-            requestHeaders: headers,
-            session,
+    it("returns empty array for a 200 response with no results", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 200,
+            text: vi.fn().mockResolvedValue(
+                JSON.stringify({
+                    results: [],
+                }),
+            ),
         });
-    });
-    it("throws when request headers are undefined", () => {
-        const service = createService(vi.fn() as typeof fetch);
 
-        expect(() =>
-            service.getAuditEventContext(
-                "LS1 1BA",
-                undefined as never,
-                {
-                    sessionId: "session-id",
-                    clientId: "client-id",
-                } as never,
+        const service = createService(mockFetch as typeof fetch);
+
+        const result = await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(result).toEqual([]);
+    });
+
+    it("returns empty array for a 200 response containing a null DPA", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 200,
+            text: vi.fn().mockResolvedValue(
+                JSON.stringify({
+                    results: [
+                        {
+                            DPA: null,
+                        },
+                    ],
+                }),
             ),
-        ).toThrow("requestHeaders must not be null");
+        });
+
+        const service = createService(mockFetch as typeof fetch);
+
+        const result = await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(result).toEqual([]);
     });
 
-    it("throws when session item is undefined", () => {
-        const service = createService(vi.fn() as typeof fetch);
+    it("does not include the API key in the request URL", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 404,
+            text: vi.fn().mockResolvedValue(""),
+        });
 
-        expect(() =>
-            service.getAuditEventContext(
-                "LS1 1BA",
-                {
-                    session_id: "test",
-                },
-                undefined as never,
-            ),
-        ).toThrow("sessionItem must not be null");
+        const service = createService(mockFetch as typeof fetch);
+
+        await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        const [requestUrl] = mockFetch.mock.calls[0] as [string, RequestInit];
+
+        const url = new URL(requestUrl);
+
+        expect(url.searchParams.has("key")).toBe(false);
+        expect(requestUrl).not.toContain(TEST_API_KEY);
     });
 
-    it("uppercases the postcode in audit event context", () => {
-        const service = createService(vi.fn() as typeof fetch);
+    it("throws when the configured OS API URL is invalid", async () => {
+        getParameterValue.mockResolvedValue("invalidURL{}");
 
-        const result = service.getAuditEventContext(
-            "ls1 1ba",
-            {
-                session_id: "test",
-            },
-            {
-                sessionId: "session-id",
-                clientId: "client-id",
-            } as never,
-        );
+        const mockFetch = vi.fn();
 
-        expect(result.personIdentity.addresses[0].postalCode).toBe("LS1 1BA");
-    });
+        const service = createService(mockFetch as typeof fetch);
 
-    it("decodes URL encoded postcodes", () => {
-        const service = createService(vi.fn() as typeof fetch);
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
+            message: "Error building URI for postcode lookup",
+            statusCode: 400,
+        });
 
-        const result = service.getAuditEventContext(
-            "LS1%201BA",
-            {
-                session_id: "test",
-            },
-            {
-                sessionId: "session-id",
-                clientId: "client-id",
-            } as never,
-        );
-
-        expect(result.personIdentity.addresses[0].postalCode).toBe("LS1 1BA");
+        expect(mockFetch).not.toHaveBeenCalled();
     });
 });
