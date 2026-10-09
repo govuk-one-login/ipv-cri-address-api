@@ -4,21 +4,30 @@ import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import type { ConfigurationService } from "./configuration-service";
 
 export class PowertoolsConfigurationService implements ConfigurationService {
+    constructor(
+        private readonly stackName: string,
+        private readonly secretPrefix: string,
+    ) {}
+
     async getParameterValue(parameterName: string): Promise<string> {
-        const value = await getParameter(parameterName);
+        const fullParameterName = `/${this.stackName}/${parameterName}`;
+
+        const value = await getParameter(fullParameterName);
 
         if (!value) {
-            throw new Error(`Missing parameter ${parameterName}`);
+            throw new Error(`Missing parameter ${fullParameterName}`);
         }
 
         return value;
     }
 
     async getSecretValue(secretName: string): Promise<string> {
-        const value = await getSecret(secretName);
+        const fullSecretName = `/${this.secretPrefix}/${secretName}`;
+
+        const value = await getSecret(fullSecretName);
 
         if (!value) {
-            throw new Error(`Missing secret ${secretName}`);
+            throw new Error(`Missing secret ${fullSecretName}`);
         }
 
         return value;

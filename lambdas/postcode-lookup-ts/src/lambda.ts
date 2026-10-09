@@ -8,12 +8,25 @@ import { PowertoolsConfigurationService } from "./services/powertools-configurat
 const logger = new Logger();
 
 const sessionTableName = process.env.SESSION_TABLE;
-const configurationService = new PowertoolsConfigurationService();
+
+const stackName = process.env.AWS_STACK_NAME;
+
+const secretPrefix = process.env.SECRET_PREFIX;
+
 const auditQueueUrl = process.env.SQS_AUDIT_EVENT_QUEUE_URL;
+
 const componentId = process.env.VERIFIABLE_CREDENTIAL_ISSUER;
 
 if (!sessionTableName) {
     throw new Error("SESSION_TABLE environment variable is required");
+}
+
+if (!stackName) {
+    throw new Error("AWS_STACK_NAME environment variable is required");
+}
+
+if (!secretPrefix) {
+    throw new Error("SECRET_PREFIX environment variable is required");
 }
 
 if (!auditQueueUrl) {
@@ -24,9 +37,12 @@ if (!componentId) {
     throw new Error("VERIFIABLE_CREDENTIAL_ISSUER environment variable is required");
 }
 
+const configurationService = new PowertoolsConfigurationService(stackName, secretPrefix);
+
 const sessionService = new SessionService(DynamoDbClient, logger, sessionTableName);
 
 const postcodeLookupService = new PostcodeLookupService(logger, configurationService);
+
 const handlerClass = new PostcodeLookupHandler(postcodeLookupService, sessionService, {
     queueUrl: auditQueueUrl,
     componentId,
