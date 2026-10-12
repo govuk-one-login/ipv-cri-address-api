@@ -42,10 +42,6 @@ export const processOrdnanceSurveyErrorResponse = (responseBody: string): never 
 };
 
 export const processOrdnanceSurveySuccessResponse = (responseBody: string): CanonicalAddress[] => {
-    if (responseBody.trim() === "") {
-        return [];
-    }
-
     const response = JSON.parse(responseBody) as OrdnanceSurveyPostcodeResponse;
 
     return (
