@@ -155,6 +155,21 @@ describe("PostcodeLookupService", () => {
         expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("postcode=SW1A+2AA"), expect.any(Object));
     });
 
+    it("decodes form-encoded spaces in the postcode before building the lookup URL", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 404,
+            text: vi.fn().mockResolvedValue(""),
+        });
+
+        const service = createService(mockFetch as typeof fetch);
+
+        await service.lookupPostcode("SW1A+2AA", "test-client");
+
+        const [requestUrl] = mockFetch.mock.calls[0] as [string, RequestInit];
+
+        expect(new URL(requestUrl).searchParams.get("postcode")).toBe("SW1A 2AA");
+    });
+
     it("sends required headers", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             status: 404,
