@@ -16,7 +16,8 @@ export class PostcodeLookupService {
     ) {}
     private buildLookupUrl(postcode: string, osApiUrl: string): string {
         const url = new URL(osApiUrl);
-        url.searchParams.set("postcode", decodeURIComponent(postcode));
+        const decodedPostcode = decodeURIComponent(postcode.replace(/\+/g, " "));
+        url.searchParams.set("postcode", decodedPostcode);
 
         return url.toString();
     }
