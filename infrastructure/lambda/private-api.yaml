@@ -103,7 +103,7 @@ paths:
                 Fn::If:
                   - IsDevEnvironment
                   - Fn::GetAtt:
-                      - PostcodeLookupTsFunction
+                      - PostcodeLookupFunction
                       - Arn
                   - Fn::GetAtt:
                       - PostcodeLookupFunction

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.oauth2.sdk.ErrorObject;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.lambda.powertools.logging.CorrelationIdPaths;
 import software.amazon.lambda.powertools.logging.Logging;
 import software.amazon.lambda.powertools.metrics.FlushMetrics;
@@ -63,6 +64,7 @@ public class PostcodeLookupHandler
     private final SessionService sessionService;
     private final EventProbe eventProbe;
     private final AuditService auditService;
+    private static final Logger LOGGER = LogManager.getLogger(PostcodeLookupHandler.class);
     protected static final String SESSION_ID = "session_id";
     protected static final String LAMBDA_NAME = "postcode_lookup";
     protected static final String POSTCODE_ERROR = "postcode_lookup_error";
@@ -128,22 +130,27 @@ public class PostcodeLookupHandler
     public APIGatewayProxyResponseEvent handleRequest(
             APIGatewayProxyRequestEvent input, Context context) {
         String sessionId = input.getHeaders().get(SESSION_ID);
+        String processingStage = "parsing request";
 
         try {
             String postcode = getPostcodeFromRequest(input);
 
+            processingStage = "validating session";
             SessionItem sessionItem = sessionService.validateSessionId(sessionId);
             eventProbe.log(Level.INFO, "found session");
 
+            processingStage = "sending request audit event";
             auditService.sendAuditEvent(
                     AuditEventType.REQUEST_SENT,
                     postcodeLookupService.getAuditEventContext(
                             postcode, input.getHeaders(), sessionItem));
 
+            processingStage = "performing postcode lookup";
             List<CanonicalAddress> results =
                     postcodeLookupService.lookupPostcode(postcode, sessionItem.getClientId());
 
             eventProbe.counterMetric(LAMBDA_NAME);
+            processingStage = "sending response audit event";
             auditService.sendAuditEvent(
                     AuditEventType.RESPONSE_RECEIVED,
                     postcodeLookupService.getAuditEventContext(
@@ -163,6 +170,10 @@ public class PostcodeLookupHandler
         } catch (ClientIdNotSupportedException e) {
             return handleException(e, LOOKUP_SERVER.getMessage(), BAD_REQUEST);
         } catch (Exception e) {
+            LOGGER.error(
+                    "Unexpected exception during postcode lookup stage '{}'; returning HTTP 401",
+                    processingStage,
+                    e);
             return handleException(e, LOOKUP_SERVER.getMessage(), UNAUTHORIZED);
         }
     }
