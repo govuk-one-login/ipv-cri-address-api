@@ -71,6 +71,18 @@ export class PostcodeLookupHandler implements LambdaInterface {
 
             const errorResponse = handleError(logger, error, `Error in ${context.functionName}`);
 
+            if (
+                error instanceof ApiError &&
+                error.statusCode === 400 &&
+                (error.message === "Missing postcode in request body." ||
+                    error.message === "Failed to parse postcode from request body")
+            ) {
+                return {
+                    ...errorResponse,
+                    body: JSON.stringify(error.message),
+                };
+            }
+
             if (error instanceof ApiError && error.statusCode === 404) {
                 return {
                     ...errorResponse,
@@ -84,7 +96,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
 
     private getPostcodeFromRequest(event: APIGatewayProxyEvent): string {
         if (!event.body) {
-            throw new ApiError("Missing postcode in request body", 400);
+            throw new ApiError("Missing postcode in request body.", 400);
         }
 
         let request: PostcodeRequest;
@@ -96,7 +108,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
         }
 
         if (!request.postcode?.trim()) {
-            throw new ApiError("Missing postcode in request body", 400);
+            throw new ApiError("Missing postcode in request body.", 400);
         }
 
         return request.postcode;

@@ -84,9 +84,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
-            body: JSON.stringify({
-                message: "Missing postcode in request body",
-            }),
+            body: JSON.stringify("Missing postcode in request body."),
         });
 
         expect(validateSessionId).not.toHaveBeenCalled();
@@ -99,9 +97,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
-            body: JSON.stringify({
-                message: "Failed to parse postcode from request body",
-            }),
+            body: JSON.stringify("Failed to parse postcode from request body"),
         });
 
         expect(validateSessionId).not.toHaveBeenCalled();
@@ -114,9 +110,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
-            body: JSON.stringify({
-                message: "Missing postcode in request body",
-            }),
+            body: JSON.stringify("Missing postcode in request body."),
         });
 
         expect(validateSessionId).not.toHaveBeenCalled();
@@ -136,9 +130,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
-            body: JSON.stringify({
-                message: "Missing postcode in request body",
-            }),
+            body: JSON.stringify("Missing postcode in request body."),
         });
 
         expect(validateSessionId).not.toHaveBeenCalled();
