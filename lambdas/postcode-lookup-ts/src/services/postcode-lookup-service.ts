@@ -56,7 +56,7 @@ export class PostcodeLookupService {
                 },
             });
         } catch {
-            throw new ApiError("Error sending request for postcode lookup", 500);
+            throw new ApiError("Error sending request for postcode lookup", 404);
         }
 
         const responseBody = await response.text();

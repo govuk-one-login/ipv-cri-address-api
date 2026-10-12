@@ -31,13 +31,13 @@ export const processOrdnanceSurveyErrorResponse = (responseBody: string): never 
     try {
         const error = JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
 
-        throw new ApiError(`Error processing postcode lookup: ${error.error.message}`, 500);
+        throw new ApiError(`Error processing postcode lookup: ${error.error.message}`, 404);
     } catch (error) {
         if (error instanceof ApiError) {
             throw error;
         }
 
-        throw new ApiError(`Error processing postcode lookup: ${responseBody}`, 500);
+        throw new ApiError(`Error processing postcode lookup: ${responseBody}`, 404);
     }
 };
 

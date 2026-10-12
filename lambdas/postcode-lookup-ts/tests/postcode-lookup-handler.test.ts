@@ -502,9 +502,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 404,
-            body: JSON.stringify({
-                message: "Error sending request for postcode lookup",
-            }),
+            body: JSON.stringify("Error sending request for postcode lookup"),
         });
 
         expect(mockBuildAndSendAuditEvent).toHaveBeenCalledOnce();

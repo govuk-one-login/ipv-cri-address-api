@@ -69,7 +69,16 @@ export class PostcodeLookupHandler implements LambdaInterface {
         } catch (error: unknown) {
             captureMetricWithDimensions(POSTCODE_LOOKUP_ERROR, getPostcodeErrorDimensions(error));
 
-            return handleError(logger, error, `Error in ${context.functionName}`);
+            const errorResponse = handleError(logger, error, `Error in ${context.functionName}`);
+
+            if (error instanceof ApiError && error.statusCode === 404) {
+                return {
+                    ...errorResponse,
+                    body: JSON.stringify(error.message),
+                };
+            }
+
+            return errorResponse;
         }
     }
 

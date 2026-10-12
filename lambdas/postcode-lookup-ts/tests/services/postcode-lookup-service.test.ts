@@ -95,14 +95,14 @@ describe("PostcodeLookupService", () => {
         });
     });
 
-    it("throws for 500 responses", async () => {
+    it("throws a 404 processing error for OS rate-limit responses", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
-            status: 500,
+            status: 429,
             text: vi.fn().mockResolvedValue(
                 JSON.stringify({
                     error: {
-                        statuscode: 500,
-                        message: "Unexpected error",
+                        statuscode: 429,
+                        message: "Rate limit exceeded",
                     },
                 }),
             ),
@@ -110,9 +110,10 @@ describe("PostcodeLookupService", () => {
 
         const service = createService(mockFetch as typeof fetch);
 
-        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toThrow(
-            "Error processing postcode lookup",
-        );
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
+            message: "Error processing postcode lookup: Rate limit exceeded",
+            statusCode: 404,
+        });
     });
 
     it("throws when postcode is empty", async () => {
