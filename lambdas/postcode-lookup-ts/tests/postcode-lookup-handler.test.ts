@@ -530,6 +530,27 @@ describe("PostcodeLookupHandler", () => {
         });
     });
 
+    it("returns 401 when parsing an empty OS success response fails", async () => {
+        validateSessionId.mockResolvedValue(session);
+        lookupPostcode.mockRejectedValue(new SyntaxError("Unexpected end of JSON input"));
+
+        const result = await createHandler().handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "M25 4RT",
+                }),
+            ),
+            context,
+        );
+
+        expect(result).toEqual({
+            statusCode: 401,
+            body: JSON.stringify("Unexpected end of JSON input"),
+        });
+        expect(mockBuildAndSendAuditEvent).toHaveBeenCalledOnce();
+        expect(mockCaptureMetric).not.toHaveBeenCalled();
+    });
+
     it("records invalid postcode error dimensions", async () => {
         await createHandler().handler(createEvent("{"), context);
 

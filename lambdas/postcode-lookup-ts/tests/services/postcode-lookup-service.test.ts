@@ -302,7 +302,7 @@ describe("PostcodeLookupService", () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("returns empty array for a 200 response with an empty body", async () => {
+    it("throws when a 200 response has an empty body", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             status: 200,
             text: vi.fn().mockResolvedValue(""),
@@ -310,9 +310,7 @@ describe("PostcodeLookupService", () => {
 
         const service = createService(mockFetch as typeof fetch);
 
-        const result = await service.lookupPostcode("SW1A 2AA", "test-client");
-
-        expect(result).toEqual([]);
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toThrow(SyntaxError);
     });
 
     it("returns empty array for a 200 response with no results", async () => {

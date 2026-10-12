@@ -90,6 +90,14 @@ export class PostcodeLookupHandler implements LambdaInterface {
                 };
             }
 
+            if (error instanceof SyntaxError) {
+                return {
+                    ...errorResponse,
+                    statusCode: 401,
+                    body: JSON.stringify(error.message),
+                };
+            }
+
             return errorResponse;
         }
     }

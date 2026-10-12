@@ -4,6 +4,7 @@ import {
     processOrdnanceSurveyBadResponse,
     processOrdnanceSurveyErrorResponse,
 } from "../../src/lib/ordnance-survey-response";
+import { ApiError } from "../../src/lib/error-handler";
 
 describe("processOrdnanceSurveySuccessResponse", () => {
     it("returns mapped canonical addresses", () => {
@@ -48,16 +49,12 @@ describe("processOrdnanceSurveySuccessResponse", () => {
         expect(result).toEqual([]);
     });
 
-    it("returns an empty array when the response body is empty", () => {
-        const result = processOrdnanceSurveySuccessResponse("");
-
-        expect(result).toEqual([]);
+    it("throws when the response body is empty", () => {
+        expect(() => processOrdnanceSurveySuccessResponse("")).toThrow(SyntaxError);
     });
 
-    it("returns an empty array when the response body contains only whitespace", () => {
-        const result = processOrdnanceSurveySuccessResponse("   ");
-
-        expect(result).toEqual([]);
+    it("throws when the response body contains only whitespace", () => {
+        expect(() => processOrdnanceSurveySuccessResponse("   ")).toThrow(SyntaxError);
     });
 
     it("ignores results without a DPA", () => {
@@ -91,20 +88,41 @@ describe("processOrdnanceSurveyBadResponse", () => {
 });
 
 describe("processOrdnanceSurveyErrorResponse", () => {
-    it("throws when the OS service returns an error", () => {
-        expect(() =>
-            processOrdnanceSurveyErrorResponse(
-                JSON.stringify({
-                    error: {
-                        statuscode: 500,
-                        message: "Unexpected error",
-                    },
-                }),
-            ),
-        ).toThrow();
+    it("throws a 404 ApiError containing the OS error message", () => {
+        const responseBody = JSON.stringify({
+            error: {
+                statuscode: 500,
+                message: "Unexpected error",
+            },
+        });
+        let thrownError: unknown;
+
+        try {
+            processOrdnanceSurveyErrorResponse(responseBody);
+        } catch (error) {
+            thrownError = error;
+        }
+
+        expect(thrownError).toBeInstanceOf(ApiError);
+        expect(thrownError).toMatchObject({
+            message: "Error processing postcode lookup: Unexpected error",
+            statusCode: 404,
+        });
     });
 
-    it("throws when the response is malformed", () => {
-        expect(() => processOrdnanceSurveyErrorResponse("{")).toThrow();
+    it("throws a 404 ApiError containing the raw body when the response is malformed", () => {
+        let thrownError: unknown;
+
+        try {
+            processOrdnanceSurveyErrorResponse("{");
+        } catch (error) {
+            thrownError = error;
+        }
+
+        expect(thrownError).toBeInstanceOf(ApiError);
+        expect(thrownError).toMatchObject({
+            message: "Error processing postcode lookup: {",
+            statusCode: 404,
+        });
     });
 });
