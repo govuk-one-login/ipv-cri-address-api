@@ -114,7 +114,6 @@ public class AddressSteps {
                         URLEncoder.encode(postcode.trim(), StandardCharsets.UTF_8)));
     }
 
-
     @Then("user receives a list of addresses containing {string}")
     public void userReceivesAListOfAddressesContaining(String postcode) throws IOException {
         String responseBody = this.testContext.getResponse().body();
