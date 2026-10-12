@@ -114,15 +114,6 @@ public class AddressSteps {
                         URLEncoder.encode(postcode.trim(), StandardCharsets.UTF_8)));
     }
 
-//    @Then("user receives a list of addresses containing {string}")
-//    public void userReceivesAListOfAddressesContaining(String postcode) throws IOException {
-//        JsonNode jsonNode = objectMapper.readTree(this.testContext.getResponse().body());
-//        assertEquals(200, this.testContext.getResponse().statusCode());
-//        assertNotNull(jsonNode.get(0).get("uprn").asText());
-//        assertEquals(postcode, jsonNode.get(0).get("postalCode").asText());
-//        addressContext.setUprn(jsonNode.get(0).get("uprn").asText());
-//        addressContext.setPostcode(jsonNode.get(0).get("postalCode").asText());
-//    }
 
     @Then("user receives a list of addresses containing {string}")
     public void userReceivesAListOfAddressesContaining(String postcode) throws IOException {
