@@ -27,14 +27,19 @@ export class PostcodeLookupService {
         }
 
         let osApiUrl: string;
-        let osApiKey: string;
 
         try {
             osApiUrl = await this.configurationService.getParameterValue(`OrdnanceSurveyAPIUrl/${clientId}`);
-
-            osApiKey = await this.configurationService.getSecretValue("OrdnanceSurveyAPIKey");
         } catch {
             throw new ApiError("The Client ID provided for this session is not supported", 400);
+        }
+
+        let osApiKey: string;
+
+        try {
+            osApiKey = await this.configurationService.getSecretValue("OrdnanceSurveyAPIKey");
+        } catch {
+            throw new ApiError("Unable to retrieve the Ordnance Survey API key", 500);
         }
 
         this.logger.info("Looking up postcode");

@@ -307,7 +307,7 @@ describe("PostcodeLookupService", () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("throws 400 when the OS API key cannot be retrieved", async () => {
+    it("throws 500 when the OS API key cannot be retrieved", async () => {
         getSecretValue.mockRejectedValue(new Error("Secret not found"));
 
         const mockFetch = vi.fn();
@@ -315,8 +315,8 @@ describe("PostcodeLookupService", () => {
         const service = createService(mockFetch as typeof fetch);
 
         await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
-            message: "The Client ID provided for this session is not supported",
-            statusCode: 400,
+            message: "Unable to retrieve the Ordnance Survey API key",
+            statusCode: 500,
         });
 
         expect(getParameterValue).toHaveBeenCalledWith("OrdnanceSurveyAPIUrl/test-client");
