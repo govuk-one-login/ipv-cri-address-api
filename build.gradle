@@ -35,13 +35,13 @@ subprojects {
 
 	configurations.configureEach {
 		resolutionStrategy {
-			force 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
+			force 'com.fasterxml.jackson.core:jackson-databind:2.22.3'
 		}
 	}
 
 	dependencies {
 		implementation platform("software.amazon.awssdk:bom:2.33.9")
-		implementation platform("com.fasterxml.jackson:jackson-bom:2.18.3")
+		implementation platform("com.fasterxml.jackson:jackson-bom:2.22.3")
 
 		implementation(libs.aspectjrt)
 		implementation(libs.bundles.otel)

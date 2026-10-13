@@ -325,7 +325,7 @@ Resources:
     Properties:
       Location:
         ApplicationId: arn:aws:serverlessrepo:eu-west-2:667736788427:applications/di-ipv-cri-oauth-common
-        SemanticVersion: 1.2.7
+        SemanticVersion: 1.5.0
       Parameters:
         AuditEventNamePrefix: IPV_ADDRESS_CRI
         BuildNotificationStackName: slack-notifications
@@ -359,6 +359,7 @@ Resources:
         LambdaDeploymentPreference: !Ref LambdaDeploymentPreference
         LambdaProvisionedConcurrentExecutions: !FindInMap [EnvironmentConfiguration, !Ref Environment, ProvisionedConcurrency]
         LambdaVpcConfiguration: di-ipv-cri-pipeline-deployment
+        LogRetention: 365
         PermissionsBoundaryArn: !If
           - UsePermissionsBoundary
           - !Ref PermissionsBoundary
@@ -461,7 +462,8 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PublicAddressApi}-public-AccessLogs
-      RetentionInDays: 30
+      RetentionInDays: 365
+
   PublicAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevBuildEnvironment
@@ -473,7 +475,8 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /aws/apigateway/${AWS::StackName}-${PrivateAddressApi}-private-AccessLogs
-      RetentionInDays: 30
+      RetentionInDays: 365
+
   PrivateAddressApiAccessLogGroupSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevBuildEnvironment
@@ -576,7 +579,8 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${PostcodeLookupFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
+
   PostcodeLookupFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevBuildEnvironment
@@ -644,7 +648,8 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
+
   AddressFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevBuildEnvironment
@@ -722,7 +727,8 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${IssueCredentialFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
+
   IssueCredentialFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevBuildEnvironment
@@ -794,7 +800,8 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${GetAddressesFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 365
+
   GetAddressesFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
     Condition: IsNotDevBuildEnvironment
