@@ -5,9 +5,7 @@ import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
 
-import { type AuditConfig, PostcodeLookupHandler } from "../src/postcode-lookup-handler";
-import type { PostcodeLookupService } from "../src/services/postcode-lookup-service";
-import type { SessionService } from "../src/services/session-service";
+import { createHandler as createPostcodeLookupHandler } from "../src/postcode-lookup-handler";
 
 vi.mock("@govuk-one-login/cri-audit", () => ({
     buildAndSendAuditEvent: vi.fn(),
@@ -24,7 +22,7 @@ const mockCaptureMetric = vi.mocked(captureMetric);
 
 const mockCaptureMetricWithDimensions = vi.mocked(captureMetricWithDimensions);
 
-describe("PostcodeLookupHandler", () => {
+describe("createHandler", () => {
     const lookupPostcode = vi.fn();
     const validateSessionId = vi.fn();
 
@@ -32,14 +30,6 @@ describe("PostcodeLookupHandler", () => {
         queueUrl: "https://example.test/audit-queue",
         componentId: "https://example.test/address",
     };
-
-    const postcodeLookupService = {
-        lookupPostcode,
-    } as unknown as PostcodeLookupService;
-
-    const sessionService = {
-        validateSessionId,
-    } as unknown as SessionService;
 
     const context = {
         functionName: "postcode-lookup",
@@ -53,8 +43,13 @@ describe("PostcodeLookupHandler", () => {
         persistentSessionId: "test-persistent-session-id",
     };
 
-    const createHandler = (): PostcodeLookupHandler =>
-        new PostcodeLookupHandler(postcodeLookupService, sessionService, auditConfig);
+    const createHandler = () => ({
+        handler: createPostcodeLookupHandler({
+            ...auditConfig,
+            lookupPostcode,
+            validateSessionId,
+        }),
+    });
 
     const createEvent = (
         body: string | null,

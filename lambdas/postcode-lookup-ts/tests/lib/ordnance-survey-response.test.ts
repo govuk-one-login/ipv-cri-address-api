@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 import {
@@ -71,6 +71,10 @@ describe("processOrdnanceSurveySuccessResponse", () => {
 
 describe("processOrdnanceSurveyBadResponse", () => {
     const loggerError = vi.spyOn(logger, "error");
+
+    beforeEach(() => {
+        loggerError.mockClear();
+    });
 
     it("returns an empty array and logs sanitized OS bad request details", () => {
         expect(

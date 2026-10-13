@@ -13,14 +13,11 @@ vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
     getSecret: mockGetSecret,
 }));
 
-import { PowertoolsConfigurationService } from "../../src/services/powertools-configuration-service";
+import { getParameterValue, getSecretValue } from "../../src/services/configuration-service";
 
-describe("PowertoolsConfigurationService", () => {
+describe("configuration functions", () => {
     const stackName = "test-stack";
     const secretPrefix = "test-secret-prefix";
-
-    const createService = (): PowertoolsConfigurationService =>
-        new PowertoolsConfigurationService(stackName, secretPrefix);
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -29,9 +26,7 @@ describe("PowertoolsConfigurationService", () => {
     it("retrieves an SSM parameter using the stack-prefixed name", async () => {
         mockGetParameter.mockResolvedValue("https://example.test/postcode");
 
-        const service = createService();
-
-        await expect(service.getParameterValue("OrdnanceSurveyAPIUrl/test-client")).resolves.toBe(
+        await expect(getParameterValue(stackName, "OrdnanceSurveyAPIUrl/test-client")).resolves.toBe(
             "https://example.test/postcode",
         );
 
@@ -43,9 +38,7 @@ describe("PowertoolsConfigurationService", () => {
     it("retrieves a secret using the configured secret prefix", async () => {
         mockGetSecret.mockResolvedValue("test-api-key");
 
-        const service = createService();
-
-        await expect(service.getSecretValue("OrdnanceSurveyAPIKey")).resolves.toBe("test-api-key");
+        await expect(getSecretValue(secretPrefix, "OrdnanceSurveyAPIKey")).resolves.toBe("test-api-key");
 
         expect(mockGetSecret).toHaveBeenCalledOnce();
 
@@ -55,9 +48,7 @@ describe("PowertoolsConfigurationService", () => {
     it("throws when the SSM parameter is missing", async () => {
         mockGetParameter.mockResolvedValue(undefined);
 
-        const service = createService();
-
-        await expect(service.getParameterValue("OrdnanceSurveyAPIUrl/test-client")).rejects.toThrow(
+        await expect(getParameterValue(stackName, "OrdnanceSurveyAPIUrl/test-client")).rejects.toThrow(
             "Missing parameter /test-stack/OrdnanceSurveyAPIUrl/test-client",
         );
 
@@ -69,9 +60,7 @@ describe("PowertoolsConfigurationService", () => {
     it("throws when the secret is missing", async () => {
         mockGetSecret.mockResolvedValue(undefined);
 
-        const service = createService();
-
-        await expect(service.getSecretValue("OrdnanceSurveyAPIKey")).rejects.toThrow(
+        await expect(getSecretValue(secretPrefix, "OrdnanceSurveyAPIKey")).rejects.toThrow(
             "Missing secret /test-secret-prefix/OrdnanceSurveyAPIKey",
         );
 
@@ -85,9 +74,7 @@ describe("PowertoolsConfigurationService", () => {
 
         mockGetParameter.mockRejectedValue(error);
 
-        const service = createService();
-
-        await expect(service.getParameterValue("OrdnanceSurveyAPIUrl/test-client")).rejects.toBe(error);
+        await expect(getParameterValue(stackName, "OrdnanceSurveyAPIUrl/test-client")).rejects.toBe(error);
     });
 
     it("propagates errors returned by Secrets Manager", async () => {
@@ -95,8 +82,6 @@ describe("PowertoolsConfigurationService", () => {
 
         mockGetSecret.mockRejectedValue(error);
 
-        const service = createService();
-
-        await expect(service.getSecretValue("OrdnanceSurveyAPIKey")).rejects.toBe(error);
+        await expect(getSecretValue(secretPrefix, "OrdnanceSurveyAPIKey")).rejects.toBe(error);
     });
 });

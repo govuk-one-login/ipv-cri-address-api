@@ -2,9 +2,9 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import type { SessionItem, UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SessionService } from "../../src/services/session-service";
+import { validateSessionId } from "../../src/services/session-service";
 
-describe("SessionService", () => {
+describe("validateSessionId", () => {
     const send = vi.fn();
 
     const mockDynamoDbClient = {
@@ -13,6 +13,12 @@ describe("SessionService", () => {
 
     const sessionTableName = "session-table";
     const currentTime = 1_700_000_000;
+    const validateSession = (sessionId: string) =>
+        validateSessionId(sessionId, {
+            dynamoDbClient: mockDynamoDbClient,
+            sessionTableName,
+            currentTime: () => currentTime,
+        });
 
     const validSession: SessionItem = {
         attemptCount: 0,
@@ -38,9 +44,7 @@ describe("SessionService", () => {
             Item: validSession,
         });
 
-        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
-
-        const result = await service.validateSessionId("test-session-id");
+        const result = await validateSession("test-session-id");
 
         expect(result).toEqual(validSession);
         expect(send).toHaveBeenCalledOnce();
@@ -49,9 +53,7 @@ describe("SessionService", () => {
     it("throws 403 when session is not found", async () => {
         send.mockResolvedValue({});
 
-        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
-
-        await expect(service.validateSessionId("missing-session-id")).rejects.toMatchObject({
+        await expect(validateSession("missing-session-id")).rejects.toMatchObject({
             message: "Session not found",
             statusCode: 403,
         });
@@ -65,9 +67,7 @@ describe("SessionService", () => {
             },
         });
 
-        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
-
-        await expect(service.validateSessionId("test-session-id")).rejects.toMatchObject({
+        await expect(validateSession("test-session-id")).rejects.toMatchObject({
             message: "Session expired",
             statusCode: 403,
         });
@@ -81,9 +81,7 @@ describe("SessionService", () => {
             },
         });
 
-        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
-
-        await expect(service.validateSessionId("test-session-id")).rejects.toMatchObject({
+        await expect(validateSession("test-session-id")).rejects.toMatchObject({
             message: "The Client ID provided for this session is not supported",
             statusCode: 400,
         });
@@ -92,9 +90,7 @@ describe("SessionService", () => {
     it("propagates DynamoDB retrieval failures", async () => {
         send.mockRejectedValue(new Error("DynamoDB unavailable"));
 
-        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
-
-        await expect(service.validateSessionId("test-session-id")).rejects.toThrow(
+        await expect(validateSession("test-session-id")).rejects.toThrow(
             `Error retrieving ${sessionTableName} item with sessionId: test-session-id`,
         );
     });

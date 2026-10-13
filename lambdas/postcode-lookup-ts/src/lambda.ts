@@ -1,8 +1,8 @@
 import { DynamoDbClient } from "./lib/dynamo-db-client";
-import { PostcodeLookupHandler } from "./postcode-lookup-handler";
-import { PostcodeLookupService } from "./services/postcode-lookup-service";
-import { SessionService } from "./services/session-service";
-import { PowertoolsConfigurationService } from "./services/powertools-configuration-service";
+import { createHandler } from "./postcode-lookup-handler";
+import { getParameterValue, getSecretValue } from "./services/configuration-service";
+import { lookupPostcode } from "./services/postcode-lookup-service";
+import { validateSessionId } from "./services/session-service";
 const sessionTableName = process.env.SESSION_TABLE;
 
 const stackName = process.env.AWS_STACK_NAME;
@@ -33,15 +33,16 @@ if (!componentId) {
     throw new Error("VERIFIABLE_CREDENTIAL_ISSUER environment variable is required");
 }
 
-const configurationService = new PowertoolsConfigurationService(stackName, secretPrefix);
-
-const sessionService = new SessionService(DynamoDbClient, sessionTableName);
-
-const postcodeLookupService = new PostcodeLookupService(configurationService);
-
-const handlerClass = new PostcodeLookupHandler(postcodeLookupService, sessionService, {
+export const lambdaHandler = createHandler({
     queueUrl: auditQueueUrl,
     componentId,
+    validateSessionId: (sessionId) =>
+        validateSessionId(sessionId, { dynamoDbClient: DynamoDbClient, sessionTableName }),
+    lookupPostcode: (postcode, clientId) =>
+        lookupPostcode(postcode, clientId, {
+            stackName,
+            secretPrefix,
+            getParameterValue,
+            getSecretValue,
+        }),
 });
-
-export const lambdaHandler = handlerClass.handler.bind(handlerClass);

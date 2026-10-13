@@ -1,20 +1,14 @@
 import { logger } from "@govuk-one-login/cri-logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ConfigurationService } from "../../src/services/configuration-service";
-import { PostcodeLookupService } from "../../src/services/postcode-lookup-service";
+import { lookupPostcode as performPostcodeLookup } from "../../src/services/postcode-lookup-service";
 
 const TEST_URL = "https://test.os.uk/postcode";
 const TEST_API_KEY = "mock-api-key";
 
-describe("PostcodeLookupService", () => {
+describe("lookupPostcode", () => {
     const getParameterValue = vi.fn();
     const getSecretValue = vi.fn();
-
-    const mockConfigurationService = {
-        getParameterValue,
-        getSecretValue,
-    } as unknown as ConfigurationService;
 
     const loggerError = vi.spyOn(logger, "error");
 
@@ -25,8 +19,16 @@ describe("PostcodeLookupService", () => {
         getSecretValue.mockResolvedValue(TEST_API_KEY);
     });
 
-    const createService = (fetchFn: typeof fetch): PostcodeLookupService =>
-        new PostcodeLookupService(mockConfigurationService, fetchFn);
+    const createService = (fetchFn: typeof fetch) => ({
+        lookupPostcode: (postcode: string, clientId: string) =>
+            performPostcodeLookup(postcode, clientId, {
+                stackName: "test-stack",
+                secretPrefix: "test-secret-prefix",
+                getParameterValue: async (_stackName, parameterName) => getParameterValue(parameterName),
+                getSecretValue: async (_secretPrefix, secretName) => getSecretValue(secretName),
+                fetchFn,
+            }),
+    });
 
     it("returns empty array for 404 responses", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
