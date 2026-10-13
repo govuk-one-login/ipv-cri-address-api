@@ -67,7 +67,7 @@ export class PostcodeLookupService {
                 return processOrdnanceSurveySuccessResponse(responseBody);
 
             case 400:
-                return processOrdnanceSurveyBadResponse(responseBody);
+                return processOrdnanceSurveyBadResponse(responseBody, this.logger);
 
             case 404:
                 return [];

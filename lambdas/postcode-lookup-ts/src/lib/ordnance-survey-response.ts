@@ -1,6 +1,10 @@
+import type { Logger } from "@aws-lambda-powertools/logger";
 import { CanonicalAddress } from "../types/canonical-address";
-import { Dpa, OrdnanceSurveyPostcodeResponse, OrdnanceSurveyPostcodeError } from "../types/ordnance-survey";
+import { Dpa, OrdnanceSurveyPostcodeError, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey";
 import { ApiError } from "../lib/error-handler";
+import { sanitize } from "./pii-postcode-masker";
+
+const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     uprn: dpa.UPRN,
@@ -18,12 +22,33 @@ export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     addressCountry: "GB",
 });
 
-export const processOrdnanceSurveyBadResponse = (responseBody: string): [] => {
+export const processOrdnanceSurveyBadResponse = (responseBody: string, logger: Pick<Logger, "error">): [] => {
+    let parsedResponse: unknown;
+
     try {
-        JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
+        parsedResponse = JSON.parse(responseBody);
     } catch {
+        logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitize(responseBody)}`);
         return [];
     }
+
+    if (
+        typeof parsedResponse === "object" &&
+        parsedResponse !== null &&
+        "error" in parsedResponse &&
+        typeof parsedResponse.error === "object" &&
+        parsedResponse.error !== null &&
+        "statuscode" in parsedResponse.error &&
+        typeof parsedResponse.error.statuscode === "number" &&
+        "message" in parsedResponse.error &&
+        typeof parsedResponse.error.message === "string"
+    ) {
+        const error = parsedResponse.error;
+        logger.error(`${LOG_RESPONSE_PREFIX}status ${error.statuscode}: ${sanitize(error.message)}`);
+        return [];
+    }
+
+    logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitize(responseBody)}`);
     return [];
 };
 

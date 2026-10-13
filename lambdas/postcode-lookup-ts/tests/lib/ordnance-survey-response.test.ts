@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
     processOrdnanceSurveySuccessResponse,
     processOrdnanceSurveyBadResponse,
@@ -69,21 +69,35 @@ describe("processOrdnanceSurveySuccessResponse", () => {
 });
 
 describe("processOrdnanceSurveyBadResponse", () => {
-    it("returns an empty array for OS bad requests", () => {
+    const logger = {
+        error: vi.fn(),
+    };
+
+    it("returns an empty array and logs sanitized OS bad request details", () => {
         expect(
             processOrdnanceSurveyBadResponse(
                 JSON.stringify({
                     error: {
                         statuscode: 400,
-                        message: "Bad request",
+                        message:
+                            "Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ",
                     },
                 }),
+                logger,
             ),
         ).toEqual([]);
+        expect(logger.error).toHaveBeenCalledWith(
+            "Ordnance Survey Responded with status 400: Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was *******",
+        );
     });
 
-    it("returns an empty array for malformed responses", () => {
-        expect(processOrdnanceSurveyBadResponse("{")).toEqual([]);
+    it.each([
+        { body: "invalid response for SW1A 1AA", sanitizedBody: "invalid response for ********" },
+        { body: "", sanitizedBody: "" },
+    ])("returns an empty array and logs sanitized unknown errors for body %j", ({ body, sanitizedBody }) => {
+        logger.error.mockClear();
+        expect(processOrdnanceSurveyBadResponse(body, logger)).toEqual([]);
+        expect(logger.error).toHaveBeenCalledWith(`Ordnance Survey Responded with unknown error: ${sanitizedBody}`);
     });
 });
 

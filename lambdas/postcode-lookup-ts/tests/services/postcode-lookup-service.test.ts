@@ -18,6 +18,7 @@ describe("PostcodeLookupService", () => {
 
     const mockLogger = {
         info: vi.fn(),
+        error: vi.fn(),
     } as unknown as Logger;
 
     beforeEach(() => {
@@ -43,14 +44,15 @@ describe("PostcodeLookupService", () => {
         expect(result).toEqual([]);
     });
 
-    it("returns empty array for 400 responses", async () => {
+    it("returns empty array and logs sanitized details for 400 responses", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             status: 400,
             text: vi.fn().mockResolvedValue(
                 JSON.stringify({
                     error: {
                         statuscode: 400,
-                        message: "Bad request",
+                        message:
+                            "Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ",
                     },
                 }),
             ),
@@ -61,6 +63,26 @@ describe("PostcodeLookupService", () => {
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
         expect(result).toEqual([]);
+        expect(mockLogger.error).toHaveBeenCalledWith(
+            "Ordnance Survey Responded with status 400: Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was *******",
+        );
+    });
+
+    it.each([
+        { body: "invalid response for SW1A 1AA", sanitizedBody: "invalid response for ********" },
+        { body: "", sanitizedBody: "" },
+    ])("returns empty array and logs unknown error for 400 body %j", async ({ body, sanitizedBody }) => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 400,
+            text: vi.fn().mockResolvedValue(body),
+        });
+
+        const service = createService(mockFetch as typeof fetch);
+
+        const result = await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(result).toEqual([]);
+        expect(mockLogger.error).toHaveBeenCalledWith(`Ordnance Survey Responded with unknown error: ${sanitizedBody}`);
     });
 
     it("returns mapped addresses for 200 responses", async () => {
