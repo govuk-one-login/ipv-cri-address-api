@@ -1,12 +1,12 @@
 import { APIGatewayProxyEventHeaders } from "aws-lambda";
 
-import { ApiError } from "./error-handler";
+import { CriError } from "@govuk-one-login/cri-error-response";
 
 export const getSessionId = (headers: APIGatewayProxyEventHeaders) => {
     const sessionId = headers["session_id"];
 
     if (!sessionId) {
-        throw new ApiError("Missing header: session_id is required", 400);
+        throw new CriError(400, "Missing header: session_id is required");
     }
 
     return sessionId;

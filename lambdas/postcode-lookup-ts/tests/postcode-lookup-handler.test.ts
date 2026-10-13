@@ -2,10 +2,10 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
 
 import { type AuditConfig, PostcodeLookupHandler } from "../src/postcode-lookup-handler";
-import { ApiError } from "../src/lib/error-handler";
 import type { PostcodeLookupService } from "../src/services/postcode-lookup-service";
 import type { SessionService } from "../src/services/session-service";
 
@@ -84,6 +84,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify("Missing postcode in request body."),
         });
 
@@ -97,6 +98,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify("Failed to parse postcode from request body"),
         });
 
@@ -110,6 +112,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify("Missing postcode in request body."),
         });
 
@@ -130,6 +133,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify("Missing postcode in request body."),
         });
 
@@ -151,6 +155,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: "Missing header: session_id is required",
             }),
@@ -311,7 +316,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 403 when session is not found", async () => {
-        validateSessionId.mockRejectedValue(new ApiError("Session not found", 403));
+        validateSessionId.mockRejectedValue(new CriError(403, "Session not found"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -324,6 +329,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 403,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: "Session not found",
             }),
@@ -334,7 +340,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 403 when session has expired", async () => {
-        validateSessionId.mockRejectedValue(new ApiError("Session expired", 403));
+        validateSessionId.mockRejectedValue(new CriError(403, "Session expired"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -347,6 +353,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 403,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: "Session expired",
             }),
@@ -362,7 +369,7 @@ describe("PostcodeLookupHandler", () => {
             clientId: "unsupported-client",
         });
 
-        lookupPostcode.mockRejectedValue(new ApiError("The Client ID provided for this session is not supported", 400));
+        lookupPostcode.mockRejectedValue(new CriError(400, "The Client ID provided for this session is not supported"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -375,6 +382,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 400,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: "The Client ID provided for this session is not supported",
             }),
@@ -386,7 +394,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("returns 401 when session validation fails", async () => {
-        validateSessionId.mockRejectedValue(new ApiError("Any other exception", 401));
+        validateSessionId.mockRejectedValue(new CriError(401, "Any other exception"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -399,6 +407,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 401,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: "Any other exception",
             }),
@@ -409,7 +418,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("records lookup server dimensions for an unexpected error", async () => {
-        validateSessionId.mockRejectedValue(new ApiError("Any other exception", 401));
+        validateSessionId.mockRejectedValue(new CriError(401, "Any other exception"));
 
         await createHandler().handler(
             createEvent(
@@ -455,7 +464,7 @@ describe("PostcodeLookupHandler", () => {
     it("returns 408 when postcode lookup times out", async () => {
         validateSessionId.mockResolvedValue(session);
 
-        lookupPostcode.mockRejectedValue(new ApiError("Error Connection Timeout", 408));
+        lookupPostcode.mockRejectedValue(new CriError(408, "Error Connection Timeout"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -468,6 +477,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 408,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: "Error Connection Timeout",
             }),
@@ -481,7 +491,7 @@ describe("PostcodeLookupHandler", () => {
     it("returns 404 when postcode lookup processing fails", async () => {
         validateSessionId.mockResolvedValue(session);
 
-        lookupPostcode.mockRejectedValue(new ApiError("Error sending request for postcode lookup", 404));
+        lookupPostcode.mockRejectedValue(new CriError(404, "Error sending request for postcode lookup"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -494,6 +504,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 404,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify("Error sending request for postcode lookup"),
         });
 
@@ -516,8 +527,9 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 500,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                message: "Unexpected failure",
+                message: "Internal server error",
             }),
         });
 
@@ -545,6 +557,7 @@ describe("PostcodeLookupHandler", () => {
 
         expect(result).toEqual({
             statusCode: 401,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify("Unexpected end of JSON input"),
         });
         expect(mockBuildAndSendAuditEvent).toHaveBeenCalledOnce();
@@ -561,7 +574,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("records session-not-found error dimensions", async () => {
-        validateSessionId.mockRejectedValue(new ApiError("Session not found", 403));
+        validateSessionId.mockRejectedValue(new CriError(403, "Session not found"));
 
         await createHandler().handler(
             createEvent(
@@ -579,7 +592,7 @@ describe("PostcodeLookupHandler", () => {
     });
 
     it("records session-expired error dimensions", async () => {
-        validateSessionId.mockRejectedValue(new ApiError("Session expired", 403));
+        validateSessionId.mockRejectedValue(new CriError(403, "Session expired"));
 
         await createHandler().handler(
             createEvent(
@@ -599,7 +612,7 @@ describe("PostcodeLookupHandler", () => {
     it("records timeout error dimensions", async () => {
         validateSessionId.mockResolvedValue(session);
 
-        lookupPostcode.mockRejectedValue(new ApiError("Error Connection Timeout", 408));
+        lookupPostcode.mockRejectedValue(new CriError(408, "Error Connection Timeout"));
 
         await createHandler().handler(
             createEvent(
@@ -619,7 +632,7 @@ describe("PostcodeLookupHandler", () => {
     it("records lookup processing error dimensions", async () => {
         validateSessionId.mockResolvedValue(session);
 
-        lookupPostcode.mockRejectedValue(new ApiError("Error sending request for postcode lookup", 404));
+        lookupPostcode.mockRejectedValue(new CriError(404, "Error sending request for postcode lookup"));
 
         await createHandler().handler(
             createEvent(
@@ -642,7 +655,7 @@ describe("PostcodeLookupHandler", () => {
             clientId: "unsupported-client",
         });
 
-        lookupPostcode.mockRejectedValue(new ApiError("The Client ID provided for this session is not supported", 400));
+        lookupPostcode.mockRejectedValue(new CriError(400, "The Client ID provided for this session is not supported"));
 
         await createHandler().handler(
             createEvent(
@@ -662,7 +675,7 @@ describe("PostcodeLookupHandler", () => {
     it("does not send the response audit event when lookup fails", async () => {
         validateSessionId.mockResolvedValue(session);
 
-        lookupPostcode.mockRejectedValue(new ApiError("Error sending request for postcode lookup", 404));
+        lookupPostcode.mockRejectedValue(new CriError(404, "Error sending request for postcode lookup"));
 
         await createHandler().handler(
             createEvent(

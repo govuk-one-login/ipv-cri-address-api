@@ -1,18 +1,16 @@
 import type { LambdaInterface } from "@aws-lambda-powertools/commons/types";
-import { Logger } from "@aws-lambda-powertools/logger";
 import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
+import { CriError, formatErrorResponse } from "@govuk-one-login/cri-error-response";
+import { logger } from "@govuk-one-login/cri-logger";
 import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
 
-import { ApiError, handleError } from "./lib/error-handler";
 import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics";
 import { getSessionId } from "./lib/session-header";
 import { PostcodeLookupService } from "./services/postcode-lookup-service";
 import { SessionService } from "./services/session-service";
 import type { PostcodeRequest } from "./types/postcode-request";
-
-const logger = new Logger();
 
 const AUDIT_EVENT_TYPE = {
     REQUEST_SENT: "REQUEST_SENT",
@@ -34,7 +32,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
         private readonly auditConfig: AuditConfig,
     ) {}
 
-    public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+    public async handler(event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> {
         try {
             const postcode = this.getPostcodeFromRequest(event);
             const sessionId = getSessionId(event.headers);
@@ -69,10 +67,10 @@ export class PostcodeLookupHandler implements LambdaInterface {
         } catch (error: unknown) {
             captureMetricWithDimensions(POSTCODE_LOOKUP_ERROR, getPostcodeErrorDimensions(error));
 
-            const errorResponse = handleError(logger, error, `Error in ${context.functionName}`);
+            const errorResponse = formatErrorResponse(error);
 
             if (
-                error instanceof ApiError &&
+                error instanceof CriError &&
                 error.statusCode === 400 &&
                 (error.message === "Missing postcode in request body." ||
                     error.message === "Failed to parse postcode from request body")
@@ -83,7 +81,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
                 };
             }
 
-            if (error instanceof ApiError && error.statusCode === 404) {
+            if (error instanceof CriError && error.statusCode === 404) {
                 return {
                     ...errorResponse,
                     body: JSON.stringify(error.message),
@@ -104,7 +102,7 @@ export class PostcodeLookupHandler implements LambdaInterface {
 
     private getPostcodeFromRequest(event: APIGatewayProxyEvent): string {
         if (!event.body) {
-            throw new ApiError("Missing postcode in request body.", 400);
+            throw new CriError(400, "Missing postcode in request body.");
         }
 
         let request: PostcodeRequest;
@@ -112,11 +110,11 @@ export class PostcodeLookupHandler implements LambdaInterface {
         try {
             request = JSON.parse(event.body) as PostcodeRequest;
         } catch {
-            throw new ApiError("Failed to parse postcode from request body", 400);
+            throw new CriError(400, "Failed to parse postcode from request body");
         }
 
         if (!request.postcode?.trim()) {
-            throw new ApiError("Missing postcode in request body.", 400);
+            throw new CriError(400, "Missing postcode in request body.");
         }
 
         return request.postcode;

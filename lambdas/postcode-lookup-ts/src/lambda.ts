@@ -1,12 +1,8 @@
-import { Logger } from "@aws-lambda-powertools/logger";
-
 import { DynamoDbClient } from "./lib/dynamo-db-client";
 import { PostcodeLookupHandler } from "./postcode-lookup-handler";
 import { PostcodeLookupService } from "./services/postcode-lookup-service";
 import { SessionService } from "./services/session-service";
 import { PowertoolsConfigurationService } from "./services/powertools-configuration-service";
-const logger = new Logger();
-
 const sessionTableName = process.env.SESSION_TABLE;
 
 const stackName = process.env.AWS_STACK_NAME;
@@ -39,9 +35,9 @@ if (!componentId) {
 
 const configurationService = new PowertoolsConfigurationService(stackName, secretPrefix);
 
-const sessionService = new SessionService(DynamoDbClient, logger, sessionTableName);
+const sessionService = new SessionService(DynamoDbClient, sessionTableName);
 
-const postcodeLookupService = new PostcodeLookupService(logger, configurationService);
+const postcodeLookupService = new PostcodeLookupService(configurationService);
 
 const handlerClass = new PostcodeLookupHandler(postcodeLookupService, sessionService, {
     queueUrl: auditQueueUrl,

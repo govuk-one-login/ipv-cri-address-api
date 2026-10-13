@@ -1,16 +1,16 @@
-import { Logger } from "@aws-lambda-powertools/logger";
+import { CriError } from "@govuk-one-login/cri-error-response";
+import { logger } from "@govuk-one-login/cri-logger";
+
 import { CanonicalAddress } from "../types/canonical-address";
 import {
     processOrdnanceSurveySuccessResponse,
     processOrdnanceSurveyBadResponse,
     processOrdnanceSurveyErrorResponse,
 } from "../lib/ordnance-survey-response";
-import { ApiError } from "../lib/error-handler";
 import type { ConfigurationService } from "./configuration-service";
 
 export class PostcodeLookupService {
     constructor(
-        private readonly logger: Logger,
         private readonly configurationService: ConfigurationService,
         private readonly fetchFn: typeof fetch = fetch,
     ) {}
@@ -23,7 +23,7 @@ export class PostcodeLookupService {
     }
     public async lookupPostcode(postcode: string, clientId: string): Promise<CanonicalAddress[]> {
         if (!postcode?.trim()) {
-            throw new ApiError("Postcode must not be null or blank", 400);
+            throw new CriError(400, "Postcode must not be null or blank");
         }
 
         let osApiUrl: string;
@@ -31,7 +31,7 @@ export class PostcodeLookupService {
         try {
             osApiUrl = await this.configurationService.getParameterValue(`OrdnanceSurveyAPIUrl/${clientId}`);
         } catch {
-            throw new ApiError("The Client ID provided for this session is not supported", 400);
+            throw new CriError(400, "The Client ID provided for this session is not supported");
         }
 
         let osApiKey: string;
@@ -39,10 +39,10 @@ export class PostcodeLookupService {
         try {
             osApiKey = await this.configurationService.getSecretValue("OrdnanceSurveyAPIKey");
         } catch {
-            throw new ApiError("Unable to retrieve the Ordnance Survey API key", 500);
+            throw new CriError(500, "Unable to retrieve the Ordnance Survey API key");
         }
 
-        this.logger.info("Looking up postcode");
+        logger.info("Looking up postcode");
 
         let response: Response;
 
@@ -51,7 +51,7 @@ export class PostcodeLookupService {
         try {
             lookupUrl = this.buildLookupUrl(postcode, osApiUrl);
         } catch {
-            throw new ApiError("Error building URI for postcode lookup", 400);
+            throw new CriError(400, "Error building URI for postcode lookup");
         }
 
         try {
@@ -62,7 +62,7 @@ export class PostcodeLookupService {
                 },
             });
         } catch {
-            throw new ApiError("Error sending request for postcode lookup", 404);
+            throw new CriError(404, "Error sending request for postcode lookup");
         }
 
         const responseBody = await response.text();
@@ -72,7 +72,7 @@ export class PostcodeLookupService {
                 return processOrdnanceSurveySuccessResponse(responseBody);
 
             case 400:
-                return processOrdnanceSurveyBadResponse(responseBody, this.logger);
+                return processOrdnanceSurveyBadResponse(responseBody);
 
             case 404:
                 return [];

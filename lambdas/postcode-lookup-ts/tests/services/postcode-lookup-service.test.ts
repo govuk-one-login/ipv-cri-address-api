@@ -1,4 +1,4 @@
-import { Logger } from "@aws-lambda-powertools/logger";
+import { logger } from "@govuk-one-login/cri-logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ConfigurationService } from "../../src/services/configuration-service";
@@ -16,10 +16,7 @@ describe("PostcodeLookupService", () => {
         getSecretValue,
     } as unknown as ConfigurationService;
 
-    const mockLogger = {
-        info: vi.fn(),
-        error: vi.fn(),
-    } as unknown as Logger;
+    const loggerError = vi.spyOn(logger, "error");
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -29,7 +26,7 @@ describe("PostcodeLookupService", () => {
     });
 
     const createService = (fetchFn: typeof fetch): PostcodeLookupService =>
-        new PostcodeLookupService(mockLogger, mockConfigurationService, fetchFn);
+        new PostcodeLookupService(mockConfigurationService, fetchFn);
 
     it("returns empty array for 404 responses", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
@@ -63,7 +60,7 @@ describe("PostcodeLookupService", () => {
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
         expect(result).toEqual([]);
-        expect(mockLogger.error).toHaveBeenCalledWith(
+        expect(loggerError).toHaveBeenCalledWith(
             "Ordnance Survey Responded with status 400: Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was *******",
         );
     });
@@ -82,7 +79,7 @@ describe("PostcodeLookupService", () => {
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
         expect(result).toEqual([]);
-        expect(mockLogger.error).toHaveBeenCalledWith(`Ordnance Survey Responded with unknown error: ${sanitizedBody}`);
+        expect(loggerError).toHaveBeenCalledWith(`Ordnance Survey Responded with unknown error: ${sanitizedBody}`);
     });
 
     it("returns mapped addresses for 200 responses", async () => {

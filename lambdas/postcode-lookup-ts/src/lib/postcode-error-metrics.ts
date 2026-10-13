@@ -1,4 +1,4 @@
-import { ApiError } from "./error-handler";
+import { CriError } from "@govuk-one-login/cri-error-response";
 import { cleanMetricValue } from "./metric-value";
 
 export const POSTCODE_LOOKUP_ERROR = "postcode_lookup_error";
@@ -8,7 +8,7 @@ export const POSTCODE_LOOKUP_ERROR_TYPE = "postcode_lookup_error_type";
 export const POSTCODE_LOOKUP_ERROR_MESSAGE = "postcode_lookup_error_message";
 
 export const getPostcodeErrorType = (error: unknown): string => {
-    if (!(error instanceof ApiError)) {
+    if (!(error instanceof CriError)) {
         return "lookup_server";
     }
 

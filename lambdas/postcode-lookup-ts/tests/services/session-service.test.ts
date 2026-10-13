@@ -1,9 +1,8 @@
-import { Logger } from "@aws-lambda-powertools/logger";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
+import type { SessionItem, UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SessionService } from "../../src/services/session-service";
-import { SessionItem } from "../../src/types/session";
 
 describe("SessionService", () => {
     const send = vi.fn();
@@ -12,23 +11,22 @@ describe("SessionService", () => {
         send,
     } as unknown as DynamoDBDocument;
 
-    const mockLogger = {
-        warn: vi.fn(),
-        error: vi.fn(),
-    } as unknown as Logger;
-
     const sessionTableName = "session-table";
     const currentTime = 1_700_000_000;
 
     const validSession: SessionItem = {
-        expiryDate: currentTime + 60,
+        attemptCount: 0,
+        createdDate: (currentTime * 1000) as UnixMillisecondsTimestamp,
+        expiryDate: (currentTime + 60) as UnixSecondsTimestamp,
         sessionId: "test-session-id",
         clientId: "test-client",
         clientSessionId: "test-client-session-id",
-        authorizationCodeExpiryDate: currentTime + 60,
         redirectUri: "https://example.test/callback",
+        state: "test-state",
+        subject: "test-subject",
+        authorizationCodeExpiryDate: (currentTime + 60) as UnixSecondsTimestamp,
         accessToken: "mock-access-token",
-        accessTokenExpiryDate: currentTime + 60,
+        accessTokenExpiryDate: (currentTime + 60) as UnixSecondsTimestamp,
     };
 
     beforeEach(() => {
@@ -40,7 +38,7 @@ describe("SessionService", () => {
             Item: validSession,
         });
 
-        const service = new SessionService(mockDynamoDbClient, mockLogger, sessionTableName, () => currentTime);
+        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
 
         const result = await service.validateSessionId("test-session-id");
 
@@ -51,7 +49,7 @@ describe("SessionService", () => {
     it("throws 403 when session is not found", async () => {
         send.mockResolvedValue({});
 
-        const service = new SessionService(mockDynamoDbClient, mockLogger, sessionTableName, () => currentTime);
+        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
 
         await expect(service.validateSessionId("missing-session-id")).rejects.toMatchObject({
             message: "Session not found",
@@ -67,7 +65,7 @@ describe("SessionService", () => {
             },
         });
 
-        const service = new SessionService(mockDynamoDbClient, mockLogger, sessionTableName, () => currentTime);
+        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
 
         await expect(service.validateSessionId("test-session-id")).rejects.toMatchObject({
             message: "Session expired",
@@ -83,7 +81,7 @@ describe("SessionService", () => {
             },
         });
 
-        const service = new SessionService(mockDynamoDbClient, mockLogger, sessionTableName, () => currentTime);
+        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
 
         await expect(service.validateSessionId("test-session-id")).rejects.toMatchObject({
             message: "The Client ID provided for this session is not supported",
@@ -94,7 +92,7 @@ describe("SessionService", () => {
     it("propagates DynamoDB retrieval failures", async () => {
         send.mockRejectedValue(new Error("DynamoDB unavailable"));
 
-        const service = new SessionService(mockDynamoDbClient, mockLogger, sessionTableName, () => currentTime);
+        const service = new SessionService(mockDynamoDbClient, sessionTableName, () => currentTime);
 
         await expect(service.validateSessionId("test-session-id")).rejects.toThrow(
             `Error retrieving ${sessionTableName} item with sessionId: test-session-id`,

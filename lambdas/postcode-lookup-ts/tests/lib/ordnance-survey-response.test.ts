@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
+import { CriError } from "@govuk-one-login/cri-error-response";
+import { logger } from "@govuk-one-login/cri-logger";
 import {
     processOrdnanceSurveySuccessResponse,
     processOrdnanceSurveyBadResponse,
     processOrdnanceSurveyErrorResponse,
 } from "../../src/lib/ordnance-survey-response";
-import { ApiError } from "../../src/lib/error-handler";
 
 describe("processOrdnanceSurveySuccessResponse", () => {
     it("returns mapped canonical addresses", () => {
@@ -69,9 +70,7 @@ describe("processOrdnanceSurveySuccessResponse", () => {
 });
 
 describe("processOrdnanceSurveyBadResponse", () => {
-    const logger = {
-        error: vi.fn(),
-    };
+    const loggerError = vi.spyOn(logger, "error");
 
     it("returns an empty array and logs sanitized OS bad request details", () => {
         expect(
@@ -83,10 +82,9 @@ describe("processOrdnanceSurveyBadResponse", () => {
                             "Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was 5WF12LZ",
                     },
                 }),
-                logger,
             ),
         ).toEqual([]);
-        expect(logger.error).toHaveBeenCalledWith(
+        expect(loggerError).toHaveBeenCalledWith(
             "Ordnance Survey Responded with status 400: Requested postcode must contain a minimum of the sector plus 1 digit of the district e.g. SO1. Requested postcode was *******",
         );
     });
@@ -95,14 +93,13 @@ describe("processOrdnanceSurveyBadResponse", () => {
         { body: "invalid response for SW1A 1AA", sanitizedBody: "invalid response for ********" },
         { body: "", sanitizedBody: "" },
     ])("returns an empty array and logs sanitized unknown errors for body %j", ({ body, sanitizedBody }) => {
-        logger.error.mockClear();
-        expect(processOrdnanceSurveyBadResponse(body, logger)).toEqual([]);
-        expect(logger.error).toHaveBeenCalledWith(`Ordnance Survey Responded with unknown error: ${sanitizedBody}`);
+        expect(processOrdnanceSurveyBadResponse(body)).toEqual([]);
+        expect(loggerError).toHaveBeenCalledWith(`Ordnance Survey Responded with unknown error: ${sanitizedBody}`);
     });
 });
 
 describe("processOrdnanceSurveyErrorResponse", () => {
-    it("throws a 404 ApiError containing the OS error message", () => {
+    it("throws a 404 CriError containing the OS error message", () => {
         const responseBody = JSON.stringify({
             error: {
                 statuscode: 500,
@@ -117,14 +114,14 @@ describe("processOrdnanceSurveyErrorResponse", () => {
             thrownError = error;
         }
 
-        expect(thrownError).toBeInstanceOf(ApiError);
+        expect(thrownError).toBeInstanceOf(CriError);
         expect(thrownError).toMatchObject({
             message: "Error processing postcode lookup: Unexpected error",
             statusCode: 404,
         });
     });
 
-    it("throws a 404 ApiError containing the raw body when the response is malformed", () => {
+    it("throws a 404 CriError containing the raw body when the response is malformed", () => {
         let thrownError: unknown;
 
         try {
@@ -133,7 +130,7 @@ describe("processOrdnanceSurveyErrorResponse", () => {
             thrownError = error;
         }
 
-        expect(thrownError).toBeInstanceOf(ApiError);
+        expect(thrownError).toBeInstanceOf(CriError);
         expect(thrownError).toMatchObject({
             message: "Error processing postcode lookup: {",
             statusCode: 404,

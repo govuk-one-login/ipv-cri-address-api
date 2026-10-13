@@ -1,7 +1,8 @@
-import type { Logger } from "@aws-lambda-powertools/logger";
+import { CriError } from "@govuk-one-login/cri-error-response";
+import { logger } from "@govuk-one-login/cri-logger";
+
 import { CanonicalAddress } from "../types/canonical-address";
 import { Dpa, OrdnanceSurveyPostcodeError, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey";
-import { ApiError } from "../lib/error-handler";
 import { sanitize } from "./pii-postcode-masker";
 
 const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
@@ -24,7 +25,7 @@ export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     addressCountry: "GB",
 });
 
-export const processOrdnanceSurveyBadResponse = (responseBody: string, logger: Pick<Logger, "error">): [] => {
+export const processOrdnanceSurveyBadResponse = (responseBody: string): [] => {
     let parsedResponse: unknown;
 
     try {
@@ -49,13 +50,13 @@ export const processOrdnanceSurveyErrorResponse = (responseBody: string): never 
     try {
         const error = JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
 
-        throw new ApiError(`Error processing postcode lookup: ${error.error.message}`, 404);
+        throw new CriError(404, `Error processing postcode lookup: ${error.error.message}`);
     } catch (error) {
-        if (error instanceof ApiError) {
+        if (error instanceof CriError) {
             throw error;
         }
 
-        throw new ApiError(`Error processing postcode lookup: ${responseBody}`, 404);
+        throw new CriError(404, `Error processing postcode lookup: ${responseBody}`);
     }
 };
 
