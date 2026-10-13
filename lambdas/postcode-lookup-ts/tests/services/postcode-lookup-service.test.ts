@@ -1,6 +1,11 @@
 import { logger } from "@govuk-one-login/cri-logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../../src/services/configuration-service", () => ({
+    getParameterValue: vi.fn(),
+    getSecretValue: vi.fn(),
+}));
+
 import { lookupPostcode as performPostcodeLookup } from "../../src/services/postcode-lookup-service";
 
 const TEST_URL = "https://test.os.uk/postcode";
