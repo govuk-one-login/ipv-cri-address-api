@@ -6,6 +6,8 @@ import { sanitize } from "./pii-postcode-masker";
 
 const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
     uprn: dpa.UPRN,
     organisationName: dpa.ORGANISATION_NAME,
@@ -32,18 +34,9 @@ export const processOrdnanceSurveyBadResponse = (responseBody: string, logger: P
         return [];
     }
 
-    if (
-        typeof parsedResponse === "object" &&
-        parsedResponse !== null &&
-        "error" in parsedResponse &&
-        typeof parsedResponse.error === "object" &&
-        parsedResponse.error !== null &&
-        "statuscode" in parsedResponse.error &&
-        typeof parsedResponse.error.statuscode === "number" &&
-        "message" in parsedResponse.error &&
-        typeof parsedResponse.error.message === "string"
-    ) {
-        const error = parsedResponse.error;
+    const error = isRecord(parsedResponse) && isRecord(parsedResponse.error) ? parsedResponse.error : undefined;
+
+    if (typeof error?.statuscode === "number" && typeof error.message === "string") {
         logger.error(`${LOG_RESPONSE_PREFIX}status ${error.statuscode}: ${sanitize(error.message)}`);
         return [];
     }
