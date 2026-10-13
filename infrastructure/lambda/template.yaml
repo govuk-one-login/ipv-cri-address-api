@@ -6,6 +6,7 @@ Metadata:
     config:
       ignore_checks:
         - W8003 #For UseOAuthCommonLambdas & UseOAuthCommonTables condition - Can be removed one migration complete.
+
 Parameters:
   Environment:
     Type: String
@@ -52,6 +53,7 @@ Parameters:
     Description: "The stack containing the TXMA infrastructure"
     Type: String
     Default: txma-infrastructure
+
 Conditions:
   UseSecretPrefix: !Not [!Equals [!Ref SecretPrefix, "none"]]
   UsePermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, "none"]]
@@ -94,6 +96,7 @@ Conditions:
       !Condition IsNotDevEnvironment,
       !Equals [!Ref DeployAlarmsInDevEnvironment, "true"],
     ]
+
 Globals:
   Function:
     VpcConfig:
@@ -200,6 +203,7 @@ Globals:
         "responseLatency":"$context.responseLatency",
         "responseLength":"$context.responseLength"
         }
+
 Mappings:
   SnapStartMapping:
     Environment:
@@ -319,6 +323,7 @@ Mappings:
     production:
       java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
       node: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_nodejs_arm:1
+
 Resources:
   OAuth:
     Type: AWS::Serverless::Application
@@ -364,6 +369,7 @@ Resources:
           - UsePermissionsBoundary
           - !Ref PermissionsBoundary
           - !Ref AWS::NoValue
+
   DynamoTablesEncryptionKey:
     Type: AWS::KMS::Key
     Properties:
@@ -394,6 +400,7 @@ Resources:
                 "kms:ViaService":
                   - "dynamodb.amazonaws.com"
                   - !Sub "lambda.${AWS::Region}.amazonaws.com"
+
   PublicAddressApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -417,6 +424,7 @@ Resources:
       Tags:
         FMSRegionalPolicy: "false"
         CustomPolicy: "true"
+
   PrivateAddressApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -458,6 +466,7 @@ Resources:
       Tags:
         FMSRegionalPolicy: "false"
         CustomPolicy: "true"
+
   PublicAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -471,6 +480,7 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref PublicAddressApiAccessLogGroup
+
   PrivateAddressApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -484,6 +494,7 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref PrivateAddressApiAccessLogGroup
+
   PostcodeLookupFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -575,6 +586,7 @@ Resources:
                 - kms:GenerateDataKey
               Resource:
                 Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+
   PostcodeLookupFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -588,6 +600,7 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref PostcodeLookupFunctionLogGroup
+
   AddressFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -644,6 +657,7 @@ Resources:
                 - ssm:GetParametersByPath
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+
   AddressFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -657,6 +671,7 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref AddressFunctionLogGroup
+
   IssueCredentialFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -723,6 +738,7 @@ Resources:
               - kms:GenerateDataKey
             Resource:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -736,6 +752,7 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref IssueCredentialFunctionLogGroup
+
   GetAddressesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -796,6 +813,7 @@ Resources:
           - lambdas/get-addresses/src/get-addresses-handler.ts
         External:
           - "@aws-sdk/*"
+
   GetAddressesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -809,6 +827,7 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref GetAddressesFunctionLogGroup
+
   PostcodeLookupTsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -909,6 +928,7 @@ Resources:
           - lambdas/postcode-lookup-ts/src/lambda.ts
         External:
           - "@aws-sdk/*"
+
   AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -927,6 +947,7 @@ Resources:
         KMSMasterKeyId: !Ref DynamoTablesEncryptionKey
         SSEEnabled: true
         SSEType: KMS
+
   PublicAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     Condition: IsNotDevEnvironment
@@ -940,6 +961,7 @@ Resources:
       Throttle:
         BurstLimit: 200 # requests the API can handle concurrently
         RateLimit: 400 # allowed requests per second
+
   PrivateAddressApiUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     Condition: IsNotDevEnvironment
@@ -953,6 +975,7 @@ Resources:
       Throttle:
         BurstLimit: 200 # requests the API can handle concurrently
         RateLimit: 400 # allowed requests per second
+
   LinkUsagePlanApiKey1:
     Type: AWS::ApiGateway::UsagePlanKey
     Condition: IsNotDevEnvironment
@@ -960,6 +983,7 @@ Resources:
       KeyId: !ImportValue core-infrastructure-ApiKey1
       KeyType: API_KEY
       UsagePlanId: !Ref PublicAddressApiUsagePlan
+
   LinkUsagePlanApiKey2:
     Type: AWS::ApiGateway::UsagePlanKey
     Condition: IsNotDevEnvironment
@@ -967,6 +991,7 @@ Resources:
       KeyId: !ImportValue core-infrastructure-ApiKey2
       KeyType: API_KEY
       UsagePlanId: !Ref PublicAddressApiUsagePlan
+
   ProdIpvCoreOrdnanceSurveyAPIURL:
     Condition: IsProdEnvironment
     Type: AWS::SSM::Parameter
@@ -974,6 +999,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   ProdIpvCoreStubPreProdOrdnanceSurveyAPIURL:
     Condition: IsProdEnvironment
     Type: AWS::SSM::Parameter
@@ -981,6 +1007,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   ProdIpvCoreStubPreProdAwsBuildOrdnanceSurveyAPIURL:
     Condition: IsProdEnvironment
     Type: AWS::SSM::Parameter
@@ -988,6 +1015,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod-aws-build"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   IpvCoreStubAwsProdOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -996,6 +1024,7 @@ Resources:
       Type: String
       Value:
         !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
+
   IpvCoreStubAwsBuildOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1004,6 +1033,7 @@ Resources:
       Type: String
       Value:
         !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
+
   IpvCoreStubOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1012,6 +1042,7 @@ Resources:
       Type: String
       Value:
         !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
+
   IpvCoreStubPreProdAwsBuildOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1019,6 +1050,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod-aws-build"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   IpvCoreStubPreProdOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1026,6 +1058,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-pre-prod"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   IpvCoreStubAwsHeadlessOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1034,6 +1067,7 @@ Resources:
       Type: String
       Value:
         !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
+
   IpvCoreStubAwsProd3rdpartyOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1041,6 +1075,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-prod_3rdparty"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   IpvCoreStubAwsBuild3rdpartyOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1048,6 +1083,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-stub-aws-build_3rdparty"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   IpvCoreOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1056,6 +1092,7 @@ Resources:
       Type: String
       Value:
         !FindInMap [StubOrdnanceSurveyAPIURLs, Environment, !Ref Environment]
+
   IpvCore3rdPartyStubsOrdnanceSurveyAPIURL:
     Condition: IsNotProdEnvironment
     Type: AWS::SSM::Parameter
@@ -1063,6 +1100,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/OrdnanceSurveyAPIUrl/ipv-core-3rd-party-stubs"
       Type: String
       Value: !FindInMap [StaticVariables, Urls, OrdnanceSurveyAPIURL]
+
   OAuthCommonStackNameParam:
     Type: AWS::SSM::Parameter
     Condition: CreateOAuthSSMParam
@@ -1074,6 +1112,7 @@ Resources:
         - !Select [ 1, !Split [ "/", !Ref OAuth ] ]
         - !Ref CommonStackName
       Description: The stack currently used for OAuth (common-lambdas or oauth-common). Only required for test-resources.
+
   PostcodeLookupFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1082,6 +1121,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
+
   PostcodeLookupTsFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1090,6 +1130,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
+
   AddressFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1098,6 +1139,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
+
   IssueCredentialFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1106,6 +1148,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PublicAddressApi}/*/*/*"
+
   GetAddressesFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1114,6 +1157,7 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
+
   AddressLambdaErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -1138,6 +1182,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
+
   SessionLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -1185,6 +1230,7 @@ Resources:
                     - !Sub ${CommonStackName}-SessionFunctionTS
             Period: 300
             Stat: Sum
+
   SessionLambdaFailedToVerifyJWTCriticalAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -1234,6 +1280,7 @@ Resources:
                     - !Sub ${CommonStackName}-SessionFunctionTS
             Period: 300
             Stat: Sum
+
   TokenLambdaFailedToVerifyJWTWarningAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -1281,6 +1328,7 @@ Resources:
                     - !Sub ${CommonStackName}-AccessTokenFunctionTS
             Period: 300
             Stat: Sum
+
   TokenLambdaFailedToVerifyJWTCriticalAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -1330,6 +1378,7 @@ Resources:
                     - !Sub ${CommonStackName}-AccessTokenFunctionTS
             Period: 300
             Stat: Sum
+
   SessionLambdaNoMatchingEncryptionKeyAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -1357,6 +1406,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
+
   AddressAPIGW5XXErrors:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -1403,6 +1453,7 @@ Resources:
                   Value: !Sub "${AWS::StackName}-PrivateAddressApi"
             Period: 300
             Stat: Sum
+
   PostcodeLookupFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1429,6 +1480,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   PostcodeLookupFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1457,6 +1509,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   PostcodeLookupTsFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1483,6 +1536,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   PostcodeLookupTsFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1511,6 +1565,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   AddressFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1537,6 +1592,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   AddressFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1565,6 +1621,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   GetAddressesFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1591,6 +1648,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   GetAddressesFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1619,6 +1677,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   IssueCredentialFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1645,6 +1704,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   IssueCredentialFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1673,6 +1733,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
+
   CodeDeployServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -1693,6 +1754,7 @@ Resources:
           !Ref PermissionsBoundary,
           !Ref AWS::NoValue,
         ]
+
   JWKSBucketRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -1721,6 +1783,7 @@ Resources:
       Tags:
         - Key: "key_consumer_type"
           Value: "use"
+
   JsonWebKeys5XXApiGwErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -1783,6 +1846,7 @@ Resources:
                   Value: /.well-known/jwks.json
             Period: 60
             Stat: Sum
+
   JsonWebKeys5XXApiGwErrorCriticalAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -1847,6 +1911,7 @@ Resources:
                   Value: /.well-known/jwks.json
             Period: 60
             Stat: Sum
+
   JsonWebKeys4XXApiGwErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Condition: DeployAlarms
@@ -1909,6 +1974,7 @@ Resources:
                   Value: GET
             Period: 60
             Stat: Sum
+
 Outputs:
   AddressApiGatewayId:
     Description: "API GatewayID of the Address CRI API"
