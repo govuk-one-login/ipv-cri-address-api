@@ -5,7 +5,7 @@ import {
     processOrdnanceSurveySuccessResponse,
     processOrdnanceSurveyBadResponse,
     processOrdnanceSurveyErrorResponse,
-} from "../../src/lib/ordnance-survey-response";
+} from "../../src/lib/ordnance-survey-response.js";
 
 describe("processOrdnanceSurveySuccessResponse", () => {
     it("returns mapped canonical addresses", () => {

@@ -1,14 +1,14 @@
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 
-import { CanonicalAddress } from "../types/canonical-address";
+import { CanonicalAddress } from "../types/canonical-address.js";
 import {
     processOrdnanceSurveySuccessResponse,
     processOrdnanceSurveyBadResponse,
     processOrdnanceSurveyErrorResponse,
-} from "../lib/ordnance-survey-response";
+} from "../lib/ordnance-survey-response.js";
 
-import { getParameterValue, getSecretValue } from "./configuration-service";
+import { getParameterValue, getSecretValue } from "./configuration-service.js";
 
 export interface PostcodeLookupDependencies {
     stackName: string;

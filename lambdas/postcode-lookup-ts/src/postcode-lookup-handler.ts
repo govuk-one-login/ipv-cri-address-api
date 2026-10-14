@@ -6,11 +6,11 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
 import type { SessionItem } from "@govuk-one-login/cri-types";
 
-import { decodePostcode } from "./lib/postcode";
-import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics";
-import { getSessionId } from "./lib/session-header";
-import type { CanonicalAddress } from "./types/canonical-address";
-import type { PostcodeRequest } from "./types/postcode-request";
+import { decodePostcode } from "./lib/postcode.js";
+import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics.js";
+import { getSessionId } from "./lib/session-header.js";
+import type { CanonicalAddress } from "./types/canonical-address.js";
+import type { PostcodeRequest } from "./types/postcode-request.js";
 
 const AUDIT_EVENT_TYPE = {
     REQUEST_SENT: "IPV_ADDRESS_CRI_REQUEST_SENT",
@@ -74,6 +74,10 @@ const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
             statusCode: 401,
             body: JSON.stringify(error.message),
         };
+    }
+
+    if (!(error instanceof CriError)) {
+        return errorResponse;
     }
 
     if (

@@ -2,7 +2,7 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import type { SessionItem, UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { validateSessionId } from "../../src/services/session-service";
+import { validateSessionId } from "../../src/services/session-service.js";
 
 describe("validateSessionId", () => {
     const send = vi.fn();

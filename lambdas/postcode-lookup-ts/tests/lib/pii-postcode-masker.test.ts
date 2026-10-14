@@ -1,4 +1,4 @@
-import { sanitize } from "../../src/lib/pii-postcode-masker";
+import { sanitize } from "../../src/lib/pii-postcode-masker.js";
 import { describe, expect, it } from "vitest";
 
 describe("PiiPostcodeMasker", () => {

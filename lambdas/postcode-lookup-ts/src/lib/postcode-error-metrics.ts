@@ -1,5 +1,5 @@
 import { CriError } from "@govuk-one-login/cri-error-response";
-import { cleanMetricValue } from "./metric-value";
+import { cleanMetricValue } from "./metric-value.js";
 
 export const POSTCODE_LOOKUP_ERROR = "postcode_lookup_error";
 

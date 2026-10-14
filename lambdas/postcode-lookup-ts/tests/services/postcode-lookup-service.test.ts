@@ -6,7 +6,7 @@ vi.mock("../../src/services/configuration-service", () => ({
     getSecretValue: vi.fn(),
 }));
 
-import { lookupPostcode as performPostcodeLookup } from "../../src/services/postcode-lookup-service";
+import { lookupPostcode as performPostcodeLookup } from "../../src/services/postcode-lookup-service.js";
 
 const TEST_URL = "https://test.os.uk/postcode";
 const TEST_API_KEY = "mock-api-key";

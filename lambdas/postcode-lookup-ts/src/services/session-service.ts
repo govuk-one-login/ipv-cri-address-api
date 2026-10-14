@@ -2,7 +2,7 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import type { SessionItem } from "@govuk-one-login/cri-types";
 
-import { getItem } from "./dynamodb-service";
+import { getItem } from "./dynamodb-service.js";
 
 export interface SessionValidationDependencies {
     dynamoDbClient: DynamoDBDocument;

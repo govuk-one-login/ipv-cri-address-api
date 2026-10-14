@@ -13,7 +13,7 @@ vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
     getSecret: mockGetSecret,
 }));
 
-import { getParameterValue, getSecretValue } from "../../src/services/configuration-service";
+import { getParameterValue, getSecretValue } from "../../src/services/configuration-service.js";
 
 describe("configuration functions", () => {
     const stackName = "test-stack";

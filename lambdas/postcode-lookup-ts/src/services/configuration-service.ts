@@ -20,5 +20,5 @@ export const getSecretValue = async (secretPrefix: string, secretName: string): 
         throw new Error(`Missing secret ${fullSecretName}`);
     }
 
-    return value;
+    return typeof value === "string" ? value : new TextDecoder().decode(value);
 };

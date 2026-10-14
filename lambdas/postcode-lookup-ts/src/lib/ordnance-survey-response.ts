@@ -1,16 +1,16 @@
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 
-import { CanonicalAddress } from "../types/canonical-address";
-import { Dpa, OrdnanceSurveyPostcodeError, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey";
-import { sanitize } from "./pii-postcode-masker";
+import { CanonicalAddress } from "../types/canonical-address.js";
+import { Dpa, OrdnanceSurveyPostcodeError, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey.js";
+import { sanitize } from "./pii-postcode-masker.js";
 
 const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
-    uprn: Number.parseInt(dpa.UPRN, 10),
+    uprn: dpa.UPRN !== undefined ? Number.parseInt(dpa.UPRN, 10) : undefined,
     organisationName: dpa.ORGANISATION_NAME,
     departmentName: dpa.DEPARTMENT_NAME,
     subBuildingName: dpa.SUB_BUILDING_NAME,

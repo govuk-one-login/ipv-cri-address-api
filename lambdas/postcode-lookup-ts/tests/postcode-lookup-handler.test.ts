@@ -5,7 +5,7 @@ import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
 
-import { createHandler as createPostcodeLookupHandler } from "../src/postcode-lookup-handler";
+import { createHandler as createPostcodeLookupHandler } from "../src/postcode-lookup-handler.js";
 
 vi.mock("@govuk-one-login/cri-audit", () => ({
     buildAndSendAuditEvent: vi.fn(),
@@ -26,7 +26,7 @@ describe("createHandler", () => {
     const lookupPostcode = vi.fn();
     const validateSessionId = vi.fn();
 
-    const auditConfig: AuditConfig = {
+    const auditConfig = {
         queueUrl: "https://example.test/audit-queue",
         componentId: "https://example.test/address",
     };
@@ -61,7 +61,7 @@ describe("createHandler", () => {
                 session_id: "test-session-id",
                 ...additionalHeaders,
             },
-        }) as APIGatewayProxyEvent;
+        }) as unknown as APIGatewayProxyEvent;
 
     beforeEach(() => {
         lookupPostcode.mockReset();
