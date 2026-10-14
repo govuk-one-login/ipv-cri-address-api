@@ -182,7 +182,7 @@ describe("createHandler", () => {
     });
 
     it("returns addresses from postcode lookup service", async () => {
-        const addresses = [
+        const address = [
             {
                 uprn: "123",
                 postalCode: "SW1A 2AA",
@@ -190,7 +190,7 @@ describe("createHandler", () => {
         ];
 
         validateSessionId.mockResolvedValue(session);
-        lookupPostcode.mockResolvedValue(addresses);
+        lookupPostcode.mockResolvedValue(address);
 
         const result = await createHandler().handler(
             createEvent(
@@ -202,7 +202,7 @@ describe("createHandler", () => {
         );
 
         expect(result.statusCode).toBe(200);
-        expect(result.body).toBe(JSON.stringify(addresses));
+        expect(result.body).toBe(JSON.stringify(address));
     });
 
     it("sends request and response audit events", async () => {
@@ -219,7 +219,7 @@ describe("createHandler", () => {
         );
 
         const restricted = {
-            addresses: [
+            address: [
                 {
                     postalCode: "SW1A 2AA",
                 },
@@ -229,7 +229,7 @@ describe("createHandler", () => {
         expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
             1,
             auditConfig.queueUrl,
-            "REQUEST_SENT",
+            "IPV_ADDRESS_CRI_REQUEST_SENT",
             auditConfig.componentId,
             session,
             { restricted },
@@ -238,7 +238,7 @@ describe("createHandler", () => {
         expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
             2,
             auditConfig.queueUrl,
-            "RESPONSE_RECEIVED",
+            "IPV_ADDRESS_CRI_RESPONSE_RECEIVED",
             auditConfig.componentId,
             session,
             { restricted },
@@ -262,7 +262,7 @@ describe("createHandler", () => {
         );
 
         const restricted = {
-            addresses: [
+            address: [
                 {
                     postalCode: "SW1A 2AA",
                 },
@@ -275,7 +275,7 @@ describe("createHandler", () => {
         expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
             1,
             auditConfig.queueUrl,
-            "REQUEST_SENT",
+            "IPV_ADDRESS_CRI_REQUEST_SENT",
             auditConfig.componentId,
             session,
             { restricted },
@@ -284,7 +284,7 @@ describe("createHandler", () => {
         expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
             2,
             auditConfig.queueUrl,
-            "RESPONSE_RECEIVED",
+            "IPV_ADDRESS_CRI_RESPONSE_RECEIVED",
             auditConfig.componentId,
             session,
             { restricted },
@@ -326,7 +326,8 @@ describe("createHandler", () => {
             statusCode: 403,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                message: "Session not found",
+                error: "access_denied",
+                error_description: "Access denied by resource owner or authorization server - Session not found",
             }),
         });
 
@@ -350,7 +351,8 @@ describe("createHandler", () => {
             statusCode: 403,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                message: "Session expired",
+                error: "access_denied",
+                error_description: "Access denied by resource owner or authorization server - Session expired",
             }),
         });
 
@@ -378,9 +380,7 @@ describe("createHandler", () => {
         expect(result).toEqual({
             statusCode: 400,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message: "The Client ID provided for this session is not supported",
-            }),
+            body: "The Client ID provided for this session is not supported",
         });
 
         expect(mockBuildAndSendAuditEvent).toHaveBeenCalledOnce();
@@ -473,9 +473,7 @@ describe("createHandler", () => {
         expect(result).toEqual({
             statusCode: 408,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message: "Error Connection Timeout",
-            }),
+            body: "Error Connection Timeout",
         });
 
         expect(mockBuildAndSendAuditEvent).toHaveBeenCalledOnce();
@@ -508,7 +506,7 @@ describe("createHandler", () => {
         expect(mockCaptureMetric).not.toHaveBeenCalled();
     });
 
-    it("returns 500 for an unexpected error", async () => {
+    it("returns 401 for an unexpected error", async () => {
         validateSessionId.mockRejectedValue(new Error("Unexpected failure"));
 
         const result = await createHandler().handler(
@@ -521,11 +519,9 @@ describe("createHandler", () => {
         );
 
         expect(result).toEqual({
-            statusCode: 500,
+            statusCode: 401,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message: "Internal server error",
-            }),
+            body: JSON.stringify("Unexpected failure"),
         });
 
         expect(lookupPostcode).not.toHaveBeenCalled();
@@ -685,12 +681,12 @@ describe("createHandler", () => {
 
         expect(mockBuildAndSendAuditEvent).toHaveBeenCalledWith(
             auditConfig.queueUrl,
-            "REQUEST_SENT",
+            "IPV_ADDRESS_CRI_REQUEST_SENT",
             auditConfig.componentId,
             session,
             {
                 restricted: {
-                    addresses: [
+                    address: [
                         {
                             postalCode: "SW1A 2AA",
                         },

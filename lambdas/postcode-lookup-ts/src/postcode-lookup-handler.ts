@@ -6,18 +6,24 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
 import type { SessionItem } from "@govuk-one-login/cri-types";
 
+import { decodePostcode } from "./lib/postcode";
 import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics";
 import { getSessionId } from "./lib/session-header";
 import type { CanonicalAddress } from "./types/canonical-address";
 import type { PostcodeRequest } from "./types/postcode-request";
 
 const AUDIT_EVENT_TYPE = {
-    REQUEST_SENT: "REQUEST_SENT",
-    RESPONSE_RECEIVED: "RESPONSE_RECEIVED",
+    REQUEST_SENT: "IPV_ADDRESS_CRI_REQUEST_SENT",
+    RESPONSE_RECEIVED: "IPV_ADDRESS_CRI_RESPONSE_RECEIVED",
 } as const;
 
 const POSTCODE_LOOKUP_METRIC = "postcode_lookup";
 const TXMA_AUDIT_ENCODED_HEADER = "txma-audit-encoded";
+
+const PLAIN_TEXT_BAD_REQUEST_MESSAGES = new Set([
+    "The Client ID provided for this session is not supported",
+    "Error building URI for postcode lookup",
+]);
 
 export interface HandlerDependencies {
     queueUrl: string;
@@ -33,7 +39,9 @@ export const createHandler =
             const postcode = getPostcodeFromRequest(event);
             const sessionId = getSessionId(event.headers);
             const session = await validateSessionId(sessionId);
+
             logger.info("found session");
+
             const restricted = buildAuditRestricted(postcode, event.headers);
 
             await buildAndSendAuditEvent(queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, componentId, session, { restricted });
@@ -53,38 +61,65 @@ export const createHandler =
         } catch (error: unknown) {
             captureMetricWithDimensions(POSTCODE_LOOKUP_ERROR, getPostcodeErrorDimensions(error));
 
-            const errorResponse = formatErrorResponse(error);
-
-            if (
-                error instanceof CriError &&
-                error.statusCode === 400 &&
-                (error.message === "Missing postcode in request body." ||
-                    error.message === "Failed to parse postcode from request body")
-            ) {
-                return {
-                    ...errorResponse,
-                    body: JSON.stringify(error.message),
-                };
-            }
-
-            if (error instanceof CriError && error.statusCode === 404) {
-                return {
-                    ...errorResponse,
-                    body: JSON.stringify(error.message),
-                };
-            }
-
-            if (error instanceof SyntaxError) {
-                return {
-                    ...errorResponse,
-                    statusCode: 401,
-                    body: JSON.stringify(error.message),
-                };
-            }
-
-            return errorResponse;
+            return buildErrorResponse(error);
         }
     };
+
+const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
+    const errorResponse = formatErrorResponse(error);
+
+    if (error instanceof Error && !(error instanceof CriError)) {
+        return {
+            ...errorResponse,
+            statusCode: 401,
+            body: JSON.stringify(error.message),
+        };
+    }
+
+    if (
+        error.statusCode === 400 &&
+        (error.message === "Missing postcode in request body." ||
+            error.message === "Failed to parse postcode from request body")
+    ) {
+        return {
+            ...errorResponse,
+            body: JSON.stringify(error.message),
+        };
+    }
+
+    if (error.statusCode === 400 && PLAIN_TEXT_BAD_REQUEST_MESSAGES.has(error.message)) {
+        return {
+            ...errorResponse,
+            body: error.message,
+        };
+    }
+
+    if (error.statusCode === 403) {
+        return {
+            ...errorResponse,
+            body: JSON.stringify({
+                error: "access_denied",
+                error_description: "Access denied by resource owner or " + `authorization server - ${error.message}`,
+            }),
+        };
+    }
+
+    if (error.statusCode === 404) {
+        return {
+            ...errorResponse,
+            body: JSON.stringify(error.message),
+        };
+    }
+
+    if (error.statusCode === 408) {
+        return {
+            ...errorResponse,
+            body: error.message,
+        };
+    }
+
+    return errorResponse;
+};
 
 const getPostcodeFromRequest = (event: APIGatewayProxyEvent): string => {
     if (!event.body) {
@@ -110,9 +145,9 @@ const buildAuditRestricted = (postcode: string, headers: APIGatewayProxyEvent["h
     const encodedDeviceInformation = headers[TXMA_AUDIT_ENCODED_HEADER];
 
     return {
-        addresses: [
+        address: [
             {
-                postalCode: decodeURIComponent(postcode).toUpperCase(),
+                postalCode: decodePostcode(postcode).toUpperCase(),
             },
         ],
         ...(encodedDeviceInformation && {

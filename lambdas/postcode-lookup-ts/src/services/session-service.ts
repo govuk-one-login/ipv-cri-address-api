@@ -26,12 +26,8 @@ export const validateSessionId = async (
         throw new CriError(403, "Session not found");
     }
 
-    if (sessionItem.expiryDate <= currentTime()) {
+    if (sessionItem.expiryDate < currentTime()) {
         throw new CriError(403, "Session expired");
-    }
-
-    if (!sessionItem.clientId) {
-        throw new CriError(400, "The Client ID provided for this session is not supported");
     }
 
     return sessionItem;

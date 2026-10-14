@@ -13,7 +13,7 @@ describe("processOrdnanceSurveySuccessResponse", () => {
             results: [
                 {
                     DPA: {
-                        UPRN: "123",
+                        UPRN: 123,
                         POSTCODE: "SW1A 2AA",
                         POST_TOWN: "London",
                     },
@@ -26,7 +26,7 @@ describe("processOrdnanceSurveySuccessResponse", () => {
         expect(result).toHaveLength(1);
         expect(result[0]).toEqual(
             expect.objectContaining({
-                uprn: "123",
+                uprn: 123,
                 postalCode: "SW1A 2AA",
                 addressLocality: "London",
                 addressCountry: "GB",
@@ -67,6 +67,25 @@ describe("processOrdnanceSurveySuccessResponse", () => {
 
         expect(result).toEqual([]);
     });
+
+    it("converts UPRN from string to number", () => {
+        const response = JSON.stringify({
+            results: [
+                {
+                    DPA: {
+                        UPRN: "100023336956",
+                        POSTCODE: "SW1A 2AA",
+                        POST_TOWN: "London",
+                    },
+                },
+            ],
+        });
+
+        const result = processOrdnanceSurveySuccessResponse(response);
+
+        expect(result[0].uprn).toBe(100023336956);
+        expect(typeof result[0].uprn).toBe("number");
+    });
 });
 
 describe("processOrdnanceSurveyBadResponse", () => {
@@ -103,13 +122,20 @@ describe("processOrdnanceSurveyBadResponse", () => {
 });
 
 describe("processOrdnanceSurveyErrorResponse", () => {
-    it("throws a 404 CriError containing the OS error message", () => {
+    const loggerError = vi.spyOn(logger, "error");
+
+    beforeEach(() => {
+        loggerError.mockClear();
+    });
+
+    it("throws a 404 CriError containing the sanitised OS error message", () => {
         const responseBody = JSON.stringify({
             error: {
                 statuscode: 500,
-                message: "Unexpected error",
+                message: "Unexpected error for SW1A 1AA",
             },
         });
+
         let thrownError: unknown;
 
         try {
@@ -120,24 +146,73 @@ describe("processOrdnanceSurveyErrorResponse", () => {
 
         expect(thrownError).toBeInstanceOf(CriError);
         expect(thrownError).toMatchObject({
-            message: "Error processing postcode lookup: Unexpected error",
+            message: "Error processing postcode lookup: Unexpected error for ********",
             statusCode: 404,
         });
+        expect((thrownError as Error).message).not.toContain("SW1A 1AA");
     });
 
-    it("throws a 404 CriError containing the raw body when the response is malformed", () => {
+    it("logs the sanitised OS error without exposing the postcode", () => {
+        const responseBody = JSON.stringify({
+            error: {
+                statuscode: 500,
+                message: "Unexpected error for SW1A 1AA",
+            },
+        });
+
+        expect(() => processOrdnanceSurveyErrorResponse(responseBody)).toThrow(CriError);
+
+        expect(loggerError).toHaveBeenCalledWith(
+            "Ordnance Survey Responded with unknown error: Unexpected error for ********",
+        );
+        expect(loggerError).not.toHaveBeenCalledWith(expect.stringContaining("SW1A 1AA"));
+    });
+
+    it("throws a 404 CriError containing the sanitised raw body when the response is malformed", () => {
+        const responseBody = "Invalid response for SW1A 1AA";
+
         let thrownError: unknown;
 
         try {
-            processOrdnanceSurveyErrorResponse("{");
+            processOrdnanceSurveyErrorResponse(responseBody);
         } catch (error) {
             thrownError = error;
         }
 
         expect(thrownError).toBeInstanceOf(CriError);
         expect(thrownError).toMatchObject({
-            message: "Error processing postcode lookup: {",
+            message: "Error processing postcode lookup: Invalid response for ********",
             statusCode: 404,
         });
+        expect((thrownError as Error).message).not.toContain("SW1A 1AA");
+    });
+
+    it("logs the sanitised raw body when the response is malformed", () => {
+        const responseBody = "Invalid response for SW1A 1AA";
+
+        expect(() => processOrdnanceSurveyErrorResponse(responseBody)).toThrow(CriError);
+
+        expect(loggerError).toHaveBeenCalledWith(
+            "Ordnance Survey Responded with unknown error: Invalid response for ********",
+        );
+        expect(loggerError).not.toHaveBeenCalledWith(expect.stringContaining("SW1A 1AA"));
+    });
+
+    it("does not include a postcode in the thrown error for malformed JSON", () => {
+        const responseBody = '{"error":"Failed for postcode SW1A 1AA"';
+
+        let thrownError: unknown;
+
+        try {
+            processOrdnanceSurveyErrorResponse(responseBody);
+        } catch (error) {
+            thrownError = error;
+        }
+
+        expect(thrownError).toBeInstanceOf(CriError);
+        expect((thrownError as Error).message).toBe(
+            'Error processing postcode lookup: {"error":"Failed for postcode ********"',
+        );
+        expect((thrownError as Error).message).not.toContain("SW1A 1AA");
     });
 });

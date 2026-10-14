@@ -10,7 +10,7 @@ const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
-    uprn: dpa.UPRN,
+    uprn: Number.parseInt(dpa.UPRN, 10),
     organisationName: dpa.ORGANISATION_NAME,
     departmentName: dpa.DEPARTMENT_NAME,
     subBuildingName: dpa.SUB_BUILDING_NAME,
@@ -47,17 +47,20 @@ export const processOrdnanceSurveyBadResponse = (responseBody: string): [] => {
 };
 
 export const processOrdnanceSurveyErrorResponse = (responseBody: string): never => {
+    let errorMessage: string;
+
     try {
-        const error = JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
-
-        throw new CriError(404, `Error processing postcode lookup: ${error.error.message}`);
-    } catch (error) {
-        if (error instanceof CriError) {
-            throw error;
-        }
-
-        throw new CriError(404, `Error processing postcode lookup: ${responseBody}`);
+        const parsedResponse = JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
+        errorMessage = parsedResponse.error.message;
+    } catch {
+        errorMessage = responseBody;
     }
+
+    const sanitizedMessage = sanitize(errorMessage);
+
+    logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitizedMessage}`);
+
+    throw new CriError(404, `Error processing postcode lookup: ${sanitizedMessage}`);
 };
 
 export const processOrdnanceSurveySuccessResponse = (responseBody: string): CanonicalAddress[] => {

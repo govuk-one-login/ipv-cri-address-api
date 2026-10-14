@@ -63,27 +63,13 @@ describe("validateSessionId", () => {
         send.mockResolvedValue({
             Item: {
                 ...validSession,
-                expiryDate: currentTime,
+                expiryDate: (currentTime - 1) as UnixSecondsTimestamp,
             },
         });
 
         await expect(validateSession("test-session-id")).rejects.toMatchObject({
             message: "Session expired",
             statusCode: 403,
-        });
-    });
-
-    it("throws 400 when client id is missing", async () => {
-        send.mockResolvedValue({
-            Item: {
-                ...validSession,
-                clientId: "",
-            },
-        });
-
-        await expect(validateSession("test-session-id")).rejects.toMatchObject({
-            message: "The Client ID provided for this session is not supported",
-            statusCode: 400,
         });
     });
 

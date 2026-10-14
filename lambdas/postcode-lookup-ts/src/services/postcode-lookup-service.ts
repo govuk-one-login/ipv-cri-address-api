@@ -71,12 +71,16 @@ export const lookupPostcode = async (
 
     try {
         response = await fetchFn(lookupUrl, {
+            signal: AbortSignal.timeout(15_000),
             headers: {
                 Accept: "application/json",
                 key: osApiKey,
             },
         });
-    } catch {
+    } catch (error) {
+        if (error instanceof DOMException && (error.name === "TimeoutError" || error.name === "AbortError")) {
+            throw new CriError(408, "Error timed out waiting for postcode lookup response");
+        }
         throw new CriError(404, "Error sending request for postcode lookup");
     }
 

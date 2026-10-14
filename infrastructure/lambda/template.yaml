@@ -928,7 +928,19 @@ Resources:
           - lambdas/postcode-lookup-ts/src/lambda.ts
         External:
           - "@aws-sdk/*"
+  PostcodeLookupTsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupTsFunction}"
+      RetentionInDays: 365
 
+  PostcodeLookupTsFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: IsNotDevBuildEnvironment
+    Properties:
+      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
+      FilterPattern: ""
+      LogGroupName: !Ref PostcodeLookupTsFunctionLogGroup
   AddressTable:
     Type: "AWS::DynamoDB::Table"
     Properties:
@@ -1501,7 +1513,10 @@ Resources:
         - Name: Stage
           Value: !Ref Environment
         - Name: Resource
-          Value: /postcode-lookup/{postcode}
+          Value: !If
+            - IsDevEnvironment
+            - /postcode-lookup-java
+            - /postcode-lookup
       Statistic: Sum
       Unit: Count
       Period: 60
@@ -1557,7 +1572,7 @@ Resources:
         - Name: Stage
           Value: !Ref Environment
         - Name: Resource
-          Value: /postcode-lookup/{postcode}
+          Value: /postcode-lookup/
       Statistic: Sum
       Unit: Count
       Period: 60

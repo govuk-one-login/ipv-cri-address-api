@@ -97,7 +97,7 @@ describe("lookupPostcode", () => {
                     results: [
                         {
                             DPA: {
-                                UPRN: "123",
+                                UPRN: 123,
                                 POSTCODE: "SW1A 2AA",
                                 POST_TOWN: "London",
                             },
@@ -114,7 +114,7 @@ describe("lookupPostcode", () => {
         expect(result).toHaveLength(1);
 
         expect(result[0]).toMatchObject({
-            uprn: "123",
+            uprn: 123,
             postalCode: "SW1A 2AA",
             addressLocality: "London",
             addressCountry: "GB",
@@ -217,14 +217,15 @@ describe("lookupPostcode", () => {
         );
     });
 
-    it("throws when fetch fails", async () => {
+    it("throws 404 when fetch fails", async () => {
         const mockFetch = vi.fn().mockRejectedValue(new Error("network failure"));
 
         const service = createService(mockFetch as typeof fetch);
 
-        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toThrow(
-            "Error sending request for postcode lookup",
-        );
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
+            statusCode: 404,
+            message: "Error sending request for postcode lookup",
+        });
     });
 
     it("uses the configured API key when making requests", async () => {
@@ -292,6 +293,33 @@ describe("lookupPostcode", () => {
         await service.lookupPostcode("SW1A 2AA", "test-client");
 
         expect(getSecretValue).toHaveBeenCalledWith("OrdnanceSurveyAPIKey");
+    });
+    it("configures a 15 second timeout on postcode lookup requests", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 404,
+            text: vi.fn().mockResolvedValue(""),
+        });
+
+        const service = createService(mockFetch as typeof fetch);
+
+        await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        const [, requestOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+
+        expect(requestOptions.signal).toBeDefined();
+    });
+
+    it("throws 408 when the postcode lookup times out", async () => {
+        const timeoutError = new DOMException("The operation timed out", "TimeoutError");
+
+        const mockFetch = vi.fn().mockRejectedValue(timeoutError);
+
+        const service = createService(mockFetch as typeof fetch);
+
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
+            statusCode: 408,
+            message: "Error timed out waiting for postcode lookup response",
+        });
     });
 
     it("throws 400 when client configuration cannot be retrieved", async () => {
