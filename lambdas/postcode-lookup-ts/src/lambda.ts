@@ -4,7 +4,12 @@ import { getParameterValue, getSecretValue } from "./services/configuration-serv
 import { lookupPostcode } from "./services/postcode-lookup-service";
 import { validateSessionId } from "./services/session-service";
 const sessionTableName = process.env.SESSION_TABLE;
+import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 
+import type { LambdaInterface } from "@aws-lambda-powertools/commons/types";
+
+import { logger } from "@govuk-one-login/cri-logger";
+import { metrics } from "@govuk-one-login/cri-metrics";
 const stackName = process.env.AWS_STACK_NAME;
 
 const secretPrefix = process.env.SECRET_PREFIX;
@@ -33,11 +38,14 @@ if (!componentId) {
     throw new Error("VERIFIABLE_CREDENTIAL_ISSUER environment variable is required");
 }
 
-export const lambdaHandler = createHandler({
+const postcodeLookupHandler = createHandler({
     queueUrl: auditQueueUrl,
     componentId,
     validateSessionId: (sessionId) =>
-        validateSessionId(sessionId, { dynamoDbClient: DynamoDbClient, sessionTableName }),
+        validateSessionId(sessionId, {
+            dynamoDbClient: DynamoDbClient,
+            sessionTableName,
+        }),
     lookupPostcode: (postcode, clientId) =>
         lookupPostcode(postcode, clientId, {
             stackName,
@@ -46,3 +54,18 @@ export const lambdaHandler = createHandler({
             getSecretValue,
         }),
 });
+
+class PostcodeLookupLambda implements LambdaInterface {
+    @logger.injectLambdaContext({ resetKeys: true })
+    @metrics.logMetrics({
+        throwOnEmptyMetrics: false,
+        captureColdStartMetric: true,
+    })
+    public async handler(event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+        return postcodeLookupHandler(event, context);
+    }
+}
+
+const handlerClass = new PostcodeLookupLambda();
+
+export const lambdaHandler = handlerClass.handler.bind(handlerClass);
