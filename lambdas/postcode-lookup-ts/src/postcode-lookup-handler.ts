@@ -154,7 +154,7 @@ const buildAuditRestricted = (postcode: string, headers: APIGatewayProxyEvent["h
                 postalCode: decodePostcode(postcode).toUpperCase(),
             },
         ],
-        ...(encodedDeviceInformation && {
+        ...(encodedDeviceInformation !== undefined && {
             device_information: {
                 encoded: encodedDeviceInformation,
             },

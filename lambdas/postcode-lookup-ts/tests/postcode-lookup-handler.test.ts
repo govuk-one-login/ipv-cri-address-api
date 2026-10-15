@@ -600,6 +600,52 @@ describe("createHandler", () => {
         });
     });
 
+    it("includes empty device information when txma-audit-encoded is present but empty", async () => {
+        validateSessionId.mockResolvedValue(session);
+        lookupPostcode.mockResolvedValue([]);
+
+        await createHandler().handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+                {
+                    "txma-audit-encoded": "",
+                },
+            ),
+            context,
+        );
+
+        const restricted = {
+            address: [
+                {
+                    postalCode: "SW1A 2AA",
+                },
+            ],
+            device_information: {
+                encoded: "",
+            },
+        };
+
+        expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
+            1,
+            auditConfig.queueUrl,
+            "IPV_ADDRESS_CRI_REQUEST_SENT",
+            auditConfig.componentId,
+            session,
+            { restricted },
+        );
+
+        expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
+            2,
+            auditConfig.queueUrl,
+            "IPV_ADDRESS_CRI_RESPONSE_RECEIVED",
+            auditConfig.componentId,
+            session,
+            { restricted },
+        );
+    });
+
     it("records timeout error dimensions", async () => {
         validateSessionId.mockResolvedValue(session);
 
