@@ -20,7 +20,7 @@ export interface PostcodeLookupDependencies {
 
 const buildLookupUrl = (postcode: string, osApiUrl: string): string => {
     const url = new URL(osApiUrl);
-    const decodedPostcode = decodeURIComponent(postcode.replace(/\+/g, " "));
+    const decodedPostcode = decodeURIComponent(postcode.replaceAll("+", " "));
     url.searchParams.set("postcode", decodedPostcode);
 
     return url.toString();

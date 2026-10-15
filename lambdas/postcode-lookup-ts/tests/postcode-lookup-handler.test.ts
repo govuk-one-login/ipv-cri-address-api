@@ -291,7 +291,7 @@ describe("createHandler", () => {
         );
     });
 
-    it("uses X-Forwarded-For as the audit event IP address", async () => {
+    it("uses X-Forwarded-For as the IP address for request and response audit events", async () => {
         validateSessionId.mockResolvedValue({
             ...session,
             clientIpAddress: "10.0.0.1",
@@ -803,7 +803,7 @@ describe("createHandler", () => {
         expect(mockCaptureMetric).not.toHaveBeenCalled();
     });
 
-    it("uses X-Forwarded-For as the audit event IP address", async () => {
+    it("uses X-Forwarded-For as the audit event IP address for the request audit event", async () => {
         validateSessionId.mockResolvedValue({
             ...session,
             clientIpAddress: "10.0.0.1",
