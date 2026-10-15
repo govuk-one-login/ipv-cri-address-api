@@ -291,6 +291,65 @@ describe("createHandler", () => {
         );
     });
 
+    it("uses X-Forwarded-For as the audit event IP address", async () => {
+        validateSessionId.mockResolvedValue({
+            ...session,
+            clientIpAddress: "10.0.0.1",
+        });
+        lookupPostcode.mockResolvedValue([]);
+
+        await createHandler().handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+                {
+                    "X-Forwarded-For": "203.0.113.10",
+                },
+            ),
+            context,
+        );
+
+        const expectedAuditSession = {
+            ...session,
+            clientIpAddress: "203.0.113.10",
+        };
+
+        expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
+            1,
+            auditConfig.queueUrl,
+            "IPV_ADDRESS_CRI_REQUEST_SENT",
+            auditConfig.componentId,
+            expectedAuditSession,
+            {
+                restricted: {
+                    address: [
+                        {
+                            postalCode: "SW1A 2AA",
+                        },
+                    ],
+                },
+            },
+        );
+
+        expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
+            2,
+            auditConfig.queueUrl,
+            "IPV_ADDRESS_CRI_RESPONSE_RECEIVED",
+            auditConfig.componentId,
+            expectedAuditSession,
+            {
+                restricted: {
+                    address: [
+                        {
+                            postalCode: "SW1A 2AA",
+                        },
+                    ],
+                },
+            },
+        );
+    });
+
     it("records the postcode lookup metric on success", async () => {
         validateSessionId.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
@@ -742,5 +801,37 @@ describe("createHandler", () => {
         );
 
         expect(mockCaptureMetric).not.toHaveBeenCalled();
+    });
+
+    it("uses X-Forwarded-For as the audit event IP address", async () => {
+        validateSessionId.mockResolvedValue({
+            ...session,
+            clientIpAddress: "10.0.0.1",
+        });
+        lookupPostcode.mockResolvedValue([]);
+
+        await createHandler().handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+                {
+                    "X-Forwarded-For": "203.0.113.10",
+                },
+            ),
+            context,
+        );
+
+        expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
+            1,
+            auditConfig.queueUrl,
+            "IPV_ADDRESS_CRI_REQUEST_SENT",
+            auditConfig.componentId,
+            {
+                ...session,
+                clientIpAddress: "203.0.113.10",
+            },
+            expect.anything(),
+        );
     });
 });

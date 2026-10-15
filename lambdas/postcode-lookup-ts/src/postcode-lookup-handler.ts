@@ -19,6 +19,7 @@ const AUDIT_EVENT_TYPE = {
 
 const POSTCODE_LOOKUP_METRIC = "postcode_lookup";
 const TXMA_AUDIT_ENCODED_HEADER = "txma-audit-encoded";
+const CLIENT_IP_HEADER = "X-Forwarded-For";
 
 const PLAIN_TEXT_BAD_REQUEST_MESSAGES = new Set([
     "The Client ID provided for this session is not supported",
@@ -43,14 +44,16 @@ export const createHandler =
             logger.info("found session");
 
             const restricted = buildAuditRestricted(postcode, event.headers);
-
-            await buildAndSendAuditEvent(queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, componentId, session, { restricted });
+            const auditSession = buildAuditSession(session, event.headers);
+            await buildAndSendAuditEvent(queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, componentId, auditSession, {
+                restricted,
+            });
 
             const results = await lookupPostcode(postcode, session.clientId);
 
             captureMetric(POSTCODE_LOOKUP_METRIC);
 
-            await buildAndSendAuditEvent(queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, componentId, session, {
+            await buildAndSendAuditEvent(queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, componentId, auditSession, {
                 restricted,
             });
 
@@ -64,6 +67,11 @@ export const createHandler =
             return buildErrorResponse(error);
         }
     };
+
+const buildAuditSession = (session: SessionItem, headers: APIGatewayProxyEvent["headers"]): SessionItem => ({
+    ...session,
+    clientIpAddress: headers[CLIENT_IP_HEADER],
+});
 
 const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
     const errorResponse = formatErrorResponse(error);
