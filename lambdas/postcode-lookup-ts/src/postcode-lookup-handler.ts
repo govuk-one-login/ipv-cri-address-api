@@ -12,11 +12,6 @@ import { getSessionId } from "./lib/session-header.js";
 import type { CanonicalAddress } from "./types/canonical-address.js";
 import type { PostcodeRequest } from "./types/postcode-request.js";
 
-const AUDIT_EVENT_TYPE = {
-    REQUEST_SENT: "IPV_ADDRESS_CRI_REQUEST_SENT",
-    RESPONSE_RECEIVED: "IPV_ADDRESS_CRI_RESPONSE_RECEIVED",
-} as const;
-
 const POSTCODE_LOOKUP_METRIC = "postcode_lookup";
 const TXMA_AUDIT_ENCODED_HEADER = "txma-audit-encoded";
 const CLIENT_IP_HEADER = "X-Forwarded-For";
@@ -29,12 +24,13 @@ const PLAIN_TEXT_BAD_REQUEST_MESSAGES = new Set([
 export interface HandlerDependencies {
     queueUrl: string;
     componentId: string;
+    auditEventPrefix: string;
     validateSessionId: (sessionId: string) => Promise<SessionItem>;
     lookupPostcode: (postcode: string, clientId: string) => Promise<CanonicalAddress[]>;
 }
 
 export const createHandler =
-    ({ queueUrl, componentId, validateSessionId, lookupPostcode }: HandlerDependencies) =>
+    ({ queueUrl, componentId, auditEventPrefix, validateSessionId, lookupPostcode }: HandlerDependencies) =>
     async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
         try {
             const postcode = getPostcodeFromRequest(event);
@@ -45,7 +41,7 @@ export const createHandler =
 
             const restricted = buildAuditRestricted(postcode, event.headers);
             const auditSession = buildAuditSession(session, event.headers);
-            await buildAndSendAuditEvent(queueUrl, AUDIT_EVENT_TYPE.REQUEST_SENT, componentId, auditSession, {
+            await buildAndSendAuditEvent(queueUrl, `${auditEventPrefix}_REQUEST_SENT`, componentId, auditSession, {
                 restricted,
             });
 
@@ -53,7 +49,7 @@ export const createHandler =
 
             captureMetric(POSTCODE_LOOKUP_METRIC);
 
-            await buildAndSendAuditEvent(queueUrl, AUDIT_EVENT_TYPE.RESPONSE_RECEIVED, componentId, auditSession, {
+            await buildAndSendAuditEvent(queueUrl, `${auditEventPrefix}_RESPONSE_RECEIVED`, componentId, auditSession, {
                 restricted,
             });
 

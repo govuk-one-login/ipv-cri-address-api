@@ -1,10 +1,20 @@
 import { logger } from "@govuk-one-login/cri-logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { captureMetric, MetricUnit } from "@govuk-one-login/cri-metrics";
 
 vi.mock("../../src/services/configuration-service", () => ({
     getParameterValue: vi.fn(),
     getSecretValue: vi.fn(),
 }));
+
+vi.mock("@govuk-one-login/cri-metrics", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@govuk-one-login/cri-metrics")>();
+
+    return {
+        ...actual,
+        captureMetric: vi.fn(),
+    };
+});
 
 import { lookupPostcode as performPostcodeLookup } from "../../src/services/postcode-lookup-service.js";
 
@@ -14,6 +24,7 @@ const TEST_API_KEY = "mock-api-key";
 describe("lookupPostcode", () => {
     const getParameterValue = vi.fn();
     const getSecretValue = vi.fn();
+    const mockCaptureMetric = vi.mocked(captureMetric);
 
     const loggerError = vi.spyOn(logger, "error");
 
@@ -119,6 +130,65 @@ describe("lookupPostcode", () => {
             addressLocality: "London",
             addressCountry: "GB",
         });
+    });
+
+    it("records postcode lookup duration in milliseconds and logs the same latency", async () => {
+        const loggerInfoSpy = vi.spyOn(logger, "info").mockImplementation(() => undefined);
+
+        const mockFetch = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    results: [],
+                }),
+                {
+                    status: 200,
+                },
+            ),
+        );
+
+        const service = createService(mockFetch as typeof fetch);
+
+        await service.lookupPostcode("SW1A 2AA", "test-client");
+
+        expect(mockCaptureMetric).toHaveBeenCalledOnce();
+
+        const durationMs = mockCaptureMetric.mock.calls[0][1];
+
+        expect(mockCaptureMetric).toHaveBeenCalledWith("lookup_postcode_duration", durationMs, MetricUnit.Milliseconds);
+
+        expect(loggerInfoSpy).toHaveBeenCalledWith("API response received from OS API", {
+            status: 200,
+            latencyInMs: durationMs,
+        });
+    });
+
+    it("does not record postcode lookup duration when the OS request fails", async () => {
+        const mockFetch = vi.fn().mockRejectedValue(new Error("Network failure"));
+
+        const service = createService(mockFetch as typeof fetch);
+
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
+            statusCode: 404,
+            message: "Error sending request for postcode lookup",
+        });
+
+        expect(mockCaptureMetric).not.toHaveBeenCalled();
+    });
+
+    it("does not record postcode lookup duration when reading the OS response fails", async () => {
+        const mockFetch = vi.fn().mockResolvedValue({
+            status: 200,
+            text: vi.fn().mockRejectedValue(new Error("Failed to read response body")),
+        });
+
+        const service = createService(mockFetch as typeof fetch);
+
+        await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
+            statusCode: 404,
+            message: "Error sending request for postcode lookup",
+        });
+
+        expect(mockCaptureMetric).not.toHaveBeenCalled();
     });
 
     it("throws a 404 processing error for OS rate-limit responses", async () => {
@@ -339,7 +409,7 @@ describe("lookupPostcode", () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("throws 500 when the OS API key cannot be retrieved", async () => {
+    it("throws 401 when the OS API key cannot be retrieved", async () => {
         getSecretValue.mockRejectedValue(new Error("Secret not found"));
 
         const mockFetch = vi.fn();
@@ -348,7 +418,7 @@ describe("lookupPostcode", () => {
 
         await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
             message: "Unable to retrieve the Ordnance Survey API key",
-            statusCode: 500,
+            statusCode: 401,
         });
 
         expect(getParameterValue).toHaveBeenCalledWith("OrdnanceSurveyAPIUrl/test-client");

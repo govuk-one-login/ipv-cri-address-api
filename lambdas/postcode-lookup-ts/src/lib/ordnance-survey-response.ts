@@ -10,7 +10,7 @@ const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
-    uprn: dpa.UPRN !== undefined ? Number.parseInt(dpa.UPRN, 10) : undefined,
+    uprn: dpa.UPRN !== undefined ? Number(dpa.UPRN) : undefined,
     organisationName: dpa.ORGANISATION_NAME,
     departmentName: dpa.DEPARTMENT_NAME,
     subBuildingName: dpa.SUB_BUILDING_NAME,

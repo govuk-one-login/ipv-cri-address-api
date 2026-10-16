@@ -86,6 +86,41 @@ describe("processOrdnanceSurveySuccessResponse", () => {
         expect(result[0].uprn).toBe(100023336956);
         expect(typeof result[0].uprn).toBe("number");
     });
+
+    it("does not partially parse an invalid UPRN", () => {
+        const response = JSON.stringify({
+            results: [
+                {
+                    DPA: {
+                        UPRN: "5AB",
+                        POSTCODE: "SW1A 2AA",
+                        POST_TOWN: "London",
+                    },
+                },
+            ],
+        });
+
+        const result = processOrdnanceSurveySuccessResponse(response);
+
+        expect(result[0].uprn).toBeNaN();
+    });
+
+    it("leaves UPRN undefined when it is missing", () => {
+        const response = JSON.stringify({
+            results: [
+                {
+                    DPA: {
+                        POSTCODE: "SW1A 2AA",
+                        POST_TOWN: "London",
+                    },
+                },
+            ],
+        });
+
+        const result = processOrdnanceSurveySuccessResponse(response);
+
+        expect(result[0].uprn).toBeUndefined();
+    });
 });
 
 describe("processOrdnanceSurveyBadResponse", () => {

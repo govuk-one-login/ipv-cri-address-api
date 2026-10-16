@@ -60,6 +60,14 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  UsePostcodeLookupTsCanaryDeploymentAlarms:
+    !And
+    - !Condition IsNotProdEnvironment
+    - !Condition UseCanaryDeploymentAlarms
+  UsePostcodeLookupTsLogsSubscriptionFilter:
+    !And
+    - !Condition IsNotProdEnvironment
+    - !Condition IsNotDevBuildEnvironment
   IsDevEnvironment:
     !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
@@ -830,13 +838,14 @@ Resources:
 
   PostcodeLookupTsFunction:
     Type: AWS::Serverless::Function
+    Condition: IsNotProdEnvironment
     Properties:
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
       Handler: lambda.lambdaHandler
       DeploymentPreference:
         Alarms: !If
-          - UseCanaryDeploymentAlarms
+          - UsePostcodeLookupTsCanaryDeploymentAlarms
           - [
             !Ref PostcodeLookupTsFunctionCanaryErrors,
             !Ref PostcodeLookupTsFunctionCanary5xxErrors,
@@ -928,15 +937,17 @@ Resources:
           - lambdas/postcode-lookup-ts/src/lambda.ts
         External:
           - "@aws-sdk/*"
+
   PostcodeLookupTsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    Condition: IsNotProdEnvironment
     Properties:
       LogGroupName: !Sub "/aws/lambda/${PostcodeLookupTsFunction}"
       RetentionInDays: 365
 
   PostcodeLookupTsFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: IsNotDevBuildEnvironment
+    Condition: UsePostcodeLookupTsLogsSubscriptionFilter
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -1136,6 +1147,7 @@ Resources:
 
   PostcodeLookupTsFunctionPermission:
     Type: AWS::Lambda::Permission
+    Condition: IsNotProdEnvironment
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref PostcodeLookupTsFunction.Alias
@@ -1509,7 +1521,7 @@ Resources:
         - Name: ApiName
           Value: !Sub "${AWS::StackName}-PrivateAddressApi"
         - Name: Method
-          Value: GET
+          Value: POST
         - Name: Stage
           Value: !Ref Environment
         - Name: Resource
@@ -1527,14 +1539,16 @@ Resources:
 
   PostcodeLookupTsFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
+    Condition: UsePostcodeLookupTsCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
-      AlarmDescription: !Sub "Errors returned from the PostcodeLookupTsFunction Lambda."
+      AlarmDescription: !Sub
+        - "Errors returned from the PostcodeLookupTsFunction Lambda. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
       MetricName: Errors
       Dimensions:
         - Name: Resource
@@ -1554,25 +1568,27 @@ Resources:
 
   PostcodeLookupTsFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseCanaryDeploymentAlarms
+    Condition: UsePostcodeLookupTsCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
-      AlarmDescription: !Sub "PostcodeLookupTsFunction Lambda returning 5xx response."
+      AlarmDescription: !Sub
+        - "PostcodeLookupTsFunction Lambda returning 5xx response. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
       Dimensions:
         - Name: ApiName
           Value: !Sub "${AWS::StackName}-PrivateAddressApi"
         - Name: Method
-          Value: GET
+          Value: POST
         - Name: Stage
           Value: !Ref Environment
         - Name: Resource
-          Value: /postcode-lookup/
+          Value: /postcode-lookup
       Statistic: Sum
       Unit: Count
       Period: 60

@@ -30,9 +30,14 @@ describe("PiiPostcodeMasker", () => {
         expect(sanitize("This is just a normal sentence.")).toBe("This is just a normal sentence.");
     });
 
-    it.each(["B16 9BL", "sw1a 1aa", "EC1A 1BB"])("lowercase postcode can be masked: %s", (postcode) => {
-        expect(sanitize(postcode)).toBe("*".repeat(postcode.length));
-    });
+    it.each(["B16 9BL", "sw1a 1aa", "EC1A 1BB", "ABC", "123", "ZZ99ZZZZ", "INVALID", "12345"])(
+        "postcode-like value can be masked: %s",
+        (postcode) => {
+            expect(sanitize(`SO1. Requested postcode was ${postcode}`)).toBe(
+                `SO1. Requested postcode was ${"*".repeat(postcode.length)}`,
+            );
+        },
+    );
 
     it("postcode with extra spaces can be masked", () => {
         expect(sanitize("   SW1A 1AA   ")).toBe("   ********   ");

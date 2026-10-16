@@ -29,6 +29,7 @@ describe("createHandler", () => {
     const auditConfig = {
         queueUrl: "https://example.test/audit-queue",
         componentId: "https://example.test/address",
+        auditEventPrefix: "IPV_ADDRESS_CRI",
     };
 
     const context = {
@@ -242,6 +243,45 @@ describe("createHandler", () => {
             auditConfig.componentId,
             session,
             { restricted },
+        );
+    });
+
+    it("uses the configured audit event prefix", async () => {
+        validateSessionId.mockResolvedValue(session);
+        lookupPostcode.mockResolvedValue([]);
+
+        const handler = createPostcodeLookupHandler({
+            ...auditConfig,
+            auditEventPrefix: "TEST_PREFIX",
+            lookupPostcode,
+            validateSessionId,
+        });
+
+        await handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "SW1A 2AA",
+                }),
+            ),
+            context,
+        );
+
+        expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
+            1,
+            auditConfig.queueUrl,
+            "TEST_PREFIX_REQUEST_SENT",
+            auditConfig.componentId,
+            session,
+            expect.anything(),
+        );
+
+        expect(mockBuildAndSendAuditEvent).toHaveBeenNthCalledWith(
+            2,
+            auditConfig.queueUrl,
+            "TEST_PREFIX_RESPONSE_RECEIVED",
+            auditConfig.componentId,
+            session,
+            expect.anything(),
         );
     });
 

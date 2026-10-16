@@ -18,6 +18,8 @@ const auditQueueUrl = process.env.SQS_AUDIT_EVENT_QUEUE_URL;
 
 const componentId = process.env.VERIFIABLE_CREDENTIAL_ISSUER;
 
+const auditEventPrefix = process.env.SQS_AUDIT_EVENT_PREFIX;
+
 if (!sessionTableName) {
     throw new Error("SESSION_TABLE environment variable is required");
 }
@@ -38,9 +40,14 @@ if (!componentId) {
     throw new Error("VERIFIABLE_CREDENTIAL_ISSUER environment variable is required");
 }
 
+if (!auditEventPrefix) {
+    throw new Error("SQS_AUDIT_EVENT_PREFIX environment variable is required");
+}
+
 const postcodeLookupHandler = createHandler({
     queueUrl: auditQueueUrl,
     componentId,
+    auditEventPrefix,
     validateSessionId: (sessionId) =>
         validateSessionId(sessionId, {
             dynamoDbClient: DynamoDbClient,
