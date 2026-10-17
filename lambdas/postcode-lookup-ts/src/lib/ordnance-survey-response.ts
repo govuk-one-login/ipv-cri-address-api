@@ -2,7 +2,7 @@ import { CriError } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 
 import { CanonicalAddress } from "../types/canonical-address.js";
-import { Dpa, OrdnanceSurveyPostcodeError, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey.js";
+import { Dpa, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey.js";
 import { sanitize } from "./pii-postcode-masker.js";
 
 const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
@@ -10,7 +10,7 @@ const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
-    uprn: dpa.UPRN !== undefined ? Number(dpa.UPRN) : undefined,
+    uprn: dpa.UPRN ? Number(dpa.UPRN) : undefined,
     organisationName: dpa.ORGANISATION_NAME,
     departmentName: dpa.DEPARTMENT_NAME,
     subBuildingName: dpa.SUB_BUILDING_NAME,
@@ -47,28 +47,24 @@ export const processOrdnanceSurveyBadResponse = (responseBody: string): [] => {
 };
 
 export const processOrdnanceSurveyErrorResponse = (responseBody: string): never => {
-    let errorMessage: string;
+    const sanitizedResponse = sanitize(responseBody);
 
-    try {
-        const parsedResponse = JSON.parse(responseBody) as OrdnanceSurveyPostcodeError;
-        errorMessage = parsedResponse.error.message;
-    } catch {
-        errorMessage = responseBody;
-    }
+    logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitizedResponse}`);
 
-    const sanitizedMessage = sanitize(errorMessage);
-
-    logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitizedMessage}`);
-
-    throw new CriError(404, `Error processing postcode lookup: ${sanitizedMessage}`);
+    throw new CriError(404, `Error processing postcode lookup: ${sanitizedResponse}`);
 };
 
 export const processOrdnanceSurveySuccessResponse = (responseBody: string): CanonicalAddress[] => {
     const response = JSON.parse(responseBody) as OrdnanceSurveyPostcodeResponse;
 
+    if (response.results === null || response.results === undefined) {
+        logger.warn("Postcode lookup returned no results");
+        return [];
+    }
+
     return (
         response.results
-            ?.map((result) => result.DPA)
+            .map((result) => result.DPA)
             .filter((dpa): dpa is Dpa => dpa != null)
             .map(toCanonicalAddress) ?? []
     );

@@ -46,7 +46,7 @@ describe("lookupPostcode", () => {
             }),
     });
 
-    it("returns empty array for 404 responses", async () => {
+    it("returns empty array and logs when OS returns 404 responses", async () => {
         const mockFetch = vi.fn().mockResolvedValue({
             status: 404,
             text: vi.fn().mockResolvedValue(""),
@@ -57,6 +57,7 @@ describe("lookupPostcode", () => {
         const result = await service.lookupPostcode("SW1A 2AA", "test-client");
 
         expect(result).toEqual([]);
+        expect(loggerError).toHaveBeenCalledWith("Ordnance Survey Responded with 404: Not Found");
     });
 
     it("returns empty array and logs sanitized details for 400 responses", async () => {
@@ -207,7 +208,12 @@ describe("lookupPostcode", () => {
         const service = createService(mockFetch as typeof fetch);
 
         await expect(service.lookupPostcode("SW1A 2AA", "test-client")).rejects.toMatchObject({
-            message: "Error processing postcode lookup: Rate limit exceeded",
+            message: `Error processing postcode lookup: ${JSON.stringify({
+                error: {
+                    statuscode: 429,
+                    message: "Rate limit exceeded",
+                },
+            })}`,
             statusCode: 404,
         });
     });

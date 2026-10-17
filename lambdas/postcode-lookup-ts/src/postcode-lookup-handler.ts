@@ -16,11 +16,6 @@ const POSTCODE_LOOKUP_METRIC = "postcode_lookup";
 const TXMA_AUDIT_ENCODED_HEADER = "txma-audit-encoded";
 const CLIENT_IP_HEADER = "X-Forwarded-For";
 
-const PLAIN_TEXT_BAD_REQUEST_MESSAGES = new Set([
-    "The Client ID provided for this session is not supported",
-    "Error building URI for postcode lookup",
-]);
-
 export interface HandlerDependencies {
     queueUrl: string;
     componentId: string;
@@ -38,7 +33,7 @@ export const createHandler =
             const session = await validateSessionId(sessionId);
 
             logger.info("found session");
-
+            validatePostcode(postcode);
             const restricted = buildAuditRestricted(postcode, event.headers);
             const auditSession = buildAuditSession(session, event.headers);
             await buildAndSendAuditEvent(queueUrl, `${auditEventPrefix}_REQUEST_SENT`, componentId, auditSession, {
@@ -55,9 +50,13 @@ export const createHandler =
 
             return {
                 statusCode: 200,
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify(results),
             };
         } catch (error: unknown) {
+            logger.error("Postcode lookup failed", error instanceof Error ? error : new Error(String(error)));
             captureMetricWithDimensions(POSTCODE_LOOKUP_ERROR, getPostcodeErrorDimensions(error));
 
             return buildErrorResponse(error);
@@ -71,7 +70,6 @@ const buildAuditSession = (session: SessionItem, headers: APIGatewayProxyEvent["
 
 const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
     const errorResponse = formatErrorResponse(error);
-
     if (error instanceof Error && !(error instanceof CriError)) {
         return {
             ...errorResponse,
@@ -84,24 +82,12 @@ const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
         return errorResponse;
     }
 
-    if (
-        error.statusCode === 400 &&
-        (error.message === "Missing postcode in request body." ||
-            error.message === "Failed to parse postcode from request body")
-    ) {
+    if (error.statusCode === 400) {
         return {
             ...errorResponse,
             body: JSON.stringify(error.message),
         };
     }
-
-    if (error.statusCode === 400 && PLAIN_TEXT_BAD_REQUEST_MESSAGES.has(error.message)) {
-        return {
-            ...errorResponse,
-            body: error.message,
-        };
-    }
-
     if (error.statusCode === 403) {
         return {
             ...errorResponse,
@@ -122,7 +108,7 @@ const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
     if (error.statusCode === 408) {
         return {
             ...errorResponse,
-            body: error.message,
+            body: JSON.stringify(error.message),
         };
     }
 
@@ -130,7 +116,7 @@ const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
 };
 
 const getPostcodeFromRequest = (event: APIGatewayProxyEvent): string => {
-    if (!event.body) {
+    if (event.body === null || event.body === undefined) {
         throw new CriError(400, "Missing postcode in request body.");
     }
 
@@ -142,11 +128,17 @@ const getPostcodeFromRequest = (event: APIGatewayProxyEvent): string => {
         throw new CriError(400, "Failed to parse postcode from request body");
     }
 
-    if (!request.postcode?.trim()) {
+    if (request?.postcode === null || request?.postcode === undefined) {
         throw new CriError(400, "Missing postcode in request body.");
     }
 
     return request.postcode;
+};
+
+const validatePostcode = (postcode: string): void => {
+    if (!postcode.trim()) {
+        throw new CriError(400, "Postcode must not be null or blank");
+    }
 };
 
 const buildAuditRestricted = (postcode: string, headers: APIGatewayProxyEvent["headers"]): Record<string, unknown> => {

@@ -8,6 +8,12 @@ import {
 } from "../../src/lib/ordnance-survey-response.js";
 
 describe("processOrdnanceSurveySuccessResponse", () => {
+    const loggerWarn = vi.spyOn(logger, "warn");
+
+    beforeEach(() => {
+        loggerWarn.mockClear();
+    });
+
     it("returns mapped canonical addresses", () => {
         const response = JSON.stringify({
             results: [
@@ -34,7 +40,7 @@ describe("processOrdnanceSurveySuccessResponse", () => {
         );
     });
 
-    it("returns an empty array when results is empty", () => {
+    it("returns an empty array without warning when results is empty", () => {
         const result = processOrdnanceSurveySuccessResponse(
             JSON.stringify({
                 results: [],
@@ -42,12 +48,27 @@ describe("processOrdnanceSurveySuccessResponse", () => {
         );
 
         expect(result).toEqual([]);
+        expect(loggerWarn).not.toHaveBeenCalled();
     });
 
-    it("returns an empty array when results is missing", () => {
+    it("returns an empty array and logs a warning when results is missing", () => {
         const result = processOrdnanceSurveySuccessResponse("{}");
 
         expect(result).toEqual([]);
+        expect(loggerWarn).toHaveBeenCalledOnce();
+        expect(loggerWarn).toHaveBeenCalledWith("Postcode lookup returned no results");
+    });
+
+    it("returns an empty array and logs a warning when results is null", () => {
+        const result = processOrdnanceSurveySuccessResponse(
+            JSON.stringify({
+                results: null,
+            }),
+        );
+
+        expect(result).toEqual([]);
+        expect(loggerWarn).toHaveBeenCalledOnce();
+        expect(loggerWarn).toHaveBeenCalledWith("Postcode lookup returned no results");
     });
 
     it("throws when the response body is empty", () => {
@@ -121,6 +142,24 @@ describe("processOrdnanceSurveySuccessResponse", () => {
 
         expect(result[0].uprn).toBeUndefined();
     });
+
+    it("leaves UPRN undefined when it is empty", () => {
+        const response = JSON.stringify({
+            results: [
+                {
+                    DPA: {
+                        UPRN: "",
+                        POSTCODE: "SW1A 2AA",
+                        POST_TOWN: "London",
+                    },
+                },
+            ],
+        });
+
+        const result = processOrdnanceSurveySuccessResponse(response);
+
+        expect(result[0].uprn).toBeUndefined();
+    });
 });
 
 describe("processOrdnanceSurveyBadResponse", () => {
@@ -181,7 +220,12 @@ describe("processOrdnanceSurveyErrorResponse", () => {
 
         expect(thrownError).toBeInstanceOf(CriError);
         expect(thrownError).toMatchObject({
-            message: "Error processing postcode lookup: Unexpected error for ********",
+            message: `Error processing postcode lookup: ${JSON.stringify({
+                error: {
+                    statuscode: 500,
+                    message: "Unexpected error for ********",
+                },
+            })}`,
             statusCode: 404,
         });
         expect((thrownError as Error).message).not.toContain("SW1A 1AA");
@@ -198,9 +242,32 @@ describe("processOrdnanceSurveyErrorResponse", () => {
         expect(() => processOrdnanceSurveyErrorResponse(responseBody)).toThrow(CriError);
 
         expect(loggerError).toHaveBeenCalledWith(
-            "Ordnance Survey Responded with unknown error: Unexpected error for ********",
+            `Ordnance Survey Responded with unknown error: ${JSON.stringify({
+                error: {
+                    statuscode: 500,
+                    message: "Unexpected error for ********",
+                },
+            })}`,
         );
         expect(loggerError).not.toHaveBeenCalledWith(expect.stringContaining("SW1A 1AA"));
+    });
+
+    it("uses the sanitised full OS response in the processing error", () => {
+        const responseBody = JSON.stringify({
+            error: {
+                statuscode: 500,
+                message: "Unexpected error for SW1A 1AA",
+            },
+        });
+
+        expect(() => processOrdnanceSurveyErrorResponse(responseBody)).toThrow(
+            `Error processing postcode lookup: ${JSON.stringify({
+                error: {
+                    statuscode: 500,
+                    message: "Unexpected error for ********",
+                },
+            })}`,
+        );
     });
 
     it("throws a 404 CriError containing the sanitised raw body when the response is malformed", () => {

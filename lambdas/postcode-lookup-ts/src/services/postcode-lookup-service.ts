@@ -104,6 +104,7 @@ export const lookupPostcode = async (
             return processOrdnanceSurveyBadResponse(responseBody);
 
         case 404:
+            logger.error("Ordnance Survey Responded with 404: Not Found");
             return [];
 
         default:

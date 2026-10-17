@@ -89,6 +89,20 @@ describe("createHandler", () => {
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
     });
 
+    it("returns 400 when request body is empty", async () => {
+        const result = await createHandler().handler(createEvent(""), context);
+
+        expect(result).toEqual({
+            statusCode: 400,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify("Failed to parse postcode from request body"),
+        });
+
+        expect(validateSessionId).not.toHaveBeenCalled();
+        expect(lookupPostcode).not.toHaveBeenCalled();
+        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
+    });
+
     it("returns 400 when request body contains invalid JSON", async () => {
         const result = await createHandler().handler(createEvent("{"), context);
 
@@ -130,15 +144,41 @@ describe("createHandler", () => {
         expect(result).toEqual({
             statusCode: 400,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify("Missing postcode in request body."),
+            body: JSON.stringify("Postcode must not be null or blank"),
         });
 
-        expect(validateSessionId).not.toHaveBeenCalled();
+        expect(validateSessionId).toHaveBeenCalled();
         expect(lookupPostcode).not.toHaveBeenCalled();
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
     });
 
-    it("returns 400 when session_id header is missing", async () => {
+    it("validates the session before rejecting a blank postcode", async () => {
+        validateSessionId.mockRejectedValue(new CriError(403, "Session not found"));
+
+        const result = await createHandler().handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "   ",
+                }),
+            ),
+            context,
+        );
+
+        expect(validateSessionId).toHaveBeenCalled();
+        expect(lookupPostcode).not.toHaveBeenCalled();
+        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
+
+        expect(result).toEqual({
+            statusCode: 403,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                error: "access_denied",
+                error_description: "Access denied by resource owner or authorization server - Session not found",
+            }),
+        });
+    });
+
+    it("returns 403 when session_id header is missing", async () => {
         const result = await createHandler().handler(
             {
                 body: JSON.stringify({
@@ -150,10 +190,11 @@ describe("createHandler", () => {
         );
 
         expect(result).toEqual({
-            statusCode: 400,
+            statusCode: 403,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                message: "Missing header: session_id is required",
+                error: "access_denied",
+                error_description: "Access denied by resource owner or authorization server - Session not found",
             }),
         });
 
@@ -179,7 +220,13 @@ describe("createHandler", () => {
 
         expect(lookupPostcode).toHaveBeenCalledWith("SW1A 2AA", "test-client");
 
-        expect(result.statusCode).toBe(200);
+        expect(result).toEqual({
+            statusCode: 200,
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([]),
+        });
     });
 
     it("returns addresses from postcode lookup service", async () => {
@@ -202,8 +249,13 @@ describe("createHandler", () => {
             context,
         );
 
-        expect(result.statusCode).toBe(200);
-        expect(result.body).toBe(JSON.stringify(address));
+        expect(result).toEqual({
+            statusCode: 200,
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(address),
+        });
     });
 
     it("sends request and response audit events", async () => {
@@ -479,7 +531,7 @@ describe("createHandler", () => {
         expect(result).toEqual({
             statusCode: 400,
             headers: { "Content-Type": "application/json" },
-            body: "The Client ID provided for this session is not supported",
+            body: JSON.stringify("The Client ID provided for this session is not supported"),
         });
 
         expect(mockBuildAndSendAuditEvent).toHaveBeenCalledOnce();
@@ -507,6 +559,20 @@ describe("createHandler", () => {
             }),
         });
 
+        expect(lookupPostcode).not.toHaveBeenCalled();
+        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
+    });
+
+    it("returns 400 when request body is JSON null", async () => {
+        const result = await createHandler().handler(createEvent("null"), context);
+
+        expect(result).toEqual({
+            statusCode: 400,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify("Missing postcode in request body."),
+        });
+
+        expect(validateSessionId).not.toHaveBeenCalled();
         expect(lookupPostcode).not.toHaveBeenCalled();
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
     });
@@ -558,7 +624,7 @@ describe("createHandler", () => {
     it("returns 408 when postcode lookup times out", async () => {
         validateSessionId.mockResolvedValue(session);
 
-        lookupPostcode.mockRejectedValue(new CriError(408, "Error Connection Timeout"));
+        lookupPostcode.mockRejectedValue(new CriError(408, "Error timed out waiting for postcode lookup response"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -571,8 +637,10 @@ describe("createHandler", () => {
 
         expect(result).toEqual({
             statusCode: 408,
-            headers: { "Content-Type": "application/json" },
-            body: "Error Connection Timeout",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify("Error timed out waiting for postcode lookup response"),
         });
 
         expect(mockBuildAndSendAuditEvent).toHaveBeenCalledOnce();
@@ -748,7 +816,7 @@ describe("createHandler", () => {
     it("records timeout error dimensions", async () => {
         validateSessionId.mockResolvedValue(session);
 
-        lookupPostcode.mockRejectedValue(new CriError(408, "Error Connection Timeout"));
+        lookupPostcode.mockRejectedValue(new CriError(408, "Error_timed_out_waiting_for_postcode_lookup_response"));
 
         await createHandler().handler(
             createEvent(
@@ -761,7 +829,7 @@ describe("createHandler", () => {
 
         expect(mockCaptureMetricWithDimensions).toHaveBeenCalledWith("postcode_lookup_error", {
             postcode_lookup_error_type: "time_out_error",
-            postcode_lookup_error_message: "Error_Connection_Timeout",
+            postcode_lookup_error_message: "Error_timed_out_waiting_for_postcode_lookup_response",
         });
     });
 
