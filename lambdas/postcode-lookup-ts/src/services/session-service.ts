@@ -4,7 +4,7 @@ import type { SessionItem } from "@govuk-one-login/cri-types";
 
 import { getItem } from "./dynamodb-service.js";
 
-export interface SessionValidationDependencies {
+interface SessionValidationDependencies {
     dynamoDbClient: DynamoDBDocument;
     sessionTableName: string;
     currentTime?: () => number;

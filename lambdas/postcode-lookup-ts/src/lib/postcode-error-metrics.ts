@@ -3,11 +3,11 @@ import { cleanMetricValue } from "./metric-value.js";
 
 export const POSTCODE_LOOKUP_ERROR = "postcode_lookup_error";
 
-export const POSTCODE_LOOKUP_ERROR_TYPE = "postcode_lookup_error_type";
+const POSTCODE_LOOKUP_ERROR_TYPE = "postcode_lookup_error_type";
 
-export const POSTCODE_LOOKUP_ERROR_MESSAGE = "postcode_lookup_error_message";
+const POSTCODE_LOOKUP_ERROR_MESSAGE = "postcode_lookup_error_message";
 
-export const getPostcodeErrorType = (error: unknown): string => {
+const getPostcodeErrorType = (error: unknown): string => {
     if (!(error instanceof CriError)) {
         return "lookup_server";
     }

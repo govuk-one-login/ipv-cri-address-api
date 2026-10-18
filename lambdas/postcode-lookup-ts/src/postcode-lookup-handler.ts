@@ -9,6 +9,7 @@ import type { SessionItem } from "@govuk-one-login/cri-types";
 import { decodePostcode } from "./lib/postcode.js";
 import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics.js";
 import { getSessionId } from "./lib/session-header.js";
+import { sanitize } from "./lib/pii-postcode-masker.js";
 import type { CanonicalAddress } from "./types/canonical-address.js";
 import type { PostcodeRequest } from "./types/postcode-request.js";
 
@@ -16,7 +17,7 @@ const POSTCODE_LOOKUP_METRIC = "postcode_lookup";
 const TXMA_AUDIT_ENCODED_HEADER = "txma-audit-encoded";
 const CLIENT_IP_HEADER = "X-Forwarded-For";
 
-export interface HandlerDependencies {
+interface HandlerDependencies {
     queueUrl: string;
     componentId: string;
     auditEventPrefix: string;
@@ -56,7 +57,13 @@ export const createHandler =
                 body: JSON.stringify(results),
             };
         } catch (error: unknown) {
-            logger.error("Postcode lookup failed", error instanceof Error ? error : new Error(String(error)));
+            const errorToLog =
+                error instanceof Error
+                    ? new Error(sanitize(error.message) ?? "Postcode lookup failed")
+                    : new Error("Unknown postcode lookup error");
+
+            logger.error("Postcode lookup failed", errorToLog);
+
             captureMetricWithDimensions(POSTCODE_LOOKUP_ERROR, getPostcodeErrorDimensions(error));
 
             return buildErrorResponse(error);

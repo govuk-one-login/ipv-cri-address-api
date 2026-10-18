@@ -4,8 +4,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildAndSendAuditEvent } from "@govuk-one-login/cri-audit";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { captureMetric, captureMetricWithDimensions } from "@govuk-one-login/cri-metrics";
+import { logger } from "@govuk-one-login/cri-logger";
 
 import { createHandler as createPostcodeLookupHandler } from "../src/postcode-lookup-handler.js";
+
+vi.mock("@govuk-one-login/cri-logger", () => ({
+    logger: {
+        info: vi.fn(),
+        error: vi.fn(),
+    },
+}));
 
 vi.mock("@govuk-one-login/cri-audit", () => ({
     buildAndSendAuditEvent: vi.fn(),
@@ -15,6 +23,8 @@ vi.mock("@govuk-one-login/cri-metrics", () => ({
     captureMetric: vi.fn(),
     captureMetricWithDimensions: vi.fn(),
 }));
+
+const mockLoggerError = vi.mocked(logger.error);
 
 const mockBuildAndSendAuditEvent = vi.mocked(buildAndSendAuditEvent);
 
@@ -71,83 +81,25 @@ describe("createHandler", () => {
         mockBuildAndSendAuditEvent.mockReset();
         mockCaptureMetric.mockReset();
         mockCaptureMetricWithDimensions.mockReset();
+        mockLoggerError.mockReset();
 
         mockBuildAndSendAuditEvent.mockResolvedValue(undefined);
     });
-
-    it("returns 400 when request body is missing", async () => {
-        const result = await createHandler().handler(createEvent(null), context);
+    it.each([
+        ["empty", "", "Failed to parse postcode from request body"],
+        ["invalid JSON", "{", "Failed to parse postcode from request body"],
+        ["missing postcode value", "{}", "Missing postcode in request body."],
+        ["JSON null", "null", "Missing postcode in request body."],
+    ])("returns 400 when request body is %s", async (_scenario, body, expectedMessage) => {
+        const result = await createHandler().handler(createEvent(body), context);
 
         expect(result).toEqual({
             statusCode: 400,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify("Missing postcode in request body."),
+            body: JSON.stringify(expectedMessage),
         });
 
         expect(validateSessionId).not.toHaveBeenCalled();
-        expect(lookupPostcode).not.toHaveBeenCalled();
-        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 when request body is empty", async () => {
-        const result = await createHandler().handler(createEvent(""), context);
-
-        expect(result).toEqual({
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify("Failed to parse postcode from request body"),
-        });
-
-        expect(validateSessionId).not.toHaveBeenCalled();
-        expect(lookupPostcode).not.toHaveBeenCalled();
-        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 when request body contains invalid JSON", async () => {
-        const result = await createHandler().handler(createEvent("{"), context);
-
-        expect(result).toEqual({
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify("Failed to parse postcode from request body"),
-        });
-
-        expect(validateSessionId).not.toHaveBeenCalled();
-        expect(lookupPostcode).not.toHaveBeenCalled();
-        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 when postcode value is missing", async () => {
-        const result = await createHandler().handler(createEvent("{}"), context);
-
-        expect(result).toEqual({
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify("Missing postcode in request body."),
-        });
-
-        expect(validateSessionId).not.toHaveBeenCalled();
-        expect(lookupPostcode).not.toHaveBeenCalled();
-        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
-    });
-
-    it("returns 400 when postcode value is blank", async () => {
-        const result = await createHandler().handler(
-            createEvent(
-                JSON.stringify({
-                    postcode: "   ",
-                }),
-            ),
-            context,
-        );
-
-        expect(result).toEqual({
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify("Postcode must not be null or blank"),
-        });
-
-        expect(validateSessionId).toHaveBeenCalled();
         expect(lookupPostcode).not.toHaveBeenCalled();
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
     });
@@ -563,18 +515,67 @@ describe("createHandler", () => {
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
     });
 
-    it("returns 400 when request body is JSON null", async () => {
-        const result = await createHandler().handler(createEvent("null"), context);
+    it("does not log the postcode when a non-Error value is thrown", async () => {
+        const postcode = "SW1A 2AA";
 
-        expect(result).toEqual({
-            statusCode: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify("Missing postcode in request body."),
+        validateSessionId.mockResolvedValue(session);
+        lookupPostcode.mockRejectedValue({
+            message: "Unexpected postcode lookup error",
+            postcode,
         });
 
-        expect(validateSessionId).not.toHaveBeenCalled();
-        expect(lookupPostcode).not.toHaveBeenCalled();
-        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
+        await createHandler().handler(
+            createEvent(
+                JSON.stringify({
+                    postcode,
+                }),
+            ),
+            context,
+        );
+
+        expect(mockLoggerError).toHaveBeenCalledWith(
+            "Postcode lookup failed",
+            expect.objectContaining({
+                message: "Unknown postcode lookup error",
+            }),
+        );
+
+        expect(JSON.stringify(mockLoggerError.mock.calls)).not.toContain(postcode);
+    });
+
+    it("does not log the postcode when an Error contains the postcode", async () => {
+        const postcode = "SW1A 2AA";
+
+        validateSessionId.mockResolvedValue(session);
+
+        lookupPostcode.mockRejectedValue(new Error(`Unexpected error for ${postcode}`));
+
+        await createHandler().handler(createEvent(JSON.stringify({ postcode })), context);
+
+        expect(mockLoggerError).toHaveBeenCalled();
+
+        const loggedError = mockLoggerError.mock.calls[0][1];
+
+        expect(loggedError).toBeInstanceOf(Error);
+
+        if (loggedError instanceof Error) {
+            expect(loggedError.message).not.toContain(postcode);
+        }
+    });
+
+    it("does not record the postcode in error metric dimensions", async () => {
+        const postcode = "SW1A 2AA";
+
+        validateSessionId.mockResolvedValue(session);
+        lookupPostcode.mockRejectedValue(new Error(`Unexpected error for ${postcode}`));
+
+        await createHandler().handler(createEvent(JSON.stringify({ postcode })), context);
+
+        expect(mockCaptureMetricWithDimensions).toHaveBeenCalled();
+
+        const dimensions = mockCaptureMetricWithDimensions.mock.calls[0][1];
+
+        expect(JSON.stringify(dimensions)).not.toContain(postcode);
     });
 
     it("records lookup server dimensions for an unexpected error", async () => {

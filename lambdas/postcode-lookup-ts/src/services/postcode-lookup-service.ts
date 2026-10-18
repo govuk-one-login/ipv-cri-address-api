@@ -13,7 +13,7 @@ import { getParameterValue, getSecretValue } from "./configuration-service.js";
 
 const LOOKUP_POSTCODE_DURATION_METRIC = "lookup_postcode_duration";
 
-export interface PostcodeLookupDependencies {
+interface PostcodeLookupDependencies {
     stackName: string;
     secretPrefix: string;
     getParameterValue?: typeof getParameterValue;

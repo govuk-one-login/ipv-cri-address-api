@@ -2,7 +2,7 @@ export interface OrdnanceSurveyPostcodeResponse {
     results?: Result[];
 }
 
-export interface Result {
+interface Result {
     DPA?: Dpa;
 }
 
@@ -19,13 +19,4 @@ export interface Dpa {
     DEPENDENT_LOCALITY?: string;
     POST_TOWN?: string;
     POSTCODE?: string;
-}
-
-export interface OrdnanceSurveyPostcodeError {
-    error: OrdnanceSurveyError;
-}
-
-export interface OrdnanceSurveyError {
-    statuscode: number;
-    message: string;
 }
