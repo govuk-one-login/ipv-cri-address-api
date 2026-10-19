@@ -108,7 +108,7 @@ describe("processOrdnanceSurveySuccessResponse", () => {
         expect(typeof result[0].uprn).toBe("number");
     });
 
-    it("does not partially parse an invalid UPRN", () => {
+    it("returns NaN for an invalid UPRN value", () => {
         const response = JSON.stringify({
             results: [
                 {

@@ -64,6 +64,10 @@ Conditions:
     !And
     - !Condition IsNotProdEnvironment
     - !Condition UseCanaryDeploymentAlarms
+  UsePostcodeLookupTsCanary5xxAlarm:
+    !And
+    - !Condition IsDevEnvironment
+    - !Condition UseCanaryDeploymentAlarms
   UsePostcodeLookupTsLogsSubscriptionFilter:
     !And
     - !Condition IsNotProdEnvironment
@@ -848,7 +852,6 @@ Resources:
           - UsePostcodeLookupTsCanaryDeploymentAlarms
           - [
             !Ref PostcodeLookupTsFunctionCanaryErrors,
-            !Ref PostcodeLookupTsFunctionCanary5xxErrors,
           ]
           - [ !Ref AWS::NoValue ]
       CodeUri: ../../
@@ -857,7 +860,7 @@ Resources:
         - !FindInMap [ DynatraceLayerARN, !Ref Environment, node ]
       Environment:
         Variables:
-          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup"
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup-ts"
           SESSION_TABLE: !If
             - UseOAuthCommonTables
             - !GetAtt OAuth.Outputs.DbSessionTableName
@@ -1568,7 +1571,7 @@ Resources:
 
   PostcodeLookupTsFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UsePostcodeLookupTsCanaryDeploymentAlarms
+    Condition: UsePostcodeLookupTsCanary5xxAlarm
     Properties:
       ActionsEnabled: true
       AlarmActions:
