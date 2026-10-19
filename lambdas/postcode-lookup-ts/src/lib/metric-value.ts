@@ -16,7 +16,7 @@ export const cleanMetricValue = (value: string | null | undefined): string => {
 
     for (let index = 0; index < stripped.length; index += 1) {
         const character = stripped[index];
-        const characterCode = stripped.charCodeAt(index);
+        const characterCode = stripped.codePointAt(index);
 
         if (/\s/.test(character)) {
             cleaned += "_";
