@@ -2,9 +2,9 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import type { SessionItem, UnixMillisecondsTimestamp, UnixSecondsTimestamp } from "@govuk-one-login/cri-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { validateSessionId } from "../../src/services/session-service.js";
+import { getSessionById } from "../../src/services/session-service.js";
 
-describe("validateSessionId", () => {
+describe("getSessionById", () => {
     const send = vi.fn();
 
     const mockDynamoDbClient = {
@@ -14,7 +14,7 @@ describe("validateSessionId", () => {
     const sessionTableName = "session-table";
     const currentTime = 1_700_000_000;
     const validateSession = (sessionId: string) =>
-        validateSessionId(sessionId, {
+        getSessionById(sessionId, {
             dynamoDbClient: mockDynamoDbClient,
             sessionTableName,
             currentTime: () => currentTime,
@@ -37,6 +37,21 @@ describe("validateSessionId", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it("uses the current time when currentTime is not provided", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(currentTime * 1000);
+
+        send.mockResolvedValue({
+            Item: validSession,
+        });
+
+        const result = await getSessionById("test-session-id", {
+            dynamoDbClient: mockDynamoDbClient,
+            sessionTableName,
+        });
+
+        expect(result).toEqual(validSession);
     });
 
     it("returns a valid session", async () => {

@@ -10,7 +10,7 @@ interface SessionValidationDependencies {
     currentTime?: () => number;
 }
 
-export const validateSessionId = async (
+export const getSessionById = async (
     sessionId: string,
     {
         dynamoDbClient,

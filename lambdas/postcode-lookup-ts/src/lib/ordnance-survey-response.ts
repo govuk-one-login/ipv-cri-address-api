@@ -5,8 +5,6 @@ import { CanonicalAddress } from "../types/canonical-address.js";
 import { Dpa, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey.js";
 import { sanitize } from "./pii-postcode-masker.js";
 
-const LOG_RESPONSE_PREFIX = "Ordnance Survey Responded with ";
-
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 
 export const toCanonicalAddress = (dpa: Dpa): CanonicalAddress => ({
@@ -31,25 +29,25 @@ export const processOrdnanceSurveyBadResponse = (responseBody: string): [] => {
     try {
         parsedResponse = JSON.parse(responseBody);
     } catch {
-        logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitize(responseBody)}`);
+        logger.error(`Ordnance Survey Responded with unknown error: ${sanitize(responseBody)}`);
         return [];
     }
 
     const error = isRecord(parsedResponse) && isRecord(parsedResponse.error) ? parsedResponse.error : undefined;
 
     if (typeof error?.statuscode === "number" && typeof error.message === "string") {
-        logger.error(`${LOG_RESPONSE_PREFIX}status ${error.statuscode}: ${sanitize(error.message)}`);
+        logger.error(`Ordnance Survey Responded with status ${error.statuscode}: ${sanitize(error.message)}`);
         return [];
     }
 
-    logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitize(responseBody)}`);
+    logger.error(`Ordnance Survey Responded with unknown error: ${sanitize(responseBody)}`);
     return [];
 };
 
 export const processOrdnanceSurveyErrorResponse = (responseBody: string): never => {
     const sanitizedResponse = sanitize(responseBody);
 
-    logger.error(`${LOG_RESPONSE_PREFIX}unknown error: ${sanitizedResponse}`);
+    logger.error(`Ordnance Survey Responded with unknown error: ${sanitizedResponse}`);
 
     throw new CriError(404, `Error processing postcode lookup: ${sanitizedResponse}`);
 };

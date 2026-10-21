@@ -34,7 +34,7 @@ const mockCaptureMetricWithDimensions = vi.mocked(captureMetricWithDimensions);
 
 describe("createHandler", () => {
     const lookupPostcode = vi.fn();
-    const validateSessionId = vi.fn();
+    const getSessionById = vi.fn();
 
     const auditConfig = {
         queueUrl: "https://example.test/audit-queue",
@@ -58,7 +58,7 @@ describe("createHandler", () => {
         handler: createPostcodeLookupHandler({
             ...auditConfig,
             lookupPostcode,
-            validateSessionId,
+            getSessionById,
         }),
     });
 
@@ -76,7 +76,7 @@ describe("createHandler", () => {
 
     beforeEach(() => {
         lookupPostcode.mockReset();
-        validateSessionId.mockReset();
+        getSessionById.mockReset();
 
         mockBuildAndSendAuditEvent.mockReset();
         mockCaptureMetric.mockReset();
@@ -86,6 +86,7 @@ describe("createHandler", () => {
         mockBuildAndSendAuditEvent.mockResolvedValue(undefined);
     });
     it.each([
+        ["null", null, "Missing postcode in request body."],
         ["empty", "", "Failed to parse postcode from request body"],
         ["invalid JSON", "{", "Failed to parse postcode from request body"],
         ["missing postcode value", "{}", "Missing postcode in request body."],
@@ -99,13 +100,13 @@ describe("createHandler", () => {
             body: JSON.stringify(expectedMessage),
         });
 
-        expect(validateSessionId).not.toHaveBeenCalled();
+        expect(getSessionById).not.toHaveBeenCalled();
         expect(lookupPostcode).not.toHaveBeenCalled();
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
     });
 
-    it("validates the session before rejecting a blank postcode", async () => {
-        validateSessionId.mockRejectedValue(new CriError(403, "Session not found"));
+    it("returns 400 when the postcode is blank", async () => {
+        getSessionById.mockResolvedValue(session);
 
         const result = await createHandler().handler(
             createEvent(
@@ -116,7 +117,30 @@ describe("createHandler", () => {
             context,
         );
 
-        expect(validateSessionId).toHaveBeenCalled();
+        expect(result).toEqual({
+            statusCode: 400,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify("Postcode must not be null or blank"),
+        });
+
+        expect(getSessionById).toHaveBeenCalledWith("test-session-id");
+        expect(lookupPostcode).not.toHaveBeenCalled();
+        expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
+    });
+
+    it("validates the session before rejecting a blank postcode", async () => {
+        getSessionById.mockRejectedValue(new CriError(403, "Session not found"));
+
+        const result = await createHandler().handler(
+            createEvent(
+                JSON.stringify({
+                    postcode: "   ",
+                }),
+            ),
+            context,
+        );
+
+        expect(getSessionById).toHaveBeenCalled();
         expect(lookupPostcode).not.toHaveBeenCalled();
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
 
@@ -150,13 +174,13 @@ describe("createHandler", () => {
             }),
         });
 
-        expect(validateSessionId).not.toHaveBeenCalled();
+        expect(getSessionById).not.toHaveBeenCalled();
         expect(lookupPostcode).not.toHaveBeenCalled();
         expect(mockBuildAndSendAuditEvent).not.toHaveBeenCalled();
     });
 
     it("calls postcode lookup using the client id from the session", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
 
         const result = await createHandler().handler(
@@ -168,7 +192,7 @@ describe("createHandler", () => {
             context,
         );
 
-        expect(validateSessionId).toHaveBeenCalledWith("test-session-id");
+        expect(getSessionById).toHaveBeenCalledWith("test-session-id");
 
         expect(lookupPostcode).toHaveBeenCalledWith("SW1A 2AA", "test-client");
 
@@ -189,7 +213,7 @@ describe("createHandler", () => {
             },
         ];
 
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue(address);
 
         const result = await createHandler().handler(
@@ -211,7 +235,7 @@ describe("createHandler", () => {
     });
 
     it("sends request and response audit events", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
 
         await createHandler().handler(
@@ -251,14 +275,14 @@ describe("createHandler", () => {
     });
 
     it("uses the configured audit event prefix", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
 
         const handler = createPostcodeLookupHandler({
             ...auditConfig,
             auditEventPrefix: "TEST_PREFIX",
             lookupPostcode,
-            validateSessionId,
+            getSessionById,
         });
 
         await handler(
@@ -290,7 +314,7 @@ describe("createHandler", () => {
     });
 
     it("adds encoded device information to audit events", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
 
         await createHandler().handler(
@@ -336,7 +360,7 @@ describe("createHandler", () => {
     });
 
     it("uses X-Forwarded-For as the IP address for request and response audit events", async () => {
-        validateSessionId.mockResolvedValue({
+        getSessionById.mockResolvedValue({
             ...session,
             clientIpAddress: "10.0.0.1",
         });
@@ -395,7 +419,7 @@ describe("createHandler", () => {
     });
 
     it("records the postcode lookup metric on success", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
 
         await createHandler().handler(
@@ -414,7 +438,7 @@ describe("createHandler", () => {
     });
 
     it("returns 403 when session is not found", async () => {
-        validateSessionId.mockRejectedValue(new CriError(403, "Session not found"));
+        getSessionById.mockRejectedValue(new CriError(403, "Session not found"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -439,7 +463,7 @@ describe("createHandler", () => {
     });
 
     it("returns 403 when session has expired", async () => {
-        validateSessionId.mockRejectedValue(new CriError(403, "Session expired"));
+        getSessionById.mockRejectedValue(new CriError(403, "Session expired"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -464,7 +488,7 @@ describe("createHandler", () => {
     });
 
     it("returns 400 when client id is not supported", async () => {
-        validateSessionId.mockResolvedValue({
+        getSessionById.mockResolvedValue({
             ...session,
             clientId: "unsupported-client",
         });
@@ -492,7 +516,7 @@ describe("createHandler", () => {
     });
 
     it("returns 401 when session validation fails", async () => {
-        validateSessionId.mockRejectedValue(new CriError(401, "Any other exception"));
+        getSessionById.mockRejectedValue(new CriError(401, "Any other exception"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -518,7 +542,7 @@ describe("createHandler", () => {
     it("does not log the postcode when a non-Error value is thrown", async () => {
         const postcode = "SW1A 2AA";
 
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockRejectedValue({
             message: "Unexpected postcode lookup error",
             postcode,
@@ -546,7 +570,7 @@ describe("createHandler", () => {
     it("does not log the postcode when an Error contains the postcode", async () => {
         const postcode = "SW1A 2AA";
 
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
 
         lookupPostcode.mockRejectedValue(new Error(`Unexpected error for ${postcode}`));
 
@@ -566,7 +590,7 @@ describe("createHandler", () => {
     it("does not record the postcode in error metric dimensions", async () => {
         const postcode = "SW1A 2AA";
 
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockRejectedValue(new Error(`Unexpected error for ${postcode}`));
 
         await createHandler().handler(createEvent(JSON.stringify({ postcode })), context);
@@ -579,7 +603,7 @@ describe("createHandler", () => {
     });
 
     it("records lookup server dimensions for an unexpected error", async () => {
-        validateSessionId.mockRejectedValue(new CriError(401, "Any other exception"));
+        getSessionById.mockRejectedValue(new CriError(401, "Any other exception"));
 
         await createHandler().handler(
             createEvent(
@@ -597,7 +621,7 @@ describe("createHandler", () => {
     });
 
     it("performs audit, lookup and metric operations in Java-equivalent order", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
 
         await createHandler().handler(
@@ -623,7 +647,7 @@ describe("createHandler", () => {
     });
 
     it("returns 408 when postcode lookup times out", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
 
         lookupPostcode.mockRejectedValue(new CriError(408, "Error timed out waiting for postcode lookup response"));
 
@@ -650,7 +674,7 @@ describe("createHandler", () => {
     });
 
     it("returns 404 when postcode lookup processing fails", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
 
         lookupPostcode.mockRejectedValue(new CriError(404, "Error sending request for postcode lookup"));
 
@@ -675,7 +699,7 @@ describe("createHandler", () => {
     });
 
     it("returns 401 for an unexpected error", async () => {
-        validateSessionId.mockRejectedValue(new Error("Unexpected failure"));
+        getSessionById.mockRejectedValue(new Error("Unexpected failure"));
 
         const result = await createHandler().handler(
             createEvent(
@@ -702,7 +726,7 @@ describe("createHandler", () => {
     });
 
     it("returns 401 when parsing an empty OS success response fails", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockRejectedValue(new SyntaxError("Unexpected end of JSON input"));
 
         const result = await createHandler().handler(
@@ -733,7 +757,7 @@ describe("createHandler", () => {
     });
 
     it("records session-not-found error dimensions", async () => {
-        validateSessionId.mockRejectedValue(new CriError(403, "Session not found"));
+        getSessionById.mockRejectedValue(new CriError(403, "Session not found"));
 
         await createHandler().handler(
             createEvent(
@@ -751,7 +775,7 @@ describe("createHandler", () => {
     });
 
     it("records session-expired error dimensions", async () => {
-        validateSessionId.mockRejectedValue(new CriError(403, "Session expired"));
+        getSessionById.mockRejectedValue(new CriError(403, "Session expired"));
 
         await createHandler().handler(
             createEvent(
@@ -769,7 +793,7 @@ describe("createHandler", () => {
     });
 
     it("includes empty device information when txma-audit-encoded is present but empty", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
         lookupPostcode.mockResolvedValue([]);
 
         await createHandler().handler(
@@ -815,7 +839,7 @@ describe("createHandler", () => {
     });
 
     it("records timeout error dimensions", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
 
         lookupPostcode.mockRejectedValue(new CriError(408, "Error_timed_out_waiting_for_postcode_lookup_response"));
 
@@ -835,7 +859,7 @@ describe("createHandler", () => {
     });
 
     it("records lookup processing error dimensions", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
 
         lookupPostcode.mockRejectedValue(new CriError(404, "Error sending request for postcode lookup"));
 
@@ -855,7 +879,7 @@ describe("createHandler", () => {
     });
 
     it("records lookup server error dimensions", async () => {
-        validateSessionId.mockResolvedValue({
+        getSessionById.mockResolvedValue({
             ...session,
             clientId: "unsupported-client",
         });
@@ -878,7 +902,7 @@ describe("createHandler", () => {
     });
 
     it("does not send the response audit event when lookup fails", async () => {
-        validateSessionId.mockResolvedValue(session);
+        getSessionById.mockResolvedValue(session);
 
         lookupPostcode.mockRejectedValue(new CriError(404, "Error sending request for postcode lookup"));
 
@@ -913,7 +937,7 @@ describe("createHandler", () => {
     });
 
     it("uses X-Forwarded-For as the audit event IP address for the request audit event", async () => {
-        validateSessionId.mockResolvedValue({
+        getSessionById.mockResolvedValue({
             ...session,
             clientIpAddress: "10.0.0.1",
         });

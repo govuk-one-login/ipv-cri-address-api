@@ -22,10 +22,10 @@
         "@aws-sdk/client-ssm": "3.1005.0",
         "@aws-sdk/lib-dynamodb": "3.1005.0",
         "@govuk-one-login/cri-audit": "1.0.3",
-        "@govuk-one-login/cri-error-response": "^1.0.2",
+        "@govuk-one-login/cri-error-response": "1.0.2",
         "@govuk-one-login/cri-logger": "1.1.0",
         "@govuk-one-login/cri-metrics": "1.0.3",
-        "@govuk-one-login/cri-types": "^1.1.0",
+        "@govuk-one-login/cri-types": "1.1.0",
         "esbuild": "0.28.1"
     },
     "devDependencies": {

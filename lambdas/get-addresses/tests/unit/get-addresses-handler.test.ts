@@ -2,7 +2,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { beforeEach, describe, expect, it, MockInstance, vi } from "vitest";
 import { AddressesHandler } from "../../src/get-addresses-handler";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
-import { DynamoDbClient } from "../../src/lib/dynamo-db-client";
+import { DynamoDbClient } from "../../../common/src/lib/dynamo-db-client.js";
 import { AddressService } from "../../src/services/address-service";
 import { ApiError } from "../../src/lib/error-handler";
 vi.mock("@aws-lambda-powertools/logger");

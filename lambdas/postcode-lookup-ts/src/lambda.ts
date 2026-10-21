@@ -1,8 +1,8 @@
-import { DynamoDbClient } from "./lib/dynamo-db-client.js";
+import { DynamoDbClient } from "../../common/src/lib/dynamo-db-client.js";
 import { createHandler } from "./postcode-lookup-handler.js";
 import { getParameterValue, getSecretValue } from "./services/configuration-service.js";
 import { lookupPostcode } from "./services/postcode-lookup-service.js";
-import { validateSessionId } from "./services/session-service.js";
+import { getSessionById } from "./services/session-service.js";
 const sessionTableName = process.env.SESSION_TABLE;
 import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 
@@ -48,8 +48,8 @@ const postcodeLookupHandler = createHandler({
     queueUrl: auditQueueUrl,
     componentId,
     auditEventPrefix,
-    validateSessionId: (sessionId) =>
-        validateSessionId(sessionId, {
+    getSessionById: (sessionId) =>
+        getSessionById(sessionId, {
             dynamoDbClient: DynamoDbClient,
             sessionTableName,
         }),

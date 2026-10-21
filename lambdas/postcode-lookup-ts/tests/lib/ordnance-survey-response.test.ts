@@ -186,6 +186,14 @@ describe("processOrdnanceSurveyBadResponse", () => {
         );
     });
 
+    it("returns an empty array and logs an unknown error when the response has no error object", () => {
+        const responseBody = JSON.stringify({});
+
+        expect(processOrdnanceSurveyBadResponse(responseBody)).toEqual([]);
+
+        expect(loggerError).toHaveBeenCalledWith(`Ordnance Survey Responded with unknown error: ${responseBody}`);
+    });
+
     it.each([
         { body: "invalid response for SW1A 1AA", sanitizedBody: "invalid response for ********" },
         { body: "", sanitizedBody: "" },

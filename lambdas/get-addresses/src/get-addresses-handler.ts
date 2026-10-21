@@ -1,6 +1,6 @@
 import type { LambdaInterface } from "@aws-lambda-powertools/commons/types";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { DynamoDbClient } from "./lib/dynamo-db-client";
+import { DynamoDbClient } from "../../common/src/lib/dynamo-db-client.js";
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 import { handleError } from "./lib/error-handler";
 import { getSessionId } from "./lib/session-header";

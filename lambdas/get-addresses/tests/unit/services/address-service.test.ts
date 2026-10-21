@@ -1,4 +1,4 @@
-import { DynamoDbClient } from "../../../src/lib/dynamo-db-client";
+import { DynamoDbClient } from "../../../../common/src/lib/dynamo-db-client.js";
 import { AddressService } from "../../../src/services/address-service";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { Address } from "../../../src/types/address";

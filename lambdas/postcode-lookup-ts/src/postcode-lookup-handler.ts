@@ -21,33 +21,41 @@ interface HandlerDependencies {
     queueUrl: string;
     componentId: string;
     auditEventPrefix: string;
-    validateSessionId: (sessionId: string) => Promise<SessionItem>;
+    getSessionById: (sessionId: string) => Promise<SessionItem>;
     lookupPostcode: (postcode: string, clientId: string) => Promise<CanonicalAddress[]>;
 }
 
 export const createHandler =
-    ({ queueUrl, componentId, auditEventPrefix, validateSessionId, lookupPostcode }: HandlerDependencies) =>
+    ({ queueUrl, componentId, auditEventPrefix, getSessionById, lookupPostcode }: HandlerDependencies) =>
     async (event: APIGatewayProxyEvent, _context: Context): Promise<APIGatewayProxyResult> => {
         try {
+            logger.info("Postcode lookup request received");
             const postcode = getPostcodeFromRequest(event);
             const sessionId = getSessionId(event.headers);
-            const session = await validateSessionId(sessionId);
+            logger.info("Retrieving session");
+            const session = await getSessionById(sessionId);
 
             logger.info("found session");
             validatePostcode(postcode);
+            logger.info("Postcode request validated");
             const restricted = buildAuditRestricted(postcode, event.headers);
             const auditSession = buildAuditSession(session, event.headers);
             await buildAndSendAuditEvent(queueUrl, `${auditEventPrefix}_REQUEST_SENT`, componentId, auditSession, {
                 restricted,
             });
+            logger.info("REQUEST_SENT audit event sent");
 
+            logger.info("Calling postcode lookup service");
             const results = await lookupPostcode(postcode, session.clientId);
-
+            logger.info("Postcode lookup service call completed");
             captureMetric(POSTCODE_LOOKUP_METRIC);
 
             await buildAndSendAuditEvent(queueUrl, `${auditEventPrefix}_RESPONSE_RECEIVED`, componentId, auditSession, {
                 restricted,
             });
+            logger.info("RESPONSE_RECEIVED audit event sent");
+
+            logger.info("Postcode lookup completed successfully");
 
             return {
                 statusCode: 200,
