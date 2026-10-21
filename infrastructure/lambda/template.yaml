@@ -60,6 +60,18 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  UsePostcodeLookupTsCanaryDeploymentAlarms:
+    !And
+    - !Condition IsNotProdEnvironment
+    - !Condition UseCanaryDeploymentAlarms
+  UsePostcodeLookupTsCanary5xxAlarm:
+    !And
+    - !Condition IsDevEnvironment
+    - !Condition UseCanaryDeploymentAlarms
+  UsePostcodeLookupTsLogsSubscriptionFilter:
+    !And
+    - !Condition IsNotProdEnvironment
+    - !Condition IsNotDevBuildEnvironment
   IsDevEnvironment:
     !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
@@ -80,7 +92,6 @@ Conditions:
     - !Equals
       - !FindInMap [ EnvironmentConfiguration, !Ref Environment, OAuthCommonTables ]
       - true
-
   AddProvisionedConcurrency:
     !Not [
       !Equals [
@@ -117,7 +128,6 @@ Globals:
       Type: !Ref LambdaDeploymentPreference
       Role: !GetAtt CodeDeployServiceRole.Arn
     MemorySize: !FindInMap [MemorySizeMapping, Environment, !Ref Environment]
-
     Environment:
       Variables:
         AWS_STACK_NAME: !Sub ${AWS::StackName}
@@ -215,12 +225,10 @@ Mappings:
       staging: PublishedVersions
       integration: PublishedVersions
       production: PublishedVersions
-
   StaticVariables:
     Urls:
       SupportManualURL: "https://team-manual.account.gov.uk/teams/CRI-Orange-team/supporting-cri-orange/address-credential-issuer-runbook"
       OrdnanceSurveyAPIURL: "https://api.os.uk/search/places/v1/postcode"
-
   StubOrdnanceSurveyAPIURLs:
     Environment:
       localdev: https://dvzu1fes9j.execute-api.eu-west-2.amazonaws.com/dev/search/places/v1/postcode
@@ -228,7 +236,6 @@ Mappings:
       build: https://b8ysflv2t2.execute-api.eu-west-2.amazonaws.com/build/search/places/v1/postcode
       staging: https://hv21rikq99.execute-api.eu-west-2.amazonaws.com/staging/search/places/v1/postcode
       integration: https://api.os.uk/search/places/v1/postcode
-
   MemorySizeMapping:
     Environment:
       dev: 2048
@@ -237,7 +244,6 @@ Mappings:
       integration: 2048
       production: 4096
       localdev: 2048
-
   EnvironmentConfiguration:
     dev:
       provisionedConcurrency: 0
@@ -293,7 +299,6 @@ Mappings:
       ProvisionedConcurrency: 1
       OAuthCommonLambdas: true
       OAuthCommonTables: false
-
   MaxJwtTtlMapping:
     Environment:
       dev: 2
@@ -302,7 +307,6 @@ Mappings:
       integration: 6
       production: 6
       localdev: 2
-
   # Permitted values: SECONDS,MINUTES,HOURS,DAYS,MONTHS,YEARS
   JwtTtlUnitMapping:
     Environment:
@@ -312,7 +316,6 @@ Mappings:
       integration: MONTHS
       production: MONTHS
       localdev: HOURS
-
   DynatraceLayerARN:
     localdev:
       java: arn:aws:lambda:eu-west-2:216552277552:layer:Dynatrace_OneAgent_1_331_39_20260206-150338_with_collector_java_arm:1
@@ -747,6 +750,7 @@ Resources:
               - kms:GenerateDataKey
             Resource:
               Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+
   IssueCredentialFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -835,6 +839,122 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref GetAddressesFunctionLogGroup
+
+  PostcodeLookupTsFunction:
+    Type: AWS::Serverless::Function
+    Condition: IsNotProdEnvironment
+    Properties:
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
+      Handler: lambda.lambdaHandler
+      DeploymentPreference:
+        Alarms: !If
+          - UsePostcodeLookupTsCanaryDeploymentAlarms
+          - [
+            !Ref PostcodeLookupTsFunctionCanaryErrors,
+          ]
+          - [ !Ref AWS::NoValue ]
+      CodeUri: ../../
+      Runtime: nodejs22.x
+      Layers:
+        - !FindInMap [ DynatraceLayerARN, !Ref Environment, node ]
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-postcode-lookup-ts"
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          VERIFIABLE_CREDENTIAL_ISSUER: !If
+            - UseOAuthCommonTables
+            - !FindInMap [ EnvironmentConfiguration, !Ref Environment, BaseURL ]
+            - !Sub "{{resolve:ssm:/${CommonStackName}/verifiable-credential/issuer}}"
+          SQS_AUDIT_EVENT_QUEUE_URL:
+            Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueUrl
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBReadPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBReadPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
+        - Statement:
+            - Sid: ReadSecretsPolicy
+              Effect: Allow
+              Action:
+                - secretsmanager:*
+              Resource: !Sub
+                - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${Prefix}/OrdnanceSurveyAPIKey*"
+                - Prefix:
+                    !If [
+                      UseSecretPrefix,
+                      !Ref SecretPrefix,
+                      !Ref AWS::StackName,
+                    ]
+            - Sid: ReadParametersPolicy
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIUrl/*"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${CommonStackName}/SessionTtl"
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
+        - SQSSendMessagePolicy:
+            QueueName:
+              Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueName
+        - Statement:
+            - Sid: auditEventQueueKmsEncryptionKeyPermission
+              Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey
+              Resource:
+                Fn::ImportValue: !Sub ${TxmaStackName}-AuditEventQueueEncryptionKeyArn
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: esm
+        Target: es2022
+        Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+          - lambdas/postcode-lookup-ts/src/lambda.ts
+        External:
+          - "@aws-sdk/*"
+
+  PostcodeLookupTsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsNotProdEnvironment
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${PostcodeLookupTsFunction}"
+      RetentionInDays: 365
+
+  PostcodeLookupTsFunctionLogsSubscriptionFilterCSLS:
+    Type: AWS::Logs::SubscriptionFilter
+    Condition: UsePostcodeLookupTsLogsSubscriptionFilter
+    Properties:
+      DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
+      FilterPattern: ""
+      LogGroupName: !Ref PostcodeLookupTsFunctionLogGroup
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"
@@ -1025,6 +1145,16 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref PostcodeLookupFunction.Alias
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
+
+  PostcodeLookupTsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Condition: IsNotProdEnvironment
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PostcodeLookupTsFunction.Alias
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
@@ -1395,11 +1525,74 @@ Resources:
         - Name: ApiName
           Value: !Sub "${AWS::StackName}-PrivateAddressApi"
         - Name: Method
-          Value: GET
+          Value: POST
         - Name: Stage
           Value: !Ref Environment
         - Name: Resource
-          Value: /postcode-lookup/{postcode}
+          Value: !If
+            - IsDevEnvironment
+            - /postcode-lookup-java
+            - /postcode-lookup
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  PostcodeLookupTsFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UsePostcodeLookupTsCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      OKActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      AlarmDescription: !Sub
+        - "Errors returned from the PostcodeLookupTsFunction Lambda. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-PostcodeLookupTsFunction:live"
+        - Name: FunctionName
+          Value: !Ref PostcodeLookupTsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt PostcodeLookupTsFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  PostcodeLookupTsFunctionCanary5xxErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UsePostcodeLookupTsCanary5xxAlarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      OKActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      AlarmDescription: !Sub
+        - "PostcodeLookupTsFunction Lambda returning 5xx response. Runbook: ${SupportManualURL}"
+        - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+        - Name: Method
+          Value: POST
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /postcode-lookup
       Statistic: Sum
       Unit: Count
       Period: 60
