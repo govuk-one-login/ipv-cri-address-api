@@ -38,24 +38,24 @@ jobs:
       contents: read
     steps:
       - name: Pull repository
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        uses: gradle/actions/setup-gradle@b9bee63ef481cc545e4517ec730544a4d8b1dfa0 # v6.4.0
         with:
           gradle-version: '9.6.1'
 
       - name: Set up JDK
-        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           java-version: 21
           distribution: corretto
           cache: gradle
 
       - name: Cache build artifacts
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           key: ${{ runner.os }}-address-api-java-${{ github.head_ref || github.ref_name }}
           restore-keys: ${{ runner.os }}-address-api-java-
@@ -65,14 +65,14 @@ jobs:
             !**/*/build/reports
 
       - name: Cache SonarCloud packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
           path: ~/.sonar/cache
 
       - name: Get coverage results
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ${{ needs.unit-tests-java.outputs.coverage-artifact }}
 
@@ -91,7 +91,7 @@ jobs:
       contents: read
     steps:
       - name: Run SonarCloud scan
-        uses: govuk-one-login/github-actions/code-quality/sonarcloud@7bc197778553493ca4c6fb4a78caf3cfd03f8ccb
+        uses: govuk-one-login/github-actions/code-quality/sonarcloud@b5f4f92a0692bf297b08c43745e545e45631f0ee
         with:
           projectBaseDir: .
           coverage-location: coverage
@@ -108,7 +108,7 @@ jobs:
       security-events: write
     steps:
       - name: Run CodeQL scan
-        uses: govuk-one-login/github-actions/code-quality/codeql@d201191485b645ec856a34e5ca48636cf97b2574
+        uses: govuk-one-login/github-actions/code-quality/codeql@b5f4f92a0692bf297b08c43745e545e45631f0ee
         with:
           languages: javascript-typescript
 
@@ -120,15 +120,15 @@ jobs:
       security-events: write
     steps:
       - name: Pull repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        uses: gradle/actions/setup-gradle@b9bee63ef481cc545e4517ec730544a4d8b1dfa0 # v6.4.0
         with:
           gradle-version: '9.6.1'
 
       - name: Set up JDK
-        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           java-version: 21
           distribution: corretto

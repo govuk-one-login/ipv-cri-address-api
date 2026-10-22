@@ -16,26 +16,26 @@ jobs:
       contents: read
     steps:
       - name: Check out repository code
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up JDK
-        uses: actions/setup-java@17f84c3641ba7b8f6deff6309fc4c864478f5d62 # v3.14.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           java-version: 21
           distribution: corretto
 
       - name: Setup Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.11.2
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        uses: gradle/actions/setup-gradle@b9bee63ef481cc545e4517ec730544a4d8b1dfa0 # v6.4.0
         with:
           gradle-version: '9.6.1'
 
       - name: Assume temporary AWS role
-        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.BUILD_CRI_V1_GH_ACTIONS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -49,7 +49,7 @@ jobs:
           sam build -t ./infrastructure/lambda/template.yaml -b ./out/
 
       - name: Deploy SAM app
-        uses: govuk-one-login/devplatform-upload-action@fda75612a1b0e5a8c84ae7c44a23340e50e5bbde # v3.11.0
+        uses: govuk-one-login/devplatform-upload-action/sam@7076683de6e38a0ecdfbcd273b510a47c7b9489c # v4.4.0
         with:
           artifact-bucket-name: ${{ secrets.BUILD_CRI_V1_ARTIFACT_SOURCE_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.BUILD_SIGNING_PROFILE_NAME }}
