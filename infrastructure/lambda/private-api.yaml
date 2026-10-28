@@ -130,7 +130,7 @@ paths:
             - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}:live/invocations
             - FunctionArn:
                 Fn::If:
-                  - IsDevEnvironment
+                  - IsDevBuildEnvironment
                   - Fn::GetAtt:
                       - PostcodeLookupTsFunction
                       - Arn
