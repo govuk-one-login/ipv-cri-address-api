@@ -6,6 +6,7 @@ Metadata:
     config:
       ignore_checks:
         - W8003 #For UseOAuthCommonLambdas & UseOAuthCommonTables condition - Can be removed one migration complete.
+        - E3724 #Due to updated linting it is now showing "Additional properties are not allowed ('CodeSigningConfigArn' was unexpected)" but it's the correct in AWS documentation
 
 Parameters:
   Environment:
@@ -60,10 +61,7 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  UsePostcodeLookupTsCanaryDeploymentAlarms:
-    !And
-    - !Condition IsNotProdEnvironment
-    - !Condition UseCanaryDeploymentAlarms
+  UsePostcodeLookupTsCanaryDeploymentAlarms: !Condition UseCanaryDeploymentAlarms
   UsePostcodeLookupTsCanary5xxAlarm:
     !And
     - !Condition IsDevEnvironment
@@ -842,7 +840,6 @@ Resources:
 
   PostcodeLookupTsFunction:
     Type: AWS::Serverless::Function
-    Condition: IsNotProdEnvironment
     Properties:
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
