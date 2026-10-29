@@ -6,6 +6,7 @@ Metadata:
     config:
       ignore_checks:
         - W8003 #For UseOAuthCommonLambdas & UseOAuthCommonTables condition - Can be removed one migration complete.
+        - E3724 #Due to updated linting it is now showing "Additional properties are not allowed ('CodeSigningConfigArn' was unexpected)" but it's the correct in AWS documentation
 
 Parameters:
   Environment:
