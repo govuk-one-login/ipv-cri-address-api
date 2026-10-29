@@ -60,10 +60,7 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  UsePostcodeLookupTsCanaryDeploymentAlarms:
-    !And
-    - !Condition IsNotProdEnvironment
-    - !Condition UseCanaryDeploymentAlarms
+  UsePostcodeLookupTsCanaryDeploymentAlarms: !Condition UseCanaryDeploymentAlarms
   UsePostcodeLookupTsCanary5xxAlarm:
     !And
     - !Condition IsDevEnvironment
@@ -842,7 +839,6 @@ Resources:
 
   PostcodeLookupTsFunction:
     Type: AWS::Serverless::Function
-    Condition: IsNotProdEnvironment
     Properties:
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
