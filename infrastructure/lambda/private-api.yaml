@@ -129,14 +129,9 @@ paths:
           Fn::Sub:
             - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}:live/invocations
             - FunctionArn:
-                Fn::If:
-                  - IsDevBuildEnvironment
-                  - Fn::GetAtt:
-                      - PostcodeLookupTsFunction
-                      - Arn
-                  - Fn::GetAtt:
-                      - PostcodeLookupFunction
-                      - Arn
+                Fn::GetAtt:
+                   - PostcodeLookupTsFunction
+                   - Arn
         responses:
           default:
             statusCode: "200"

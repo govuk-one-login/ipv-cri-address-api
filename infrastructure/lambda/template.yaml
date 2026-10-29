@@ -940,7 +940,6 @@ Resources:
 
   PostcodeLookupTsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: IsNotProdEnvironment
     Properties:
       LogGroupName: !Sub "/aws/lambda/${PostcodeLookupTsFunction}"
       RetentionInDays: 365
@@ -1148,7 +1147,6 @@ Resources:
 
   PostcodeLookupTsFunctionPermission:
     Type: AWS::Lambda::Permission
-    Condition: IsNotProdEnvironment
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref PostcodeLookupTsFunction.Alias
