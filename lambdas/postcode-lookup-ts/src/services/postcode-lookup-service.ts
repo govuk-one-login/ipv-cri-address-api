@@ -2,14 +2,14 @@ import { CriError } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 import { captureMetric, MetricUnit } from "@govuk-one-login/cri-metrics";
 
-import { CanonicalAddress } from "../types/canonical-address.js";
+import type { CanonicalAddress } from "../../../common/src/types/canonical-address.js";
 import {
     processOrdnanceSurveySuccessResponse,
     processOrdnanceSurveyBadResponse,
     processOrdnanceSurveyErrorResponse,
 } from "../lib/ordnance-survey-response.js";
 
-import { getParameterValue, getSecretValue } from "./configuration-service.js";
+import { getParameterValue, getSecretValue } from "../../../common/src/services/configuration-service.js";
 
 const LOOKUP_POSTCODE_DURATION_METRIC = "lookup_postcode_duration";
 
