@@ -61,6 +61,14 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
+  UseAddressTsCanaryDeploymentAlarms:
+    !And
+    - !Condition IsDevEnvironment
+    - !Condition UseCanaryDeploymentAlarms
+  UseAddressTsCanary5xxAlarm:
+    !And
+    - !Condition IsDevEnvironment
+    - !Condition UseCanaryDeploymentAlarms
   UsePostcodeLookupTsCanaryDeploymentAlarms: !Condition UseCanaryDeploymentAlarms
   UsePostcodeLookupTsCanary5xxAlarm:
     !And
@@ -668,10 +676,77 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
+  AddressTsFunction:
+    Type: AWS::Serverless::Function
+    Condition: IsDevEnvironment
+    Properties:
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
+      Handler: lambda.lambdaHandler
+      DeploymentPreference:
+        Alarms: !If
+          - UseAddressTsCanaryDeploymentAlarms
+          - [
+            !Ref AddressTsFunctionCanaryErrors,
+            !Ref AddressTsFunctionCanary5xxErrors,
+          ]
+          - [ !Ref AWS::NoValue ]
+      CodeUri: ../../
+      Runtime: nodejs22.x
+      Layers:
+        - !FindInMap [ DynatraceLayerARN, !Ref Environment, node ]
+      Environment:
+        Variables:
+          ADDRESS_TABLE: !Ref AddressTable
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address-ts"
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBCrudPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AddressTable
+        - KMSDecryptPolicy:
+            KeyId: !Ref DynamoTablesEncryptionKey
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
+
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: esm
+        Target: es2022
+        Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+          - lambdas/addressTs/src/lambda.ts
+        External:
+          - "@aws-sdk/*"
+
   AddressFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
+      RetentionInDays: 365
+
+  AddressTsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsDevEnvironment
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${AddressTsFunction}"
       RetentionInDays: 365
 
   AddressFunctionLogsSubscriptionFilterCSLS:
@@ -1163,6 +1238,16 @@ Resources:
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
 
+  AddressTsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Condition: IsDevEnvironment
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AddressTsFunction.Alias
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
+
   IssueCredentialFunctionPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -1623,6 +1708,33 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  AddressTsFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseAddressTsCanaryDeploymentAlarms
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      OKActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      AlarmDescription: !Sub "Errors returned from the AddressTsFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-AddressTsFunction:live"
+        - Name: FunctionName
+          Value: !Ref AddressTsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt AddressTsFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   AddressFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1633,6 +1745,37 @@ Resources:
       OKActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+        - Name: Method
+          Value: PUT
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /address
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  AddressTsFunctionCanary5xxErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseAddressTsCanary5xxAlarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      OKActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      AlarmDescription: !Sub
+        - "AddressTsFunction Lambda returning 5xx response."
+        - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
       Dimensions:
