@@ -103,28 +103,35 @@ describe("configuration-service", () => {
             await expect(getSecretValue(prefix, valueName)).rejects.toBe(error);
         });
     });
-
+});
+describe("expiration epoch ", () => {
+    beforeEach(() => {
+        vi.spyOn(Date, "now").mockReturnValue(1_000_123);
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
     describe("getSessionExpirationEpoch", () => {
         it("uses the default 2 hour session TTL", () => {
-            expect(getSessionExpirationEpoch(() => 1000)).toBe(8200);
+            expect(getSessionExpirationEpoch()).toBe(8200);
         });
 
         it("uses the configured session TTL", () => {
             process.env.SESSION_TTL = "3600";
 
-            expect(getSessionExpirationEpoch(() => 1000)).toBe(4600);
+            expect(getSessionExpirationEpoch()).toBe(4600);
         });
     });
 
     describe("getAuthorizationCodeExpirationEpoch", () => {
         it("uses the default 10 minute authorization code TTL", () => {
-            expect(getAuthorizationCodeExpirationEpoch(() => 1000)).toBe(1600);
+            expect(getAuthorizationCodeExpirationEpoch()).toBe(1600);
         });
 
         it("uses the configured authorization code TTL", () => {
             process.env.AUTHORIZATION_CODE_TTL = "300";
 
-            expect(getAuthorizationCodeExpirationEpoch(() => 1000)).toBe(1300);
+            expect(getAuthorizationCodeExpirationEpoch()).toBe(1300);
         });
     });
 });

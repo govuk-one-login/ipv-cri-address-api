@@ -8,7 +8,7 @@ import type { SessionItem } from "@govuk-one-login/cri-types";
 import { getSessionId } from "../../common/src/lib/session-header.js";
 import type { CanonicalAddress } from "../../common/src/types/canonical-address.js";
 
-const ADDRESS_METRIC = "address";
+const SAVE_ADDRESS_METRIC_NAME = "address";
 
 const SESSION_ERROR_MESSAGES = new Set(["Session not found", "Session expired"]);
 
@@ -43,6 +43,7 @@ export const createHandler =
             const addresses = parseAddresses(event.body);
 
             if (addresses.length === 0) {
+                logger.info("No addresses provided");
                 return {
                     statusCode: 200,
                     body: "",
@@ -58,19 +59,20 @@ export const createHandler =
             const expiryDate = getSessionExpirationEpoch();
 
             await saveAddresses(sessionId, addressesWithValidity, expiryDate);
+            logger.info("Addresses saved");
 
             storeAddressEntryTypeMetrics(addressesWithValidity);
 
             await createAuthorizationCode(session);
 
-            captureMetric(ADDRESS_METRIC);
+            captureMetric(SAVE_ADDRESS_METRIC_NAME);
 
             return {
                 statusCode: 204,
                 body: "",
             };
         } catch (error: unknown) {
-            captureMetric(ADDRESS_METRIC, 0);
+            captureMetric(SAVE_ADDRESS_METRIC_NAME, 0);
 
             return buildErrorResponse(error);
         }
