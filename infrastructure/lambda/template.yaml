@@ -69,15 +69,6 @@ Conditions:
     !And
     - !Condition IsDevEnvironment
     - !Condition UseCanaryDeploymentAlarms
-  UsePostcodeLookupTsCanaryDeploymentAlarms: !Condition UseCanaryDeploymentAlarms
-  UsePostcodeLookupTsCanary5xxAlarm:
-    !And
-    - !Condition IsDevEnvironment
-    - !Condition UseCanaryDeploymentAlarms
-  UsePostcodeLookupTsLogsSubscriptionFilter:
-    !And
-    - !Condition IsNotProdEnvironment
-    - !Condition IsNotDevBuildEnvironment
   IsDevEnvironment:
     !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
@@ -921,9 +912,10 @@ Resources:
       Handler: lambda.lambdaHandler
       DeploymentPreference:
         Alarms: !If
-          - UsePostcodeLookupTsCanaryDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - [
             !Ref PostcodeLookupTsFunctionCanaryErrors,
+            !Ref PostcodeLookupTsFunctionCanary5xxErrors,
           ]
           - [ !Ref AWS::NoValue ]
       CodeUri: ../../
@@ -1021,7 +1013,7 @@ Resources:
 
   PostcodeLookupTsFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: UsePostcodeLookupTsLogsSubscriptionFilter
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -1623,7 +1615,7 @@ Resources:
 
   PostcodeLookupTsFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UsePostcodeLookupTsCanaryDeploymentAlarms
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -1652,7 +1644,7 @@ Resources:
 
   PostcodeLookupTsFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UsePostcodeLookupTsCanary5xxAlarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
