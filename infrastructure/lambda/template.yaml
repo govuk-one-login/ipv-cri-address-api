@@ -61,11 +61,7 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  UseAddressTsCanaryDeploymentAlarms:
-    !And
-    - !Condition IsDevEnvironment
-    - !Condition UseCanaryDeploymentAlarms
-  UseAddressTsCanary5xxAlarm:
+  UseAddressTsAlarms:
     !And
     - !Condition IsDevEnvironment
     - !Condition UseCanaryDeploymentAlarms
@@ -667,7 +663,7 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
-  AddressTsFunction:
+  SaveAddressTsFunction:
     Type: AWS::Serverless::Function
     Condition: IsDevEnvironment
     Properties:
@@ -676,10 +672,10 @@ Resources:
       Handler: lambda.lambdaHandler
       DeploymentPreference:
         Alarms: !If
-          - UseAddressTsCanaryDeploymentAlarms
+          - UseAddressTsAlarms
           - [
-            !Ref AddressTsFunctionCanaryErrors,
-            !Ref AddressTsFunctionCanary5xxErrors,
+            !Ref SaveAddressTsFunctionCanaryErrors,
+            !Ref SaveAddressTsFunctionCanary5xxErrors,
           ]
           - [ !Ref AWS::NoValue ]
       CodeUri: ../../
@@ -723,7 +719,7 @@ Resources:
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
         EntryPoints:
-          - lambdas/addressTs/src/lambda.ts
+          - lambdas/address-ts/src/lambda.ts
         External:
           - "@aws-sdk/*"
 
@@ -733,11 +729,11 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
       RetentionInDays: 365
 
-  AddressTsFunctionLogGroup:
+  SaveAddressTsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Condition: IsDevEnvironment
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${AddressTsFunction}"
+      LogGroupName: !Sub "/aws/lambda/${SaveAddressTsFunction}"
       RetentionInDays: 365
 
   AddressFunctionLogsSubscriptionFilterCSLS:
@@ -1230,12 +1226,12 @@ Resources:
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
 
-  AddressTsFunctionPermission:
+  SaveAddressTsFunctionPermission:
     Type: AWS::Lambda::Permission
     Condition: IsDevEnvironment
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref AddressTsFunction.Alias
+      FunctionName: !Ref SaveAddressTsFunction.Alias
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
@@ -1700,24 +1696,24 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  AddressTsFunctionCanaryErrors:
+  SaveAddressTsFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseAddressTsCanaryDeploymentAlarms
+    Condition: UseAddressTsAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
       OKActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
-      AlarmDescription: !Sub "Errors returned from the AddressTsFunction Lambda."
+      AlarmDescription: !Sub "Errors returned from the SaveAddressTsFunction Lambda."
       MetricName: Errors
       Dimensions:
         - Name: Resource
-          Value: !Sub "${AWS::StackName}-AddressTsFunction:live"
+          Value: !Sub "${AWS::StackName}-SaveAddressTsFunction:live"
         - Name: FunctionName
-          Value: !Ref AddressTsFunction
+          Value: !Ref SaveAddressTsFunction
         - Name: ExecutedVersion
-          Value: !GetAtt AddressTsFunction.Version.Version
+          Value: !GetAtt SaveAddressTsFunction.Version.Version
       Namespace: AWS/Lambda
       Statistic: Sum
       Unit: Count
@@ -1756,9 +1752,9 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
-  AddressTsFunctionCanary5xxErrors:
+  SaveAddressTsFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseAddressTsCanary5xxAlarm
+    Condition: UseAddressTsAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -1766,7 +1762,7 @@ Resources:
       OKActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub
-        - "AddressTsFunction Lambda returning 5xx response."
+        - "SaveAddressTsFunction Lambda returning 5xx response."
         - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
