@@ -4,8 +4,6 @@ import { CriError } from "@govuk-one-login/cri-error-response";
 import { captureMetric } from "@govuk-one-login/cri-metrics";
 import type { CanonicalAddress } from "../../../common/src/types/canonical-address.js";
 
-const ADDRESS_PROCESSING_ERROR_STATUS = 500;
-
 const ERROR_COULD_NOT_PARSE_ADDRESSES = "could not parse addresses";
 
 const ERROR_SINGLE_ADDRESS_NOT_CURRENT = "setAddressValidity found a single address but is not a CURRENT address.";
@@ -20,12 +18,6 @@ const ERROR_ADDRESS_LINKING_NOT_NEEDED =
 
 const ERROR_ADDRESS_DATE_IS_INVALID = "setAddressValidity found address where validFrom and validUntil are Equal.";
 
-const ERROR_COUNTRY_CODE_NOT_PRESENT = "Country code not present for address";
-
-const MANUAL_ADDRESS_METRIC = "manual-address-entry";
-
-const PRE_POPULATED_ADDRESS_METRIC = "pre-populated-address-entry";
-
 interface SaveAddressesDependencies {
     dynamoDbClient: DynamoDBDocument;
     addressTableName: string;
@@ -39,7 +31,7 @@ interface AddressItem {
 
 export const parseAddresses = (addressBody: string | null): CanonicalAddress[] => {
     if (addressBody === null) {
-        throw addressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
+        throw new AddressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
     }
 
     let parsedBody: unknown;
@@ -47,15 +39,15 @@ export const parseAddresses = (addressBody: string | null): CanonicalAddress[] =
     try {
         parsedBody = JSON.parse(addressBody);
     } catch {
-        throw addressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
+        throw new AddressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
     }
 
     if (!Array.isArray(parsedBody) || !parsedBody.every(isCanonicalAddress)) {
-        throw addressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
+        throw new AddressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
     }
 
     if (isCountryCodeAbsentForAny(parsedBody)) {
-        throw addressProcessingError(ERROR_COUNTRY_CODE_NOT_PRESENT);
+        throw new AddressProcessingError("Country code not present for address");
     }
 
     return parsedBody;
@@ -106,16 +98,16 @@ export const applyAddressValidity = (addresses: CanonicalAddress[]): CanonicalAd
 
         case 1:
             if (!isCurrentAddress(result[0])) {
-                throw addressProcessingError(ERROR_SINGLE_ADDRESS_NOT_CURRENT);
+                throw new AddressProcessingError(ERROR_SINGLE_ADDRESS_NOT_CURRENT);
             }
 
             return result;
 
         case 2:
-            return processAddresses(result);
+            return specifyValidUntilForPreviousAddress(result);
 
         default:
-            throw addressProcessingError(ERROR_TOO_MANY_ADDRESSES);
+            throw new AddressProcessingError(ERROR_TOO_MANY_ADDRESSES);
     }
 };
 
@@ -143,7 +135,7 @@ export const storeAddressEntryTypeMetrics = (addresses: CanonicalAddress[]): voi
     for (const address of addresses) {
         const hasUprn = address.uprn !== undefined;
 
-        captureMetric(hasUprn ? PRE_POPULATED_ADDRESS_METRIC : MANUAL_ADDRESS_METRIC);
+        captureMetric(hasUprn ? "pre-populated-address-entry" : "manual-address-entry");
     }
 };
 
@@ -155,11 +147,13 @@ export const isNotCurrentAddress = (address: CanonicalAddress): boolean => !isCu
 export const isInvalidAddress = (address: CanonicalAddress): boolean =>
     isPresent(address.validFrom) && isPresent(address.validUntil) && address.validFrom === address.validUntil;
 
-const processAddresses = (addresses: CanonicalAddress[]): CanonicalAddress[] => {
+const specifyValidUntilForPreviousAddress = (
+    addresses: [CanonicalAddress, CanonicalAddress],
+): [CanonicalAddress, CanonicalAddress] => {
     const [firstAddress, secondAddress] = addresses;
 
     if (isInvalidAddress(firstAddress) || isInvalidAddress(secondAddress)) {
-        throw addressProcessingError(ERROR_ADDRESS_DATE_IS_INVALID);
+        throw new AddressProcessingError(ERROR_ADDRESS_DATE_IS_INVALID);
     }
 
     const firstIsCurrent = isCurrentAddress(firstAddress);
@@ -180,7 +174,7 @@ const processAddresses = (addresses: CanonicalAddress[]): CanonicalAddress[] => 
         currentAddressIndex = 1;
         previousAddressIndex = 0;
     } else {
-        throw addressProcessingError(ERROR_COULD_NOT_DETERMINE_CURRENT_ADDRESS);
+        throw new AddressProcessingError(ERROR_COULD_NOT_DETERMINE_CURRENT_ADDRESS);
     }
 
     const currentAddress = addresses[currentAddressIndex];
@@ -188,7 +182,7 @@ const processAddresses = (addresses: CanonicalAddress[]): CanonicalAddress[] => 
     const previousAddress = addresses[previousAddressIndex];
 
     if (isPresent(previousAddress.validUntil)) {
-        throw addressProcessingError(ERROR_ADDRESS_LINKING_NOT_NEEDED);
+        throw new AddressProcessingError(ERROR_ADDRESS_LINKING_NOT_NEEDED);
     }
 
     return addresses.map((address, index) =>
@@ -215,8 +209,12 @@ const normalizePostcodeForGbAddress = (address: CanonicalAddress): CanonicalAddr
 };
 
 const isGreatBritain = (addressCountry: CanonicalAddress["addressCountry"]): boolean =>
-    typeof addressCountry === "string" && addressCountry.toUpperCase() === "GB";
+    addressCountry?.toUpperCase() === "GB";
 
 const isPresent = <T>(value: T | null | undefined): value is T => value !== null && value !== undefined;
 
-const addressProcessingError = (message: string): CriError => new CriError(ADDRESS_PROCESSING_ERROR_STATUS, message);
+class AddressProcessingError extends CriError {
+    constructor(message: string) {
+        super(500, message);
+    }
+}
