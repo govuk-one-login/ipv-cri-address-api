@@ -61,15 +61,10 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  UsePostcodeLookupTsCanaryDeploymentAlarms: !Condition UseCanaryDeploymentAlarms
-  UsePostcodeLookupTsCanary5xxAlarm:
+  UseAddressTsAlarms:
     !And
     - !Condition IsDevEnvironment
     - !Condition UseCanaryDeploymentAlarms
-  UsePostcodeLookupTsLogsSubscriptionFilter:
-    !And
-    - !Condition IsNotProdEnvironment
-    - !Condition IsNotDevBuildEnvironment
   IsDevEnvironment:
     !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
@@ -668,10 +663,77 @@ Resources:
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/clients/*"
 
+  SaveAddressTsFunction:
+    Type: AWS::Serverless::Function
+    Condition: IsDevEnvironment
+    Properties:
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
+      Handler: lambda.lambdaHandler
+      DeploymentPreference:
+        Alarms: !If
+          - UseAddressTsAlarms
+          - [
+            !Ref SaveAddressTsFunctionCanaryErrors,
+            !Ref SaveAddressTsFunctionCanary5xxErrors,
+          ]
+          - [ !Ref AWS::NoValue ]
+      CodeUri: ../../
+      Runtime: nodejs22.x
+      Layers:
+        - !FindInMap [ DynatraceLayerARN, !Ref Environment, node ]
+      Environment:
+        Variables:
+          ADDRESS_TABLE: !Ref AddressTable
+          SESSION_TABLE: !If
+            - UseOAuthCommonTables
+            - !GetAtt OAuth.Outputs.DbSessionTableName
+            - !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-address-ts"
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Sub "{{resolve:ssm:/${CommonStackName}/SessionTableName}}"
+        - DynamoDBCrudPolicy:
+            TableName: !GetAtt OAuth.Outputs.DbSessionTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AddressTable
+        - KMSDecryptPolicy:
+            KeyId: !Ref DynamoTablesEncryptionKey
+        - KMSDecryptPolicy:
+            KeyId: !Sub "{{resolve:ssm:/${CommonStackName}/DynamoDBCustomerManagedKeyID}}"
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt OAuth.Outputs.DbCustomerManagedKeyID
+
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: esm
+        Target: es2022
+        Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+          - lambdas/address-ts/src/lambda.ts
+        External:
+          - "@aws-sdk/*"
+
   AddressFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${AddressFunction}"
+      RetentionInDays: 365
+
+  SaveAddressTsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsDevEnvironment
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${SaveAddressTsFunction}"
       RetentionInDays: 365
 
   AddressFunctionLogsSubscriptionFilterCSLS:
@@ -846,9 +908,10 @@ Resources:
       Handler: lambda.lambdaHandler
       DeploymentPreference:
         Alarms: !If
-          - UsePostcodeLookupTsCanaryDeploymentAlarms
+          - UseCanaryDeploymentAlarms
           - [
             !Ref PostcodeLookupTsFunctionCanaryErrors,
+            !Ref PostcodeLookupTsFunctionCanary5xxErrors,
           ]
           - [ !Ref AWS::NoValue ]
       CodeUri: ../../
@@ -946,7 +1009,7 @@ Resources:
 
   PostcodeLookupTsFunctionLogsSubscriptionFilterCSLS:
     Type: AWS::Logs::SubscriptionFilter
-    Condition: UsePostcodeLookupTsLogsSubscriptionFilter
+    Condition: IsNotDevBuildEnvironment
     Properties:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
@@ -1159,6 +1222,16 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AddressFunction.Alias
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
+
+  SaveAddressTsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Condition: IsDevEnvironment
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SaveAddressTsFunction.Alias
       Principal: apigateway.amazonaws.com
       SourceAccount: !Sub "${AWS::AccountId}"
       SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PrivateAddressApi}/*/*/*"
@@ -1538,7 +1611,7 @@ Resources:
 
   PostcodeLookupTsFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UsePostcodeLookupTsCanaryDeploymentAlarms
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -1567,7 +1640,7 @@ Resources:
 
   PostcodeLookupTsFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UsePostcodeLookupTsCanary5xxAlarm
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -1623,6 +1696,33 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  SaveAddressTsFunctionCanaryErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseAddressTsAlarms
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      OKActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      AlarmDescription: !Sub "Errors returned from the SaveAddressTsFunction Lambda."
+      MetricName: Errors
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${AWS::StackName}-SaveAddressTsFunction:live"
+        - Name: FunctionName
+          Value: !Ref SaveAddressTsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt SaveAddressTsFunction.Version.Version
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   AddressFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
     Condition: UseCanaryDeploymentAlarms
@@ -1633,6 +1733,37 @@ Resources:
       OKActions:
         - !ImportValue slack-notifications-WarningAlertsTopicArn
       AlarmDescription: !Sub "AddressFunction Lambda returning 5xx response."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-PrivateAddressApi"
+        - Name: Method
+          Value: PUT
+        - Name: Stage
+          Value: !Ref Environment
+        - Name: Resource
+          Value: /address
+      Statistic: Sum
+      Unit: Count
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  SaveAddressTsFunctionCanary5xxErrors:
+    Type: AWS::CloudWatch::Alarm
+    Condition: UseAddressTsAlarms
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      OKActions:
+        - !ImportValue slack-notifications-WarningAlertsTopicArn
+      AlarmDescription: !Sub
+        - "SaveAddressTsFunction Lambda returning 5xx response."
+        - SupportManualURL: !FindInMap [ StaticVariables, Urls, SupportManualURL ]
       Namespace: AWS/ApiGateway
       MetricName: 5XXError
       Dimensions:

@@ -1,7 +1,7 @@
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { logger } from "@govuk-one-login/cri-logger";
 
-import { CanonicalAddress } from "../types/canonical-address.js";
+import type { CanonicalAddress } from "../../../common/src/types/canonical-address.js";
 import { Dpa, OrdnanceSurveyPostcodeResponse } from "../types/ordnance-survey.js";
 import { sanitize } from "./pii-postcode-masker.js";
 

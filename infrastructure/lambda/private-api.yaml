@@ -21,25 +21,20 @@ paths:
         required: true
       responses:
         200:
+          description: "No addresses provided"
+        204:
           description: "Address saved successfully"
-        201:
-          description: "Address saved and credential issued"
+        403:
+          description: "Session not found or expired"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthorizationResponse"
-        400:
-          description: "Bad request"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        401:
-          description: "Unauthorized"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
         500:
           description: "Internal server error"
           content:
@@ -50,7 +45,71 @@ paths:
       x-amazon-apigateway-integration:
         httpMethod: "POST"
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddressFunction.Arn}:live/invocations
+          Fn::Sub:
+            - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}:live/invocations
+            - FunctionArn:
+                Fn::If:
+                  - IsDevEnvironment
+                  - Fn::GetAtt:
+                      - SaveAddressTsFunction
+                      - Arn
+                  - Fn::GetAtt:
+                      - AddressFunction
+                      - Arn
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+
+  /address-java:
+    put:
+      parameters:
+        - in: header
+          name: "session_id"
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Address"
+        required: true
+      responses:
+        200:
+          description: "No addresses provided"
+        204:
+          description: "Address saved successfully"
+        403:
+          description: "Session not found or expired"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+        500:
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      x-amazon-apigateway-request-validator: "Validate both"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri:
+          Fn::Sub:
+            - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}:live/invocations
+            - FunctionArn:
+                Fn::GetAtt:
+                  - AddressFunction
+                  - Arn
         responses:
           default:
             statusCode: "200"
