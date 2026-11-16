@@ -248,6 +248,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.dev.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
       OAuthCommonLambdas: true
@@ -257,6 +258,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.dev.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
       OAuthCommonLambdas: true
@@ -266,6 +268,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.build.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
       StubJwksEndpoint: https://test-resources.review-a.build.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 1
       OAuthCommonLambdas: true
@@ -275,6 +278,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.staging.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
       StubJwksEndpoint: https://test-resources.review-a.staging.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
       OAuthCommonLambdas: true
@@ -283,6 +287,7 @@ Mappings:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.integration.account.gov.uk
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
       CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.integration.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
@@ -293,6 +298,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
       BaseURL: https://review-a.account.gov.uk
       CoreRedirectURI: https://identity.account.gov.uk/credential-issuer/callback?id=address
+      HealthcheckSSMClientId: ipv-core
       StubJwksEndpoint: ""
       ProvisionedConcurrency: 1
       OAuthCommonLambdas: true
@@ -434,6 +440,33 @@ Resources:
       Tags:
         FMSRegionalPolicy: "false"
         CustomPolicy: "true"
+      Auth:
+        ResourcePolicy:
+          CustomStatements:
+            - Effect: Deny
+              Principal: "*"
+              Action: execute-api:Invoke
+              Resource:
+                - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/${Environment}/GET/healthcheck/thirdparty*"
+              Condition:
+                NotIpAddress:
+                  aws:SourceIp:
+                    - "217.196.229.77/32"
+                    - "217.196.229.79/32"
+                    - "217.196.229.80/32"
+                    - "217.196.229.81/32"
+                    - "51.149.8.0/25"
+                    - "51.149.8.128/29"
+                    - "159.254.101.107/32"
+                    - "159.254.101.75/32"
+                    - "164.137.3.121/32"
+                    - "164.137.3.89/32"
+                    - "3.9.56.99/32"
+
+            - Effect: Allow
+              Principal: "*"
+              Action: execute-api:Invoke
+              Resource: "execute-api:/*"
 
   PrivateAddressApi:
     Type: AWS::Serverless::Api
@@ -951,6 +984,75 @@ Resources:
       DestinationArn: "arn:aws:logs:eu-west-2:885513274347:destination:csls_cw_logs_destination_prodpython"
       FilterPattern: ""
       LogGroupName: !Ref PostcodeLookupTsFunctionLogGroup
+
+  HealthcheckFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - lambdas/healthcheck/src/handler.ts
+        Format: esm
+        Target: es2022
+        Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+    Properties:
+      Handler: handler.handler
+      CodeUri: ../../
+      Runtime: nodejs22.x
+      LoggingConfig:
+        LogGroup: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-HealthcheckFunction"
+          CLIENT_ID:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              HealthcheckSSMClientId,
+            ]
+          TIMEOUT_TIME_SECONDS: 20
+          EXPECTED_OS_API_KEY_LENGTH: 32
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - Statement:
+            - Sid: ReadOrdnanceSurveySecret
+              Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub
+                - "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${Prefix}/OrdnanceSurveyAPIKey*"
+                - Prefix:
+                    !If [
+                      UseSecretPrefix,
+                      !Ref SecretPrefix,
+                      !Ref AWS::StackName,
+                    ]
+            - Sid: ReadOrdnanceSurveyApiUrl
+              Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIUrl/*"
+
+  HealthcheckFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      RetentionInDays: 365
+
+  HealthcheckFunctionAPIGWPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HealthcheckFunction.Alias
+      Principal: apigateway.amazonaws.com
+      SourceAccount: !Sub "${AWS::AccountId}"
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${PublicAddressApi}/*/*/*"
 
   AddressTable:
     Type: "AWS::DynamoDB::Table"

@@ -222,6 +222,29 @@ paths:
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
 
+  /healthcheck/thirdparty:
+    get:
+      responses:
+        200:
+          description: "Lambda invocation successful"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        passThroughBehavior: "when_no_templates"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HealthcheckFunction.Arn}:live/invocations
+
+  /healthcheck/thirdparty/info:
+    get:
+      responses:
+        200:
+          description: "Lambda invocation successful"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        passThroughBehavior: "when_no_templates"
+        type: "aws_proxy"
+        uri:
+          Fn::Sub: arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HealthcheckFunction.Arn}:live/invocations
 components:
   schemas:
     JWKSFile:
