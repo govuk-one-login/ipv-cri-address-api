@@ -6,17 +6,17 @@ import type { CanonicalAddress } from "../../../common/src/types/canonical-addre
 
 const ERROR_COULD_NOT_PARSE_ADDRESSES = "could not parse addresses";
 
-const ERROR_SINGLE_ADDRESS_NOT_CURRENT = "setAddressValidity found a single address but is not a CURRENT address.";
+const ERROR_SINGLE_ADDRESS_NOT_CURRENT = "applyAddressValidity found a single address but is not a CURRENT address.";
 
-const ERROR_TOO_MANY_ADDRESSES = "setAddressValidity given too many Addresses to process.";
+const ERROR_TOO_MANY_ADDRESSES = "applyAddressValidity received too many Addresses to process.";
 
 const ERROR_COULD_NOT_DETERMINE_CURRENT_ADDRESS =
-    "setAddressValidity found two addresses but could not determine which address is a CURRENT addressType.";
+    "applyAddressValidity found two addresses but could not determine which address is a CURRENT.";
 
 const ERROR_ADDRESS_LINKING_NOT_NEEDED =
-    "setAddressValidity found PREVIOUS address but validUntil was already set - automatic date linking failed.";
+    "applyAddressValidity found PREVIOUS address with a validUntil  already set - automatic date linking failed.";
 
-const ERROR_ADDRESS_DATE_IS_INVALID = "setAddressValidity found address where validFrom and validUntil are Equal.";
+const ERROR_ADDRESS_DATE_IS_INVALID = "applyAddressValidity found address where validFrom and validUntil are Equal.";
 
 interface SaveAddressesDependencies {
     dynamoDbClient: DynamoDBDocument;
@@ -104,7 +104,7 @@ export const applyAddressValidity = (addresses: CanonicalAddress[]): CanonicalAd
             return result;
 
         case 2:
-            return specifyValidUntilForPreviousAddress(result);
+            return specifyValidUntilForPreviousAddress([result[0], result[1]]);
 
         default:
             throw new AddressProcessingError(ERROR_TOO_MANY_ADDRESSES);
@@ -185,14 +185,23 @@ const specifyValidUntilForPreviousAddress = (
         throw new AddressProcessingError(ERROR_ADDRESS_LINKING_NOT_NEEDED);
     }
 
-    return addresses.map((address, index) =>
-        index === previousAddressIndex
-            ? {
-                  ...address,
-                  validUntil: currentAddress.validFrom,
-              }
-            : address,
-    );
+    if (previousAddressIndex === 0) {
+        return [
+            {
+                ...firstAddress,
+                validUntil: currentAddress.validFrom,
+            },
+            secondAddress,
+        ];
+    }
+
+    return [
+        firstAddress,
+        {
+            ...secondAddress,
+            validUntil: currentAddress.validFrom,
+        },
+    ];
 };
 
 const normalizePostcodeForGbAddress = (address: CanonicalAddress): CanonicalAddress => {

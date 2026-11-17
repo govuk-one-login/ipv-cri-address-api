@@ -191,7 +191,7 @@ describe("address-service", () => {
 
         it("rejects one non-current address", () => {
             expect(() => applyAddressValidity([previousAddress])).toThrow(
-                "setAddressValidity found a single address but is not a CURRENT address.",
+                "applyAddressValidity found a single address but is not a CURRENT address.",
             );
         });
 
@@ -238,9 +238,7 @@ describe("address-service", () => {
                         postalCode: "B1 1AA",
                     },
                 ]),
-            ).toThrow(
-                "setAddressValidity found two addresses but could not determine which address is a CURRENT addressType.",
-            );
+            ).toThrow("applyAddressValidity found two addresses but could not determine which address is a CURRENT.");
         });
 
         it("rejects equal validFrom and validUntil", () => {
@@ -250,7 +248,7 @@ describe("address-service", () => {
             };
 
             expect(() => applyAddressValidity([invalidAddress, previousAddress])).toThrow(
-                "setAddressValidity found address where validFrom and validUntil are Equal.",
+                "applyAddressValidity found address where validFrom and validUntil are Equal.",
             );
         });
 
@@ -261,7 +259,7 @@ describe("address-service", () => {
             };
 
             expect(() => applyAddressValidity([currentAddress, previousWithValidUntil])).toThrow(
-                "setAddressValidity found PREVIOUS address but validUntil was already set - automatic date linking failed.",
+                "applyAddressValidity found PREVIOUS address with a validUntil  already set - automatic date linking failed.",
             );
         });
 
@@ -275,7 +273,7 @@ describe("address-service", () => {
                         postalCode: "B1 1AA",
                     },
                 ]),
-            ).toThrow("setAddressValidity given too many Addresses to process.");
+            ).toThrow("applyAddressValidity received too many Addresses to process.");
         });
 
         it("does not mutate the input addresses", () => {
