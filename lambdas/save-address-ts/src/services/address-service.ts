@@ -18,6 +18,25 @@ const ERROR_ADDRESS_LINKING_NOT_NEEDED =
 
 const ERROR_ADDRESS_DATE_IS_INVALID = "applyAddressValidity found address where validFrom and validUntil are Equal.";
 
+const CANONICAL_ADDRESS_KEYS = [
+    "validFrom",
+    "validUntil",
+    "uprn",
+    "organisationName",
+    "departmentName",
+    "subBuildingName",
+    "buildingName",
+    "buildingNumber",
+    "dependentStreetName",
+    "streetName",
+    "doubleDependentAddressLocality",
+    "dependentAddressLocality",
+    "addressLocality",
+    "postalCode",
+    "addressCountry",
+    "addressRegion",
+] as const satisfies readonly (keyof CanonicalAddress)[];
+
 interface SaveAddressesDependencies {
     dynamoDbClient: DynamoDBDocument;
     addressTableName: string;
@@ -50,12 +69,32 @@ export const parseAddresses = (addressBody: string | null): CanonicalAddress[] =
         throw new AddressProcessingError("Country code not present for address");
     }
 
-    return parsedBody;
+    return parsedBody.map(pickCanonicalAddressFields);
 };
+
+const DATE_PATTERN = /^(?!0000)\d{4}-\d{2}-\d{2}$/;
 
 const isOptionalString = (value: unknown): boolean => value === undefined || typeof value === "string";
 
 const isOptionalNumber = (value: unknown): boolean => value === undefined || typeof value === "number";
+
+const isOptionalDate = (value: unknown): boolean =>
+    value === undefined || (typeof value === "string" && isValidDate(value));
+
+const isValidDate = (value: string): boolean => {
+    if (!DATE_PATTERN.test(value)) {
+        return false;
+    }
+
+    const [year, month, day] = value.split("-").map(Number);
+
+    const date = new Date(0);
+
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCFullYear(year, month - 1, day);
+
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+};
 
 const isCanonicalAddress = (value: unknown): value is CanonicalAddress => {
     if (typeof value !== "object" || value === null) {
@@ -66,8 +105,8 @@ const isCanonicalAddress = (value: unknown): value is CanonicalAddress => {
 
     return (
         isOptionalNumber(address.uprn) &&
-        isOptionalString(address.validFrom) &&
-        isOptionalString(address.validUntil) &&
+        isOptionalDate(address.validFrom) &&
+        isOptionalDate(address.validUntil) &&
         isOptionalString(address.organisationName) &&
         isOptionalString(address.departmentName) &&
         isOptionalString(address.subBuildingName) &&
@@ -84,6 +123,11 @@ const isCanonicalAddress = (value: unknown): value is CanonicalAddress => {
     );
 };
 
+const pickCanonicalAddressFields = (address: CanonicalAddress): CanonicalAddress =>
+    Object.fromEntries(
+        CANONICAL_ADDRESS_KEYS.filter((key) => address[key] !== undefined).map((key) => [key, address[key]]),
+    ) as CanonicalAddress;
+
 const isCountryCodeAbsentForAny = (addresses: CanonicalAddress[]): boolean =>
     addresses.some((address) => address.addressCountry === undefined || address.addressCountry === "");
 
@@ -93,9 +137,6 @@ export const applyAddressValidity = (addresses: CanonicalAddress[]): CanonicalAd
     }));
 
     switch (result.length) {
-        case 0:
-            return result;
-
         case 1:
             if (!isCurrentAddress(result[0])) {
                 throw new AddressProcessingError(ERROR_SINGLE_ADDRESS_NOT_CURRENT);
@@ -222,7 +263,7 @@ const isGreatBritain = (addressCountry: CanonicalAddress["addressCountry"]): boo
 
 const isPresent = <T>(value: T | null | undefined): value is T => value !== null && value !== undefined;
 
-class AddressProcessingError extends CriError {
+export class AddressProcessingError extends CriError {
     constructor(message: string) {
         super(500, message);
     }

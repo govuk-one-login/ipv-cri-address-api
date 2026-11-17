@@ -7,6 +7,7 @@ import type { SessionItem } from "@govuk-one-login/cri-types";
 
 import { getSessionId } from "../../common/src/lib/session-header.js";
 import type { CanonicalAddress } from "../../common/src/types/canonical-address.js";
+import { AddressProcessingError } from "./services/address-service.js";
 
 const SAVE_ADDRESS_METRIC_NAME = "address";
 
@@ -87,6 +88,15 @@ const buildErrorResponse = (error: unknown): APIGatewayProxyResult => {
                 error: "access_denied",
                 error_description: "Access denied by resource owner or " + `authorization server - ${error.message}`,
             }),
+        };
+    }
+
+    if (error instanceof AddressProcessingError) {
+        logger.error("Address processing failed");
+
+        return {
+            statusCode: 500,
+            body: JSON.stringify(error.message),
         };
     }
     return formatErrorResponse(error);

@@ -63,25 +63,6 @@ describe("address-service", () => {
             expect(() => parseAddresses(JSON.stringify(currentAddress))).toThrow("could not parse addresses");
         });
 
-        it("throws when the country code is missing", () => {
-            const address = {
-                uprn: 12345,
-                postalCode: "SW1A 2AA",
-                validFrom: "2020-01-01",
-            };
-
-            expect(() => parseAddresses(JSON.stringify([address]))).toThrow("Country code not present for address");
-        });
-
-        it("throws when the country code is empty", () => {
-            const address = {
-                ...currentAddress,
-                addressCountry: "",
-            };
-
-            expect(() => parseAddresses(JSON.stringify([address]))).toThrow("Country code not present for address");
-        });
-
         it("does not treat whitespace as a missing country code", () => {
             const address = {
                 ...currentAddress,
@@ -138,6 +119,45 @@ describe("address-service", () => {
             expect(() => parseAddresses(JSON.stringify([address]))).toThrow("could not parse addresses");
         });
 
+        it.each(["2010-00-00", "2024-13-01", "2024-02-30", "2023-02-29", "2024-1-01", "0000-01-01", "not-a-date"])(
+            "throws when validFrom is an invalid date: %s",
+            (validFrom) => {
+                expect(() =>
+                    parseAddresses(
+                        JSON.stringify([
+                            {
+                                addressCountry: "GB",
+                                validFrom,
+                            },
+                        ]),
+                    ),
+                ).toThrow("could not parse addresses");
+            },
+        );
+
+        it("throws when validUntil contains an invalid date", () => {
+            expect(() =>
+                parseAddresses(
+                    JSON.stringify([
+                        {
+                            addressCountry: "GB",
+                            validFrom: "2020-01-01",
+                            validUntil: "2021-00-00",
+                        },
+                    ]),
+                ),
+            ).toThrow("could not parse addresses");
+        });
+
+        it.each(["2021-01-01", "2024-02-29", "1234-12-12"])("accepts valid date: %s", (validFrom) => {
+            const address = {
+                addressCountry: "GB",
+                validFrom,
+            };
+
+            expect(parseAddresses(JSON.stringify([address]))).toEqual([address]);
+        });
+
         it.each([
             {
                 description: "missing",
@@ -158,6 +178,34 @@ describe("address-service", () => {
             };
 
             expect(() => parseAddresses(JSON.stringify([address]))).toThrow("Country code not present for address");
+        });
+
+        it("removes fields that are not part of CanonicalAddress", () => {
+            const address = {
+                uprn: 10022812929,
+                buildingNumber: "8",
+                streetName: "HADLEY ROAD",
+                addressLocality: "BATH",
+                postalCode: "ba2 5aa",
+                addressCountry: "GB",
+                validFrom: "2021-01-01",
+                unexpectedField: "should-not-be-stored",
+                nested: {
+                    anything: ["goes", 123],
+                },
+            };
+
+            expect(parseAddresses(JSON.stringify([address]))).toEqual([
+                {
+                    uprn: 10022812929,
+                    buildingNumber: "8",
+                    streetName: "HADLEY ROAD",
+                    addressLocality: "BATH",
+                    postalCode: "ba2 5aa",
+                    addressCountry: "GB",
+                    validFrom: "2021-01-01",
+                },
+            ]);
         });
     });
 
@@ -181,10 +229,6 @@ describe("address-service", () => {
     });
 
     describe("applyAddressValidity", () => {
-        it("returns an empty array unchanged", () => {
-            expect(applyAddressValidity([])).toEqual([]);
-        });
-
         it("accepts one current address", () => {
             expect(applyAddressValidity([currentAddress])).toEqual([currentAddress]);
         });

@@ -4,6 +4,7 @@ import { CriError } from "@govuk-one-login/cri-error-response";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createHandler } from "../src/address-handler.js";
+import { AddressProcessingError } from "../src/services/address-service.js";
 
 const { mockCaptureMetric } = vi.hoisted(() => ({
     mockCaptureMetric: vi.fn(),
@@ -160,18 +161,23 @@ describe("address-handler", () => {
         expect(createAuthorizationCode).not.toHaveBeenCalled();
     });
 
-    it("returns 500 when parsing addresses fails", async () => {
+    it("returns the address processing error message when parsing addresses fails", async () => {
         parseAddresses.mockImplementationOnce(() => {
-            throw new CriError(500, "Country code not present for address");
+            throw new AddressProcessingError("Country code not present for address");
         });
 
         const response = await handler(event, context);
 
-        expect(response.statusCode).toBe(500);
-
-        expect(getSessionById).not.toHaveBeenCalled();
+        expect(response).toEqual({
+            statusCode: 500,
+            body: JSON.stringify("Country code not present for address"),
+        });
 
         expect(mockCaptureMetric).toHaveBeenCalledWith("address", 0);
+
+        expect(getSessionById).not.toHaveBeenCalled();
+        expect(saveAddresses).not.toHaveBeenCalled();
+        expect(createAuthorizationCode).not.toHaveBeenCalled();
     });
 
     it("returns 500 when an unexpected error occurs", async () => {
@@ -249,7 +255,15 @@ describe("address-handler", () => {
 
         const response = await handler(event, context);
 
-        expect(response.statusCode).toBe(500);
+        expect(response).toEqual({
+            statusCode: 500,
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                message: "Internal server error",
+            }),
+        });
 
         expect(saveAddresses).toHaveBeenCalledOnce();
         expect(createAuthorizationCode).toHaveBeenCalledWith(session);
