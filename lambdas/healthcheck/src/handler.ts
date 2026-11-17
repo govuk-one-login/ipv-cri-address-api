@@ -281,6 +281,16 @@ const validatePostcodeResponse = (addresses: CanonicalAddress[] | undefined): He
 const passed = (result: AssertFunctionResultOutput<unknown> | undefined): boolean =>
     result !== undefined && result.error === undefined;
 
+const logAssertionFailure = (check: string, result: AssertFunctionResultOutput<unknown> | undefined): void => {
+    if (!result?.error) {
+        return;
+    }
+
+    logger.error(`${check} healthcheck failed`, {
+        error: result.error,
+    });
+};
+
 class HealthcheckHandler implements LambdaInterface {
     @logger.injectLambdaContext({
         resetKeys: true,
@@ -305,6 +315,7 @@ class HealthcheckHandler implements LambdaInterface {
                 () => loadOsConfig(stackName, secretPrefix, clientId),
                 validateOsConfig(expectedApiKeyLength),
             );
+            logAssertionFailure("Ordnance Survey configuration", configResult);
 
             const config = configResult.result;
 
@@ -321,6 +332,7 @@ class HealthcheckHandler implements LambdaInterface {
                     (signal) => checkOsHost(config.osApiUrl, signal),
                     validateHostResponse,
                 );
+                logAssertionFailure("Ordnance Survey host", hostResult);
 
                 if (passed(hostResult)) {
                     logger.info("Calling Ordnance Survey API with healthcheck postcode");
@@ -331,6 +343,7 @@ class HealthcheckHandler implements LambdaInterface {
                         (signal) => lookupTestPostcode(config.osApiUrl, config.osApiKey, signal),
                         validatePostcodeResponse,
                     );
+                    logAssertionFailure("Ordnance Survey postcode lookup", postcodeResult);
                 }
             }
 
@@ -382,6 +395,10 @@ class HealthcheckHandler implements LambdaInterface {
                 }),
             };
         } catch (error) {
+            logger.error("Healthcheck failed", {
+                error: error instanceof Error ? error.message : "Unknown healthcheck error",
+            });
+
             return formatErrorResponse(error);
         }
     }

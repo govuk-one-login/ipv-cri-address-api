@@ -248,7 +248,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.dev.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
-      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
       OAuthCommonLambdas: true
@@ -258,7 +258,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.dev.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
-      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
       StubJwksEndpoint: https://test-resources.review-a.dev.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
       OAuthCommonLambdas: true
@@ -268,7 +268,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.build.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
-      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
       StubJwksEndpoint: https://test-resources.review-a.build.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 1
       OAuthCommonLambdas: true
@@ -278,7 +278,7 @@ Mappings:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.staging.account.gov.uk
       CoreRedirectURI: https://identity.staging.account.gov.uk/credential-issuer/callback?id=address
-      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
+      HealthcheckSSMClientId: ipv-core-stub-aws-prod
       StubJwksEndpoint: https://test-resources.review-a.staging.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
       OAuthCommonLambdas: true
@@ -287,7 +287,7 @@ Mappings:
       provisionedConcurrency: 0
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       BaseURL: https://review-a.integration.account.gov.uk
-      HealthcheckSSMClientId: ipv-core-stub-aws-prod_3rdparty
+      HealthcheckSSMClientId: ipv-core
       CoreRedirectURI: https://identity.integration.account.gov.uk/credential-issuer/callback?id=address
       StubJwksEndpoint: https://test-resources.review-a.integration.account.gov.uk/.well-known/jwks.json
       ProvisionedConcurrency: 0
@@ -987,24 +987,12 @@ Resources:
 
   HealthcheckFunction:
     Type: AWS::Serverless::Function
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        EntryPoints:
-          - lambdas/healthcheck/src/handler.ts
-        Format: esm
-        Target: es2022
-        Sourcemap: true
-        OutExtension:
-          - .js=.mjs
-        Banner:
-          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
     Properties:
       Handler: handler.handler
       CodeUri: ../../
       Runtime: nodejs22.x
-      LoggingConfig:
-        LogGroup: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      Layers:
+        - !FindInMap [ DynatraceLayerARN, !Ref Environment, node ]
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: !Sub "${CriIdentifier}-HealthcheckFunction"
@@ -1038,11 +1026,27 @@ Resources:
                 - ssm:GetParameter
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/OrdnanceSurveyAPIUrl/*"
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: esm
+        Target: es2022
+        Sourcemap: true
+        OutExtension:
+          - .js=.mjs
+        Platform: node
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+          - lambdas/healthcheck/src/handler.ts
+        External:
+          - "@aws-sdk/*"
 
   HealthcheckFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}/HealthcheckFunction
+      LogGroupName: !Sub "/aws/lambda/${HealthcheckFunction}"
       RetentionInDays: 365
 
   HealthcheckFunctionAPIGWPermission:

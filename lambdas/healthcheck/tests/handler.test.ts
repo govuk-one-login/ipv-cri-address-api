@@ -1,6 +1,7 @@
 import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { logger } from "@govuk-one-login/cri-logger";
 import { getParameterValue, getSecretValue } from "../../postcode-lookup-ts/src/services/configuration-service.js";
 
 vi.mock("../../postcode-lookup-ts/src/services/configuration-service.js", () => ({
@@ -29,6 +30,7 @@ const mockGetParameterValue = vi.mocked(getParameterValue);
 
 const mockGetSecretValue = vi.mocked(getSecretValue);
 
+const loggerError = vi.spyOn(logger, "error");
 const createEvent = (path: string): APIGatewayProxyEvent =>
     ({
         path,
@@ -54,7 +56,7 @@ describe("HealthcheckHandler", () => {
 
         process.env.AWS_STACK_NAME = "test-stack";
         process.env.SECRET_PREFIX = "test-secret-prefix";
-        process.env.CLIENT_ID = "ipv-core-stub-aws-prod_3rdparty";
+        process.env.CLIENT_ID = "ipv-core-stub-aws-prod";
         process.env.TIMEOUT_TIME_SECONDS = "20";
         process.env.EXPECTED_OS_API_KEY_LENGTH = "32";
 
@@ -93,7 +95,7 @@ describe("HealthcheckHandler", () => {
 
             expect(mockGetParameterValue).toHaveBeenCalledWith(
                 "test-stack",
-                "OrdnanceSurveyAPIUrl/ipv-core-stub-aws-prod_3rdparty",
+                "OrdnanceSurveyAPIUrl/ipv-core-stub-aws-prod",
             );
 
             expect(mockGetSecretValue).toHaveBeenCalledWith("test-secret-prefix", "OrdnanceSurveyAPIKey");
@@ -128,6 +130,10 @@ describe("HealthcheckHandler", () => {
             expect(response.statusCode).not.toBe(200);
 
             expect(mockFetch).toHaveBeenCalledOnce();
+
+            expect(loggerError).toHaveBeenCalledWith("Healthcheck failed", {
+                error: "Ordnance Survey API host is unavailable",
+            });
         });
 
         it("fails when 10 Downing Street is not returned", async () => {
@@ -226,6 +232,10 @@ describe("HealthcheckHandler", () => {
             expect(body.postcodeLookup).toBe("N/A (not called due to earlier failures)");
 
             expect(mockFetch).not.toHaveBeenCalled();
+
+            expect(loggerError).toHaveBeenCalledWith("Ordnance Survey configuration healthcheck failed", {
+                error: expect.stringContaining("Ordnance Survey API key has unexpected length"),
+            });
         });
 
         it("returns 200 and does not call OS Places after the host check fails", async () => {
@@ -248,6 +258,41 @@ describe("HealthcheckHandler", () => {
             expect(body.postcodeLookup).toBe("N/A (not called due to earlier failures)");
 
             expect(mockFetch).toHaveBeenCalledOnce();
+
+            expect(loggerError).toHaveBeenCalledWith("Ordnance Survey host healthcheck failed", {
+                error: expect.stringContaining("Ordnance Survey API host is unavailable"),
+            });
+        });
+
+        it("logs when the postcode healthcheck fails", async () => {
+            const mockFetch = vi
+                .fn()
+                .mockResolvedValueOnce(createHostResponse(200))
+                .mockResolvedValueOnce(
+                    createPostcodeResponse({
+                        results: [
+                            {
+                                DPA: {
+                                    BUILDING_NUMBER: "11",
+                                    THOROUGHFARE_NAME: "DOWNING STREET",
+                                    POSTCODE: "SW1A 2AA",
+                                },
+                            },
+                        ],
+                    }),
+                );
+
+            vi.stubGlobal("fetch", mockFetch);
+
+            const handler = await getHandler();
+
+            const response = await handler(createEvent("/healthcheck/thirdparty/info"), context);
+
+            expect(response.statusCode).toBe(200);
+
+            expect(loggerError).toHaveBeenCalledWith("Ordnance Survey postcode lookup healthcheck failed", {
+                error: expect.stringContaining("10 Downing Street was not returned by the Ordnance Survey API"),
+            });
         });
 
         it("does not expose the OS API key in the report", async () => {
