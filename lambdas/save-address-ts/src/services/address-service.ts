@@ -3,6 +3,7 @@ import { PutCommand, type DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { CriError } from "@govuk-one-login/cri-error-response";
 import { captureMetric } from "@govuk-one-login/cri-metrics";
 import type { CanonicalAddress } from "../../../common/src/types/canonical-address.js";
+import { redactObjectFields } from "../../../common/src/lib/pii-redactor.js";
 
 const ERROR_COULD_NOT_PARSE_ADDRESSES = "could not parse addresses";
 
@@ -61,8 +62,14 @@ export const parseAddresses = (addressBody: string | null): CanonicalAddress[] =
         throw new AddressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
     }
 
-    if (!Array.isArray(parsedBody) || !parsedBody.every(isCanonicalAddress)) {
+    if (!Array.isArray(parsedBody)) {
         throw new AddressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
+    }
+
+    const invalidAddress = parsedBody.find((address) => !isCanonicalAddress(address));
+
+    if (invalidAddress !== undefined) {
+        throw invalidAddressError(invalidAddress);
     }
 
     if (isCountryCodeAbsentForAny(parsedBody)) {
@@ -72,25 +79,24 @@ export const parseAddresses = (addressBody: string | null): CanonicalAddress[] =
     return parsedBody.map(pickCanonicalAddressFields);
 };
 
-const DATE_PATTERN = /^(?!0000)\d{4}-\d{2}-\d{2}$/;
+const ISO_DATE_PATTERN = /^(?!0000)\d{4}-\d{2}-\d{2}$/;
 
 const isOptionalString = (value: unknown): boolean => value === undefined || typeof value === "string";
 
 const isOptionalNumber = (value: unknown): boolean => value === undefined || typeof value === "number";
 
 const isOptionalDate = (value: unknown): boolean =>
-    value === undefined || (typeof value === "string" && isValidDate(value));
+    value === undefined || (typeof value === "string" && isIsoCalendarDate(value));
 
-const isValidDate = (value: string): boolean => {
-    if (!DATE_PATTERN.test(value)) {
+const isIsoCalendarDate = (value: string): boolean => {
+    if (!ISO_DATE_PATTERN.test(value)) {
         return false;
     }
 
-    const [year, month, day] = value.split("-").map(Number);
+    const [year, month, day] = value.split("-").map(Number) as [number, number, number];
 
     const date = new Date(0);
 
-    date.setUTCHours(0, 0, 0, 0);
     date.setUTCFullYear(year, month - 1, day);
 
     return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
@@ -262,6 +268,19 @@ const isGreatBritain = (addressCountry: CanonicalAddress["addressCountry"]): boo
     addressCountry?.toUpperCase() === "GB";
 
 const isPresent = <T>(value: T | null | undefined): value is T => value !== null && value !== undefined;
+
+const invalidAddressError = (value: unknown): AddressProcessingError => {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+        return new AddressProcessingError(ERROR_COULD_NOT_PARSE_ADDRESSES);
+    }
+
+    return new AddressProcessingError(
+        `${ERROR_COULD_NOT_PARSE_ADDRESSES}...` +
+            "Error while deserializing object. " +
+            "Some PII fields were redacted. " +
+            JSON.stringify(redactObjectFields(value as Record<string, unknown>)),
+    );
+};
 
 export class AddressProcessingError extends CriError {
     constructor(message: string) {

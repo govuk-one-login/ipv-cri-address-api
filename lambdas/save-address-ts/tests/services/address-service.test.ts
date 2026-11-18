@@ -2,6 +2,7 @@ import { type DynamoDBDocument, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+    AddressProcessingError,
     applyAddressValidity,
     isCurrentAddress,
     isInvalidAddress,
@@ -119,21 +120,27 @@ describe("address-service", () => {
             expect(() => parseAddresses(JSON.stringify([address]))).toThrow("could not parse addresses");
         });
 
-        it.each(["2010-00-00", "2024-13-01", "2024-02-30", "2023-02-29", "2024-1-01", "0000-01-01", "not-a-date"])(
-            "throws when validFrom is an invalid date: %s",
-            (validFrom) => {
-                expect(() =>
-                    parseAddresses(
-                        JSON.stringify([
-                            {
-                                addressCountry: "GB",
-                                validFrom,
-                            },
-                        ]),
-                    ),
-                ).toThrow("could not parse addresses");
-            },
-        );
+        it.each([
+            "2010-00-00",
+            "2021-02-30",
+            "2021-02-29",
+            "2021-13-01",
+            "2021-01-01T00:00:00Z",
+            "2024-1-01",
+            "0000-01-01",
+            "not-a-date",
+        ])("throws when validFrom is an invalid date: %s", (validFrom) => {
+            expect(() =>
+                parseAddresses(
+                    JSON.stringify([
+                        {
+                            addressCountry: "GB",
+                            validFrom,
+                        },
+                    ]),
+                ),
+            ).toThrow("could not parse addresses");
+        });
 
         it("throws when validUntil contains an invalid date", () => {
             expect(() =>
@@ -206,6 +213,51 @@ describe("address-service", () => {
                     validFrom: "2021-01-01",
                 },
             ]);
+        });
+
+        it("redacts PII when an address fails validation", () => {
+            const address = {
+                uprn: "72262801",
+                buildingNumber: "8",
+                streetName: "GRANGE FIELDS WAY",
+                addressLocality: "LEEDS",
+                postalCode: "LS10 4QL",
+                addressCountry: "GB",
+                addressRegion: "YORKSHIRE",
+                validFrom: "2010-00-00",
+                validUntil: "2021-01-16",
+            };
+
+            expect(() => parseAddresses(JSON.stringify([address]))).toThrow(
+                "Error while deserializing object. Some PII fields were redacted.",
+            );
+        });
+
+        it("does not expose address PII when validation fails", () => {
+            const address = {
+                streetName: "GRANGE FIELDS WAY",
+                postalCode: "LS10 4QL",
+                addressCountry: "GB",
+                validFrom: "2010-00-00",
+            };
+
+            try {
+                parseAddresses(JSON.stringify([address]));
+
+                expect.unreachable("Expected address parsing to fail");
+            } catch (error) {
+                expect(error).toBeInstanceOf(AddressProcessingError);
+
+                const message = (error as Error).message;
+
+                expect(message).toContain("Some PII fields were redacted");
+
+                expect(message).not.toContain("GRANGE FIELDS WAY");
+
+                expect(message).not.toContain("LS10 4QL");
+
+                expect(message).not.toContain("2010-00-00");
+            }
         });
     });
 
