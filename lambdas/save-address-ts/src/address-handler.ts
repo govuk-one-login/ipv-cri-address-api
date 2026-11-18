@@ -53,6 +53,10 @@ export const createHandler =
             const sessionId = getSessionId(event.headers);
             const session = await getSessionById(sessionId);
 
+            logger.appendKeys({
+                govuk_signin_journey_id: session.clientSessionId,
+            });
+
             logger.info("found session");
 
             const addressesWithValidity = applyAddressValidity(addresses);

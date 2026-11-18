@@ -6,14 +6,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createHandler } from "../src/address-handler.js";
 import { AddressProcessingError } from "../src/services/address-service.js";
 
-const { mockCaptureMetric } = vi.hoisted(() => ({
+const { mockCaptureMetric, mockAppendKeys } = vi.hoisted(() => ({
     mockCaptureMetric: vi.fn(),
+    mockAppendKeys: vi.fn(),
 }));
 
 vi.mock("@govuk-one-login/cri-logger", () => ({
     logger: {
         info: vi.fn(),
         error: vi.fn(),
+        appendKeys: mockAppendKeys,
     },
 }));
 
@@ -85,6 +87,7 @@ describe("address-handler", () => {
         const session = {
             sessionId: SESSION_ID,
             expiryDate: ADDRESS_TTL,
+            clientSessionId: "test-client-session-id",
         };
 
         const addressesWithValidity = [canonicalAddress];
@@ -117,6 +120,10 @@ describe("address-handler", () => {
         expect(createAuthorizationCode).toHaveBeenCalledWith(session);
 
         expect(mockCaptureMetric).toHaveBeenCalledWith("address");
+
+        expect(mockAppendKeys).toHaveBeenCalledWith({
+            govuk_signin_journey_id: "test-client-session-id",
+        });
     });
 
     it("returns 403 when the session cannot be found", async () => {
