@@ -2,7 +2,7 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { captureMetric, MetricUnit } from "@govuk-one-login/cri-metrics";
 
-vi.mock("../../src/services/configuration-service", () => ({
+vi.mock("../../../common/src/services/configuration-service", () => ({
     getParameterValue: vi.fn(),
     getSecretValue: vi.fn(),
 }));

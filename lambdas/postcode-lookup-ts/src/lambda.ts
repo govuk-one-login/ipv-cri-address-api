@@ -1,8 +1,8 @@
 import { DynamoDbClient } from "../../common/src/lib/dynamo-db-client.js";
 import { createHandler } from "./postcode-lookup-handler.js";
-import { getParameterValue, getSecretValue } from "./services/configuration-service.js";
+import { getParameterValue, getSecretValue } from "../../common/src/services/configuration-service.js";
 import { lookupPostcode } from "./services/postcode-lookup-service.js";
-import { getSessionById } from "./services/session-service.js";
+import { getSessionById } from "../../common/src/services/session-service.js";
 const sessionTableName = process.env.SESSION_TABLE;
 import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 

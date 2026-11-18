@@ -8,9 +8,9 @@ import type { SessionItem } from "@govuk-one-login/cri-types";
 
 import { decodePostcode } from "./lib/postcode.js";
 import { getPostcodeErrorDimensions, POSTCODE_LOOKUP_ERROR } from "./lib/postcode-error-metrics.js";
-import { getSessionId } from "./lib/session-header.js";
+import { getSessionId } from "../../common/src/lib/session-header.js";
 import { sanitize } from "./lib/pii-postcode-masker.js";
-import type { CanonicalAddress } from "./types/canonical-address.js";
+import type { CanonicalAddress } from "../../common/src/types/canonical-address.js";
 import type { PostcodeRequest } from "./types/postcode-request.js";
 
 const POSTCODE_LOOKUP_METRIC = "postcode_lookup";
