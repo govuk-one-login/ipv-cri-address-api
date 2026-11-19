@@ -10,9 +10,9 @@ import { logger } from "@govuk-one-login/cri-logger";
 import { metrics } from "@govuk-one-login/cri-metrics";
 import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
 
-import { getParameterValue, getSecretValue } from "../../postcode-lookup-ts/src/services/configuration-service.js";
+import { getParameterValue, getSecretValue } from "../../common/src/services/configuration-service.js";
 import { processOrdnanceSurveySuccessResponse } from "../../postcode-lookup-ts/src/lib/ordnance-survey-response.js";
-import type { CanonicalAddress } from "../../postcode-lookup-ts/src/types/canonical-address.js";
+import type { CanonicalAddress } from "../../common/src/types/canonical-address.js";
 
 const TEST_POSTCODE = "SW1A 2AA";
 const TEST_BUILDING_NUMBER = "10";

@@ -2,9 +2,9 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { logger } from "@govuk-one-login/cri-logger";
-import { getParameterValue, getSecretValue } from "../../postcode-lookup-ts/src/services/configuration-service.js";
+import { getParameterValue, getSecretValue } from "../../common/src/services/configuration-service.js";
 
-vi.mock("../../postcode-lookup-ts/src/services/configuration-service.js", () => ({
+vi.mock("../../common/src/services/configuration-service.js", () => ({
     getParameterValue: vi.fn(),
     getSecretValue: vi.fn(),
 }));
