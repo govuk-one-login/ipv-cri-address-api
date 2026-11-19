@@ -61,10 +61,6 @@ Conditions:
   UseCodeSigningConfig: !Not [!Equals [!Ref CodeSigningConfigArn, "none"]]
   UseCanaryDeploymentAlarms:
     !Not [!Equals [!Ref LambdaDeploymentPreference, AllAtOnce]]
-  UseAddressTsAlarms:
-    !And
-    - !Condition IsDevEnvironment
-    - !Condition UseCanaryDeploymentAlarms
   IsDevEnvironment:
     !Or [!Equals [!Ref Environment, dev], !Condition IsLocalDevEnvironment]
   IsLocalDevEnvironment: !Equals [!Ref Environment, localdev]
@@ -665,14 +661,13 @@ Resources:
 
   SaveAddressTsFunction:
     Type: AWS::Serverless::Function
-    Condition: IsDevEnvironment
     Properties:
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: 1
       Handler: lambda.lambdaHandler
       DeploymentPreference:
         Alarms: !If
-          - UseAddressTsAlarms
+          - UseCanaryDeploymentAlarms
           - [
             !Ref SaveAddressTsFunctionCanaryErrors,
             !Ref SaveAddressTsFunctionCanary5xxErrors,
@@ -731,7 +726,6 @@ Resources:
 
   SaveAddressTsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: IsDevEnvironment
     Properties:
       LogGroupName: !Sub "/aws/lambda/${SaveAddressTsFunction}"
       RetentionInDays: 365
@@ -1698,7 +1692,7 @@ Resources:
 
   SaveAddressTsFunctionCanaryErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseAddressTsAlarms
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
@@ -1754,7 +1748,7 @@ Resources:
 
   SaveAddressTsFunctionCanary5xxErrors:
     Type: AWS::CloudWatch::Alarm
-    Condition: UseAddressTsAlarms
+    Condition: UseCanaryDeploymentAlarms
     Properties:
       ActionsEnabled: true
       AlarmActions:
